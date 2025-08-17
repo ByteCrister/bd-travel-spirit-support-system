@@ -1,7 +1,9 @@
-import LoginPage from "@/components/Validation/LoginPage";
+import React from 'react'
 
-export default function Home() {
+const page = () => {
   return (
-    <LoginPage />
-  );
+    <div>page</div>
+  )
 }
+
+export default page
