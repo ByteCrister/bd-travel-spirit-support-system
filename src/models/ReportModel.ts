@@ -7,17 +7,40 @@ import { Schema, model, Document, Types, Connection } from "mongoose";
  * =========================
  */
 
-/** Possible states in the report lifecycle */
-export type ReportStatus = "open" | "in_review" | "resolved" | "rejected";
+/**
+ * Possible states in the report lifecycle.
+ * Helps track workflow from creation to resolution.
+ */
+export enum REPORT_STATUS {
+    OPEN = "open",             // Newly created, awaiting review
+    IN_REVIEW = "in_review",   // Being investigated by support/admin
+    RESOLVED = "resolved",     // Issue addressed and closed
+    REJECTED = "rejected",     // Report dismissed as invalid/unfounded
+}
 
-/** Categories for standardizing report reasons (helps analytics) */
-export type ReportReason =
-    | "false_description"
-    | "late_pickup"
-    | "safety_issue"
-    | "unprofessional_guide"
-    | "billing_problem"
-    | "other";
+/**
+ * Categories for standardizing report reasons.
+ * Useful for analytics, filtering, and consistent classification.
+ */
+export enum REPORT_REASON {
+    FALSE_DESCRIPTION = "false_description",       // Listing info was inaccurate
+    LATE_PICKUP = "late_pickup",                   // Pickup was delayed
+    SAFETY_ISSUE = "safety_issue",                 // Safety concern raised
+    UNPROFESSIONAL_GUIDE = "unprofessional_guide", // Guide behavior issue
+    BILLING_PROBLEM = "billing_problem",           // Payment or billing dispute
+    OTHER = "other",                               // Miscellaneous reason
+}
+
+/**
+ * Priority levels for triaging reports.
+ * Determines urgency for handling.
+ */
+export enum ReportPriority {
+    LOW = "low",       // Can be addressed later
+    NORMAL = "normal", // Standard handling
+    HIGH = "high",     // Needs prompt attention
+    URGENT = "urgent", // Requires immediate action
+}
 
 /**
  * =========================
@@ -27,17 +50,17 @@ export type ReportReason =
 export interface IReport extends Document {
     reporter: Types.ObjectId;         // Who filed the report (User)
     tour: Types.ObjectId;              // Tour being reported
-    reason: ReportReason;              // Categorical reason
+    reason: REPORT_REASON;              // Categorical reason
     message: string;                   // Detailed complaint
     evidenceImages?: Types.ObjectId[]; // Optional evidence images
     evidenceLinks?: string[];          // Links to supporting files/videos
-    status: ReportStatus;              // Workflow stage
+    status: REPORT_STATUS;              // Workflow stage
     assignedTo?: Types.ObjectId;       // Support/admin handling it
-    priority: "low" | "normal" | "high" | "urgent"; // For triage ordering
+    priority: ReportPriority;          // For triage ordering
     resolutionNotes?: string;          // Internal notes after resolution
-    resolvedAt?: Date;                  // Timestamp of resolution
-    reopenedCount?: number;             // Track if re-opened after closure
-    tags?: string[];                    // For internal categorization/analytics
+    resolvedAt?: Date;                 // Timestamp of resolution
+    reopenedCount?: number;            // Track if re-opened after closure
+    tags?: string[];                   // For internal categorization/analytics
     createdAt: Date;
     updatedAt: Date;
 }
@@ -51,9 +74,9 @@ const ReportSchema = new Schema<IReport>(
     {
         reporter: {
             type: Schema.Types.ObjectId,
-            ref: "users",
+            ref: "User",
             required: true,
-            index: true, // speeds up user-specific report lookups
+            index: true,
         },
         tour: {
             type: Schema.Types.ObjectId,
@@ -63,14 +86,7 @@ const ReportSchema = new Schema<IReport>(
         },
         reason: {
             type: String,
-            enum: [
-                "false_description",
-                "late_pickup",
-                "safety_issue",
-                "unprofessional_guide",
-                "billing_problem",
-                "other",
-            ],
+            enum: Object.values(REPORT_REASON),
             required: true,
             index: true,
         },
@@ -79,15 +95,15 @@ const ReportSchema = new Schema<IReport>(
         evidenceLinks: [{ type: String, trim: true }],
         status: {
             type: String,
-            enum: ["open", "in_review", "resolved", "rejected"],
-            default: "open",
+            enum: Object.values(REPORT_STATUS),
+            default: REPORT_STATUS.OPEN,
             index: true,
         },
-        assignedTo: { type: Schema.Types.ObjectId, ref: "users", index: true },
+        assignedTo: { type: Schema.Types.ObjectId, ref: "User", index: true },
         priority: {
             type: String,
-            enum: ["low", "normal", "high", "urgent"],
-            default: "normal",
+            enum: Object.values(ReportPriority),
+            default: ReportPriority.NORMAL,
             index: true,
         },
         resolutionNotes: { type: String, trim: true },
@@ -102,9 +118,6 @@ const ReportSchema = new Schema<IReport>(
  * =========================
  * INDEXES
  * =========================
- * These support:
- * - Dashboard queries for open/urgent reports
- * - Quick filtering by assigned staff
  */
 ReportSchema.index({ status: 1, priority: -1, createdAt: -1 });
 ReportSchema.index({ assignedTo: 1, status: 1 });

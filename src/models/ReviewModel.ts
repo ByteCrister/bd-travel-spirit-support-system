@@ -7,13 +7,17 @@ import { Schema, model, Document, Types, Connection } from "mongoose";
  * =========================
  */
 
-/** Trip type for review context — helps future guests relate */
-export type TripType =
-    | "Solo"
-    | "Couple"
-    | "Family"
-    | "Friends"
-    | "Business";
+/**
+ * Trip type for review context — helps future guests relate.
+ * Using an enum ensures type safety and consistent values.
+ */
+export enum TRIP_TYPE {
+    SOLO = "Solo",
+    COUPLE = "Couple",
+    FAMILY = "Family",
+    FRIENDS = "Friends",
+    BUSINESS = "Business",
+}
 
 /**
  * =========================
@@ -21,17 +25,17 @@ export type TripType =
  * =========================
  */
 export interface IReview extends Document {
-    tour: Types.ObjectId;             // Reference to the Tour
-    user: Types.ObjectId;             // Reference to the User
-    rating: number;                   // 1–5 scale
-    title?: string;                   // Optional review headline
-    comment: string;                   // Detailed textual feedback
-    images: Types.ObjectId[];         // Uploaded review images
-    tripType?: TripType;              // Context: what kind of traveler wrote this
-    travelDate?: Date;                // When the trip took place
-    isVerified: boolean;              // True if user booked through the platform
-    isApproved: boolean;              // Moderation: approved for public display
-    helpfulCount: number;             // Number of “helpful” votes
+    tour: Types.ObjectId;        // Reference to the Tour
+    user: Types.ObjectId;        // Reference to the User
+    rating: number;              // 1–5 scale
+    title?: string;              // Optional review headline
+    comment: string;             // Detailed textual feedback
+    images: Types.ObjectId[];    // Uploaded review images
+    tripType?: TRIP_TYPE;         // Context: what kind of traveler wrote this
+    travelDate?: Date;           // When the trip took place
+    isVerified: boolean;         // True if user booked through the platform
+    isApproved: boolean;         // Moderation: approved for public display
+    helpfulCount: number;        // Number of “helpful” votes
     createdAt: Date;
     updatedAt: Date;
 }
@@ -51,7 +55,7 @@ const ReviewSchema = new Schema<IReview>(
         },
         user: {
             type: Schema.Types.ObjectId,
-            ref: "users",
+            ref: "User",
             required: true,
             index: true,
         },
@@ -67,7 +71,7 @@ const ReviewSchema = new Schema<IReview>(
         images: [{ type: Schema.Types.ObjectId, ref: "Image" }],
         tripType: {
             type: String,
-            enum: ["Solo", "Couple", "Family", "Friends", "Business"],
+            enum: Object.values(TRIP_TYPE),
         },
         travelDate: Date,
         isVerified: { type: Boolean, default: false, index: true },
@@ -91,7 +95,6 @@ ReviewSchema.index({ isApproved: 1, createdAt: -1 });        // Filter & paginat
  * =========================
  * MODEL FACTORY
  * =========================
- * Safe for hot-reload dev environments and multi-DB connections.
  */
 export const getReviewModel = (db: Connection) =>
     db.models.Review || db.model<IReview>("Review", ReviewSchema);

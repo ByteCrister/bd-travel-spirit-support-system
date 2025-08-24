@@ -72,7 +72,7 @@ const ImageSchema = new Schema<IImage>(
         /** Who uploaded the image */
         uploadedBy: {
             type: Schema.Types.ObjectId,
-            ref: "users",
+            ref: "User",
             required: true,
             index: true,
         },

@@ -2,27 +2,34 @@
 import { Schema, Document, Types, Connection } from "mongoose";
 
 /**
- * Types of notifications supported by the Bandaldegi platform.
+ * Types of notifications supported by the Bangladeshi platform.
  * Keep this tight — adding too many ad-hoc values can hurt filtering logic.
  */
-export type UserNotificationType =
-    | "booking_confirmation" // Sent after a successful booking
-    | "booking_reminder"     // Reminder before a booked tour starts
-    | "new_tour"             // Notify about new tour listings
-    | "discount_offer"       // Marketing/promo-based notifications
-    | "message"              // Direct or group message
-    | "system_alert";        // Critical platform/system messages
+export enum USER_NOTIFICATION_TYPE {
+    BOOKING_CONFIRMATION = "booking_confirmation", // Sent after a successful booking
+    BOOKING_REMINDER = "booking_reminder",         // Reminder before a booked tour starts
+    NEW_TOUR = "new_tour",                         // Notify about new tour listings
+    DISCOUNT_OFFER = "discount_offer",             // Marketing/promo-based notifications
+    MESSAGE = "message",                           // Direct or group message
+    SYSTEM_ALERT = "system_alert"                  // Critical platform/system messages
+}
 
 /** Optional urgency levels for ordering/display logic */
-export type NotificationPriority = "low" | "normal" | "high" | "urgent";
+export enum NOTIFICATION_PRIORITY {
+    LOW = "low",
+    NORMAL = "normal",
+    HIGH = "high",
+    URGENT = "urgent"
+}
 
 /** Entities that can be referenced in notifications */
-export type NotificationRelatedModel =
-    | "Tour"
-    | "Booking"
-    | "User"
-    | "Payment"
-    | "SupportTicket";
+export enum NOTIFICATION_RELATED_MODAL {
+    TOUR = "Tour",
+    BOOKING = "Booking",
+    USER = "User",
+    PAYMENT = "Payment",
+    SUPPORT_TICKET = "SupportTicket"
+}
 
 /**
  * =========================
@@ -32,12 +39,12 @@ export type NotificationRelatedModel =
  */
 export interface IUserNotification extends Document {
     recipient: Types.ObjectId; // Target user
-    type: UserNotificationType; // Category
-    priority: NotificationPriority;
+    type: USER_NOTIFICATION_TYPE; // Category
+    priority: NOTIFICATION_PRIORITY;
     title: string;              // Short heading
     message: string;            // Longer descriptive body
     link?: string;              // URL to open in UI
-    relatedModel?: NotificationRelatedModel;
+    relatedModel?: NOTIFICATION_RELATED_MODAL;
     relatedId?: Types.ObjectId;
     isRead: boolean;            // UI read/unread state
     deliveredAt?: Date;         // Time it was actually sent to user
@@ -56,27 +63,20 @@ const UserNotificationSchema = new Schema<IUserNotification>(
     {
         recipient: {
             type: Schema.Types.ObjectId,
-            ref: "users",
+            ref: "User",
             required: true,
             index: true,
         },
         type: {
             type: String,
-            enum: [
-                "booking_confirmation",
-                "booking_reminder",
-                "new_tour",
-                "discount_offer",
-                "message",
-                "system_alert",
-            ],
+            enum: Object.values(USER_NOTIFICATION_TYPE),
             required: true,
             index: true,
         },
         priority: {
             type: String,
-            enum: ["low", "normal", "high", "urgent"],
-            default: "normal",
+            enum: Object.values(NOTIFICATION_PRIORITY),
+            default: NOTIFICATION_PRIORITY.NORMAL,
             index: true,
         },
         title: { type: String, required: true, trim: true },
@@ -84,7 +84,7 @@ const UserNotificationSchema = new Schema<IUserNotification>(
         link: { type: String, trim: true },
         relatedModel: {
             type: String,
-            enum: ["Tour", "Booking", "User", "Payment", "SupportTicket"],
+            enum: Object.values(NOTIFICATION_RELATED_MODAL),
         },
         relatedId: { type: Schema.Types.ObjectId },
         isRead: { type: Boolean, default: false, index: true },

@@ -2,23 +2,54 @@ import mongoose, { Schema, Document, Connection, Types } from "mongoose";
 
 /**
  * =========================
- * ENUMS & TYPE ALIASES
+ * CONST ENUMS
  * =========================
  */
 
-// Roles supported by Bandaldegi
-export type UserRole =
-    | "traveler"     // Regular user booking tours
-    | "guide"        // Person conducting tours
-    | "assistant"  // Manages schedules, logistics
-    | "support"      // Customer support staff
-    | "admin";       // Platform administrator
+/** Roles supported by the platform */
+export enum USER_ROLE {
+    /** Regular user booking tours */
+    TRAVELER = "traveler",
 
-// Account lifecycle states
-export type AccountStatus = "pending" | "active" | "suspended" | "banned";
+    /** Person conducting tours */
+    GUIDE = "guide",
 
-// Organizer profile verification states
-export type OrganizerStatus = "pending" | "approved" | "rejected";
+    /** Manages schedules, logistics */
+    ASSISTANT = "assistant",
+
+    /** Customer support staff */
+    SUPPORT = "support",
+
+    /** Platform administrator */
+    ADMIN = "admin",
+}
+
+/** Account lifecycle states */
+export enum ACCOUNT_STATUS {
+    /** Account created but not yet verified */
+    PENDING = "pending",
+
+    /** Account is active and in good standing */
+    ACTIVE = "active",
+
+    /** Temporarily disabled due to violations or inactivity */
+    SUSPENDED = "suspended",
+
+    /** Permanently banned from the platform */
+    BANNED = "banned",
+}
+
+/** Organizer profile verification states */
+export enum ORGANIZER_STATUS {
+    /** Awaiting admin review */
+    PENDING = "pending",
+
+    /** Approved and allowed to create/manage tours */
+    APPROVED = "approved",
+
+    /** Rejected after review */
+    REJECTED = "rejected",
+}
 
 /**
  * =========================
@@ -66,12 +97,12 @@ const OrganizerProfileSchema = new Schema(
         ],
         status: {
             type: String,
-            enum: ["pending", "approved", "rejected"],
-            default: "pending",
+            enum: Object.values(ORGANIZER_STATUS),
+            default: ORGANIZER_STATUS.PENDING,
         },
         appliedAt: Date,
         reviewedAt: Date,
-        reviewer: { type: Schema.Types.ObjectId, ref: "users" }, // admin user who reviewed
+        reviewer: { type: Schema.Types.ObjectId, ref: "User" }, // admin user who reviewed
     },
     { _id: false, timestamps: true } // timestamps track last update
 );
@@ -82,66 +113,84 @@ const OrganizerProfileSchema = new Schema(
  * =========================
  */
 export interface IUser extends Document {
+    /** Full name of the user */
     name: string;
+
+    /** Unique email address for login and communication */
     email: string;
+
+    /** Hashed password */
     password: string;
-    roles: UserRole[];
+
+    /** Role-based permissions */
+    role: USER_ROLE;
+
+    /** Profile picture URL */
     avatar?: string;
+
+    /** Contact phone number */
     phone?: string;
-    address?: {
-        street: string;
-        city: string;
-        state: string;
-        country: string;
-        zip: string;
-    };
+
+    /** Optional address details */
+    address?: mongoose.InferSchemaType<typeof AddressSchema>;
+
+    /** Date of birth */
     dateOfBirth?: Date;
+
+    /** Whether the email is verified */
     isVerified: boolean;
-    accountStatus: AccountStatus;
+
+    /** Current account lifecycle state */
+    accountStatus: ACCOUNT_STATUS;
+
+    /** Token for password reset */
     resetPasswordToken?: string;
+
+    /** Expiration date for password reset token */
     resetPasswordExpires?: Date;
 
-    // Tour-related references
-    bookingHistory: Types.ObjectId[]; // Tours already booked
-    cart: Types.ObjectId[];           // Tours in cart
-    wishlist: Types.ObjectId[];       // Tours user might want later
+    /** Tours already booked */
+    bookingHistory: Types.ObjectId[];
 
-    // Payment storage (tokenized or masked, never full card info)
-    paymentMethods: {
-        cardType: string;
-        last4: string;
-        expiryMonth: number;
-        expiryYear: number;
-        cardHolder: string;
-        billingAddress: {
-            street: string;
-            city: string;
-            state: string;
-            country: string;
-            zip: string;
-        };
-    }[];
+    /** Tours in cart */
+    cart: Types.ObjectId[];
 
-    // Personalization
+    /** Tours user might want later */
+    wishlist: Types.ObjectId[];
+
+    /** Stored payment methods (tokenized/masked) */
+    paymentMethods: mongoose.InferSchemaType<typeof PaymentMethodSchema>[];
+
+    /** User preferences for language and currency */
     preferences: {
         language: string;
         currency: string;
     };
 
-    // Login tracking & moderation
+    /** Number of failed login attempts */
     loginAttempts: number;
+
+    /** Last login timestamp */
     lastLogin?: Date;
+
+    /** Whether the account is currently active */
     isActive: boolean;
+
+    /** Suspension details if applicable */
     suspension?: {
         reason: string;
         suspendedBy: Types.ObjectId;
         until: Date;
         createdAt: Date;
     };
+
+    /** Soft-delete timestamp */
     deletedAt?: Date;
 
-    // Organizer-specific data
+    /** Organizer-specific profile */
     organizerProfile?: mongoose.InferSchemaType<typeof OrganizerProfileSchema>;
+
+    /** Tours created by this user (if organizer) */
     toursCreated?: Types.ObjectId[];
 }
 
@@ -158,10 +207,12 @@ const UserSchema = new Schema<IUser>(
         password: { type: String, required: true },
 
         // Role-based permissions
-        roles: {
-            type: [String],
-            enum: ["traveler", "guide", "assistant", "support", "admin"],
-            default: ["traveler"],
+        role: {
+            type: String,
+            enum: Object.values(USER_ROLE),
+            default: USER_ROLE.TRAVELER,
+            required: true,
+            index: true,
         },
 
         // Profile
@@ -174,8 +225,8 @@ const UserSchema = new Schema<IUser>(
         isVerified: { type: Boolean, default: false },
         accountStatus: {
             type: String,
-            enum: ["pending", "active", "suspended", "banned"],
-            default: "pending",
+            enum: Object.values(ACCOUNT_STATUS),
+            default: ACCOUNT_STATUS.PENDING,
         },
 
         // Password reset flow
@@ -205,7 +256,7 @@ const UserSchema = new Schema<IUser>(
         // Suspension for violations
         suspension: {
             reason: String,
-            suspendedBy: { type: Schema.Types.ObjectId, ref: "users" },
+            suspendedBy: { type: Schema.Types.ObjectId, ref: "User" },
             until: Date,
             createdAt: Date,
         },
@@ -222,15 +273,13 @@ const UserSchema = new Schema<IUser>(
  * INDEXES FOR PERFORMANCE
  * =========================
  */
-UserSchema.index({ roles: 1 });
+UserSchema.index({ role: 1 });
 UserSchema.index({ "organizerProfile.status": 1 });
 
 /**
  * =========================
  * MODEL FACTORY
  * =========================
- * Ensures we don't re‑register the model when
- * hot‑reloading in dev or using multiple connections.
  */
 export const getUserModel = (db: Connection) =>
-    db.models.users || db.model<IUser>("users", UserSchema);
+    db.models.User || db.model<IUser>("User", UserSchema);

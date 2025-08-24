@@ -6,10 +6,20 @@ import { Connection, Schema, model, Document, Types } from "mongoose";
  * ENUM DEFINITIONS
  * =========================
  */
-const TravelTypeEnum = ["Couples", "Group of friends", "Solo travelers", "Families"] as const;
-type TravelType = typeof TravelTypeEnum[number];
+/** Types of travelers this tour is suited for */
+export enum TravelType {
+    COUPLES = "Couples",
+    GROUP_OF_FRIENDS = "Group of friends",
+    SOLO_TRAVELERS = "Solo travelers",
+    FAMILIES = "Families",
+}
 
-type TourStatus = "draft" | "published" | "archived";
+/** Publishing status of the tour */
+export enum TourStatus {
+    DRAFT = "draft",
+    PUBLISHED = "published",
+    ARCHIVED = "archived",
+}
 
 /**
  * =========================
@@ -179,8 +189,12 @@ const TourSchema = new Schema<ITour>(
         slug: { type: String, required: true, unique: true, lowercase: true },
 
         // Publishing status
-        status: { type: String, enum: ["draft", "published", "archived"], default: "draft" },
-
+        status: {
+            type: String,
+            enum: Object.values(TourStatus),
+            default: TourStatus.DRAFT,
+        },
+        
         // Marketing content
         highlights: [{ type: String, required: true, trim: true }],
         description: { type: String, required: true, trim: true },
@@ -193,8 +207,7 @@ const TourSchema = new Schema<ITour>(
         meetingPoints: [MeetingPointSchema],
         activities: [{ type: String, trim: true }],
         tags: [{ type: String, trim: true, index: true }],
-        travelTypes: [{ type: String, enum: TravelTypeEnum, required: true }],
-        priceOptions: [PriceOptionSchema],
+        travelTypes: [{ type: String, enum: Object.values(TravelType), required: true }], priceOptions: [PriceOptionSchema],
         discounts: [DiscountSchema],
 
         // Scheduling
@@ -205,7 +218,7 @@ const TourSchema = new Schema<ITour>(
 
         // Bookings / relationships
         bookingInfo: {
-            users: [{ type: Types.ObjectId, ref: "users" }],
+            users: [{ type: Types.ObjectId, ref: "User" }],
         },
         reviews: [{ type: Types.ObjectId, ref: "Review" }],
 

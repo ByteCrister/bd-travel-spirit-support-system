@@ -21,13 +21,13 @@ const ChatMessageSchema = new Schema<IChatMessage>(
   {
     sender: {
       type: Schema.Types.ObjectId,
-      ref: 'users',
+      ref: 'User',
       required: true,
       index: true, // Speeds up sender-based queries
     },
     receiver: {
       type: Schema.Types.ObjectId,
-      ref: 'users',
+      ref: 'User',
       required: true,
       index: true, // Speeds up receiver-based queries
     },
