@@ -1,5 +1,5 @@
-// models/Employee.ts
-import { Schema, Document, Types, Connection } from "mongoose";
+// models/employee.model.ts
+import { Schema, Document, Types, models, model } from "mongoose";
 
 /* ------------------------------------------------------------------
    ENUM CONSTANTS — Single source of truth for roles, statuses, types
@@ -237,5 +237,4 @@ EmployeeSchema.index({ hostId: 1, status: 1 });
 /* ------------------------------------------------------------------
    MODEL FACTORY — Supports multi-connection setups
 -------------------------------------------------------------------*/
-export const getEmployeeModel = (db: Connection) =>
-    db.models.employees || db.model<IEmployee>("employees", EmployeeSchema);
+export const EmployeeModel = models.employees || model<IEmployee>("employees", EmployeeSchema);

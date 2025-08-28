@@ -1,5 +1,6 @@
-// models/AdminNotification.ts
-import { Schema, model, Document, Types, Connection } from 'mongoose';
+// models/admin-notification.model.ts
+import { models } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 /**
  * Enum representing the different system or business events
@@ -108,11 +109,28 @@ const AdminNotificationSchema = new Schema<IAdminNotification>(
             },
         ],
         meta: { type: Schema.Types.Mixed }, // Flexible field for extra data
-        expiresAt: { type: Date, index: true }, // Can be used with TTL index for auto-deletion
+        /**
+        * Only set for LOW/MEDIUM priority so TTL deletes them after 60 days.
+        * High/Critical leave this field empty → they never expire automatically.
+        */
+        expiresAt: { type: Date, index: { expireAfterSeconds: 0 } },
         isDeleted: { type: Boolean, default: false, index: true },
     },
     { timestamps: true } // Automatically adds createdAt & updatedAt
 );
+
+// Auto-set expiresAt for LOW and MEDIUM priorities
+AdminNotificationSchema.pre("save", function (next) {
+    if (
+        this.priority === AdminNotificationPriority.LOW ||
+        this.priority === AdminNotificationPriority.MEDIUM
+    ) {
+        this.expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 60); // 60 days
+    } else {
+        this.expiresAt = undefined; // Never auto-delete
+    }
+    next();
+});
 
 /**
  * Compound index for faster queries when fetching unread notifications
@@ -124,9 +142,7 @@ AdminNotificationSchema.index({ recipients: 1, isRead: 1, createdAt: -1 });
  * Retrieves the AdminNotification model from a specific DB connection.
  * This pattern prevents model recompilation errors in hot-reload environments.
  */
-export const getAdminNotificationModel = (db: Connection) =>
-    db.models.AdminNotification ||
-    db.model<IAdminNotification>('AdminNotification', AdminNotificationSchema);
+export const getAdminNotificationModel = models.AdminNotification || model<IAdminNotification>('AdminNotification', AdminNotificationSchema);
 
 /**
  * Default model export for single-connection applications.

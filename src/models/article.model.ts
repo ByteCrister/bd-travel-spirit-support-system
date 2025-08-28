@@ -1,5 +1,6 @@
-// models/Article.ts
-import { Schema, Types, Document, Connection } from 'mongoose';
+// models/article.model.ts
+import { model, models } from 'mongoose';
+import { Schema, Types, Document } from 'mongoose';
 
 /**
  * Enum representing the possible publication states of an article.
@@ -107,5 +108,4 @@ const ArticleSchema = new Schema<IArticle>(
 // Index for finding featured/published quickly
 ArticleSchema.index({ isFeatured: 1, status: 1 });
 
-export const getArticleModel = (db: Connection) =>
-    db.models.Article || db.model<IArticle>('Article', ArticleSchema);
+export const ArticleModel = models.Article || model<IArticle>('Article', ArticleSchema);

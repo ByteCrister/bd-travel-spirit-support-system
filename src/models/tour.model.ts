@@ -1,5 +1,6 @@
-// models/Tour.ts
-import { Connection, Schema, model, Document, Types } from "mongoose";
+// models/tour.model.ts
+import { models } from "mongoose";
+import {  Schema, model, Document, Types } from "mongoose";
 
 /**
  * =========================
@@ -194,7 +195,7 @@ const TourSchema = new Schema<ITour>(
             enum: Object.values(TourStatus),
             default: TourStatus.DRAFT,
         },
-        
+
         // Marketing content
         highlights: [{ type: String, required: true, trim: true }],
         description: { type: String, required: true, trim: true },
@@ -278,6 +279,4 @@ TourSchema.index(
 
 export const Tour = model<ITour>('Tour', TourSchema);
 
-export const getTourModel = (db: Connection) => {
-    return db.models.tour || db.model<ITour>('Tour', TourSchema);
-};
+export const TourModel = models.tour || model<ITour>('Tour', TourSchema);

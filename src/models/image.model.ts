@@ -1,5 +1,6 @@
-// models/Image.ts
-import { Schema, model, Document, Types, Connection } from "mongoose";
+// models/image.model.ts
+import { models } from "mongoose";
+import { Schema, model, Document, Types } from "mongoose";
 
 /**
  * =================================
@@ -95,8 +96,4 @@ ImageSchema.index({ uploadedBy: 1, tags: 1 });
  * ==================
  * Ensures safe model reuse across hot-reloads & multiple connections.
  */
-export const getImageModel = (db: Connection) =>
-    db.models.Image || db.model<IImage>("Image", ImageSchema);
-
-/** Default export for single connection usage */
-export const Image = model<IImage>("Image", ImageSchema);
+export const ImageModel = models.Image || model<IImage>("Image", ImageSchema);

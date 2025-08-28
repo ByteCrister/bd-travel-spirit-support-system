@@ -1,5 +1,5 @@
-// models/Report.ts
-import { Schema, model, Document, Types, Connection } from "mongoose";
+// models/report.model.ts
+import { Schema, model, Document, Types, models } from "mongoose";
 
 /**
  * =========================
@@ -127,7 +127,4 @@ ReportSchema.index({ assignedTo: 1, status: 1 });
  * MODEL FACTORY
  * =========================
  */
-export const getReportModel = (db: Connection) =>
-    db.models.Report || db.model<IReport>("Report", ReportSchema);
-
-export const Report = model<IReport>("Report", ReportSchema);
+export const ReportModel = models.Report || model<IReport>("Report", ReportSchema);

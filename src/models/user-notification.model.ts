@@ -1,5 +1,5 @@
-// models/UserNotification.ts
-import { Schema, Document, Types, Connection } from "mongoose";
+// models/user-notification.model.ts
+import { Schema, Document, Types, models, model } from "mongoose";
 
 /**
  * Types of notifications supported by the Bangladeshi platform.
@@ -50,6 +50,7 @@ export interface IUserNotification extends Document {
     deliveredAt?: Date;         // Time it was actually sent to user
     readAt?: Date;              // Time the user opened it
     meta?: Record<string, unknown>; // Flexible key-value store for custom context
+    expiresAt?: Date;           // Optional expiration date for TTL index
     createdAt: Date;
     updatedAt: Date;
 }
@@ -94,7 +95,9 @@ const UserNotificationSchema = new Schema<IUserNotification>(
             type: Map,
             of: Schema.Types.Mixed, // Allows nested key-value pairs without schema changes
         },
+        expiresAt: { type: Date, index: { expireAfterSeconds: 0 } }
     },
+
     {
         timestamps: true, // auto-manages createdAt / updatedAt
     }
@@ -112,6 +115,19 @@ const UserNotificationSchema = new Schema<IUserNotification>(
 UserNotificationSchema.index({ recipient: 1, isRead: 1 });
 UserNotificationSchema.index({ recipient: 1, priority: -1 });
 UserNotificationSchema.index({ createdAt: -1 });
+// Middleware to set expiry date conditionally
+UserNotificationSchema.pre("save", function (next) {
+    if (
+        this.priority === NOTIFICATION_PRIORITY.LOW ||
+        this.priority === NOTIFICATION_PRIORITY.NORMAL
+    ) {
+        this.expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 60); // +60 days
+    } else {
+        this.expiresAt = undefined; // No auto-delete
+    }
+    next();
+});
+
 
 /**
  * =========================
@@ -119,6 +135,4 @@ UserNotificationSchema.index({ createdAt: -1 });
  * =========================
  * Ensures hot-reload safety in dev and supports multi-connection setups.
  */
-export const getUserNotificationModel = (db: Connection) =>
-    db.models.UserNotification ||
-    db.model<IUserNotification>("UserNotification", UserNotificationSchema);
+export const UserNotificationModel = models.UserNotification || model<IUserNotification>("UserNotification", UserNotificationSchema);

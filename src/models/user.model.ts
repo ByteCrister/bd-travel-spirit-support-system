@@ -1,4 +1,6 @@
-import mongoose, { Schema, Document, Connection, Types } from "mongoose";
+// * models/user.model.ts
+import mongoose, { Schema, Document, Types, model } from "mongoose";
+import { models } from "mongoose";
 
 /**
  * =========================
@@ -310,5 +312,4 @@ UserSchema.index({ dateOfBirth: 1 });
  * MODEL FACTORY
  * =========================
  */
-export const getUserModel = (db: Connection) =>
-    db.models.User || db.model<IUser>("User", UserSchema);
+export const UserModel = models.User || model<IUser>("User", UserSchema);

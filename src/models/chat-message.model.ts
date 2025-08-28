@@ -1,6 +1,6 @@
-// models/ChatMessage.ts
+// models/chat-message.model.ts
 
-import mongoose, { Schema, Document, Connection } from 'mongoose';
+import mongoose, { Schema, Document, models, model } from 'mongoose';
 
 /**
  * Chat message model — represents a message exchanged between two users.
@@ -77,6 +77,4 @@ ChatMessageSchema.index(
  * Returns the ChatMessage model from the provided connection.
  * Prevents model recompilation in case of hot reload.
  */
-export const getChatMessageModel = (db: Connection) =>
-  db.models.ChatMessage ||
-  db.model<IChatMessage>('ChatMessage', ChatMessageSchema);
+export const ChatMessageModel = models.ChatMessage || model<IChatMessage>('ChatMessage', ChatMessageSchema);

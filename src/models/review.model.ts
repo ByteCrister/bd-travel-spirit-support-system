@@ -1,5 +1,5 @@
-// models/Review.ts
-import { Schema, model, Document, Types, Connection } from "mongoose";
+// models/review.model.ts
+import { Schema, model, Document, Types, models } from "mongoose";
 
 /**
  * =========================
@@ -96,7 +96,4 @@ ReviewSchema.index({ isApproved: 1, createdAt: -1 });        // Filter & paginat
  * MODEL FACTORY
  * =========================
  */
-export const getReviewModel = (db: Connection) =>
-    db.models.Review || db.model<IReview>("Review", ReviewSchema);
-
-export const Review = model<IReview>("Review", ReviewSchema);
+export const ReviewModel = models.Review || model<IReview>("Review", ReviewSchema);
