@@ -1,4 +1,4 @@
-import { ACCOUNT_STATUS, USER_ROLE } from "./user.types";
+import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
 
 /**
  * ======================================
