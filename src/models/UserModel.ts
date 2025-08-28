@@ -273,8 +273,37 @@ const UserSchema = new Schema<IUser>(
  * INDEXES FOR PERFORMANCE
  * =========================
  */
+// =============================
+// TEXT INDEX (one compound index only)
+// =============================
+UserSchema.index({
+    name: "text",
+    email: "text",
+    phone: "text",
+    "address.street": "text",
+    "address.city": "text",
+    "address.state": "text",
+    "address.country": "text",
+    "address.zip": "text",
+    "organizerProfile.companyName": "text"
+});
+
+// =============================
+// FILTERING + SORTING INDEXES
+// =============================
+// For dropdowns, filters, and sorting
 UserSchema.index({ role: 1 });
-UserSchema.index({ "organizerProfile.status": 1 });
+UserSchema.index({ accountStatus: 1 });
+UserSchema.index({ isVerified: 1 });
+UserSchema.index({ isActive: 1 });
+
+// For frequent sorting
+UserSchema.index({ createdAt: -1 });
+UserSchema.index({ lastLogin: -1 });
+
+// Optional: range queries
+UserSchema.index({ dateOfBirth: 1 });
+
 
 /**
  * =========================
