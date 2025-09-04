@@ -90,13 +90,20 @@ const OrganizerProfileSchema = new Schema(
         companyName: { type: String, trim: true },
         bio: { type: String, trim: true },
         social: { type: String, trim: true }, // could store URL or handle
-        documents: [
-            {
-                name: { type: String, trim: true },
-                url: { type: String, trim: true },
-                uploadedAt: Date,
-            },
-        ],
+        documents: {
+            type: [
+                {
+                    name: { type: String, trim: true, required: true },
+                    url: { type: String, trim: true, required: true },
+                    uploadedAt: { type: Date, default: Date.now }
+                }
+            ],
+            validate: [
+                (val: { name: string; url: string; uploadedAt: Date }[]) => val.length > 0,
+                "At least one verification document is required"
+            ],
+            required: true
+        },
         status: {
             type: String,
             enum: Object.values(ORGANIZER_STATUS),
