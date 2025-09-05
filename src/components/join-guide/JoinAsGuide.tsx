@@ -83,7 +83,7 @@ export default function JoinAsGuide() {
           </motion.div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {/* Support Login Button */}
             <motion.button
               initial={{ opacity: 0, x: 20 }}
@@ -93,26 +93,27 @@ export default function JoinAsGuide() {
               className="group relative inline-flex items-center gap-2.5 rounded-2xl 
     bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800
     border border-gray-200/60 dark:border-gray-700/60 backdrop-blur-sm
-    px-5 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 
+    px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 
     shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50
     hover:shadow-xl hover:shadow-gray-300/60 dark:hover:shadow-gray-800/60
     hover:scale-105 hover:border-emerald-300/40 dark:hover:border-emerald-500/40
     transition-all duration-300
     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 
-    focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+    focus-visible:ring-offset-2 focus-visible:ring-offset-transparent
+    overflow-hidden"
             >
-              {/* Background Glow Effect */}
-              <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-cyan-500/20 opacity-0 blur-sm transition-opacity duration-300 group-hover:opacity-100"></div>
+              {/* Background Glow Effect - contained within button */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-cyan-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
               
               {/* Icon Container */}
-              <div className="relative flex items-center justify-center">
+              <div className="relative z-10 flex items-center justify-center">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-200/30 dark:border-emerald-500/20 group-hover:border-emerald-300/50 dark:group-hover:border-emerald-400/40 transition-all duration-300">
                   <FiUser className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 transition-all duration-300 group-hover:scale-110 group-hover:text-emerald-700 dark:group-hover:text-emerald-300" />
                 </div>
               </div>
               
               {/* Text Content */}
-              <div className="relative flex flex-col items-start">
+              <div className="relative z-10 flex flex-col items-start">
                 <span className="hidden sm:inline text-sm font-semibold bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-200 dark:to-gray-300 bg-clip-text text-transparent group-hover:from-emerald-700 group-hover:to-teal-700 dark:group-hover:from-emerald-300 dark:group-hover:to-teal-300 transition-all duration-300">
                   Log in as support member
                 </span>
@@ -122,7 +123,7 @@ export default function JoinAsGuide() {
                 <div className="hidden sm:block h-0.5 w-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-300 group-hover:w-full"></div>
               </div>
               
-              {/* Shine Effect */}
+              {/* Shine Effect - contained within button */}
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 -translate-x-full transition-all duration-700 group-hover:opacity-100 group-hover:translate-x-full"></div>
             </motion.button>
 
@@ -134,24 +135,25 @@ export default function JoinAsGuide() {
             onClick={handleApplyClick}
               className="group relative inline-flex items-center gap-2 rounded-2xl 
     bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 
-    px-6 py-3 text-sm font-semibold text-white 
+    px-5 py-3 text-sm font-semibold text-white 
     shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 
     hover:scale-105 transition-all duration-300
     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 
     focus-visible:ring-offset-2 focus-visible:ring-offset-transparent 
-    dark:focus-visible:ring-offset-gray-900"
+    dark:focus-visible:ring-offset-gray-900
+    overflow-hidden"
             >
-              {/* Background Glow */}
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 opacity-0 blur transition-opacity duration-300 group-hover:opacity-30"></div>
+              {/* Background Glow - contained within button */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 opacity-0 transition-opacity duration-300 group-hover:opacity-30"></div>
 
               {/* Button Content */}
-              <div className="relative flex items-center gap-2">
+              <div className="relative z-10 flex items-center gap-2">
                 <FiZap className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
                 <span>Apply Now</span>
                 <FiArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </div>
 
-              {/* Shine Effect */}
+              {/* Shine Effect - contained within button */}
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 -translate-x-full transition-all duration-1000 group-hover:opacity-100 group-hover:translate-x-full"></div>
             </motion.button>
           </div>

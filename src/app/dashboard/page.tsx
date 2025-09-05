@@ -26,6 +26,9 @@ import {
   FiTrendingUp,
   FiRefreshCw
 } from "react-icons/fi";
+import { BookingsLineChart } from "@/components/dashboard/Charts/BookingsLineChart";
+import { UsersAreaChart } from "@/components/dashboard/Charts/UsersAreaChart";
+import { RevenueMiniChart } from "@/components/dashboard/Charts/RevenueMiniChart";
 
 export default function DashboardPage() {
   const {
@@ -37,6 +40,7 @@ export default function DashboardPage() {
     roleDistribution,
     announcements,
     adminNotifications,
+    analytics,
     loading,
     errors,
     refreshAll,
@@ -208,6 +212,41 @@ export default function DashboardPage() {
             </>
           )}
         </motion.div>
+
+        {/* Analytics Section */}
+        {isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
+            <div className="lg:col-span-2">
+              {loading.analytics ? (
+                <ChartsSkeleton title="Bookings (Last 14 Days)" />
+              ) : (
+                <BookingsLineChart data={analytics?.bookingsOverTime || []} />
+              )}
+            </div>
+            <div>
+              {loading.analytics ? (
+                <ChartsSkeleton title="Revenue (14 Days)" />
+              ) : (
+                <RevenueMiniChart data={analytics?.revenueOverTime || []} />
+              )}
+            </div>
+            <div className="lg:col-span-3">
+              {loading.analytics ? (
+                <ChartsSkeleton title="Travelers vs Guides (14 Days)" />
+              ) : (
+                <UsersAreaChart 
+                  travelers={analytics?.travelersOverTime || []} 
+                  guides={analytics?.guidesOverTime || []} 
+                />
+              )}
+            </div>
+          </motion.div>
+        )}
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

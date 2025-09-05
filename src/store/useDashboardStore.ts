@@ -1,129 +1,23 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import {
+  UserRole,
+  DashboardStats,
+  RecentActivity,
+  PendingAction,
+  Booking,
+  RoleDistribution,
+  Announcement,
+  AdminNotification,
+  AnalyticsData,
+  SystemHealth,
+  TrendingInsight,
+  DashboardFilters,
+} from '@/types/dashboard.types';
 
 // ===== TYPES & INTERFACES =====
 
-export type UserRole = 'admin' | 'support';
-
-export interface DashboardStats {
-  totalUsers: number;
-  totalOrganizers: number;
-  totalSupportAgents: number;
-  activeTours: number;
-  upcomingTours: number;
-  totalBookings: number;
-  pendingReports: number;
-  suspendedUsers: number;
-  totalRevenue?: number; // Admin only
-  topDestinationTrends?: string[]; // Admin only
-}
-
-export interface RecentActivity {
-  id: string;
-  type: 'signup' | 'booking' | 'report' | 'tour' | 'user_action';
-  title: string;
-  description: string;
-  timestamp: string;
-  user?: string;
-  severity?: 'low' | 'medium' | 'high';
-}
-
-export interface PendingAction {
-  id: string;
-  type: 'report' | 'complaint' | 'flagged_content' | 'organizer_approval' | 'tour_approval';
-  title: string;
-  description: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  createdAt: string;
-  assignedTo?: string;
-  status: 'pending' | 'in_progress' | 'resolved';
-}
-
-export interface Booking {
-  id: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  tour: {
-    id: string;
-    title: string;
-    destination: string;
-  };
-  bookingDate: string;
-  status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
-  amount: number;
-}
-
-export interface RoleDistribution {
-  travelers: number;
-  organizers: number;
-  support: number;
-  banned: number;
-}
-
-export interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  type: 'info' | 'warning' | 'urgent';
-  createdAt: string;
-  createdBy: string;
-  isActive: boolean;
-}
-
-export interface AdminNotification {
-  id: string;
-  type: 'report' | 'ticket' | 'flagged_user' | 'system_alert' | 'revenue_issue' | 'approval_pending';
-  title: string;
-  message: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  createdAt: string;
-  isRead: boolean;
-  actionRequired: boolean;
-}
-
-export interface AnalyticsData {
-  bookingsOverTime: Array<{ date: string; count: number; revenue?: number }>;
-  newUsersOverTime: Array<{ date: string; count: number }>;
-  revenueOverTime: Array<{ date: string; amount: number }>;
-  reportsOverTime: Array<{ date: string; count: number }>;
-}
-
-export interface SystemHealth {
-  serverStatus: 'healthy' | 'warning' | 'critical';
-  databaseConnections: number;
-  activeCronJobs: number;
-  lastBackup: string;
-  errorLogs: Array<{
-    id: string;
-    level: 'error' | 'warning' | 'info';
-    message: string;
-    timestamp: string;
-  }>;
-}
-
-export interface TrendingInsight {
-  id: string;
-  type: 'destination' | 'category' | 'tour_type';
-  title: string;
-  description: string;
-  trend: 'up' | 'down' | 'stable';
-  percentage: number;
-  confidence: number;
-}
-
-export interface DashboardFilters {
-  dateRange: {
-    start: string;
-    end: string;
-  };
-  userRole?: string;
-  bookingStatus?: string;
-  reportStatus?: string;
-  searchQuery?: string;
-}
+// moved type definitions to '@/types/dashboard.types'
 
 // ===== STORE STATE =====
 
@@ -331,7 +225,7 @@ export const useDashboardStore = create<DashboardState>()(
             topDestinationTrends: ['Bali', 'Thailand', 'Japan', 'Italy', 'Spain'],
           };
           set({ stats: mockStats });
-        } catch (error) {
+        } catch {
           set({ errors: { ...get().errors, stats: 'Failed to fetch stats' } });
         } finally {
           set({ loading: { ...get().loading, stats: false } });
@@ -375,7 +269,7 @@ export const useDashboardStore = create<DashboardState>()(
             },
           ];
           set({ recentActivity: mockActivity });
-        } catch (error) {
+        } catch {
           set({ errors: { ...get().errors, recentActivity: 'Failed to fetch recent activity' } });
         } finally {
           set({ loading: { ...get().loading, recentActivity: false } });
@@ -411,7 +305,7 @@ export const useDashboardStore = create<DashboardState>()(
             },
           ];
           set({ pendingActions: mockActions });
-        } catch (error) {
+        } catch {
           set({ errors: { ...get().errors, pendingActions: 'Failed to fetch pending actions' } });
         } finally {
           set({ loading: { ...get().loading, pendingActions: false } });
@@ -445,7 +339,7 @@ export const useDashboardStore = create<DashboardState>()(
             },
           ];
           set({ recentBookings: mockBookings });
-        } catch (error) {
+        } catch {
           set({ errors: { ...get().errors, recentBookings: 'Failed to fetch recent bookings' } });
         } finally {
           set({ loading: { ...get().loading, recentBookings: false } });
@@ -467,7 +361,7 @@ export const useDashboardStore = create<DashboardState>()(
             banned: 3,
           };
           set({ roleDistribution: mockDistribution });
-        } catch (error) {
+        } catch {
           set({ errors: { ...get().errors, roleDistribution: 'Failed to fetch role distribution' } });
         } finally {
           set({ loading: { ...get().loading, roleDistribution: false } });
@@ -503,7 +397,7 @@ export const useDashboardStore = create<DashboardState>()(
             },
           ];
           set({ announcements: mockAnnouncements });
-        } catch (error) {
+        } catch {
           set({ errors: { ...get().errors, announcements: 'Failed to fetch announcements' } });
         } finally {
           set({ loading: { ...get().loading, announcements: false } });
@@ -541,14 +435,14 @@ export const useDashboardStore = create<DashboardState>()(
             },
           ];
           set({ adminNotifications: mockNotifications });
-        } catch (error) {
+        } catch {
           set({ errors: { ...get().errors, adminNotifications: 'Failed to fetch admin notifications' } });
         } finally {
           set({ loading: { ...get().loading, adminNotifications: false } });
         }
       },
 
-      fetchAnalytics: async (filters) => {
+      fetchAnalytics: async () => {
         set({ loading: { ...get().loading, analytics: true }, errors: { ...get().errors, analytics: null } });
         try {
           // const res = await fetch('/api/dashboard/analytics', {
@@ -566,9 +460,13 @@ export const useDashboardStore = create<DashboardState>()(
               count: Math.floor(Math.random() * 50) + 10,
               revenue: Math.floor(Math.random() * 10000) + 5000,
             })),
-            newUsersOverTime: Array.from({ length: 30 }, (_, i) => ({
+            travelersOverTime: Array.from({ length: 30 }, (_, i) => ({
               date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              count: Math.floor(Math.random() * 20) + 5,
+              count: Math.floor(Math.random() * 30) + 10,
+            })),
+            guidesOverTime: Array.from({ length: 30 }, (_, i) => ({
+              date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              count: Math.floor(Math.random() * 12) + 2,
             })),
             revenueOverTime: Array.from({ length: 30 }, (_, i) => ({
               date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -580,7 +478,7 @@ export const useDashboardStore = create<DashboardState>()(
             })),
           };
           set({ analytics: mockAnalytics });
-        } catch (error) {
+        } catch {
           set({ errors: { ...get().errors, analytics: 'Failed to fetch analytics' } });
         } finally {
           set({ loading: { ...get().loading, analytics: false } });
@@ -616,7 +514,7 @@ export const useDashboardStore = create<DashboardState>()(
             ],
           };
           set({ systemHealth: mockSystemHealth });
-        } catch (error) {
+        } catch {
           set({ errors: { ...get().errors, systemHealth: 'Failed to fetch system health' } });
         } finally {
           set({ loading: { ...get().loading, systemHealth: false } });
@@ -652,7 +550,7 @@ export const useDashboardStore = create<DashboardState>()(
             },
           ];
           set({ trendingInsights: mockInsights });
-        } catch (error) {
+        } catch {
           set({ errors: { ...get().errors, trendingInsights: 'Failed to fetch trending insights' } });
         } finally {
           set({ loading: { ...get().loading, trendingInsights: false } });

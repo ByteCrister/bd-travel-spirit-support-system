@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  FiHome, 
-  FiUsers, 
-  FiUser, 
-  FiUserCheck, 
-  FiHeadphones, 
-  FiFileText, 
-  FiShare2, 
-  FiImage, 
-  FiGift, 
-  FiSettings, 
-  FiMenu, 
+import {
+  FiHome,
+  FiUsers,
+  FiUser,
+  FiUserCheck,
+  FiHeadphones,
+  FiFileText,
+  FiShare2,
+  FiImage,
+  FiGift,
+  FiSettings,
+  FiMenu,
   FiX,
   FiChevronRight
 } from "react-icons/fi";
@@ -87,7 +87,7 @@ export function Sidebar({ isMobile = false, onClose, isOpen = false }: SidebarPr
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["Main", "Users"]);
 
   const toggleGroup = (groupTitle: string) => {
-    setExpandedGroups(prev => 
+    setExpandedGroups(prev =>
       prev.includes(groupTitle)
         ? prev.filter(title => title !== groupTitle)
         : [...prev, groupTitle]
@@ -107,19 +107,6 @@ export function Sidebar({ isMobile = false, onClose, isOpen = false }: SidebarPr
 
   return (
     <>
-      {/* Mobile Overlay */}
-      {isMobile && (
-        <AnimatePresence>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-            onClick={onClose}
-          />
-        </AnimatePresence>
-      )}
-
       {/* Sidebar */}
       <motion.aside
         initial={false}
@@ -156,7 +143,7 @@ export function Sidebar({ isMobile = false, onClose, isOpen = false }: SidebarPr
                 </div>
                 <div>
                   <h1 className="font-display text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-                    Travel Spirit
+                    BD Travel Spirit
                   </h1>
                   <p className="text-xs text-slate-600 dark:text-slate-400">Admin Dashboard</p>
                 </div>

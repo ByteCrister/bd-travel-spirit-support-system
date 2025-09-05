@@ -9,15 +9,14 @@ import {
   FiFlag, 
   FiAlertTriangle, 
   FiEye, 
-  FiCheck, 
-  FiClock,
+  FiCheck,
   FiUser,
   FiMapPin,
   FiSettings,
   FiAlertCircle
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
-import { PendingAction } from "@/store/useDashboardStore";
+import { PendingAction } from "@/types/dashboard.types";
 
 interface PendingActionsProps {
   actions: PendingAction[];
@@ -123,21 +122,21 @@ export function PendingActions({
   }
 
   return (
-    <Card className={cn("h-full", className)}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className={cn(className)}>
+      <CardHeader className="pb-3 lg:pb-2">
+        <CardTitle className="flex items-center justify-between gap-2">
           <FiAlertTriangle className="h-5 w-5" />
-          Pending Actions
+          <span className="truncate">Pending Actions</span>
           {actions.length > 0 && (
-            <Badge variant="destructive" className="ml-2">
+            <Badge variant="destructive" className="shrink-0">
               {actions.filter(action => action.status === 'pending').length}
             </Badge>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="max-h-[60vh] lg:max-h-[65vh]">
-          <div className="space-y-4">
+      <CardContent className="pt-0 lg:pt-0">
+        <ScrollArea className="max-h-[60vh] lg:h-[52vh] xl:h-[54vh] pr-1 w-full">
+          <div className="space-y-2 lg:space-y-3">
             {actions.length === 0 ? (
               <div className="text-center py-8">
                 <FiCheck className="h-12 w-12 text-green-300 dark:text-green-600 mx-auto mb-4" />
@@ -152,21 +151,21 @@ export function PendingActions({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className={cn(
-                    "p-4 border rounded-lg transition-all duration-200 hover:shadow-md",
+                    "p-3 lg:p-4 border rounded-lg transition-all duration-200 hover:shadow-sm border-slate-200 dark:border-slate-800",
                     getPriorityColor(action.priority)
                   )}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 lg:gap-3 lg:grid lg:grid-cols-[1fr_auto]">
                     <div className={cn(
-                      "flex items-center justify-center h-8 w-8 rounded-full",
+                      "flex items-center justify-center h-8 w-8 lg:h-9 lg:w-9 rounded-full",
                       getPriorityColor(action.priority)
                     )}>
                       {getActionIcon(action.type)}
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                      <div className="flex items-center flex-wrap gap-2 mb-1 lg:mb-1.5">
+                        <h4 className="text-sm lg:text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">
                           {action.title}
                         </h4>
                         <Badge className={cn("text-xs", getStatusColor(action.status))}>
@@ -174,12 +173,12 @@ export function PendingActions({
                         </Badge>
                       </div>
                       
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                      <p className="text-[13px] lg:text-xs text-slate-600 dark:text-slate-400 mb-2">
                         {action.description}
                       </p>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap text-xs">
                           <Badge variant="outline" className="text-xs">
                             {action.priority}
                           </Badge>
@@ -188,13 +187,13 @@ export function PendingActions({
                           </span>
                         </div>
                         
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 lg:self-start">
                           {onView && (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => onView(action.id)}
-                              className="h-7 px-2 text-xs"
+                              className="h-7 px-2 text-[11px]"
                             >
                               <FiEye className="h-3 w-3 mr-1" />
                               View
@@ -204,7 +203,7 @@ export function PendingActions({
                             <Button
                               size="sm"
                               onClick={() => onResolve(action.id)}
-                              className="h-7 px-2 text-xs"
+                              className="h-7 px-2 text-[11px]"
                             >
                               <FiCheck className="h-3 w-3 mr-1" />
                               Resolve

@@ -13,7 +13,7 @@ import {
   FiUser
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
-import { Announcement } from "@/store/useDashboardStore";
+import { Announcement } from "@/types/dashboard.types";
 
 interface AnnouncementBoardProps {
   announcements: Announcement[];
@@ -89,21 +89,21 @@ export function AnnouncementBoard({ announcements, loading = false, className }:
   const activeAnnouncements = announcements.filter(announcement => announcement.isActive);
 
   return (
-    <Card className={cn("h-full", className)}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className={cn("overflow-hidden", className)}>
+      <CardHeader className="pb-3 lg:pb-2">
+        <CardTitle className="flex items-center justify-between gap-2">
           <FiVolume2 className="h-5 w-5" />
-          Announcements
+          <span className="truncate">Announcements</span>
           {activeAnnouncements.length > 0 && (
-            <Badge variant="outline" className="ml-2">
+            <Badge variant="outline" className="shrink-0">
               {activeAnnouncements.length} Active
             </Badge>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="max-h-[60vh] lg:max-h-[65vh]">
-          <div className="space-y-4">
+      <CardContent className="pt-0 lg:pt-0">
+        <ScrollArea className="max-h-[60vh] lg:h-[52vh] xl:h-[54vh] pr-1 w-full">
+          <div className="space-y-2 lg:space-y-3">
             {activeAnnouncements.length === 0 ? (
               <div className="text-center py-8">
                 <FiVolume2 className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
@@ -118,21 +118,21 @@ export function AnnouncementBoard({ announcements, loading = false, className }:
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className={cn(
-                    "p-4 border rounded-lg transition-all duration-200 hover:shadow-md",
+                    "p-3 lg:p-4 border rounded-lg transition-all duration-200 hover:shadow-sm border-slate-200 dark:border-slate-800 overflow-hidden",
                     getAnnouncementColor(announcement.type)
                   )}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 lg:gap-3 lg:grid lg:grid-cols-[auto_1fr]">
                     <div className={cn(
-                      "flex items-center justify-center h-8 w-8 rounded-full",
+                      "flex items-center justify-center h-8 w-8 lg:h-9 lg:w-9 rounded-full",
                       getAnnouncementColor(announcement.type)
                     )}>
                       {getAnnouncementIcon(announcement.type)}
                     </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                    <div className="flex-1 min-w-0 max-w-full">
+                      <div className="flex items-center flex-wrap gap-2 mb-1 lg:mb-1.5">
+                        <h4 className="text-sm lg:text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">
                           {announcement.title}
                         </h4>
                         <Badge variant="outline" className="text-xs">
@@ -140,12 +140,12 @@ export function AnnouncementBoard({ announcements, loading = false, className }:
                         </Badge>
                       </div>
                       
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
+                      <p className="text-[13px] lg:text-xs text-slate-600 dark:text-slate-400 mb-2 leading-relaxed break-words">
                         {announcement.content}
                       </p>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-4 flex-wrap text-xs">
                           <div className="flex items-center gap-1">
                             <FiUser className="h-3 w-3 text-slate-400" />
                             <span className="text-xs text-slate-500 dark:text-slate-500">

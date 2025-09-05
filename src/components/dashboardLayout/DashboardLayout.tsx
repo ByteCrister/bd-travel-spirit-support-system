@@ -17,7 +17,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Modal states
   const [showViewProfile, setShowViewProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -27,11 +27,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   // Optimized mobile detection with debouncing
   const checkMobile = useCallback(() => {
     const mobile = window.innerWidth < 1024;
-    setIsMobile(mobile);
-    if (mobile && isMobileMenuOpen) {
+
+    // if switching to desktop, close menu
+    if (!mobile) {
       setIsMobileMenuOpen(false);
     }
-  }, [isMobileMenuOpen]);
+
+    setIsMobile(mobile);
+  }, []);
+
 
   useEffect(() => {
     // Initial check
@@ -85,7 +89,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     } else {
       document.body.style.overflow = "unset";
     }
-    
+
     return () => {
       document.body.style.overflow = "unset";
     };
@@ -109,14 +113,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
       {/* Sidebar */}
-      <Sidebar 
-        isMobile={isMobile} 
-        onClose={closeMobileMenu}
-        isOpen={isMobileMenuOpen}
-      />
+      {isMobile ? (
+        <Sidebar
+          isMobile
+          onClose={closeMobileMenu}
+          isOpen={isMobileMenuOpen}
+        />
+      ) : (
+        <Sidebar
+          isMobile={false}
+          onClose={() => { }}
+          isOpen={true} // always open on desktop
+        />
+      )}
 
       {/* Topbar */}
-      <Topbar 
+      <Topbar
         onMenuClick={openMobileMenu}
         isMobile={isMobile}
         onViewProfile={() => setShowViewProfile(true)}

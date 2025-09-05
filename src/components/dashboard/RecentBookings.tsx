@@ -16,7 +16,7 @@ import {
   FiAlertCircle
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
-import { Booking } from "@/store/useDashboardStore";
+import { Booking } from "@/types/dashboard.types";
 
 interface RecentBookingsProps {
   bookings: Booking[];

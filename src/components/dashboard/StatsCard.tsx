@@ -1,6 +1,8 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
+import CountUp from "react-countup";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -70,6 +72,10 @@ export function StatsCard({
 }: StatsCardProps) {
   const colors = colorVariants[color];
 
+  const AnimatedNumber = ({ target }: { target: number }) => (
+    <CountUp end={target} duration={0.8} separator="," />
+  );
+
   if (loading) {
     return (
       <Card className={cn("relative overflow-hidden", colors.bg, colors.border, className)}>
@@ -115,7 +121,11 @@ export function StatsCard({
               
               <div className="space-y-1">
                 <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  {typeof value === "number" ? value.toLocaleString() : value}
+                  {typeof value === "number" ? (
+                    <AnimatedNumber target={value} />
+                  ) : (
+                    value
+                  )}
                 </p>
                 {description && (
                   <p className="text-xs text-slate-500 dark:text-slate-500">

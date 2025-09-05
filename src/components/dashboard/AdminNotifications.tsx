@@ -18,7 +18,7 @@ import {
   FiX
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
-import { AdminNotification } from "@/store/useDashboardStore";
+import { AdminNotification } from "@/types/dashboard.types";
 
 interface AdminNotificationsProps {
   notifications: AdminNotification[];
@@ -118,31 +118,33 @@ export function AdminNotifications({
   }
 
   return (
-    <Card className={cn("h-full", className)}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className={cn(className)}>
+      <CardHeader className="pb-3 lg:pb-2">
+        <CardTitle className="flex items-center justify-between gap-2">
           <FiBell className="h-5 w-5" />
-          Notifications
-          {unreadCount > 0 && (
-            <Badge variant="destructive" className="ml-2">
-              {unreadCount}
-            </Badge>
-          )}
-          {actionRequiredCount > 0 && (
-            <Badge variant="outline" className="ml-1">
-              {actionRequiredCount} Action Required
-            </Badge>
-          )}
+          <span className="truncate">Notifications</span>
+          <div className="flex items-center gap-2 shrink-0">
+            {unreadCount > 0 && (
+              <Badge variant="destructive">
+                {unreadCount}
+              </Badge>
+            )}
+            {actionRequiredCount > 0 && (
+              <Badge variant="outline">
+                {actionRequiredCount} Action Required
+              </Badge>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="max-h-[60vh] lg:max-h-[65vh]">
-          <div className="space-y-4">
+      <CardContent className="pt-0 lg:pt-0">
+        <ScrollArea className="max-h-[60vh] lg:h-[52vh] xl:h-[54vh] pr-1 w-full">
+          <div className="space-y-2 lg:space-y-3">
             {notifications.length === 0 ? (
               <div className="text-center py-8">
                 <FiBell className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
                 <p className="text-slate-500 dark:text-slate-400">No notifications</p>
-                <p className="text-sm text-slate-400 dark:text-slate-500">You're all caught up!</p>
+                <p className="text-sm text-slate-400 dark:text-slate-500">You&apos;re all caught up!</p>
               </div>
             ) : (
               notifications.map((notification, index) => (
@@ -152,22 +154,22 @@ export function AdminNotifications({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className={cn(
-                    "p-4 border rounded-lg transition-all duration-200 hover:shadow-md",
+                    "p-3 lg:p-4 border rounded-lg transition-all duration-200 hover:shadow-sm border-slate-200 dark:border-slate-800",
                     getSeverityColor(notification.severity),
                     !notification.isRead && "ring-2 ring-blue-500/20"
                   )}
                 >
                   <div className="flex items-start gap-3">
                     <div className={cn(
-                      "flex items-center justify-center h-8 w-8 rounded-full",
+                      "flex items-center justify-center h-8 w-8 lg:h-9 lg:w-9 rounded-full",
                       getSeverityColor(notification.severity)
                     )}>
                       {getNotificationIcon(notification.type)}
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                      <div className="flex items-center flex-wrap gap-2 mb-1 lg:mb-1.5">
+                        <h4 className="text-sm lg:text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">
                           {notification.title}
                         </h4>
                         <div className="flex gap-1">
@@ -185,25 +187,25 @@ export function AdminNotifications({
                         </div>
                       </div>
                       
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                      <p className="text-[13px] lg:text-xs text-slate-600 dark:text-slate-400 mb-2">
                         {notification.message}
                       </p>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <FiClock className="h-3 w-3 text-slate-400" />
                           <span className="text-xs text-slate-500 dark:text-slate-500">
                             {formatTimeAgo(notification.createdAt)}
                           </span>
                         </div>
                         
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 lg:self-start">
                           {onView && (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => onView(notification.id)}
-                              className="h-7 px-2 text-xs"
+                              className="h-7 px-2 text-[11px]"
                             >
                               <FiEye className="h-3 w-3 mr-1" />
                               View
@@ -214,7 +216,7 @@ export function AdminNotifications({
                               size="sm"
                               variant="outline"
                               onClick={() => onMarkAsRead(notification.id)}
-                              className="h-7 px-2 text-xs"
+                              className="h-7 px-2 text-[11px]"
                             >
                               <FiCheck className="h-3 w-3 mr-1" />
                               Mark Read
@@ -225,7 +227,7 @@ export function AdminNotifications({
                               size="sm"
                               variant="ghost"
                               onClick={() => onDismiss(notification.id)}
-                              className="h-7 px-2 text-xs text-slate-400 hover:text-slate-600"
+                              className="h-7 px-2 text-[11px] text-slate-400 hover:text-slate-600"
                             >
                               <FiX className="h-3 w-3" />
                             </Button>
