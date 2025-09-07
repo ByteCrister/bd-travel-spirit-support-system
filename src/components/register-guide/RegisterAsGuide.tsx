@@ -8,23 +8,24 @@ import { StepPersonalInfo } from '@/components/register-guide/StepPersonalInfo'
 import { StepCompanyDetails } from '@/components/register-guide/StepCompanyDetails'
 import { StepDocuments } from '@/components/register-guide/StepDocuments'
 import { StepReviewSubmit } from '@/components/register-guide/StepReviewSubmit'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft, Save, Shield, Users, Globe, Star, Heart } from 'lucide-react'
+import { Shield, Users, Globe, Star, Heart } from 'lucide-react'
 import { toast } from 'sonner'
-import Link from 'next/link'
+import { GuideRegisterHeader } from './GuideRegisterHeader'
+import { GuideRegisterFooter } from './GuideRegisterFooter'
 
 const RegisterAsGuide: React.FC = () => {
-  const { 
-    currentStep, 
-    setCurrentStep, 
-    formData, 
-    clearAllErrors 
+  const {
+    currentStep,
+    setCurrentStep,
+    formData,
+    clearAllErrors
   } = useRegisterGuideStore()
 
   const totalSteps = 4
 
   // Handle step navigation
   const handleNext = () => {
+    console.log(currentStep);
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1)
     }
@@ -92,52 +93,12 @@ const RegisterAsGuide: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen" style={{ 
+    <div className="min-h-screen" style={{
       background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
       fontFamily: "'Inter', system-ui, sans-serif"
     }}>
       {/* Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="border-b bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 shadow-sm"
-      >
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="flex items-center space-x-2 hover:bg-gray-100">
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Home</span>
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold" style={{ 
-                  background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  fontFamily: "'Poppins', system-ui, sans-serif"
-                }}>
-                  Register as Guide
-                </h1>
-                <p className="text-gray-600">
-                  Join BD Travel Spirit as a verified guide and start your journey
-                </p>
-              </div>
-            </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveAndContinueLater}
-              className="flex items-center space-x-2 hover:bg-gray-100"
-            >
-              <Save className="w-4 h-4" />
-              <span>Save & Continue Later</span>
-            </Button>
-          </div>
-        </div>
-      </motion.div>
+      <GuideRegisterHeader handleSaveAndContinueLater={handleSaveAndContinueLater} />
 
       {/* Hero Section */}
       <motion.div
@@ -161,7 +122,7 @@ const RegisterAsGuide: React.FC = () => {
           <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-8">
             Join thousands of successful guides worldwide and help travelers discover amazing experiences
           </p>
-          
+
           {/* Features Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             {features.map((feature, index) => {
@@ -208,33 +169,7 @@ const RegisterAsGuide: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <footer className="border-t bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 mt-16">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center space-y-4">
-            <div className="text-sm text-gray-600">
-              <p>
-                By registering as a guide, you agree to our{' '}
-                <a href="#" className="text-blue-600 hover:underline font-medium">Terms of Service</a>
-                {' '}and{' '}
-                <a href="#" className="text-blue-600 hover:underline font-medium">Privacy Policy</a>
-              </p>
-            </div>
-            <div className="text-sm text-gray-600">
-              <p>
-                Need help? Contact us at{' '}
-                <a href="mailto:support@bdtravelspirit.com" className="text-blue-600 hover:underline font-medium">
-                  support@bdtravelspirit.com
-                </a>
-              </p>
-            </div>
-            <div className="pt-4 border-t border-gray-200">
-              <p className="text-xs text-gray-500">
-                © 2024 BD Travel Spirit. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <GuideRegisterFooter />
     </div>
   )
 }

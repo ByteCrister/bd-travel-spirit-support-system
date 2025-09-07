@@ -9,12 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useRegisterGuideStore } from '@/lib/registerGuideStore'
 import { companyDetailsSchema, isValidUrl } from '@/lib/validationSchemas'
-import { 
-  Building2, 
-  FileText, 
-  Globe, 
-  Share2, 
-  CheckCircle, 
+import {
+  Building2,
+  FileText,
+  Globe,
+  Share2,
+  CheckCircle,
   AlertCircle,
   ArrowRight,
   ArrowLeft,
@@ -24,6 +24,7 @@ import {
   TrendingUp
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 interface StepCompanyDetailsProps {
   onNext: () => void
@@ -43,11 +44,18 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
       setLocalErrors({})
       setIsValidating(false)
       return true
-    } catch (error: any) {
+    } catch (error) {
       const newErrors: Record<string, string> = {}
-      error.errors?.forEach((err: any) => {
-        newErrors[err.path[0]] = err.message
-      })
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'errors' in error &&
+        Array.isArray((error).errors)
+      ) {
+        (error as { errors: { path: string[]; message: string }[] }).errors.forEach((err) => {
+          newErrors[err.path[0]] = err.message
+        })
+      }
       setLocalErrors(newErrors)
       setIsValidating(false)
       return false
@@ -58,7 +66,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
   const handleInputChange = (field: keyof typeof formData.companyDetails, value: string) => {
     updateCompanyDetails({ [field]: value })
     clearError(field)
-    
+
     // Clear local error for this field
     if (localErrors[field]) {
       setLocalErrors(prev => {
@@ -138,7 +146,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-4 shadow-lg" style={{ boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' }}>
           <Building2 className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-3xl font-bold mb-2" style={{ 
+        <h2 className="text-3xl font-bold mb-2" style={{
           background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -155,7 +163,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
         {/* Main Form */}
         <div className="lg:col-span-2 space-y-6">
           {/* Company Information Card */}
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -208,7 +216,8 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                           animate={{ scale: 1, rotate: 0 }}
                           exit={{ scale: 0, rotate: 180 }}
                         >
-                                                      <AlertCircle className="w-5 h-5 text-red-500" />
+
+                          <AlertCircle className="w-5 h-5 text-red-500" />
                         </motion.div>
                       ) : isFieldValid('companyName') ? (
                         <motion.div
@@ -228,7 +237,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                                                className="text-sm text-red-500 flex items-center space-x-1"
+                      className="text-sm text-red-500 flex items-center space-x-1"
                     >
                       <AlertCircle className="w-4 h-4" />
                       <span>{getFieldError('companyName')}</span>
@@ -269,7 +278,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                   <div className="absolute right-3 top-3">
                     <AnimatePresence mode="wait">
                       {getFieldError('bio') ? (
-                                                    <AlertCircle className="w-5 h-5 text-red-500" />
+                        <AlertCircle className="w-5 h-5 text-red-500" />
                       ) : isFieldValid('bio') ? (
                         <CheckCircle className="w-5 h-5 text-green-500" />
                       ) : null}
@@ -282,7 +291,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                                                className="text-sm text-red-500 flex items-center space-x-1"
+                      className="text-sm text-red-500 flex items-center space-x-1"
                     >
                       <AlertCircle className="w-4 h-4" />
                       <span>{getFieldError('bio')}</span>
@@ -297,7 +306,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
           </Card>
 
           {/* Online Presence Card */}
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -345,7 +354,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <AnimatePresence mode="wait">
                       {getFieldError('website') ? (
-                                                    <AlertCircle className="w-5 h-5 text-red-500" />
+                        <AlertCircle className="w-5 h-5 text-red-500" />
                       ) : isFieldValid('website') ? (
                         <CheckCircle className="w-5 h-5 text-green-500" />
                       ) : null}
@@ -357,7 +366,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                     <motion.p
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                                                className="text-sm text-red-500 flex items-center space-x-1"
+                      className="text-sm text-red-500 flex items-center space-x-1"
                     >
                       <AlertCircle className="w-4 h-4" />
                       <span>{getFieldError('website')}</span>
@@ -395,7 +404,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <AnimatePresence mode="wait">
                       {getFieldError('socialMedia') ? (
-                                                    <AlertCircle className="w-5 h-5 text-red-500" />
+                        <AlertCircle className="w-5 h-5 text-red-500" />
                       ) : isFieldValid('socialMedia') ? (
                         <CheckCircle className="w-5 h-5 text-green-500" />
                       ) : null}
@@ -407,7 +416,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                     <motion.p
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                                                className="text-sm text-red-500 flex items-center space-x-1"
+                      className="text-sm text-red-500 flex items-center space-x-1"
                     >
                       <AlertCircle className="w-4 h-4" />
                       <span>{getFieldError('socialMedia')}</span>
@@ -424,7 +433,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
 
         {/* Features Sidebar */}
         <div className="space-y-6">
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -433,9 +442,9 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
               <CardTitle className="text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
                 Why Travelers Choose Us
               </CardTitle>
-                                <p className="text-sm text-gray-600">
-                    Highlight what makes your company special
-                  </p>
+              <p className="text-sm text-gray-600">
+                Highlight what makes your company special
+              </p>
             </CardHeader>
             <CardContent className="space-y-4">
               {features.map((feature, index) => {
@@ -462,20 +471,31 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
           </Card>
 
           {/* Tips Card */}
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
           }}>
-            <CardHeader>
-              <CardTitle className="text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
-                💡 Pro Tips
+            <CardHeader className="flex flex-row items-center gap-3">
+              {/* Image instead of icon/emoji */}
+              <Image
+                src="/images/register_as_guide/idea.png"
+                alt="Pro Tips"
+                width={28}
+                height={28}
+                className="rounded-md"
+              />
+              <CardTitle
+                className="text-lg"
+                style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}
+              >
+                Pro Tips
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="text-sm text-gray-500 space-y-2">
                 <p>• Be specific about your specialties and unique offerings</p>
-                <p>• Mention any certifications or awards you've received</p>
+                <p>• Mention any certifications or awards you&apos;ve received</p>
                 <p>• Include languages you speak fluently</p>
                 <p>• Highlight your local knowledge and hidden gems</p>
               </div>
@@ -499,7 +519,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
           <ArrowLeft className="w-4 h-4" />
           <span>Previous</span>
         </Button>
-        
+
         <div className="flex items-center space-x-4 ml-auto">
           <div className="text-sm text-gray-600">
             Step 2 of 4

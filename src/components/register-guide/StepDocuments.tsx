@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useRegisterGuideStore, DocumentFile } from '@/lib/registerGuideStore'
 import { validateFile } from '@/lib/validationSchemas'
-import { 
-  Upload, 
-  FileText, 
-  Image, 
-  AlertCircle, 
-  CheckCircle, 
-  Shield, 
+import {
+  Upload,
+  FileText,
+  Image as Img,
+  AlertCircle,
+  CheckCircle,
+  Shield,
   FileCheck,
   Camera,
   FileImage,
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import imageCompression from 'browser-image-compression'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 interface StepDocumentsProps {
   onNext: () => void
@@ -57,7 +58,7 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
       maxWidthOrHeight: 1920,
       useWebWorker: true,
     }
-    
+
     try {
       const compressedFile = await imageCompression(file, options)
       return compressedFile
@@ -78,7 +79,7 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        
+
         const validation = validateFile(file)
         if (!validation.isValid) {
           setUploadError(validation.error || 'Invalid file')
@@ -159,7 +160,7 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
   const getFileInfo = (type: string) => {
     if (type.startsWith('image/')) {
       return {
-        icon: Image,
+        icon: Img,
         color: 'text-blue-500',
         bgColor: 'bg-blue-50',
         borderColor: 'border-blue-200'
@@ -219,7 +220,7 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-4 shadow-lg" style={{ boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' }}>
           <Shield className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-3xl font-bold mb-2" style={{ 
+        <h2 className="text-3xl font-bold mb-2" style={{
           background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -236,7 +237,7 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
         {/* Main Upload Area */}
         <div className="lg:col-span-2 space-y-6">
           {/* Upload Card */}
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -259,8 +260,8 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
               <motion.div
                 className={cn(
                   "relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 cursor-pointer group",
-                  dragActive 
-                    ? "border-blue-500 bg-blue-50/50 scale-105" 
+                  dragActive
+                    ? "border-blue-500 bg-blue-50/50 scale-105"
                     : "border-gray-300 hover:border-blue-500/50 hover:bg-blue-50/30"
                 )}
                 onDrop={handleDrop}
@@ -278,22 +279,22 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
                   onChange={handleFileInputChange}
                   className="hidden"
                 />
-                
+
                 <motion.div
                   className="flex flex-col items-center space-y-4"
-                  animate={{ 
+                  animate={{
                     scale: isUploading ? [1, 1.1, 1] : 1,
                     rotate: isUploading ? [0, 5, -5, 0] : 0
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 2,
                     repeat: isUploading ? Infinity : 0
                   }}
                 >
                   <div className={cn(
                     "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300",
-                    dragActive 
-                      ? "bg-blue-500 text-white shadow-lg" 
+                    dragActive
+                      ? "bg-blue-500 text-white shadow-lg"
                       : "bg-blue-100 text-blue-600 group-hover:bg-blue-500 group-hover:text-white"
                   )}>
                     {isUploading ? (
@@ -307,7 +308,7 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
                       <Upload className="w-8 h-8" />
                     )}
                   </div>
-                  
+
                   <div>
                     <p className="text-lg font-semibold">
                       {isUploading ? 'Processing files...' : dragActive ? 'Drop files here' : 'Click to upload or drag and drop'}
@@ -366,12 +367,12 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
                     </Button>
                   )}
                 </div>
-                
+
                 <AnimatePresence>
                   {formData.documents.map((doc, index) => {
                     const fileInfo = getFileInfo(doc.type)
                     const Icon = fileInfo.icon
-                    
+
                     return (
                       <motion.div
                         key={`${doc.name}-${index}`}
@@ -400,7 +401,7 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
                             </p>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-2">
                           <motion.div
                             initial={{ scale: 0 }}
@@ -442,7 +443,7 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Document Requirements */}
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -451,9 +452,9 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
               <CardTitle className="text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
                 Required Documents
               </CardTitle>
-                                <p className="text-sm text-gray-600">
-                    Upload these documents to verify your identity
-                  </p>
+              <p className="text-sm text-gray-600">
+                Upload these documents to verify your identity
+              </p>
             </CardHeader>
             <CardContent className="space-y-4">
               {documentTypes.map((doc, index) => {
@@ -487,14 +488,25 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
           </Card>
 
           {/* Security Info */}
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
           }}>
-            <CardHeader>
-              <CardTitle className="text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
-                🔒 Security & Privacy
+            <CardHeader className="flex flex-row  gap-3">
+              {/* Image instead of emoji */}
+              <Image
+                src="/images/register_as_guide/security.png"
+                alt="Security & Privacy"
+                width={28}
+                height={28}
+                className="rounded-md"
+              />
+              <CardTitle
+                className="text-lg"
+                style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}
+              >
+                Security & Privacy
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -525,7 +537,7 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
           <ArrowLeft className="w-4 h-4" />
           <span>Previous</span>
         </Button>
-        
+
         <div className="flex items-center space-x-4 ml-auto">
           <div className="text-sm text-gray-600">
             Step 3 of 4

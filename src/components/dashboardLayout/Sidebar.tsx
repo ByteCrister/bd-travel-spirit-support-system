@@ -19,11 +19,14 @@ import {
 } from "react-icons/fi";
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface SidebarProps {
   isMobile?: boolean;
   onClose?: () => void;
   isOpen?: boolean;
+  isCollapsed: boolean;
+  setIsCollapsed: (v: boolean) => void;
 }
 
 interface NavGroup {
@@ -82,8 +85,12 @@ const navigationGroups: NavGroup[] = [
   },
 ];
 
-export function Sidebar({ isMobile = false, onClose, isOpen = false }: SidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+export function Sidebar({
+  isMobile = false,
+  onClose,
+  isOpen = false,
+  isCollapsed,
+  setIsCollapsed }: SidebarProps) {
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["Main", "Users"]);
 
   const toggleGroup = (groupTitle: string) => {
@@ -95,7 +102,7 @@ export function Sidebar({ isMobile = false, onClose, isOpen = false }: SidebarPr
   };
 
   const sidebarVariants = {
-    expanded: { width: 280 },
+    expanded: { width: 288 },
     collapsed: { width: 80 },
   };
 
@@ -114,10 +121,12 @@ export function Sidebar({ isMobile = false, onClose, isOpen = false }: SidebarPr
         variants={isMobile ? mobileVariants : sidebarVariants}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className={cn(
-          "fixed left-0 top-0 z-50 flex h-full flex-col",
-          "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl",
-          "border-r border-slate-200/60 dark:border-slate-700/60",
-          "shadow-xl shadow-slate-200/20 dark:shadow-slate-900/20",
+          "fixed left-0 top-0 z-50 flex h-screen flex-col",
+          // subtle gradient background for modern feel
+          "bg-gradient-to-b from-white/95 to-slate-50/90 dark:from-slate-900/95 dark:to-slate-950/90",
+          "backdrop-blur-xl",
+          "border-r border-slate-200/60 dark:border-slate-800/60",
+          "shadow-lg shadow-blue-500/5",
           isMobile ? "w-80" : "w-80 lg:relative lg:z-auto"
         )}
         role="navigation"
@@ -138,9 +147,16 @@ export function Sidebar({ isMobile = false, onClose, isOpen = false }: SidebarPr
                 transition={{ duration: 0.2 }}
                 className="flex items-center gap-3"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25">
-                  <FiHome className="h-5 w-5" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-lg shadow-blue-500/25">
+                  <Image
+                    src="/images/website_logo/logo_1_airplane.png"
+                    alt="Website Logo"
+                    width={42}
+                    height={42}
+                    className="object-contain"
+                  />
                 </div>
+
                 <div>
                   <h1 className="font-display text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
                     BD Travel Spirit
@@ -155,9 +171,15 @@ export function Sidebar({ isMobile = false, onClose, isOpen = false }: SidebarPr
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.2 }}
-                className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
+                className="flex h-12 w-12 items-center justify-center rounded-xl shadow-lg shadow-blue-500/25"
               >
-                <FiHome className="h-6 w-6" />
+                <Image
+                  src="/images/website_logo/logo_1_airplane.png"
+                  alt="Website Logo"
+                  width={42}
+                  height={42}
+                  className="object-contain"
+                />
               </motion.div>
             )}
           </AnimatePresence>
@@ -201,10 +223,12 @@ export function Sidebar({ isMobile = false, onClose, isOpen = false }: SidebarPr
                 <motion.button
                   onClick={() => toggleGroup(group.title)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                    "hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100",
-                    "hover:shadow-sm hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500/20",
-                    expandedGroups.includes(group.title) && "text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-800/50",
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                    "font-display tracking-wide text-slate-500 dark:text-slate-400", // group titles modern font
+                    "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-950 dark:hover:to-indigo-900",
+                    "hover:text-blue-600 dark:hover:text-blue-400",
+                    expandedGroups.includes(group.title) &&
+                    "bg-blue-50/60 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 shadow-sm",
                     isCollapsed && "justify-center px-2 py-3"
                   )}
                   whileHover={{ scale: 1.02 }}
@@ -212,7 +236,13 @@ export function Sidebar({ isMobile = false, onClose, isOpen = false }: SidebarPr
                   aria-expanded={expandedGroups.includes(group.title)}
                   aria-controls={`nav-group-${group.title.toLowerCase()}`}
                 >
-                  <group.icon className={cn("h-5 w-5 flex-shrink-0", isCollapsed && "h-6 w-6")} />
+                  <group.icon
+                    className={cn(
+                      "h-5 w-5 flex-shrink-0 text-slate-400 transition-colors duration-200",
+                      "group-hover:text-blue-500",
+                      isCollapsed && "h-6 w-6"
+                    )}
+                  />                  
                   <AnimatePresence>
                     {!isCollapsed && (
                       <motion.div

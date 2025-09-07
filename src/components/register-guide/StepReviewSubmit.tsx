@@ -6,15 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useRegisterGuideStore } from '@/lib/registerGuideStore'
 import { submitGuideApplication } from '@/lib/dummyApi'
-import { 
-  User, 
-  Building2, 
-  FileText, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Globe, 
-  CheckCircle, 
+import {
+  User,
+  Building2,
+  FileText,
+  Mail,
+  Phone,
+  MapPin,
+  Globe,
+  CheckCircle,
   AlertCircle,
   ArrowLeft,
   Send,
@@ -27,6 +27,7 @@ import {
   Heart
 } from 'lucide-react'
 import { toast } from 'sonner'
+import Image from 'next/image'
 
 interface StepReviewSubmitProps {
   onPrevious: () => void
@@ -45,14 +46,14 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
     }
 
     setSubmitting(true)
-    
+
     try {
       const result = await submitGuideApplication(formData)
-      
+
       if (result.success) {
         setIsSubmitted(true)
         toast.success(result.message || 'Application submitted successfully!')
-        
+
         setTimeout(() => {
           resetForm()
           onSuccess?.()
@@ -94,7 +95,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
         className="w-full max-w-4xl mx-auto"
         style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
       >
-        <Card className="border-0 shadow-lg" style={{ 
+        <Card className="border-0 shadow-lg" style={{
           background: 'rgba(255, 255, 255, 0.8)',
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -119,13 +120,13 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                   <Sparkles className="w-8 h-8 text-yellow-400" />
                 </motion.div>
               </motion.div>
-              
+
               <div>
                 <h2 className="text-3xl font-bold text-green-600 mb-4" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
                   Application Submitted Successfully!
                 </h2>
                 <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                  Thank you for your interest in becoming a guide with BD Travel Spirit. 
+                  Thank you for your interest in becoming a guide with BD Travel Spirit.
                   We will review your application and get back to you within 3-5 business days.
                 </p>
               </div>
@@ -225,7 +226,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-4 shadow-lg" style={{ boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' }}>
           <Eye className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-3xl font-bold mb-2" style={{ 
+        <h2 className="text-3xl font-bold mb-2" style={{
           background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -242,7 +243,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
         {/* Main Review Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Personal Information Review */}
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -285,7 +286,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-start space-x-3">
                     <MapPin className="w-5 h-5 text-gray-500 mt-1" />
@@ -303,7 +304,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           </Card>
 
           {/* Company Details Review */}
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -326,15 +327,15 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                 <h4 className="font-semibold text-lg mb-2">{formData.companyDetails.companyName}</h4>
                 <p className="text-gray-600 text-sm mb-4">{formData.companyDetails.bio}</p>
               </div>
-              
+
               {(formData.companyDetails.website || formData.companyDetails.socialMedia) && (
                 <div className="space-y-2">
                   {formData.companyDetails.website && (
                     <div className="flex items-center space-x-3">
                       <Globe className="w-4 h-4 text-gray-500" />
-                      <a 
-                        href={formData.companyDetails.website} 
-                        target="_blank" 
+                      <a
+                        href={formData.companyDetails.website}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:underline"
                       >
@@ -345,9 +346,9 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                   {formData.companyDetails.socialMedia && (
                     <div className="flex items-center space-x-3">
                       <Globe className="w-4 h-4 text-gray-500" />
-                      <a 
-                        href={formData.companyDetails.socialMedia} 
-                        target="_blank" 
+                      <a
+                        href={formData.companyDetails.socialMedia}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:underline"
                       >
@@ -361,7 +362,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           </Card>
 
           {/* Documents Review */}
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -410,14 +411,24 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Terms and Conditions */}
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
           }}>
-            <CardHeader>
-              <CardTitle className="text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
-                📋 Terms & Conditions
+            <CardHeader className="flex flex-row gap-2">
+              <Image
+                src="/images/register_as_guide/secure-data.png"
+                alt="Terms & Conditions Icon"
+                width={34}
+                height={34}
+                className="object-contain"
+              />
+              <CardTitle
+                className="text-lg"
+                style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}
+              >
+                Terms & Conditions
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -432,14 +443,21 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           </Card>
 
           {/* Security Notice */}
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
           }}>
-            <CardHeader>
+            <CardHeader className="flex flex-row gap-2">
+              <Image
+                src="/images/register_as_guide/terms-and-conditions.png"
+                alt="Terms & Conditions Icon"
+                width={34}
+                height={34}
+                className="object-contain"
+              />
               <CardTitle className="text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
-                🔒 Security Notice
+                Security Notice
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -470,7 +488,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           <ArrowLeft className="w-4 h-4" />
           <span>Previous</span>
         </Button>
-        
+
         <div className="flex items-center space-x-4 ml-auto">
           <div className="text-sm text-gray-600">
             Step 4 of 4
