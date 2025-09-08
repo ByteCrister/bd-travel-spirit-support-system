@@ -1,14 +1,30 @@
-// models/employee.model.ts
-import { Schema, Document, Types, models, model } from "mongoose";
+import { UpdateQuery } from "mongoose";
+import { FilterQuery } from "mongoose";
+import { Query } from "mongoose";
+import {
+    Schema,
+    Document,
+    Types,
+    models,
+    model,
+    Model,
+} from "mongoose";
 
 /* ------------------------------------------------------------------
    ENUM CONSTANTS — Single source of truth for roles, statuses, types
--------------------------------------------------------------------*/
+------------------------------------------------------------------- */
+
+/**
+ * Core job roles determining base permissions.
+ */
 export const EMPLOYEE_ROLE = {
     ASSISTANT: "assistant",
     SUPPORT: "support",
 } as const;
 
+/**
+ * Lifecycle states for employee HR workflows.
+ */
 export const EMPLOYEE_STATUS = {
     ACTIVE: "active",
     ON_LEAVE: "onLeave",
@@ -16,6 +32,9 @@ export const EMPLOYEE_STATUS = {
     TERMINATED: "terminated",
 } as const;
 
+/**
+ * Contract types affecting payroll and benefits.
+ */
 export const EMPLOYMENT_TYPE = {
     FULL_TIME: "full_time",
     PART_TIME: "part_time",
@@ -25,216 +44,297 @@ export const EMPLOYMENT_TYPE = {
 
 /* ------------------------------------------------------------------
    DERIVED TYPES — Automatically match constant values
--------------------------------------------------------------------*/
+------------------------------------------------------------------- */
+
 export type EmployeeRole = typeof EMPLOYEE_ROLE[keyof typeof EMPLOYEE_ROLE];
 export type EmployeeStatus = typeof EMPLOYEE_STATUS[keyof typeof EMPLOYEE_STATUS];
 export type EmploymentType = typeof EMPLOYMENT_TYPE[keyof typeof EMPLOYMENT_TYPE];
 
 /* ------------------------------------------------------------------
-   INTERFACE — Strongly typed employee document
--------------------------------------------------------------------*/
-export interface IEmployee extends Document {
-    /** Linked User profile (must exist in `User` collection) */
-    userId: Types.ObjectId;
+   PLUGIN: Soft Delete (no `any`)
+------------------------------------------------------------------- */
+function softDeletePlugin<T extends Document, M extends Model<T>>(schema: Schema<T, M>) {
+    function autoFilter(this: Query<T[], T>) {
+        if (!this.getQuery().includeDeleted) {
+            this.where({ isDeleted: false });
+        }
+    }
+    schema.pre("find", autoFilter);
+    schema.pre("findOne", autoFilter);
+    schema.pre("countDocuments", autoFilter);
 
-    /** Optional supervisor/host reference (links to another user) */
-    hostId?: Types.ObjectId;
+    // instance method
+    schema.method("softDelete", function (this: T & { isDeleted: boolean }) {
+        this.isDeleted = true;
+        return this.save();
+    });
 
-    /** Core role category — determines primary responsibilities & permissions */
-    role: EmployeeRole;
+    // statics
+    schema.static(
+        "restore",
+        function (this: M, id: Types.ObjectId): Promise<T | null> {
+            return this.findByIdAndUpdate(
+                id,
+                { isDeleted: false } as UpdateQuery<T>,
+                { new: true }
+            ).exec();
+        }
+    );
 
-    /** Public-facing job title or designation (e.g., "Senior Developer") */
-    position?: string;
-
-    /** Current employment state — used for HR workflows & filtering */
-    status: EmployeeStatus;
-
-    /** Employment category — affects benefits, payroll, and scheduling */
-    employmentType?: EmploymentType;
-
-    /** Department or team name (e.g., "Engineering", "HR") */
-    department?: string;
-
-    /** Base salary amount (numeric, without currency symbol) */
-    salary?: number;
-
-    /** ISO 4217 currency code for salary (e.g., "USD", "EUR") */
-    salaryCurrency?: string;
-
-    /** Official joining date — used for tenure, benefits, and probation tracking */
-    dateOfJoining: Date;
-
-    /** Optional last working date — set when employee leaves */
-    dateOfLeaving?: Date;
-
-    /** Contact details for direct communication and emergencies */
-    contactInfo: {
-        /** Primary phone number */
-        phone?: string;
-
-        /** Work or personal email address */
-        email?: string;
-
-        /** Emergency contact details — used only in urgent situations */
-        emergencyContact?: {
-            /** Full name of emergency contact person */
-            name: string;
-
-            /** Phone number of emergency contact */
-            phone: string;
-
-            /** Relationship to employee (e.g., "Spouse", "Parent") */
-            relation: string;
-        };
-    };
-
-    /** List of granted permissions (feature/action-level access control) */
-    permissions: string[];
-
-    /** Work shift schedules — supports multiple shifts per employee */
-    shifts?: {
-        /** Shift start time in HH:mm format */
-        startTime: string;
-
-        /** Shift end time in HH:mm format */
-        endTime: string;
-
-        /** Days of the week this shift applies to (e.g., ["Mon", "Wed"]) */
-        days: string[];
-    }[];
-
-    /** Performance tracking & review history */
-    performance: {
-        /** Numeric rating (1–5) from latest review */
-        rating?: number;
-
-        /** Date of last performance review */
-        lastReview?: Date;
-
-        /** Reviewer feedback or performance notes */
-        feedback?: string;
-    };
-
-    /** Uploaded HR or legal documents related to the employee */
-    documents?: {
-        /** Document type (e.g., "ID Proof", "Contract") */
-        type: string;
-
-        /** Public or internal file URL */
-        url: string;
-
-        /** Date when the document was uploaded */
-        uploadedAt: Date;
-    }[];
-
-    /** Optional internal notes — visible only to HR/admins */
-    notes?: string;
-
-    /** Audit trail for record creation and updates */
-    audit: {
-        /** User who created this record */
-        createdBy: Types.ObjectId;
-
-        /** User who last updated this record */
-        updatedBy: Types.ObjectId;
-    };
-
-    /** Soft delete flag — true if employee is archived but not removed from DB */
-    isDeleted?: boolean;
-
-    /** Auto-managed timestamp for record creation */
-    createdAt: Date;
-
-    /** Auto-managed timestamp for last record update */
-    updatedAt: Date;
+    schema.static(
+        "findDeleted",
+        function (
+            this: M,
+            filter: FilterQuery<T> = {}
+        ): Query<T[], T> {
+            return this.find({ ...filter, isDeleted: true });
+        }
+    );
 }
 
 /* ------------------------------------------------------------------
-   SCHEMA — Mongoose schema with enums from constants
--------------------------------------------------------------------*/
+   PLUGIN: Pagination (no `any`)
+------------------------------------------------------------------- */
+interface PaginateOptions {
+    page?: number;
+    limit?: number;
+    sort?: Record<string, 1 | -1>;
+}
+interface PaginateResult<T> {
+    docs: T[];
+    total: number;
+    page: number;
+    pages: number;
+}
+
+function paginatePlugin<
+    T extends Document,
+    M extends Model<T>
+>(schema: Schema<T, M>) {
+    schema.static(
+        "paginate",
+        async function (
+            this: M,
+            filter: FilterQuery<T> = {},
+            opts: PaginateOptions = {}
+        ): Promise<PaginateResult<T>> {
+            const page = Math.max(1, opts.page ?? 1);
+            const limit = Math.max(1, opts.limit ?? 10);
+            const skip = (page - 1) * limit;
+            const sort = opts.sort ?? { createdAt: -1 };
+
+            const [docs, total] = await Promise.all([
+                this.find(filter).sort(sort).skip(skip).limit(limit),
+                this.countDocuments(filter),
+            ]);
+
+            return {
+                docs,
+                total,
+                page,
+                pages: Math.ceil(total / limit),
+            };
+        }
+    );
+}
+
+/* ------------------------------------------------------------------
+   SUB-SCHEMAS & INTERFACES — granular typing & validation
+------------------------------------------------------------------- */
+
+/**
+ * Emergency contact details for urgent situations.
+ */
+export interface IEmergencyContact {
+    name: string;
+    phone: string;
+    relation: string;
+}
+const EmergencyContactSchema = new Schema<IEmergencyContact>(
+    {
+        name: { type: String, trim: true, required: true },
+        phone: { type: String, trim: true, maxlength: 20, required: true },
+        relation: { type: String, trim: true, required: true },
+    },
+    { _id: false }
+);
+
+/**
+ * Direct contact avenues for the employee.
+ */
+export interface IContactInfo {
+    phone?: string;
+    email?: string;
+    emergencyContact?: IEmergencyContact;
+}
+const ContactInfoSchema = new Schema<IContactInfo>(
+    {
+        phone: { type: String, trim: true, maxlength: 20 },
+        email: { type: String, trim: true, lowercase: true, match: /.+\@.+\..+/ },
+        emergencyContact: { type: EmergencyContactSchema },
+    },
+    { _id: false }
+);
+
+/**
+ * A single shift entry.
+ */
+export interface IShift {
+    startTime: string;
+    endTime: string;
+    days: string[];
+}
+const ShiftSchema = new Schema<IShift>(
+    {
+        startTime: { type: String, trim: true, required: true, match: /^([01]\d|2[0-3]):([0-5]\d)$/ },
+        endTime: { type: String, trim: true, required: true, match: /^([01]\d|2[0-3]):([0-5]\d)$/ },
+        days: [{ type: String, trim: true, enum: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], required: true }],
+    },
+    { _id: false }
+);
+
+/**
+ * Historical performance data.
+ */
+export interface IPerformance {
+    rating?: number;
+    lastReview?: Date;
+    feedback?: string;
+}
+const PerformanceSchema = new Schema<IPerformance>(
+    {
+        rating: { type: Number, min: 1, max: 5 },
+        lastReview: Date,
+        feedback: { type: String, trim: true, maxlength: 2000 },
+    },
+    { _id: false }
+);
+
+/**
+ * Uploaded HR or legal documents.
+ */
+export interface IDocument {
+    type: string;
+    url: string;
+    uploadedAt: Date;
+}
+const DocumentSchema = new Schema<IDocument>(
+    {
+        type: { type: String, trim: true, required: true },
+        url: { type: String, trim: true, match: /^https?:\/\//i, required: true },
+        uploadedAt: { type: Date, default: Date.now },
+    },
+    { _id: false }
+);
+
+/**
+ * Audit trail metadata for creation & updates.
+ */
+export interface IAudit {
+    createdBy: Types.ObjectId;
+    updatedBy: Types.ObjectId;
+}
+const AuditSchema = new Schema<IAudit>(
+    {
+        createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    },
+    { _id: false }
+);
+
+/* ------------------------------------------------------------------
+   MAIN INTERFACE & SCHEMA — employee record definition
+------------------------------------------------------------------- */
+
+/**
+ * Employee document stored in MongoDB.
+ */
+export interface IEmployee extends Document {
+    userId: Types.ObjectId;
+    hostId?: Types.ObjectId;
+    role: EmployeeRole;
+    position?: string;
+    status: EmployeeStatus;
+    employmentType?: EmploymentType;
+    department?: string;
+    salary?: number;
+    salaryCurrency?: string;
+    dateOfJoining: Date;
+    dateOfLeaving?: Date;
+    contactInfo: IContactInfo;
+    permissions: string[];
+    shifts?: IShift[];
+    performance: IPerformance;
+    documents?: IDocument[];
+    notes?: string;
+    audit: IAudit;
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 const EmployeeSchema = new Schema<IEmployee>(
     {
-        userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+        userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true, unique: true },
         hostId: { type: Schema.Types.ObjectId, ref: "User", index: true },
 
-        role: {
-            type: String,
-            enum: Object.values(EMPLOYEE_ROLE),
-            required: true,
-            index: true,
-        },
-
+        role: { type: String, enum: Object.values(EMPLOYEE_ROLE), required: true, index: true },
         position: { type: String, trim: true, maxlength: 100 },
-
-        status: {
-            type: String,
-            enum: Object.values(EMPLOYEE_STATUS),
-            default: EMPLOYEE_STATUS.ACTIVE,
-            index: true,
-        },
-
-        employmentType: {
-            type: String,
-            enum: Object.values(EMPLOYMENT_TYPE),
-        },
-
-        department: { type: String, trim: true, maxlength: 100 },
+        status: { type: String, enum: Object.values(EMPLOYEE_STATUS), default: EMPLOYEE_STATUS.ACTIVE, index: true },
+        employmentType: { type: String, enum: Object.values(EMPLOYMENT_TYPE) },
+        department: { type: String, trim: true, maxlength: 100, index: true },
         salary: { type: Number, default: 0, min: 0 },
         salaryCurrency: { type: String, trim: true, maxlength: 3, uppercase: true },
 
         dateOfJoining: { type: Date, default: Date.now },
-        dateOfLeaving: { type: Date },
+        dateOfLeaving: Date,
 
-        contactInfo: {
-            phone: { type: String, trim: true, maxlength: 20 },
-            email: { type: String, trim: true, lowercase: true, match: /.+\@.+\..+/ },
-            emergencyContact: {
-                name: { type: String, trim: true },
-                phone: { type: String, trim: true, maxlength: 20 },
-                relation: { type: String, trim: true },
-            },
-        },
-
+        contactInfo: { type: ContactInfoSchema, required: true },
         permissions: { type: [String], default: [] },
 
-        shifts: [
-            {
-                startTime: { type: String, trim: true },
-                endTime: { type: String, trim: true },
-                days: [{ type: String, trim: true }],
-            },
-        ],
+        shifts: { type: [ShiftSchema], default: [] },
+        performance: { type: PerformanceSchema, default: {} },
+        documents: { type: [DocumentSchema], default: [] },
 
-        performance: {
-            rating: { type: Number, min: 1, max: 5 },
-            lastReview: Date,
-            feedback: { type: String, trim: true },
-        },
+        notes: { type: String, trim: true, maxlength: 2000 },
+        audit: { type: AuditSchema, required: true },
 
-        documents: [
-            {
-                type: { type: String, trim: true },
-                url: { type: String, trim: true, match: /^https?:\/\//i },
-                uploadedAt: { type: Date, default: Date.now },
-            },
-        ],
-
-        notes: { type: String, trim: true },
-
-        audit: {
-            createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-            updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-        },
-
+        // `isDeleted` is added by softDeletePlugin too, but we declare it here for TS clarity
         isDeleted: { type: Boolean, default: false, index: true },
     },
-    { timestamps: true }
+    {
+        timestamps: true,          // auto-manage `createdAt` & `updatedAt`
+        strict: true,          // remove extraneous fields
+        versionKey: "version",     // rename `__v` → `version`
+        optimisticConcurrency: true,          // prevent silent overwrites
+        collection: "employees",   // explicit collection name
+    }
 );
 
-// Compound index for common admin filters
-EmployeeSchema.index({ hostId: 1, status: 1 });
+// Compound index for frequent admin queries on status & department
+EmployeeSchema.index({ status: 1, department: 1, isDeleted: 1 });
 
 /* ------------------------------------------------------------------
-   MODEL FACTORY — Supports multi-connection setups
--------------------------------------------------------------------*/
-export const EmployeeModel = models.employees || model<IEmployee>("employees", EmployeeSchema);
+   APPLY CUSTOM PLUGINS & HOOKS
+------------------------------------------------------------------- */
+
+EmployeeSchema.plugin(softDeletePlugin);
+EmployeeSchema.plugin(paginatePlugin);
+
+/**
+ * Ensure `dateOfLeaving` (if set) is after `dateOfJoining`.
+ */
+EmployeeSchema.pre("save", function (next) {
+    if (this.dateOfLeaving && this.dateOfLeaving < this.dateOfJoining) {
+        return next(new Error("dateOfLeaving must be after dateOfJoining"));
+    }
+    next();
+});
+
+/* ------------------------------------------------------------------
+   EXPORT MODEL
+------------------------------------------------------------------- */
+
+export const EmployeeModel: Model<IEmployee> =
+    (models.employees as Model<IEmployee>) ||
+    model<IEmployee>("employees", EmployeeSchema);

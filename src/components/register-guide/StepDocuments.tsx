@@ -4,8 +4,8 @@ import React, { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useRegisterGuideStore, DocumentFile } from '@/lib/registerGuideStore'
-import { validateFile } from '@/lib/validationSchemas'
+import { useRegisterGuideStore, DocumentFile } from '@/store/useRegisterGuideStore'
+import { validateFile } from '@/utils/validations/registerAsGuide.validation'
 import {
   Upload,
   FileText,
@@ -19,7 +19,6 @@ import {
   ArrowRight,
   ArrowLeft,
   Trash2,
-  Plus
 } from 'lucide-react'
 import imageCompression from 'browser-image-compression'
 import { cn } from '@/lib/utils'
@@ -333,7 +332,6 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
                   </motion.div>
                 )}
               </motion.div>
-
               {/* Upload Error */}
               <AnimatePresence>
                 {uploadError && (
@@ -355,17 +353,6 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
                   <h3 className="font-semibold text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
                     Uploaded Documents ({formData.documents.length})
                   </h3>
-                  {formData.documents.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center space-x-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add More</span>
-                    </Button>
-                  )}
                 </div>
 
                 <AnimatePresence>

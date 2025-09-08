@@ -1,12 +1,12 @@
 // models/tour.model.ts
-import { models } from "mongoose";
-import {  Schema, model, Document, Types } from "mongoose";
 
-/**
- * =========================
- * ENUM DEFINITIONS
- * =========================
- */
+import mongoose, { Schema, model, models, Document, Query, FilterQuery, Types } from "mongoose";
+import slugify from "slugify";
+
+////////////////////////////////////////////////////////////////////////////////
+// ENUMS: Domain-specific constants
+////////////////////////////////////////////////////////////////////////////////
+
 /** Types of travelers this tour is suited for */
 export enum TravelType {
     COUPLES = "Couples",
@@ -22,52 +22,63 @@ export enum TourStatus {
     ARCHIVED = "archived",
 }
 
-/**
- * =========================
- * SUB‑SCHEMA DEFINITIONS
- * =========================
- */
+////////////////////////////////////////////////////////////////////////////////
+// SUB-SCHEMAS: Reusable pieces of the main schema
+////////////////////////////////////////////////////////////////////////////////
 
-/** Price tiers (e.g., Standard, Premium) */
+/** Price tier (e.g., Standard, Premium) */
 const PriceOptionSchema = new Schema(
     {
         name: { type: String, required: true, trim: true },
         amount: { type: Number, required: true, min: 0 },
-        currency: { type: String, default: "BDT" },
+        currency: { type: String, required: true, default: "BDT", trim: true },
     },
     { _id: false }
 );
 
-/** Discount definitions (promo codes, seasonal offers) */
+/** Discount code and its validity window */
 const DiscountSchema = new Schema(
     {
         code: { type: String, required: true, trim: true },
         description: { type: String, trim: true },
         percentage: { type: Number, required: true, min: 0, max: 100 },
-        validFrom: Date,
-        validUntil: Date,
+        validFrom: { type: Date },
+        validUntil: { type: Date },
     },
     { _id: false }
 );
 
-/** Meeting locations for starting a tour */
+/** GeoJSON Point for mapping */
+const GeoPointSchema = new Schema(
+    {
+        type: { type: String, enum: ["Point"], default: "Point" },
+        coordinates: {
+            type: [Number],
+            required: true,
+            validate: {
+                validator: (arr: number[]) => arr.length === 2,
+                message: "Coordinates must be [lng, lat]",
+            },
+        },
+    },
+    { _id: false }
+);
+
+/** Starting meetup details */
 const MeetingPointSchema = new Schema(
     {
         title: { type: String, required: true, trim: true },
         description: { type: String, trim: true },
         location: {
             address: { type: String, trim: true },
-            coordinates: {
-                type: { type: String, enum: ["Point"], default: "Point" },
-                coordinates: { type: [Number], validate: (v: number[]) => v.length === 2 }, // [lng, lat]
-            },
+            coordinates: { type: GeoPointSchema, required: true },
         },
-        time: Date,
+        time: { type: Date, required: true },
     },
     { _id: false }
 );
 
-/** Stops or segments along the tour route */
+/** Stops along the route */
 const RoadMapPointSchema = new Schema(
     {
         title: { type: String, required: true, trim: true },
@@ -75,16 +86,13 @@ const RoadMapPointSchema = new Schema(
         image: { type: Types.ObjectId, ref: "Image" },
         location: {
             address: { type: String, trim: true },
-            coordinates: {
-                type: { type: String, enum: ["Point"], default: "Point" },
-                coordinates: { type: [Number], validate: (v: number[]) => v.length === 2 },
-            },
+            coordinates: { type: GeoPointSchema, required: true },
         },
     },
     { _id: false }
 );
 
-/** Included or excluded items (e.g., "Breakfast", "Tickets") */
+/** Handy include/exclude list */
 const IncludeItemSchema = new Schema(
     {
         label: { type: String, required: true, trim: true },
@@ -93,7 +101,7 @@ const IncludeItemSchema = new Schema(
     { _id: false }
 );
 
-/** Itinerary breakdown per day */
+/** Daily itinerary breakdown */
 const ItinerarySchema = new Schema(
     {
         day: { type: Number, required: true, min: 1 },
@@ -107,7 +115,7 @@ const ItinerarySchema = new Schema(
     { _id: false }
 );
 
-/** FAQ entries */
+/** Frequently asked questions */
 const FAQSchema = new Schema(
     {
         question: { type: String, required: true, trim: true },
@@ -116,7 +124,7 @@ const FAQSchema = new Schema(
     { _id: false }
 );
 
-/** Seasonal promotional highlights */
+/** Seasonal highlight for promotions */
 const SeasonalHighlightSchema = new Schema(
     {
         season: { type: String, trim: true },
@@ -126,18 +134,32 @@ const SeasonalHighlightSchema = new Schema(
     { _id: false }
 );
 
-/**
- * =========================
- * MAIN TOUR INTERFACE
- * =========================
- */
+////////////////////////////////////////////////////////////////////////////////
+// SOFT-DELETE PLUGIN: Adds deletedAt and filters out deleted docs by default
+////////////////////////////////////////////////////////////////////////////////
+
+function softDeletePlugin(schema: Schema) {
+    // Add deletedAt field
+    schema.add({ deletedAt: { type: Date, default: null } });
+
+    // Exclude soft-deleted docs on all find queries
+    schema.pre<Query<ITour[], ITour>>(/^find/, function (next) {
+        this.where({ deletedAt: null });
+        next();
+    });
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// MAIN INTERFACE: TypeScript type for Tour documents
+////////////////////////////////////////////////////////////////////////////////
+
 export interface ITour extends Document {
     title: string;
     slug: string;
     status: TourStatus;
     highlights: string[];
     description: string;
-    includes: { label: string; included: boolean }[];
+    includes: Types.Subdocument[];
     importantInfo: string[];
     meetingPoints: Types.Subdocument[];
     activities: string[];
@@ -174,56 +196,55 @@ export interface ITour extends Document {
     seasonalHighlights?: Types.Subdocument[];
     reports: Types.ObjectId[];
     averageRating: number;
-    createdAt: Date;
-    updatedAt: Date;
+    deletedAt?: Date;
+
+    // Virtuals
+    durationDays: number;
+
+    // Instance methods
+    isFull(): boolean;
 }
 
-/**
- * =========================
- * MAIN SCHEMA
- * =========================
- */
+////////////////////////////////////////////////////////////////////////////////
+// SCHEMA: Define fields, validations, indexes, hooks, virtuals, and methods
+////////////////////////////////////////////////////////////////////////////////
+
 const TourSchema = new Schema<ITour>(
     {
-        // Core identification
+        // Core metadata
         title: { type: String, required: true, trim: true },
-        slug: { type: String, required: true, unique: true, lowercase: true },
-
-        // Publishing status
-        status: {
-            type: String,
-            enum: Object.values(TourStatus),
-            default: TourStatus.DRAFT,
-        },
+        slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+        status: { type: String, enum: Object.values(TourStatus), default: TourStatus.DRAFT },
 
         // Marketing content
         highlights: [{ type: String, required: true, trim: true }],
         description: { type: String, required: true, trim: true },
 
-        // What's included in the price
+        // Inclusions & info
         includes: [IncludeItemSchema],
         importantInfo: [{ type: String, trim: true }],
 
-        // Logistics
+        // Logistics & categorization
         meetingPoints: [MeetingPointSchema],
         activities: [{ type: String, trim: true }],
         tags: [{ type: String, trim: true, index: true }],
-        travelTypes: [{ type: String, enum: Object.values(TravelType), required: true }], priceOptions: [PriceOptionSchema],
+        travelTypes: [{ type: String, enum: Object.values(TravelType), required: true }],
+
+        // Pricing
+        priceOptions: [PriceOptionSchema],
         discounts: [DiscountSchema],
 
-        // Scheduling
+        // Schedule
         startDate: { type: Date, required: true },
         endDate: { type: Date, required: true },
         maxGroupSize: { type: Number, required: true, min: 1 },
         repeatCount: { type: Number, default: 1, min: 1 },
 
-        // Bookings / relationships
-        bookingInfo: {
-            users: [{ type: Types.ObjectId, ref: "User" }],
-        },
+        // Relationships
+        bookingInfo: { users: [{ type: Types.ObjectId, ref: "User" }] },
         reviews: [{ type: Types.ObjectId, ref: "Review" }],
 
-        // Media
+        // Media assets
         images: [{ type: Types.ObjectId, ref: "Image" }],
         heroImage: { type: Types.ObjectId, ref: "Image" },
         gallery: [{ type: Types.ObjectId, ref: "Image" }],
@@ -248,35 +269,119 @@ const TourSchema = new Schema<ITour>(
             languagesSpoken: [{ type: String, trim: true }],
             rating: { type: Number, min: 0, max: 5 },
         },
-        healthAndSafety: [
-            {
-                title: { type: String, trim: true },
-                description: { type: String, trim: true },
-            },
-        ],
+        healthAndSafety: [{ title: String, description: String }],
         accessibilityFeatures: [{ type: String, trim: true }],
         seoTitle: { type: String, trim: true },
         seoDescription: { type: String, trim: true },
         seasonalHighlights: [SeasonalHighlightSchema],
 
-        // Admin / system
+        // Admin / system fields
         reports: [{ type: Schema.Types.ObjectId, ref: "Report" }],
         averageRating: { type: Number, default: 0, min: 0, max: 5 },
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true },
+        versionKey: "__v",
+    }
 );
 
-/**
- * =========================
- * INDEXES
- * =========================
- */
+// Apply the soft-delete plugin
+TourSchema.plugin(softDeletePlugin);
+
+////////////////////////////////////////////////////////////////////////////////
+// HOOKS: Pre-save / Pre-validate logic
+////////////////////////////////////////////////////////////////////////////////
+
+// Generate or normalize slug before validation
+TourSchema.pre<ITour>("validate", function (next) {
+    if (!this.slug && this.title) {
+        this.slug = slugify(this.title, { lower: true, strict: true });
+    }
+
+    // Ensure startDate is before endDate
+    if (this.startDate >= this.endDate) {
+        return next(new Error("startDate must be earlier than endDate"));
+    }
+
+    next();
+});
+
+////////////////////////////////////////////////////////////////////////////////
+// INDEXES: Optimize query patterns and text search
+////////////////////////////////////////////////////////////////////////////////
+
+// Case-insensitive unique slug
+TourSchema.index(
+    { slug: 1 },
+    { unique: true, collation: { locale: "en", strength: 2 } }
+);
+
+// Text search on key marketing fields
 TourSchema.index(
     { title: "text", highlights: "text", tags: "text" },
-    {
-        weights: { title: 5, highlights: 3, tags: 2 }
-    });
+    { weights: { title: 5, highlights: 3, tags: 2 } }
+);
 
-export const Tour = model<ITour>('Tour', TourSchema);
+// Geo-queries on meetingPoints
+MeetingPointSchema.index({ "location": "2dsphere" });
 
-export const TourModel = models.tour || model<ITour>('Tour', TourSchema);
+////////////////////////////////////////////////////////////////////////////////
+// VIRTUALS: Computed properties not stored in MongoDB
+////////////////////////////////////////////////////////////////////////////////
+
+/** Duration of the tour in full days */
+TourSchema.virtual("durationDays").get(function (this: ITour) {
+    const msPerDay = 1000 * 60 * 60 * 24;
+    return Math.ceil((this.endDate.getTime() - this.startDate.getTime()) / msPerDay);
+});
+
+////////////////////////////////////////////////////////////////////////////////
+// METHODS: Instance-level helpers
+////////////////////////////////////////////////////////////////////////////////
+
+/** Checks if the tour has reached its maxGroupSize */
+TourSchema.methods.isFull = function (this: ITour) {
+    return this.bookingInfo.users.length >= this.maxGroupSize;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// STATICS: Model-level helpers
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Paginates query results.
+ *
+ * @param filter  MongoDB filter object
+ * @param options Pagination settings
+ * @returns        docs array, total count, current page, total pages
+ */
+TourSchema.statics.paginate = async function (
+    filter: FilterQuery<ITour> = {},
+    options: { page?: number; limit?: number } = {}
+) {
+    const page = options.page && options.page > 0 ? options.page : 1;
+    const limit = options.limit && options.limit > 0 ? options.limit : 10;
+    const skip = (page - 1) * limit;
+
+    const [docs, total] = await Promise.all([
+        this.find(filter).skip(skip).limit(limit),
+        this.countDocuments(filter),
+    ]);
+
+    return {
+        docs,
+        total,
+        page,
+        pages: Math.ceil(total / limit),
+    };
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// EXPORT: Use existing model if already compiled (hot-reload safe)
+////////////////////////////////////////////////////////////////////////////////
+
+export const TourModel =
+    (models.Tour as mongoose.Model<ITour>) ||
+    model<ITour>("Tour", TourSchema);

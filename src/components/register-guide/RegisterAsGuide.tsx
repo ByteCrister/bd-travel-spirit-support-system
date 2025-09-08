@@ -2,16 +2,16 @@
 
 import React, { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useRegisterGuideStore } from '@/lib/registerGuideStore'
+import { useRegisterGuideStore } from '@/store/useRegisterGuideStore'
 import { Stepper } from '@/components/register-guide/Stepper'
 import { StepPersonalInfo } from '@/components/register-guide/StepPersonalInfo'
 import { StepCompanyDetails } from '@/components/register-guide/StepCompanyDetails'
 import { StepDocuments } from '@/components/register-guide/StepDocuments'
 import { StepReviewSubmit } from '@/components/register-guide/StepReviewSubmit'
 import { Shield, Users, Globe, Star, Heart } from 'lucide-react'
-import { toast } from 'sonner'
 import { GuideRegisterHeader } from './GuideRegisterHeader'
 import { GuideRegisterFooter } from './GuideRegisterFooter'
+import { showToast } from '../global/showToast'
 
 const RegisterAsGuide: React.FC = () => {
   const {
@@ -40,7 +40,7 @@ const RegisterAsGuide: React.FC = () => {
   // Handle save and continue later
   const handleSaveAndContinueLater = () => {
     localStorage.setItem('registerGuideDraft', JSON.stringify(formData))
-    toast.success('Progress saved! You can continue later.')
+    showToast.success('Progress saved! You can continue later.')
   }
 
   // Handle successful submission

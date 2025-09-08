@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useRegisterGuideStore } from '@/lib/registerGuideStore'
-import { companyDetailsSchema, isValidUrl } from '@/lib/validationSchemas'
+import { useRegisterGuideStore } from '@/store/useRegisterGuideStore'
+import { companyDetailsSchema, isValidUrl } from '@/utils/validations/registerAsGuide.validation'
 import {
   Building2,
   FileText,
@@ -25,6 +25,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
+import { ZodError } from 'zod'
+import { showToast } from '../global/showToast'
 
 interface StepCompanyDetailsProps {
   onNext: () => void
@@ -38,44 +40,72 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
 
   // Validate form data
   const validateStep = () => {
-    setIsValidating(true)
+    setIsValidating(true);
+    setLocalErrors({}); // clear previous errors
+
     try {
-      companyDetailsSchema.parse(formData.companyDetails)
-      setLocalErrors({})
-      setIsValidating(false)
-      return true
+      companyDetailsSchema.parse(formData.companyDetails);
+      setIsValidating(false);
+      return true;
     } catch (error) {
-      const newErrors: Record<string, string> = {}
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'errors' in error &&
-        Array.isArray((error).errors)
-      ) {
-        (error as { errors: { path: string[]; message: string }[] }).errors.forEach((err) => {
-          newErrors[err.path[0]] = err.message
-        })
+      const newErrors: Record<string, string> = {};
+
+      if (error instanceof ZodError) {
+        error.issues.forEach((issue) => {
+          const field = issue.path[0] as string;
+          if (field) {
+            newErrors[field] = issue.message;
+
+            showToast.warning(issue.message, `Field: ${field}`)
+          }
+        });
+      } else {
+        console.error("Unexpected validation error:", error);
+        showToast.warning("An unexpected error occurred.")
       }
-      setLocalErrors(newErrors)
-      setIsValidating(false)
-      return false
+      setLocalErrors(newErrors);
+      setIsValidating(false);
+      return false;
     }
-  }
+  };
 
   // Handle input changes
   const handleInputChange = (field: keyof typeof formData.companyDetails, value: string) => {
     updateCompanyDetails({ [field]: value })
-    clearError(field)
 
-    // Clear local error for this field
-    if (localErrors[field]) {
+    // Validate single field
+    try {
+      companyDetailsSchema.pick({ [field]: true }).parse({ [field]: value })
       setLocalErrors(prev => {
         const newErrors = { ...prev }
         delete newErrors[field]
         return newErrors
       })
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const issue = error.issues[0]
+        setLocalErrors(prev => ({ ...prev, [field]: issue.message }))
+      }
     }
   }
+
+
+  const handleBlur = (field: keyof typeof formData.companyDetails) => {
+    try {
+      companyDetailsSchema.pick({ [field]: true }).parse({ [field]: formData.companyDetails[field] })
+      setLocalErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const issue = error.issues[0]
+        setLocalErrors(prev => ({ ...prev, [field]: issue.message }))
+      }
+    }
+  }
+
 
   // Handle URL validation
   const handleUrlChange = (field: 'website' | 'socialMedia', value: string) => {
@@ -102,7 +132,9 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
   }
 
   const getFieldError = (field: string) => localErrors[field] || errors[field]
-  const isFieldValid = (field: string) => !getFieldError(field) && formData.companyDetails[field as keyof typeof formData.companyDetails]
+  const isFieldValid = (field: string) =>
+    !!formData.companyDetails[field as keyof typeof formData.companyDetails] &&
+    !getFieldError(field)
 
   const features = [
     {
@@ -201,6 +233,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                     placeholder="Enter your company or organization name"
                     value={formData.companyDetails.companyName}
                     onChange={(e) => handleInputChange('companyName', e.target.value)}
+                    onBlur={() => handleBlur('companyName')}
                     className={cn(
                       "h-12 pl-4 pr-12 transition-all duration-300",
                       getFieldError('companyName') && "border-red-500 bg-red-50",
@@ -267,6 +300,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                     placeholder="Describe your company, services, and what makes you unique. This will help travelers understand your business better."
                     value={formData.companyDetails.bio}
                     onChange={(e) => handleInputChange('bio', e.target.value)}
+                    onBlur={() => handleBlur('bio')}
                     className={cn(
                       "min-h-[140px] pl-4 pr-12 transition-all duration-300 resize-none",
                       getFieldError('bio') && "border-red-500 bg-red-50",

@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useRegisterGuideStore } from '@/lib/registerGuideStore'
+import { useRegisterGuideStore } from '@/store/useRegisterGuideStore'
 import { submitGuideApplication } from '@/lib/dummyApi'
 import {
   User,
@@ -26,8 +26,8 @@ import {
   Star,
   Heart
 } from 'lucide-react'
-import { toast } from 'sonner'
 import Image from 'next/image'
+import { showToast } from '../global/showToast'
 
 interface StepReviewSubmitProps {
   onPrevious: () => void
@@ -41,7 +41,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
   // Handle form submission
   const handleSubmit = async () => {
     if (formData.documents.length === 0) {
-      toast.error('Please upload at least one document before submitting')
+      showToast.error('Please upload at least one document before submitting')
       return
     }
 
@@ -52,18 +52,18 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
 
       if (result.success) {
         setIsSubmitted(true)
-        toast.success(result.message || 'Application submitted successfully!')
+        showToast.success(result.message || 'Application submitted successfully!')
 
         setTimeout(() => {
           resetForm()
           onSuccess?.()
         }, 2000)
       } else {
-        toast.error('Failed to submit application. Please try again.')
+        showToast.error('Failed to submit application. Please try again.')
       }
     } catch (error) {
       console.error('Submission error:', error)
-      toast.error('An error occurred while submitting your application. Please try again.')
+      showToast.error('An error occurred while submitting your application. Please try again.')
     } finally {
       setSubmitting(false)
     }

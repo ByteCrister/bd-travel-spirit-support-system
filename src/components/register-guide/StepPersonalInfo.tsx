@@ -6,22 +6,23 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useRegisterGuideStore } from '@/lib/registerGuideStore'
-import { personalInfoSchema } from '@/lib/validationSchemas'
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Building, 
-  Globe, 
-  CheckCircle, 
+import { useRegisterGuideStore } from '@/store/useRegisterGuideStore'
+import { personalInfoSchema } from '@/utils/validations/registerAsGuide.validation'
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Building,
+  Globe,
+  CheckCircle,
   AlertCircle,
   ArrowRight,
   ArrowLeft,
-  Sparkles
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ZodError } from 'zod'
+import { showToast } from '../global/showToast'
 
 interface StepPersonalInfoProps {
   onNext: () => void
@@ -41,12 +42,20 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
       setLocalErrors({})
       setIsValidating(false)
       return true
-    } catch (error: any) {
-      const newErrors: Record<string, string> = {}
-      error.errors?.forEach((err: any) => {
-        newErrors[err.path[0]] = err.message
-      })
-      setLocalErrors(newErrors)
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const newErrors: Record<string, string> = {}
+        error.issues.forEach(err => {
+          if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message
+          }
+        })
+        setLocalErrors(newErrors)
+
+        showToast.warning(Object.values(newErrors).join(", "), "Please correct the highlighted fields.")
+      } else {
+        console.error("Unexpected validation error:", error)
+      }
       setIsValidating(false)
       return false
     }
@@ -56,7 +65,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
   const handleInputChange = (field: keyof typeof formData.personalInfo, value: string) => {
     updatePersonalInfo({ [field]: value })
     clearError(field)
-    
+
     // Clear local error for this field
     if (localErrors[field]) {
       setLocalErrors(prev => {
@@ -162,7 +171,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-4" style={{ boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' }}>
           <User className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-3xl font-bold mb-2" style={{ 
+        <h2 className="text-3xl font-bold mb-2" style={{
           background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -176,7 +185,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Form */}
         <div className="lg:col-span-2">
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.9)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -197,7 +206,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
                 const Icon = field.icon
                 const hasError = getFieldError(field.id)
                 const isValid = isFieldValid(field.id)
-                
+
                 return (
                   <motion.div
                     key={field.id}
@@ -211,7 +220,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
                       <span>{field.label}</span>
                       {field.required && <span className="text-destructive">*</span>}
                     </Label>
-                    
+
                     <div className="relative">
                       <Input
                         id={field.id}
@@ -227,7 +236,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
                         )}
                         style={{ boxShadow: '0 0 0 0 rgba(59, 130, 246, 0)' }}
                       />
-                      
+
                       {/* Status Icons */}
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
                         <AnimatePresence mode="wait">
@@ -251,7 +260,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
                         </AnimatePresence>
                       </div>
                     </div>
-                    
+
                     <AnimatePresence>
                       {hasError && (
                         <motion.p
@@ -274,7 +283,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
 
         {/* Address Section */}
         <div className="space-y-6">
-          <Card className="border-0 shadow-lg" style={{ 
+          <Card className="border-0 shadow-lg" style={{
             background: 'rgba(255, 255, 255, 0.9)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
@@ -347,7 +356,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
                   const Icon = field.icon
                   const hasError = getFieldError(field.id)
                   const isValid = isFieldValid(field.id)
-                  
+
                   return (
                     <motion.div
                       key={field.id}
@@ -473,7 +482,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
             <span>Previous</span>
           </Button>
         )}
-        
+
         <div className="flex items-center space-x-4 ml-auto">
           <div className="text-sm text-gray-600">
             Step 1 of 4

@@ -53,6 +53,30 @@ export enum ORGANIZER_STATUS {
     REJECTED = "rejected",
 }
 
+// Document categories
+export enum OrganizerDocumentCategory {
+    GOVERNMENT_ID = 'government_id',
+    BUSINESS_LICENSE = 'business_license',
+    PROFESSIONAL_PHOTO = 'professional_photo',
+    CERTIFICATION = 'certification',
+}
+
+// Supported file types
+export enum OrganizerDocumentType {
+    IMAGE = 'image',
+    PDF = 'pdf',
+    DOCX = 'docx',
+}
+
+export interface OrganizerDocument {
+    category: OrganizerDocumentCategory;
+    base64Content: string;
+    fileType: OrganizerDocumentType;
+    fileName?: string;
+}
+
+
+
 /**
  * =========================
  * SUB‑SCHEMA DEFINITIONS
@@ -74,6 +98,8 @@ const AddressSchema = new Schema(
 /** Payment method with billing address */
 const PaymentMethodSchema = new Schema(
     {
+        // Prefer storing only PSP token + brand + last4 + expiry (no PAN)
+        token: { type: String, required: true }, // PSP token/id
         cardType: { type: String, required: true },
         last4: { type: String, required: true },
         expiryMonth: { type: Number, required: true },
@@ -93,16 +119,32 @@ const OrganizerProfileSchema = new Schema(
         documents: {
             type: [
                 {
-                    name: { type: String, trim: true, required: true },
-                    url: { type: String, trim: true, required: true },
-                    uploadedAt: { type: Date, default: Date.now }
-                }
+                    category: {
+                        type: String,
+                        enum: Object.values(OrganizerDocumentCategory),
+                        required: true,
+                    },
+                    base64Content: { type: String, required: true }, // full base64 string
+                    fileType: {
+                        type: String,
+                        enum: Object.values(OrganizerDocumentType),
+                        required: true,
+                    },
+                    fileName: { type: String, trim: true },
+                    uploadedAt: { type: Date, default: Date.now },
+                },
             ],
             validate: [
-                (val: { name: string; url: string; uploadedAt: Date }[]) => val.length > 0,
-                "At least one verification document is required"
+                (val: {
+                    category: OrganizerDocumentCategory;
+                    base64Content: string;
+                    fileType: OrganizerDocumentType;
+                    fileName?: string;
+                    uploadedAt: Date;
+                }[]) => val.length > 0,
+                "At least one verification document is required",
             ],
-            required: true
+            required: true,
         },
         status: {
             type: String,
@@ -129,7 +171,7 @@ export interface IUser extends Document {
     email: string;
 
     /** Hashed password */
-    password: string;
+    password?: string;
 
     /** Role-based permissions */
     role: USER_ROLE;
@@ -182,8 +224,7 @@ export interface IUser extends Document {
     /** Last login timestamp */
     lastLogin?: Date;
 
-    /** Whether the account is currently active */
-    isActive: boolean;
+    lockUntil?: Date;
 
     /** Suspension details if applicable */
     suspension?: {
@@ -201,6 +242,10 @@ export interface IUser extends Document {
 
     /** Tours created by this user (if organizer) */
     toursCreated?: Types.ObjectId[];
+
+    // virtuals
+    isLocked?: boolean;
+    isSuspended?: boolean;
 }
 
 /**
@@ -258,11 +303,11 @@ const UserSchema = new Schema<IUser>(
 
         // Security & activity tracking
         loginAttempts: { type: Number, default: 0 },
+        lockUntil: { type: Date },
         lastLogin: Date,
-        isActive: { type: Boolean, default: true },
-        deletedAt: Date, // Soft-delete marker
 
-        // Suspension for violations
+        // Soft delete and suspension
+        deletedAt: Date,
         suspension: {
             reason: String,
             suspendedBy: { type: Schema.Types.ObjectId, ref: "User" },
@@ -274,8 +319,34 @@ const UserSchema = new Schema<IUser>(
         organizerProfile: OrganizerProfileSchema,
         toursCreated: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+        versionKey: false,
+        toJSON: {
+            virtuals: true,
+            transform: (_doc, ret) => {
+                delete ret.password;
+                delete ret.resetPasswordToken;
+                delete ret.resetPasswordExpires;
+                return ret;
+            }
+        },
+        toObject: { virtuals: true }
+    }
 );
+
+// Concrete document type (mongoose model instances)
+export type IUserDoc = IUser & mongoose.Document;
+
+// Virtuals
+UserSchema.virtual("isLocked").get(function (this: IUserDoc) {
+    return !!(this.lockUntil && this.lockUntil.getTime() > Date.now());
+});
+
+UserSchema.virtual("isSuspended").get(function (this: IUserDoc) {
+    return !!(this.suspension?.until && this.suspension.until > new Date());
+});
+
 
 /**
  * =========================
@@ -319,4 +390,4 @@ UserSchema.index({ dateOfBirth: 1 });
  * MODEL FACTORY
  * =========================
  */
-export const UserModel = models.User || model<IUser>("User", UserSchema);
+export const UserModel = models.User || model<IUserDoc>("User", UserSchema);

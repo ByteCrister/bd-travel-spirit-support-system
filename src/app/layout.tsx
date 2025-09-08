@@ -25,7 +25,11 @@ export default async function RootLayout({
         <DashboardProvider>
           {children}
         </DashboardProvider>
-        <Toaster />
+        <Toaster
+          position="top-right"
+          richColors
+          duration={5000}
+        />
       </body>
     </html>
   );
