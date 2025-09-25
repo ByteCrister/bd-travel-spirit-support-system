@@ -1,15 +1,11 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useRegisterGuideStore, DocumentFile } from '@/store/useRegisterGuideStore'
-import { validateFile } from '@/utils/validations/registerAsGuide.validation'
 import {
   Upload,
-  FileText,
-  Image as Img,
   AlertCircle,
   CheckCircle,
   Shield,
@@ -20,9 +16,38 @@ import {
   ArrowLeft,
   Trash2,
 } from 'lucide-react'
-import imageCompression from 'browser-image-compression'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
+import { useStepDocumentsHandlers } from '@/hooks/useStepDocumentsHandlers'
+import { DocumentFile, SegmentedDocuments } from '@/store/useRegisterGuideStore'
+
+// Document types and their details
+export const documentTypes = [
+  {
+    icon: Shield,
+    title: "Government ID",
+    description: "Driver's License, Passport, or National ID",
+    required: true
+  },
+  {
+    icon: FileCheck,
+    title: "Business License",
+    description: "Official business registration certificate",
+    required: true
+  },
+  {
+    icon: Camera,
+    title: "Professional Photo",
+    description: "Clear headshot for your profile",
+    required: false
+  },
+  {
+    icon: FileImage,
+    title: "Certifications",
+    description: "Tour guide or professional certifications",
+    required: false
+  }
+]
 
 interface StepDocumentsProps {
   onNext: () => void
@@ -30,175 +55,28 @@ interface StepDocumentsProps {
 }
 
 export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious }) => {
-  const { formData, addDocument, removeDocument, setError, clearError } = useRegisterGuideStore()
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string>('')
-  const [dragActive, setDragActive] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const {
+    formData,
+    isUploading,
+    uploadError,
+    dragActive,
+    fileInputRef,
+    removeDocument,
+    handleFileInputChange,
+    handleDrop,
+    handleDragOver,
+    handleDragLeave,
+    handleNext,
+    formatFileSize,
+    getFileInfo,
+    selectedSegment,
+    setSelectedSegment
+  } = useStepDocumentsHandlers(onNext)
 
-  // Convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => {
-        const result = reader.result as string
-        const base64 = result.split(',')[1]
-        resolve(base64)
-      }
-      reader.onerror = error => reject(error)
-    })
-  }
-
-  // Compress image file
-  const compressImage = async (file: File): Promise<File> => {
-    const options = {
-      maxSizeMB: 1,
-      maxWidthOrHeight: 1920,
-      useWebWorker: true,
-    }
-
-    try {
-      const compressedFile = await imageCompression(file, options)
-      return compressedFile
-    } catch (error) {
-      console.error('Image compression failed:', error)
-      return file
-    }
-  }
-
-  // Handle file upload
-  const handleFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return
-
-    setIsUploading(true)
-    setUploadError('')
-    clearError('documents')
-
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-
-        const validation = validateFile(file)
-        if (!validation.isValid) {
-          setUploadError(validation.error || 'Invalid file')
-          setIsUploading(false)
-          return
-        }
-
-        let processedFile = file
-
-        if (file.type.startsWith('image/')) {
-          processedFile = await compressImage(file)
-        }
-
-        const base64 = await fileToBase64(processedFile)
-
-        const document: DocumentFile = {
-          name: file.name,
-          base64,
-          uploadedAt: new Date().toISOString(),
-          type: file.type,
-          size: processedFile.size
-        }
-
-        addDocument(document)
-      }
-    } catch (error) {
-      console.error('File upload error:', error)
-      setUploadError('Failed to process file. Please try again.')
-    } finally {
-      setIsUploading(false)
-    }
-  }
-
-  // Handle file input change
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileUpload(e.target.files)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
-
-  // Handle drag and drop
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragActive(false)
-    handleFileUpload(e.dataTransfer.files)
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragActive(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragActive(false)
-  }
-
-  // Handle next button click
-  const handleNext = () => {
-    if (formData.documents.length === 0) {
-      setError('documents', 'At least one document is required')
-      return
-    }
-    onNext()
-  }
-
-  // Format file size
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-
-  // Get file icon and color
-  const getFileInfo = (type: string) => {
-    if (type.startsWith('image/')) {
-      return {
-        icon: Img,
-        color: 'text-blue-500',
-        bgColor: 'bg-blue-50',
-        borderColor: 'border-blue-200'
-      }
-    }
-    return {
-      icon: FileText,
-      color: 'text-red-500',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200'
-    }
-  }
-
-  const documentTypes = [
-    {
-      icon: Shield,
-      title: "Government ID",
-      description: "Driver's License, Passport, or National ID",
-      required: true
-    },
-    {
-      icon: FileCheck,
-      title: "Business License",
-      description: "Official business registration certificate",
-      required: true
-    },
-    {
-      icon: Camera,
-      title: "Professional Photo",
-      description: "Clear headshot for your profile",
-      required: false
-    },
-    {
-      icon: FileImage,
-      title: "Certifications",
-      description: "Tour guide or professional certifications",
-      required: false
-    }
-  ]
+  const totalDocs = Object.values(formData.documents).reduce(
+    (count, arr) => count + arr.length,
+    0
+  )
 
   return (
     <motion.div
@@ -233,28 +111,53 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
         {/* Main Upload Area */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Upload Card */}
-          <Card className="border-0 shadow-lg" style={{
-            background: 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
+          <Card
+            className="border-0 shadow-lg"
+            style={{
+              background: "rgba(255, 255, 255, 0.8)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+            }}
+          >
             <CardHeader className="pb-6">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-blue-500/10 rounded-xl flex items-center justify-center">
                   <Upload className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
+                  <CardTitle
+                    className="text-xl"
+                    style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}
+                  >
                     Upload Documents
                   </CardTitle>
-                  <p className="text-sm text-gray-600">Drag & drop or click to browse</p>
+                  <p className="text-sm text-gray-600">
+                    Select a category, then drag & drop or click to browse
+                  </p>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Segment Selector */}
+              <div className="flex items-center space-x-4">
+                <label className="text-sm font-medium">Select Document Type:</label>
+                <select
+                  value={selectedSegment}
+                  onChange={(e) =>
+                    setSelectedSegment(e.target.value as keyof SegmentedDocuments)
+                  }
+                  className="border rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="governmentId">Government ID (Required)</option>
+                  <option value="businessLicense">Business License (Required)</option>
+                  <option value="professionalPhoto">Professional Photo</option>
+                  <option value="certifications">Certifications</option>
+                </select>
+              </div>
+
               {/* Upload Area */}
               <motion.div
                 className={cn(
@@ -263,7 +166,7 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
                     ? "border-blue-500 bg-blue-50/50 scale-105"
                     : "border-gray-300 hover:border-blue-500/50 hover:bg-blue-50/30"
                 )}
-                onDrop={handleDrop}
+                onDrop={(e) => handleDrop(e, selectedSegment)}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onClick={() => fileInputRef.current?.click()}
@@ -275,27 +178,30 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
                   type="file"
                   multiple
                   accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleFileInputChange}
+                  onChange={(e) => handleFileInputChange(e, selectedSegment)}
                   className="hidden"
                 />
 
+                {/* Upload Icon + Text */}
                 <motion.div
                   className="flex flex-col items-center space-y-4"
                   animate={{
                     scale: isUploading ? [1, 1.1, 1] : 1,
-                    rotate: isUploading ? [0, 5, -5, 0] : 0
+                    rotate: isUploading ? [0, 5, -5, 0] : 0,
                   }}
                   transition={{
                     duration: 2,
-                    repeat: isUploading ? Infinity : 0
+                    repeat: isUploading ? Infinity : 0,
                   }}
                 >
-                  <div className={cn(
-                    "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300",
-                    dragActive
-                      ? "bg-blue-500 text-white shadow-lg"
-                      : "bg-blue-100 text-blue-600 group-hover:bg-blue-500 group-hover:text-white"
-                  )}>
+                  <div
+                    className={cn(
+                      "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300",
+                      dragActive
+                        ? "bg-blue-500 text-white shadow-lg"
+                        : "bg-blue-100 text-blue-600 group-hover:bg-blue-500 group-hover:text-white"
+                    )}
+                  >
                     {isUploading ? (
                       <motion.div
                         animate={{ rotate: 360 }}
@@ -310,28 +216,19 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
 
                   <div>
                     <p className="text-lg font-semibold">
-                      {isUploading ? 'Processing files...' : dragActive ? 'Drop files here' : 'Click to upload or drag and drop'}
+                      {isUploading
+                        ? "Processing files..."
+                        : dragActive
+                          ? "Drop files here"
+                          : "Click to upload or drag and drop"}
                     </p>
                     <p className="text-sm text-gray-500">
                       PDF, JPG, PNG files up to 5MB each
                     </p>
                   </div>
                 </motion.div>
-
-                {/* Upload Progress */}
-                {isUploading && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center"
-                  >
-                    <div className="text-center">
-                      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                      <p className="text-sm font-medium">Processing files...</p>
-                    </div>
-                  </motion.div>
-                )}
               </motion.div>
+
               {/* Upload Error */}
               <AnimatePresence>
                 {uploadError && (
@@ -347,85 +244,95 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
                 )}
               </AnimatePresence>
 
-              {/* Uploaded Documents */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
-                    Uploaded Documents ({formData.documents.length})
-                  </h3>
-                </div>
+              {/* Uploaded Documents by Segment */}
+              <div className="space-y-8">
+                {Object.entries(formData.documents).map(([segment, docs]) => {
+                  const typedSegment = segment as keyof SegmentedDocuments
+                  const typedDocs = docs as DocumentFile[]
 
-                <AnimatePresence>
-                  {formData.documents.map((doc, index) => {
-                    const fileInfo = getFileInfo(doc.type)
-                    const Icon = fileInfo.icon
+                  return (<div key={typedSegment} className="space-y-3">
+                    <h3 className="font-semibold text-lg flex items-center space-x-2">
+                      <span className="capitalize">{segment}</span>
+                      {(segment === "governmentId" || segment === "businessLicense") && (
+                        <span className="text-red-500 text-sm ml-2">(Required)</span>
+                      )}
+                      <span className="text-gray-500 text-sm ml-2">
+                        ({docs.length})
+                      </span>
+                    </h3>
 
-                    return (
-                      <motion.div
-                        key={`${doc.name}-${index}`}
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                        className={cn(
-                          "flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 hover:shadow-md",
-                          fileInfo.bgColor,
-                          fileInfo.borderColor
-                        )}
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className={cn(
-                            "w-12 h-12 rounded-xl flex items-center justify-center",
-                            fileInfo.bgColor,
-                            fileInfo.borderColor,
-                            "border"
-                          )}>
-                            <Icon className={cn("w-6 h-6", fileInfo.color)} />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-sm">{doc.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatFileSize(doc.size)} • {new Date(doc.uploadedAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
+                    {docs.length === 0 ? (
+                      <p className="text-sm text-gray-500">
+                        No documents uploaded yet
+                      </p>
+                    ) : (
+                      <AnimatePresence>
+                        {typedDocs.map((doc, index) => {
+                          const fileInfo = getFileInfo(doc.type)
+                          const Icon = fileInfo.icon
+                          return (
+                            <motion.div
+                              key={`${doc.name}-${index}`}
+                              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                              className={cn(
+                                "flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 hover:shadow-md",
+                                fileInfo.bgColor,
+                                fileInfo.borderColor
+                              )}
+                            >
+                              <div className="flex items-center space-x-4">
+                                <div
+                                  className={cn(
+                                    "w-12 h-12 rounded-xl flex items-center justify-center",
+                                    fileInfo.bgColor,
+                                    fileInfo.borderColor,
+                                    "border"
+                                  )}
+                                >
+                                  <Icon className={cn("w-6 h-6", fileInfo.color)} />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-sm">{doc.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatFileSize(doc.size)} •{" "}
+                                    {new Date(doc.uploadedAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
 
-                        <div className="flex items-center space-x-2">
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 0.2 }}
-                          >
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                          </motion.div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeDocument(index)}
-                            className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </motion.div>
-                    )
-                  })}
-                </AnimatePresence>
-
-                {formData.documents.length === 0 && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-12 text-muted-foreground"
-                  >
-                    <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                    <p className="text-lg font-medium mb-2">No documents uploaded yet</p>
-                    <p className="text-sm">Upload at least one document to continue</p>
-                  </motion.div>
-                )}
+                              <div className="flex items-center space-x-2">
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  transition={{ delay: 0.2 }}
+                                >
+                                  <CheckCircle className="w-5 h-5 text-green-500" />
+                                </motion.div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    removeDocument(segment as keyof SegmentedDocuments, index)
+                                  }
+                                  className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </motion.div>
+                          )
+                        })}
+                      </AnimatePresence>
+                    )}
+                  </div>)
+                })}
               </div>
             </CardContent>
           </Card>
         </div>
+
 
         {/* Sidebar */}
         <div className="space-y-6">
@@ -531,7 +438,7 @@ export const StepDocuments: React.FC<StepDocumentsProps> = ({ onNext, onPrevious
           </div>
           <Button
             onClick={handleNext}
-            disabled={formData.documents.length === 0 || isUploading}
+            disabled={totalDocs === 0 || isUploading}
             className="flex items-center space-x-2 px-8 py-3 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
             style={{ boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' }}
           >

@@ -1,19 +1,14 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useRegisterGuideStore } from '@/store/useRegisterGuideStore'
-import { personalInfoSchema } from '@/utils/validations/registerAsGuide.validation'
 import {
   User,
-  Mail,
-  Phone,
   MapPin,
-  Building,
   Globe,
   CheckCircle,
   AlertCircle,
@@ -21,8 +16,7 @@ import {
   ArrowLeft,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ZodError } from 'zod'
-import { showToast } from '../global/showToast'
+import { formFields, locationFields, usePersonalInfoHandler } from '@/hooks/usePersonalInfoHandler'
 
 interface StepPersonalInfoProps {
   onNext: () => void
@@ -30,128 +24,14 @@ interface StepPersonalInfoProps {
 }
 
 export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPrevious }) => {
-  const { formData, updatePersonalInfo, setError, clearError, errors } = useRegisterGuideStore()
-  const [localErrors, setLocalErrors] = useState<Record<string, string>>({})
-  const [isValidating, setIsValidating] = useState(false)
-
-  // Validate form data
-  const validateStep = () => {
-    setIsValidating(true)
-    try {
-      personalInfoSchema.parse(formData.personalInfo)
-      setLocalErrors({})
-      setIsValidating(false)
-      return true
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const newErrors: Record<string, string> = {}
-        error.issues.forEach(err => {
-          if (err.path[0]) {
-            newErrors[err.path[0] as string] = err.message
-          }
-        })
-        setLocalErrors(newErrors)
-
-        showToast.warning(Object.values(newErrors).join(", "), "Please correct the highlighted fields.")
-      } else {
-        console.error("Unexpected validation error:", error)
-      }
-      setIsValidating(false)
-      return false
-    }
-  }
-
-  // Handle input changes
-  const handleInputChange = (field: keyof typeof formData.personalInfo, value: string) => {
-    updatePersonalInfo({ [field]: value })
-    clearError(field)
-
-    // Clear local error for this field
-    if (localErrors[field]) {
-      setLocalErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors[field]
-        return newErrors
-      })
-    }
-  }
-
-  // Handle next button click
-  const handleNext = () => {
-    if (validateStep()) {
-      onNext()
-    }
-  }
-
-  // Auto-fill email if user is logged in (simulated)
-  useEffect(() => {
-    const userEmail = localStorage.getItem('userEmail')
-    if (userEmail && !formData.personalInfo.email) {
-      updatePersonalInfo({ email: userEmail })
-    }
-  }, [formData.personalInfo.email, updatePersonalInfo])
-
-  const getFieldError = (field: string) => localErrors[field] || errors[field]
-  const isFieldValid = (field: string) => !getFieldError(field) && formData.personalInfo[field as keyof typeof formData.personalInfo]
-
-  const formFields = [
-    {
-      id: 'fullName',
-      label: 'Full Name',
-      placeholder: 'Enter your full name',
-      icon: User,
-      required: true,
-      type: 'text'
-    },
-    {
-      id: 'email',
-      label: 'Email Address',
-      placeholder: 'Enter your email address',
-      icon: Mail,
-      required: true,
-      type: 'email'
-    },
-    {
-      id: 'phone',
-      label: 'Phone Number',
-      placeholder: 'Enter your phone number',
-      icon: Phone,
-      required: true,
-      type: 'tel'
-    },
-    {
-      id: 'address',
-      label: 'Street Address',
-      placeholder: 'Enter your street address',
-      icon: MapPin,
-      required: true,
-      type: 'text'
-    }
-  ]
-
-  const locationFields = [
-    {
-      id: 'city',
-      label: 'City',
-      placeholder: 'City',
-      icon: Building,
-      required: true
-    },
-    {
-      id: 'state',
-      label: 'State/Province',
-      placeholder: 'State',
-      icon: Building,
-      required: true
-    },
-    {
-      id: 'zipCode',
-      label: 'Zip Code',
-      placeholder: 'Zip Code',
-      icon: Building,
-      required: true
-    }
-  ]
+  const {
+    formData,
+    isValidating,
+    handleInputChange,
+    getFieldError,
+    isFieldValid,
+    handleNext,
+  } = usePersonalInfoHandler(onNext);
 
   return (
     <motion.div

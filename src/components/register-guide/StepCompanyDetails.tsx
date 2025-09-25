@@ -1,14 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useRegisterGuideStore } from '@/store/useRegisterGuideStore'
-import { companyDetailsSchema, isValidUrl } from '@/utils/validations/registerAsGuide.validation'
 import {
   Building2,
   FileText,
@@ -18,15 +16,10 @@ import {
   AlertCircle,
   ArrowRight,
   ArrowLeft,
-  Users,
-  Target,
-  Lightbulb,
-  TrendingUp
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
-import { ZodError } from 'zod'
-import { showToast } from '../global/showToast'
+import { features, useCompanyDetailsHandler } from '@/hooks/useCompanyDetailsHandler'
 
 interface StepCompanyDetailsProps {
   onNext: () => void
@@ -34,130 +27,16 @@ interface StepCompanyDetailsProps {
 }
 
 export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, onPrevious }) => {
-  const { formData, updateCompanyDetails, setError, clearError, errors } = useRegisterGuideStore()
-  const [localErrors, setLocalErrors] = useState<Record<string, string>>({})
-  const [isValidating, setIsValidating] = useState(false)
-
-  // Validate form data
-  const validateStep = () => {
-    setIsValidating(true);
-    setLocalErrors({}); // clear previous errors
-
-    try {
-      companyDetailsSchema.parse(formData.companyDetails);
-      setIsValidating(false);
-      return true;
-    } catch (error) {
-      const newErrors: Record<string, string> = {};
-
-      if (error instanceof ZodError) {
-        error.issues.forEach((issue) => {
-          const field = issue.path[0] as string;
-          if (field) {
-            newErrors[field] = issue.message;
-
-            showToast.warning(issue.message, `Field: ${field}`)
-          }
-        });
-      } else {
-        console.error("Unexpected validation error:", error);
-        showToast.warning("An unexpected error occurred.")
-      }
-      setLocalErrors(newErrors);
-      setIsValidating(false);
-      return false;
-    }
-  };
-
-  // Handle input changes
-  const handleInputChange = (field: keyof typeof formData.companyDetails, value: string) => {
-    updateCompanyDetails({ [field]: value })
-
-    // Validate single field
-    try {
-      companyDetailsSchema.pick({ [field]: true }).parse({ [field]: value })
-      setLocalErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors[field]
-        return newErrors
-      })
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const issue = error.issues[0]
-        setLocalErrors(prev => ({ ...prev, [field]: issue.message }))
-      }
-    }
-  }
-
-
-  const handleBlur = (field: keyof typeof formData.companyDetails) => {
-    try {
-      companyDetailsSchema.pick({ [field]: true }).parse({ [field]: formData.companyDetails[field] })
-      setLocalErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors[field]
-        return newErrors
-      })
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const issue = error.issues[0]
-        setLocalErrors(prev => ({ ...prev, [field]: issue.message }))
-      }
-    }
-  }
-
-
-  // Handle URL validation
-  const handleUrlChange = (field: 'website' | 'socialMedia', value: string) => {
-    if (value && !isValidUrl(value)) {
-      setLocalErrors(prev => ({
-        ...prev,
-        [field]: 'Please enter a valid URL'
-      }))
-    } else {
-      setLocalErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors[field]
-        return newErrors
-      })
-    }
-    handleInputChange(field, value)
-  }
-
-  // Handle next button click
-  const handleNext = () => {
-    if (validateStep()) {
-      onNext()
-    }
-  }
-
-  const getFieldError = (field: string) => localErrors[field] || errors[field]
-  const isFieldValid = (field: string) =>
-    !!formData.companyDetails[field as keyof typeof formData.companyDetails] &&
-    !getFieldError(field)
-
-  const features = [
-    {
-      icon: Users,
-      title: "Expert Team",
-      description: "Professional guides with local expertise"
-    },
-    {
-      icon: Target,
-      title: "Custom Tours",
-      description: "Tailored experiences for every traveler"
-    },
-    {
-      icon: Lightbulb,
-      title: "Unique Insights",
-      description: "Hidden gems and local secrets"
-    },
-    {
-      icon: TrendingUp,
-      title: "Quality Service",
-      description: "Consistent excellence in every tour"
-    }
-  ]
+  const {
+    formData,
+    isValidating,
+    handleInputChange,
+    handleBlur,
+    handleUrlChange,
+    getFieldError,
+    isFieldValid,
+    handleNext,
+  } = useCompanyDetailsHandler(onNext);
 
   return (
     <motion.div
@@ -291,7 +170,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                   <span>Company Bio</span>
                   <span className="text-destructive">*</span>
                   <span className="text-muted-foreground ml-2">
-                    ({formData.companyDetails.bio.length}/500 characters)
+                    ({formData.companyDetails.bio.trim().length}/500 characters)
                   </span>
                 </Label>
                 <div className="relative">

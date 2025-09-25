@@ -28,10 +28,17 @@ export interface DocumentFile {
   size: number
 }
 
+export interface SegmentedDocuments {
+  governmentId: DocumentFile[]
+  businessLicense: DocumentFile[]
+  professionalPhoto: DocumentFile[]
+  certifications: DocumentFile[]
+}
+
 export interface FormData {
   personalInfo: PersonalInfo
   companyDetails: CompanyDetails
-  documents: DocumentFile[]
+  documents: SegmentedDocuments
 }
 
 export interface RegisterGuideState {
@@ -39,13 +46,13 @@ export interface RegisterGuideState {
   formData: FormData
   isSubmitting: boolean
   errors: Record<string, string>
-  
+
   // Actions
   setCurrentStep: (step: number) => void
   updatePersonalInfo: (data: Partial<PersonalInfo>) => void
   updateCompanyDetails: (data: Partial<CompanyDetails>) => void
-  addDocument: (document: DocumentFile) => void
-  removeDocument: (index: number) => void
+  addDocument: (segment: keyof SegmentedDocuments, document: DocumentFile) => void
+  removeDocument: (segment: keyof SegmentedDocuments, index: number) => void
   setError: (field: string, error: string) => void
   clearError: (field: string) => void
   clearAllErrors: () => void
@@ -70,12 +77,17 @@ const initialFormData: FormData = {
     website: '',
     socialMedia: ''
   },
-  documents: []
+  documents: {
+    governmentId: [],
+    businessLicense: [],
+    professionalPhoto: [],
+    certifications: []
+  }
 }
 
 export const useRegisterGuideStore = create<RegisterGuideState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       currentStep: 1,
       formData: initialFormData,
       isSubmitting: false,
@@ -103,20 +115,26 @@ export const useRegisterGuideStore = create<RegisterGuideState>()(
         }))
       },
 
-      addDocument: (document: DocumentFile) => {
+      addDocument: (segment: keyof SegmentedDocuments, document: DocumentFile) => {
         set((state) => ({
           formData: {
             ...state.formData,
-            documents: [...state.formData.documents, document]
+            documents: {
+              ...state.formData.documents,
+              [segment]: [...state.formData.documents[segment], document]
+            }
           }
         }))
       },
 
-      removeDocument: (index: number) => {
+      removeDocument: (segment: keyof SegmentedDocuments, index: number) => {
         set((state) => ({
           formData: {
             ...state.formData,
-            documents: state.formData.documents.filter((_, i) => i !== index)
+            documents: {
+              ...state.formData.documents,
+              [segment]: state.formData.documents[segment].filter((_, i) => i !== index)
+            }
           }
         }))
       },
