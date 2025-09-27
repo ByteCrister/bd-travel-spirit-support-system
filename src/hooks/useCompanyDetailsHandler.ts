@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { ZodError } from 'zod'
 import { CompanyDetails, useRegisterGuideStore } from '@/store/useRegisterGuideStore'
-import { companyDetailsSchema, isValidUrl } from '@/utils/validators/registerAsGuide.validation'
+import { companyDetailsSchema, isValidUrl } from '@/utils/validators/registerAsGuide.validator'
 import { showToast } from '@/components/global/showToast'
 import { Lightbulb, Target, TrendingUp, Users } from 'lucide-react'
 

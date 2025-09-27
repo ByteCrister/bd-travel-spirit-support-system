@@ -1,8 +1,8 @@
-import React from 'react'
+import JoinAsGuide from "@/components/join-guide/JoinAsGuide"
 
 const page = () => {
   return (
-    <div>page</div>
+    <JoinAsGuide />
   )
 }
 

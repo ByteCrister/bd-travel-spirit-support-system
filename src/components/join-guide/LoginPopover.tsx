@@ -1,19 +1,41 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  FiLogIn, 
-  FiMail, 
-  FiLock, 
-  FiEye, 
-  FiEyeOff, 
-  FiX, 
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  FiLogIn,
+  FiX,
+  FiMail,
+  FiLock,
+  FiEye,
+  FiEyeOff,
   FiShield,
-  FiArrowRight,
-  FiAlertCircle
+  FiArrowRight
 } from "react-icons/fi";
+import { FcGoogle } from "react-icons/fc";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { LoginFormValues, loginValidator } from "@/utils/validators/login.validator";
+import ForgotPasswordDialog from "./ForgotPasswordDialog";
+
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -27,249 +49,180 @@ const inter = Inter({
 
 interface LoginPopoverProps {
   isOpen: boolean;
+  showForgotPassword: boolean;
   onClose: () => void;
+  setShowForgotPassword: (value: boolean) => void;
+  handleBackToLogin: () => void;
 }
 
-export default function LoginPopover({ isOpen, onClose }: LoginPopoverProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function LoginPopover({ isOpen, onClose, showForgotPassword, setShowForgotPassword, handleBackToLogin }: LoginPopoverProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Close popover when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginValidator),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.body.style.overflow = "hidden";
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen, onClose]);
-
-  // Close on Escape key
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, onClose]);
-
-  const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
-
-    if (!email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-
-    if (!password) {
-      newErrors.password = "Password is required";
-    } else if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-
+  const handleSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      // Handle successful login here
-      console.log("Login successful");
+      console.log("Login successful", values);
       onClose();
+      form.reset();
     }, 2000);
   };
 
-  const handleReset = () => {
-    setEmail("");
-    setPassword("");
-    setErrors({});
-    setShowPassword(false);
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      onClose();
+      form.reset();
+      setShowPassword(false);
+    }
   };
 
+  const handleForgotPassword = () => {
+    setShowForgotPassword(true);
+    onClose();
+  };
+
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-          />
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className={`max-w-md p-0 gap-0 border-0 bg-transparent shadow-none ${jakarta.className}`}
+        showCloseButton={false}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="relative w-full"
+        >
+          {/* Main Container */}
+          <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+            {/* Background Effects */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-cyan-500/5"></div>
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
 
-          {/* Popover */}
-          <motion.div
-            ref={popoverRef}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${jakarta.className}`}
-          >
-            <div className="relative w-full max-w-md mx-auto">
-              {/* Main Container */}
-              <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
-                {/* Background Effects */}
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-cyan-500/5"></div>
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
-
-                {/* Header */}
-                <div className="relative px-6 pt-6 pb-4">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-lg shadow-emerald-500/30">
-                        <FiShield className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <h2 className={`${inter.className} text-xl font-bold text-gray-900 dark:text-white`}>
-                          Support Login
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Access your support dashboard
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <motion.button
-                      onClick={onClose}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-200"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <FiX className="h-4 w-4" />
-                    </motion.button>
+            {/* Header */}
+            <DialogHeader className="relative px-6 pt-6 pb-4 space-y-0">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-lg shadow-emerald-500/30">
+                    <FiShield className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <DialogTitle className={`${inter.className} text-xl font-bold text-gray-900 dark:text-white`}>
+                      Support Login
+                    </DialogTitle>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Access your support dashboard
+                    </p>
                   </div>
                 </div>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="relative px-6 pb-6">
-                  <div className="space-y-4">
-                    {/* Email Field */}
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Email Address
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <FiMail className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <input
-                          id="email"
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className={`w-full pl-10 pr-4 py-3 rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                            errors.email
-                              ? "border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20"
-                              : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500"
-                          } text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400`}
-                          placeholder="Enter your email"
-                        />
-                      </div>
-                      {errors.email && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex items-center gap-2 mt-2 text-sm text-red-600 dark:text-red-400"
-                        >
-                          <FiAlertCircle className="h-4 w-4" />
-                          {errors.email}
-                        </motion.div>
-                      )}
-                    </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleOpenChange(false)}
+                  className="h-8 w-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  <FiX className="h-4 w-4 rotate-180" />
+                </Button>
+              </div>
+            </DialogHeader>
 
-                    {/* Password Field */}
-                    <div>
-                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Password
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <FiLock className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <input
-                          id="password"
-                          type={showPassword ? "text" : "password"}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className={`w-full pl-10 pr-12 py-3 rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                            errors.password
-                              ? "border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20"
-                              : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500"
-                          } text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400`}
-                          placeholder="Enter your password"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
-                        >
-                          {showPassword ? (
-                            <FiEyeOff className="h-4 w-4" />
-                          ) : (
-                            <FiEye className="h-4 w-4" />
-                          )}
-                        </button>
-                      </div>
-                      {errors.password && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex items-center gap-2 mt-2 text-sm text-red-600 dark:text-red-400"
-                        >
-                          <FiAlertCircle className="h-4 w-4" />
-                          {errors.password}
-                        </motion.div>
-                      )}
-                    </div>
-                  </div>
+            {/* Form */}
+            <div className="relative px-6 pb-6">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                  {/* Email Field */}
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Email Address
+                        </FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <FiMail className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <Input
+                              {...field}
+                              type="email"
+                              placeholder="Enter your email"
+                              className="pl-10 py-3 rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage className="flex items-center gap-2 text-sm" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Password Field */}
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Password
+                        </FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <FiLock className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <Input
+                              {...field}
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Enter your password"
+                              className="pl-10 pr-12 py-3 rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute inset-y-0 right-0 h-full w-10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-transparent"
+                            >
+                              {showPassword ? (
+                                <FiEyeOff className="h-4 w-4" />
+                              ) : (
+                                <FiEye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage className="flex items-center gap-2 text-sm" />
+                      </FormItem>
+                    )}
+                  />
 
                   {/* Actions */}
                   <div className="mt-6 space-y-4">
                     {/* Login Button */}
-                    <motion.button
+                    <Button
                       type="submit"
                       disabled={isLoading}
-                      className="group relative w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      whileHover={{ scale: isLoading ? 1 : 1.02 }}
-                      whileTap={{ scale: isLoading ? 1 : 0.98 }}
+                      className="group relative w-full rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 hover:bg-gradient-to-r hover:from-emerald-500 hover:via-teal-500 hover:to-cyan-500"
                     >
                       {/* Background Glow */}
                       <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 opacity-0 blur transition-opacity duration-300 group-hover:opacity-30"></div>
-                      
-                      <div className="relative flex items-center gap-2">
+
+                      <div className="relative flex items-center justify-center gap-2">
                         {isLoading ? (
                           <motion.div
                             animate={{ rotate: 360 }}
@@ -284,16 +237,44 @@ export default function LoginPopover({ isOpen, onClose }: LoginPopoverProps) {
                           <FiArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                         )}
                       </div>
-                    </motion.button>
+                    </Button>
+
+                    {/* Divider */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-gray-200 dark:border-gray-700" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white dark:bg-gray-900 px-2 text-gray-500 dark:text-gray-400">
+                          Or continue with
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Google Login Button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300 py-3 transition-all duration-200"
+                      onClick={() => {
+                        // Handle Google login here
+                        console.log("Google login clicked");
+                      }}
+                    >
+                      <FcGoogle className="h-4 w-4 mr-2" />
+                      Sign in with Google
+                    </Button>
 
                     {/* Forgot Password */}
                     <div className="text-center">
-                      <button
+                      <Button
                         type="button"
-                        className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors duration-200"
+                        variant="link"
+                        onClick={handleForgotPassword}
+                        className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 p-0 h-auto font-normal"
                       >
                         Forgot your password?
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -305,11 +286,17 @@ export default function LoginPopover({ isOpen, onClose }: LoginPopoverProps) {
                     </div>
                   </div>
                 </form>
-              </div>
+              </Form>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          </div>
+        </motion.div>
+      </DialogContent>
+      {/* Forgot Password Dialog */}
+      <ForgotPasswordDialog
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        onBackToLogin={handleBackToLogin}
+      />
+    </Dialog>
   );
 }

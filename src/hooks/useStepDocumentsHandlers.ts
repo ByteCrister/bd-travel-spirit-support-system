@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import imageCompression from 'browser-image-compression'
 import { DocumentFile, SegmentedDocuments, useRegisterGuideStore } from '@/store/useRegisterGuideStore'
-import { validateFile } from '@/utils/validators/registerAsGuide.validation'
+import { validateFile } from '@/utils/validators/registerAsGuide.validator'
 import { FileText, Image } from 'lucide-react'
 
 export const useStepDocumentsHandlers = (onNext: () => void) => {
