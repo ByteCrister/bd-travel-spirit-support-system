@@ -2,7 +2,6 @@
 
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { KpiCards } from './KpiCards';
 import { Section } from './Section';
 import { LineChart } from './charts/LineChart';
@@ -13,6 +12,7 @@ import { formatDuration, formatNumber, formatPercentage } from '@/utils/helpers/
 import { FilterBar } from './FilterBar';
 import { useStatisticsStore } from '@/store/useStatisticsStore';
 import { RankingItem } from '@/types/statistics.types';
+import { MainContent } from './MainContent';
 
 export function StatisticsShell() {
     const { data, loading, error, clearError, refreshSection, refreshAll } = useStatisticsStore();
@@ -517,23 +517,7 @@ export function StatisticsShell() {
             <FilterBar />
 
             {/* Main Content */}
-            <main className="px-6 py-8">
-                <Tabs defaultValue="overview" className="space-y-8">
-                    <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 lg:grid-cols-9 lg:w-auto">
-                        {tabSections.map((section) => (
-                            <TabsTrigger key={section.id} value={section.id} className="text-xs lg:text-sm">
-                                {section.label}
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
-
-                    {tabSections.map((section) => (
-                        <TabsContent key={section.id} value={section.id} className="space-y-8">
-                            {section.content}
-                        </TabsContent>
-                    ))}
-                </Tabs>
-            </main>
+            <MainContent tabSections={tabSections} />
         </div>
     );
 }

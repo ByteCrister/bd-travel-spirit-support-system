@@ -52,7 +52,8 @@ export const LineChart = React.memo<LineChartProps>(({
             <YAxis 
               tick={{ fontSize: 12 }}
               className="text-gray-600 dark:text-gray-400"
-              tickFormatter={formatValue}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              tickFormatter={(value: any) => formatValue(Number(value))}
             />
             <Tooltip
               contentStyle={{

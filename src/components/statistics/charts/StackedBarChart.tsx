@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { formatNumber } from '@/utils/helpers/format';
 
 interface StackedBarChartProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any[];
   title?: string;
   keys: string[];
@@ -51,7 +52,8 @@ export const StackedBarChart = React.memo<StackedBarChartProps>(({
             <YAxis 
               tick={{ fontSize: 12 }}
               className="text-gray-600 dark:text-gray-400"
-              tickFormatter={formatValue}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              tickFormatter={(value: any) => formatValue(value)}
             />
             <Tooltip
               contentStyle={{
