@@ -6,6 +6,7 @@ import { DashboardLayout } from "@/components/dashboardLayout/DashboardLayout";
 // Define the admin routes that should use the dashboard layout
 const ADMIN_ROUTES = [
   "/dashboard",
+  "/statistics",
   "/user/travelers",
   "/user/guide",
   "/user/assistants",
@@ -26,7 +27,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   const pathname = usePathname();
 
   // Check if the current route should use the dashboard layout
-  const shouldUseDashboardLayout = ADMIN_ROUTES.some(route => 
+  const shouldUseDashboardLayout = ADMIN_ROUTES.some(route =>
     pathname === route || pathname.startsWith(route + "/")
   );
 

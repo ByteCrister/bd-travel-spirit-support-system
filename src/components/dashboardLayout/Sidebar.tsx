@@ -17,6 +17,7 @@ import {
   FiX,
   FiChevronRight
 } from "react-icons/fi";
+import { HiOutlineChartSquareBar } from 'react-icons/hi';
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -47,6 +48,7 @@ const navigationGroups: NavGroup[] = [
     icon: FiHome,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: FiHome },
+      { href: "/statistics", label: "Statistics", icon: HiOutlineChartSquareBar },
     ],
   },
   {
