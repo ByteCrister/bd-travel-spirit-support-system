@@ -19,16 +19,17 @@ const presetOptions: { value: Preset; label: string }[] = [
 ];
 
 export function FilterBar() {
-    const { filters, loading, setDateRange, setPreset, refreshAll } = useStatisticsStore()
-    const isLoading = Object.values(loading).some(loading => loading)
+    const { filters, loading, setDateRange, setPreset, refreshAll } = useStatisticsStore();
+    const isLoading = Object.values(loading).some((loading) => loading);
+
+    // Safe destructuring with defaults
+    const from = filters.dateRange?.from ?? null;
+    const to = filters.dateRange?.to ?? null;
 
     const handleDateRangeChange = (range: DateRange | undefined) => {
         if (range?.from && range?.to) {
             setDateRange(range.from, range.to);
-            // Optional: Auto-refresh when custom range is selected
-            // refreshAll();
         } else if (range?.from) {
-            // Handle single date selection - you might want to set both from and to
             setDateRange(range.from, range.from);
         }
     };
@@ -42,8 +43,7 @@ export function FilterBar() {
     const isDateDisabled = (date: Date) => {
         const today = new Date();
         const maxPastDate = new Date();
-        maxPastDate.setFullYear(today.getFullYear() - 2); // Only allow last 2 years
-
+        maxPastDate.setFullYear(today.getFullYear() - 2);
         return date > today || date < maxPastDate;
     };
 
@@ -63,7 +63,7 @@ export function FilterBar() {
                         {presetOptions.slice(0, 3).map((preset) => (
                             <Button
                                 key={preset.value}
-                                variant={filters.preset === preset.value ? "default" : "outline"}
+                                variant={filters.preset === preset.value ? 'default' : 'outline'}
                                 size="sm"
                                 onClick={() => setPreset(preset.value)}
                                 disabled={isLoading}
@@ -77,26 +77,23 @@ export function FilterBar() {
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
-                                variant={isCustomRange ? "default" : "outline"}
+                                variant={isCustomRange ? 'default' : 'outline'}
                                 size="sm"
                                 disabled={isLoading}
                                 className="justify-start text-left font-normal min-w-[240px]"
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {isCustomRange
-                                    ? formatDateRange(filters.dateRange.from, filters.dateRange.to)
-                                    : "Custom range"
-                                }
+                                {isCustomRange ? formatDateRange(from, to) : 'Custom range'}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                                 initialFocus
                                 mode="range"
-                                defaultMonth={filters.dateRange.from || undefined}
+                                defaultMonth={from || undefined}
                                 selected={{
-                                    from: filters.dateRange.from || undefined,
-                                    to: filters.dateRange.to || undefined,
+                                    from: from || undefined,
+                                    to: to || undefined,
                                 }}
                                 disabled={isDateDisabled}
                                 onSelect={handleDateRangeChange}
@@ -108,7 +105,7 @@ export function FilterBar() {
                     {/* Current range indicator */}
                     {!isCustomRange && (
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {formatDateRange(filters.dateRange.from, filters.dateRange.to)}
+                            {formatDateRange(from, to)}
                         </span>
                     )}
                 </div>
@@ -134,7 +131,9 @@ export function FilterBar() {
                         onClick={refreshAll}
                         disabled={isLoading}
                     >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                        <RefreshCw
+                            className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
+                        />
                         Refresh
                     </Button>
                 </div>

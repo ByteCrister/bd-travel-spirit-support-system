@@ -38,7 +38,7 @@ export enum ACCOUNT_STATUS {
 }
 
 /** Organizer profile verification states */
-export enum ORGANIZER_STATUS {
+export enum GUIDE_STATUS {
     /** Awaiting admin review */
     PENDING = "pending",
 

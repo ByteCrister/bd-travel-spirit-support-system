@@ -42,7 +42,7 @@ export enum ACCOUNT_STATUS {
 }
 
 /** Organizer profile verification states */
-export enum ORGANIZER_STATUS {
+export enum GUIDE_STATUS {
     /** Awaiting admin review */
     PENDING = "pending",
 
@@ -148,8 +148,8 @@ const OrganizerProfileSchema = new Schema(
         },
         status: {
             type: String,
-            enum: Object.values(ORGANIZER_STATUS),
-            default: ORGANIZER_STATUS.PENDING,
+            enum: Object.values(GUIDE_STATUS),
+            default: GUIDE_STATUS.PENDING,
         },
         appliedAt: Date,
         reviewedAt: Date,

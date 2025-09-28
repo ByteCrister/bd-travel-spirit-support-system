@@ -1,4 +1,5 @@
 import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
+import { Suspension } from "./user.types";
 
 /**
  * ======================================
@@ -35,4 +36,29 @@ export interface UserTableRow {
 
     /** Account creation timestamp */
     createdAt: string;
+
+    /** Suspension details, if any */
+    suspension?: Suspension;
 }
+
+
+export const USER_SORTABLE_FIELDS = [
+    "name",
+    "email",
+    "role",
+    "accountStatus",
+    "createdAt",
+    "lastLogin",
+] as const;
+
+export type UserSortableField = (typeof USER_SORTABLE_FIELDS)[number];
+
+export type UserAction =
+    | "viewProfile"
+    | "edit"
+    | "activate"
+    | "suspend"
+    | "verify"
+    | "upgradeOrganizer"
+    | "resetPassword"
+    | "delete";

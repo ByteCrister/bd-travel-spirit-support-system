@@ -218,25 +218,29 @@ export const useStatisticsStore = create<StatisticsStore>()(
                 }));
             },
         }),
+        // Persist configuration
         {
             name: "statistics-store",
             partialize: (state) => ({
                 filters: {
                     preset: state.filters.preset,
-                    // Don't persist dateRange for presets as they should be dynamic
                     ...(state.filters.preset === 'CUSTOM' && {
-                        dateRange: state.filters.dateRange
-                    })
-                }
+                        dateRange: state.filters.dateRange,
+                    }),
+                },
             }),
             onRehydrateStorage: () => (state) => {
+                // Ensure dateRange always exists
+                if (!state?.filters?.dateRange) {
+                    state!.filters.dateRange = { from: null, to: null };
+                }
                 if (state?.filters?.dateRange?.from) {
                     state.filters.dateRange.from = new Date(state.filters.dateRange.from);
                 }
                 if (state?.filters?.dateRange?.to) {
                     state.filters.dateRange.to = new Date(state.filters.dateRange.to);
                 }
-            }
+            },
         }
     )
 );

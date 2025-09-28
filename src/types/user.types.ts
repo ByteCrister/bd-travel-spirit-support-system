@@ -5,7 +5,7 @@
  * ======================================
  */
 
-import { ACCOUNT_STATUS, ORGANIZER_STATUS, USER_ROLE } from "@/constants/user.const";
+import { ACCOUNT_STATUS, GUIDE_STATUS, USER_ROLE } from "@/constants/user.const";
 
 /** Postal address structure */
 export interface Address {
@@ -36,7 +36,7 @@ export interface OrganizerProfile {
         url: string;
         uploadedAt?: string; // ISO date string
     }[];
-    status: ORGANIZER_STATUS;
+    status: GUIDE_STATUS;
     appliedAt?: string;   // ISO date string
     reviewedAt?: string;  // ISO date string
     reviewer?: string;    // userId of reviewer (admin)

@@ -1,4 +1,3 @@
-import axios from 'axios';
 import type {
     DateRange,
     KpiMetrics,
@@ -12,11 +11,6 @@ import type {
     EmployeesStats,
 } from '../../types/statistics.types';
 
-// Demo axios instance
-export const api = axios.create({
-    baseURL: '/api/statistics',
-    timeout: 10000,
-});
 
 // Simulate network delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

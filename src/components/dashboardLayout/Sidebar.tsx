@@ -5,8 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FiHome,
   FiUsers,
-  FiUser,
-  FiUserCheck,
   FiHeadphones,
   FiFileText,
   FiShare2,
@@ -21,6 +19,7 @@ import { HiOutlineChartSquareBar } from 'react-icons/hi';
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { ShieldCheck } from "lucide-react";
 
 interface SidebarProps {
   isMobile?: boolean;
@@ -52,13 +51,10 @@ const navigationGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Users",
+    title: "User Management",
     icon: FiUsers,
     items: [
-      { href: "/user/travelers", label: "Travelers", icon: FiUser },
-      { href: "/user/guide", label: "Guides", icon: FiUserCheck },
-      { href: "/user/assistants", label: "Assistants", icon: FiUsers },
-      { href: "/user/support", label: "Support", icon: FiHeadphones },
+      { href: "/users", label: "Users", icon: ShieldCheck  },
     ],
   },
   {
