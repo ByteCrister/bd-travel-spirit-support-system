@@ -13,6 +13,13 @@ import { FilterBar } from './FilterBar';
 import { useStatisticsStore } from '@/store/useStatisticsStore';
 import { RankingItem } from '@/types/statistics.types';
 import { MainContent } from './MainContent';
+import { Breadcrumbs } from '../global/Breadcrumbs';
+
+const breadcrumbItems = [
+    { label: "Home", href: '/' },
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Statistics", href: "/statistics" },
+];
 
 export function StatisticsShell() {
     const { data, loading, error, clearError, refreshSection, refreshAll } = useStatisticsStore();
@@ -489,6 +496,7 @@ export function StatisticsShell() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <Breadcrumbs items={breadcrumbItems} />
             {/* Header */}
             <motion.header
                 initial={{ opacity: 0, y: -10 }}
@@ -498,11 +506,6 @@ export function StatisticsShell() {
                 <div className="px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <nav className="flex text-sm text-gray-600 dark:text-gray-400 mb-1">
-                                <span>Dashboard</span>
-                                <span className="mx-2">/</span>
-                                <span className="text-gray-900 dark:text-white">Statistics</span>
-                            </nav>
                             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                                 Platform Statistics
                             </h1>

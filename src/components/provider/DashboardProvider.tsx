@@ -8,6 +8,7 @@ const ADMIN_ROUTES = [
   "/dashboard",
   "/statistics",
   "/users",
+  "/guide",
   "/customer-support",
   "/blogs-and-articles",
   "/social/banner",

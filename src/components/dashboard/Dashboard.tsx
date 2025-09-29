@@ -29,6 +29,12 @@ import {
 import { BookingsLineChart } from "@/components/dashboard/Charts/BookingsLineChart";
 import { UsersAreaChart } from "@/components/dashboard/Charts/UsersAreaChart";
 import { RevenueMiniChart } from "@/components/dashboard/Charts/RevenueMiniChart";
+import { Breadcrumbs } from "../global/Breadcrumbs";
+
+const breadcrumbItems = [
+    { label: "Home", href: '/' },
+    { label: "Dashboard", href: "/dashboard" },
+];
 
 export default function Dashboard() {
     const {
@@ -83,6 +89,7 @@ export default function Dashboard() {
 
     return (
         <div className="space-y-6">
+            <Breadcrumbs items={breadcrumbItems} />
             {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}

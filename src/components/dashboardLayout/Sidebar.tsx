@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiHome,
@@ -20,7 +20,8 @@ import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
-
+import { MdTravelExplore } from 'react-icons/md';
+import { usePathname } from "next/navigation";
 interface SidebarProps {
   isMobile?: boolean;
   onClose?: () => void;
@@ -54,7 +55,8 @@ const navigationGroups: NavGroup[] = [
     title: "User Management",
     icon: FiUsers,
     items: [
-      { href: "/users", label: "Users", icon: ShieldCheck  },
+      { href: "/users", label: "Users", icon: ShieldCheck },
+      { href: "/guide", label: "Guide", icon: MdTravelExplore },
     ],
   },
   {
@@ -89,7 +91,19 @@ export function Sidebar({
   isOpen = false,
   isCollapsed,
   setIsCollapsed }: SidebarProps) {
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(["Main", "Users"]);
+  const pathname = usePathname();
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+
+  useEffect(() => {
+    // find the group that matches the current route
+    const activeGroup = navigationGroups.find(group =>
+      group.items.some(item => pathname.startsWith(item.href))
+    );
+
+    if (activeGroup) {
+      setExpandedGroups([activeGroup.title]);
+    }
+  }, [pathname])
 
   const toggleGroup = (groupTitle: string) => {
     setExpandedGroups(prev =>
@@ -240,7 +254,7 @@ export function Sidebar({
                       "group-hover:text-blue-500",
                       isCollapsed && "h-6 w-6"
                     )}
-                  />                  
+                  />
                   <AnimatePresence>
                     {!isCollapsed && (
                       <motion.div

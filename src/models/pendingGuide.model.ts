@@ -1,20 +1,20 @@
-// models/pendingOrganizer.model.ts
+// models/pendingGuide.model.ts
 import mongoose, { Schema, Document, model, models } from "mongoose";
-import { ORGANIZER_STATUS } from "./user.model";
+import { GUIDE_STATUS } from "./user.model";
 
 /** ===============================
  * TYPES
  * =============================== */
 
 // Supported file types
-export enum OrganizerDocumentType {
+export enum GuideDocumentType {
     IMAGE = 'image',
     PDF = 'pdf',
     DOCX = 'docx',
 }
 
 // Document categories
-export enum OrganizerDocumentCategory {
+export enum GuideDocumentCategory {
     GOVERNMENT_ID = 'government_id',
     BUSINESS_LICENSE = 'business_license',
     PROFESSIONAL_PHOTO = 'professional_photo',
@@ -32,15 +32,15 @@ export interface PendingOrganizerAddress {
 
 /** Organizer document type */
 export interface PendingOrganizerDocument {
-    category: OrganizerDocumentCategory;
+    category: GuideDocumentCategory;
     base64Content: string;
-    fileType: OrganizerDocumentType;
+    fileType: GuideDocumentType;
     fileName?: string;
     uploadedAt: Date;
 }
 
 /** Main pending organizer interface */
-export interface IPendingOrganizer extends Document {
+export interface IPendingGuide extends Document {
     name: string;
     email: string;
     phone?: string;
@@ -50,8 +50,9 @@ export interface IPendingOrganizer extends Document {
     bio?: string;
     social?: string;
     documents: PendingOrganizerDocument[];
-    status: ORGANIZER_STATUS;
+    status: GUIDE_STATUS;
     appliedAt: Date;
+    reviewComment?: string;
     reviewer?: mongoose.Types.ObjectId;
     reviewedAt?: Date;
 }
@@ -75,9 +76,9 @@ const AddressSchema = new Schema<PendingOrganizerAddress>(
 /** Document schema */
 const DocumentSchema = new Schema<PendingOrganizerDocument>(
     {
-        category: { type: String, enum: Object.values(OrganizerDocumentCategory), required: true },
+        category: { type: String, enum: Object.values(GuideDocumentCategory), required: true },
         base64Content: { type: String, required: true },
-        fileType: { type: String, enum: Object.values(OrganizerDocumentType), required: true },
+        fileType: { type: String, enum: Object.values(GuideDocumentType), required: true },
         fileName: { type: String, trim: true },
         uploadedAt: { type: Date, default: Date.now },
     },
@@ -85,12 +86,28 @@ const DocumentSchema = new Schema<PendingOrganizerDocument>(
 );
 
 /** Pending organizer schema */
-const PendingOrganizerSchema = new Schema<IPendingOrganizer>(
+const PendingGuideSchema = new Schema<IPendingGuide>(
     {
         name: { type: String, required: true, trim: true },
-        email: { type: String, required: true, trim: true },
+        email: { type: String, required: true, trim: true, unique: true, lowercase: true },
         avatar: { type: String, trim: true },
-        phone: { type: String, trim: true },
+        phone: {
+            type: String,
+            trim: true,
+            validate: {
+                validator: (v: string) =>
+                    /^(\+8801[3-9]\d{8}|01[3-9]\d{8})$/.test(v),
+                message: "Invalid phone number format",
+            },
+            set: (v: string) => {
+                if (!v) return v;
+                // Normalize: if number starts with 0, replace with +880
+                if (v.startsWith("01")) {
+                    return "+88" + v;
+                }
+                return v;
+            },
+        },
         address: AddressSchema,
         companyName: { type: String, required: true, trim: true },
         bio: { type: String, trim: true },
@@ -103,8 +120,9 @@ const PendingOrganizerSchema = new Schema<IPendingOrganizer>(
                 "At least one document is required",
             ],
         },
-        status: { type: String, enum: Object.values(ORGANIZER_STATUS), default: ORGANIZER_STATUS.PENDING },
+        status: { type: String, enum: Object.values(GUIDE_STATUS), default: GUIDE_STATUS.PENDING },
         appliedAt: { type: Date, default: Date.now },
+        reviewComment: { type: String, trim: true },
         reviewer: { type: Schema.Types.ObjectId, ref: "User" },
         reviewedAt: Date,
     },
@@ -114,11 +132,13 @@ const PendingOrganizerSchema = new Schema<IPendingOrganizer>(
 /** ===============================
  * INDEXES
  * =============================== */
-PendingOrganizerSchema.index({ status: 1 });
-PendingOrganizerSchema.index({ appliedAt: -1 });
+PendingGuideSchema.index({ status: 1 });
+PendingGuideSchema.index({ appliedAt: -1 });
+PendingGuideSchema.index({ email: 1 });
+PendingGuideSchema.index({ companyName: 1 });
 
 /** ===============================
  * MODEL EXPORT
  * =============================== */
-export const PendingOrganizerModel =
-    models.PendingOrganizer || model<IPendingOrganizer>("PendingOrganizer", PendingOrganizerSchema);
+export const PendingGuideModel =
+    models.PendingGuide || model<IPendingGuide>("PendingGuide", PendingGuideSchema);

@@ -1,12 +1,12 @@
-import { ClientOnly } from "@/components/statistics/ClientOnly";
+import { ClientOnlyStatistics } from "@/components/provider/ClientOnlyStatistics";
 import { StatisticsShell } from "@/components/statistics/StatisticsShell";
 
 
 const page = () => {
   return (
-    <ClientOnly>
+    <ClientOnlyStatistics>
       <StatisticsShell />
-    </ClientOnly>
+    </ClientOnlyStatistics>
   );
 }
 

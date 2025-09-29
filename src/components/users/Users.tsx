@@ -17,6 +17,12 @@ import { User, Suspension } from "@/types/user.types";
 import { showToast } from "../global/showToast";
 import UserHeader from "./UserHeader";
 import { useState } from "react";
+import { Breadcrumbs } from "../global/Breadcrumbs";
+
+const breadcrumbItems = [
+    { label: "Home", href: '/' },
+    { label: "Users", href: "/users" },
+];
 
 export default function Users() {
     const {
@@ -305,6 +311,7 @@ export default function Users() {
 
     return (
         <div className="space-y-6 p-4">
+            <Breadcrumbs items={breadcrumbItems} />
             {/* Header KPIs */}
             <UserHeader
                 total={total ?? 0}
