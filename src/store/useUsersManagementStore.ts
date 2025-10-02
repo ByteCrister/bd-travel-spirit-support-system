@@ -151,7 +151,7 @@ export const useUserManagementStore = create<useUserManagementStoreState>()(
                     query.page ??= 1;
                     query.perPage ??= state.perPage;
 
-                    // 🔥 sanitize query before sending
+                    // sanitize query before sending
                     Object.keys(query).forEach((k) => {
                         const val = query[k as keyof UsersQuery];
                         if (

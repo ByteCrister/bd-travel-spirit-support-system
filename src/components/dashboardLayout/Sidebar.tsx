@@ -20,7 +20,7 @@ import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
-import { MdTravelExplore } from 'react-icons/md';
+import { MdBusiness, MdTravelExplore } from 'react-icons/md';
 import { usePathname } from "next/navigation";
 interface SidebarProps {
   isMobile?: boolean;
@@ -57,6 +57,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { href: "/users", label: "Users", icon: ShieldCheck },
       { href: "/guide", label: "Guide", icon: MdTravelExplore },
+      { href: "/companies", label: "Companies", icon: MdBusiness },
     ],
   },
   {

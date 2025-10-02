@@ -27,10 +27,11 @@ import { BsCircleFill } from "react-icons/bs";
 type Props = {
   query: QueryParams;
   onChange: (partial: Partial<QueryParams>) => void;
+  onPageSizeChange: (pageSize: number) => void
   loading?: boolean;
 };
 
-export function GuideFilters({ query, onChange, loading }: Props) {
+export function GuideFilters({ query, onChange, onPageSizeChange, loading }: Props) {
   const [search, setSearch] = useState(query.search ?? "");
 
   // Debounce search updates
@@ -269,7 +270,7 @@ export function GuideFilters({ query, onChange, loading }: Props) {
             <Select
               value={query.pageSize.toString()}
               onValueChange={(val) =>
-                onChange({ pageSize: Number(val), page: 1 })
+                onPageSizeChange(Number(val))
               }
               disabled={loading}
             >

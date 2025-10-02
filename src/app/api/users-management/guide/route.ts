@@ -88,19 +88,7 @@ export async function GET(req: Request) {
         guides.sort((a, b) => {
             const aValue = a[sortBy as SortableKeys];
             const bValue = b[sortBy as SortableKeys];
-
-            // Handle undefined values
-            if (aValue === undefined && bValue === undefined) return 0;
-            if (aValue === undefined) return 1;
-            if (bValue === undefined) return -1;
-
-            // Convert to string/number for comparison
-            const aStr = String(aValue);
-            const bStr = String(bValue);
-
-            if (aStr === bStr) return 0;
-            if (sortDir === "asc") return aStr > bStr ? 1 : -1;
-            return aStr < bStr ? 1 : -1;
+            return compareValues(aValue, bValue, sortDir);
         });
 
 
@@ -121,4 +109,43 @@ export async function GET(req: Request) {
             { status: 500 }
         );
     }
+}
+
+
+
+// In route.ts (or a shared utils file)
+/**
+ * Compare two values for sorting, handling null/undefined, numbers, dates, and strings.
+ */
+function compareValues(a: unknown, b: unknown, sortDir: "asc" | "desc"): number {
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
+
+    // Numbers (or numeric strings)
+    const aNum = typeof a === "number" ? a : (typeof a === "string" && !isNaN(Number(a)) ? Number(a) : NaN);
+    const bNum = typeof b === "number" ? b : (typeof b === "string" && !isNaN(Number(b)) ? Number(b) : NaN);
+
+    if (!isNaN(aNum) && !isNaN(bNum)) {
+        if (aNum === bNum) return 0;
+        return sortDir === "asc" ? (aNum < bNum ? -1 : 1) : (aNum > bNum ? -1 : 1);
+    }
+
+    // Dates (only if a and b are strings or Date)
+    if ((typeof a === "string" || a instanceof Date) && (typeof b === "string" || b instanceof Date)) {
+        const aDate = new Date(a);
+        const bDate = new Date(b);
+        if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
+            const at = aDate.getTime();
+            const bt = bDate.getTime();
+            if (at === bt) return 0;
+            return sortDir === "asc" ? (at < bt ? -1 : 1) : (at > bt ? -1 : 1);
+        }
+    }
+
+    // Fallback: string compare
+    const aStr = String(a).toLowerCase();
+    const bStr = String(b).toLowerCase();
+    if (aStr === bStr) return 0;
+    return sortDir === "asc" ? (aStr < bStr ? -1 : 1) : (aStr > bStr ? -1 : 1);
 }

@@ -1,9 +1,8 @@
 // app/guide/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useGuideStore } from "@/store/useGuideStore";
-import { GUIDE_STATUS } from "@/constants/user.const";
+import { useCallback, useEffect, useState } from "react";
+import { SortByTypes, SortDirTypes, useGuideStore } from "@/store/useGuideStore";
 import { GuideFilters } from "@/components/guide/GuideFilters";
 import { GuideKPI } from "@/components/guide/GuideKPI";
 import { GuideTable } from "@/components/guide/GuideTable";
@@ -12,50 +11,66 @@ import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/pendingGuide.t
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { RefreshCw } from "lucide-react";
+import { Breadcrumbs } from "../global/Breadcrumbs";
+
+const breadcrumbItems = [
+    { label: "Home", href: '/' },
+    { label: "Guide", href: "/guide" },
+];
 
 export default function Guide() {
     const {
-        items,
-        ids,
+        guides,
         total,
-        query,
+        counts,
         loading,
         error,
-        setQuery,
+        query,
         fetch,
         approve,
         reject,
         updateReviewComment,
     } = useGuideStore();
 
-    // Local UI state
-    const [selectedDoc, setSelectedDoc] = useState<{
-        guide?: PendingGuideDTO;
-        doc?: PendingGuideDocumentDTO;
-    } | null>(null);
+    const [selectedDoc, setSelectedDoc] = useState<{ guide?: PendingGuideDTO; doc?: PendingGuideDocumentDTO } | null>(null);
 
-    // Initial + reactive fetch
+    // ✅ Stable callbacks (don’t depend on query)
+    const handleQueryChange = useCallback(
+        (partial: Partial<typeof query>) => {
+            fetch(false, partial);
+        },
+        [fetch]
+    );
+
+    const handlePageChange = useCallback(
+        (page: number) => {
+            fetch(false, { page });
+        },
+        [fetch]
+    );
+
+    const handlePageSizeChange = useCallback(
+        (pageSize: number) => {
+            fetch(false, { pageSize, page: 1 });
+        },
+        [fetch]
+    );
+
+    const handleSortChange = useCallback(
+        (sortBy: SortByTypes, sortDir: SortDirTypes) => {
+            fetch(false, { sortBy: sortBy ?? "createdAt", sortDir, page: 1 });
+        },
+        [fetch]
+    );
+
     useEffect(() => {
-        fetch();
-    }, [fetch, query]);
-
-    const guides = useMemo(() => ids.map((id) => items[id]).filter(Boolean), [ids, items]);
-
-    // Derived KPI counts
-    const counts = useMemo(() => {
-        let pending = 0,
-            approved = 0,
-            rejected = 0;
-        for (const g of Object.values(items)) {
-            if (g.status === GUIDE_STATUS.PENDING) pending++;
-            else if (g.status === GUIDE_STATUS.APPROVED) approved++;
-            else if (g.status === GUIDE_STATUS.REJECTED) rejected++;
-        }
-        return { total, pending, approved, rejected };
-    }, [items, total]);
+        fetch(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100/50">
+            <Breadcrumbs className="p-4" items={breadcrumbItems} />
             {/* Enhanced Topbar */}
             <div className="border-b bg-white/80 backdrop-blur-sm top-0 z-10 shadow-sm">
                 <div className="mx-auto max-w-7xl px-6 py-5">
@@ -71,7 +86,7 @@ export default function Guide() {
                         <Button
                             variant="outline"
                             className="hover:bg-gray-50 transition-colors shadow-sm border-gray-300"
-                            onClick={() => fetch()}
+                            onClick={() => fetch(true)}
                             disabled={loading}
                             aria-label="Refresh"
                         >
@@ -88,7 +103,8 @@ export default function Guide() {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
                     <GuideFilters
                         query={query}
-                        onChange={(partial) => setQuery(partial)}
+                        onChange={handleQueryChange}
+                        onPageSizeChange={handlePageSizeChange}
                         loading={loading}
                     />
                 </div>
@@ -109,10 +125,7 @@ export default function Guide() {
                         error={error}
                         sortBy={query.sortBy}
                         sortDir={query.sortDir}
-                        onSortChange={(
-                            sortBy: "status" | "name" | "email" | "companyName" | "appliedAt" | "reviewedAt" | "createdAt" | "updatedAt" | undefined,
-                            sortDir
-                        ) => setQuery({ sortBy, sortDir, page: 1 })}
+                        onSortChange={handleSortChange}
                         onApprove={(id) => approve(id)}
                         onReject={(id, reason) => reject(id, reason)}
                         onComment={(id, comment) => updateReviewComment(id, comment)}
@@ -120,8 +133,7 @@ export default function Guide() {
                         page={query.page}
                         pageSize={query.pageSize}
                         total={total}
-                        onPageChange={(page) => setQuery({ page })}
-                        onPageSizeChange={(pageSize) => setQuery({ pageSize, page: 1 })}
+                        onPageChange={handlePageChange}
                     />
                 </div>
             </div>

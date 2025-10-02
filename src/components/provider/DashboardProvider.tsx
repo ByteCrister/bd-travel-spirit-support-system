@@ -9,6 +9,7 @@ const ADMIN_ROUTES = [
   "/statistics",
   "/users",
   "/guide",
+  "/companies",
   "/customer-support",
   "/blogs-and-articles",
   "/social/banner",
@@ -25,9 +26,10 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   const pathname = usePathname();
 
   // Check if the current route should use the dashboard layout
-  const shouldUseDashboardLayout = ADMIN_ROUTES.some(route =>
-    pathname === route || pathname.startsWith(route + "/")
-  );
+  const shouldUseDashboardLayout =
+    ADMIN_ROUTES.some(
+      (route) => pathname === route || pathname.startsWith(route + "/")
+    ) || /^\/companies\/[^/]+$/.test(pathname); // matches /companies/[companyId]
 
   if (shouldUseDashboardLayout) {
     return <DashboardLayout>{children}</DashboardLayout>;

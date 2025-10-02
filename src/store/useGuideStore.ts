@@ -1,45 +1,35 @@
-// stores/useGuideStore.ts
-
-import { GUIDE_STATUS } from "@/constants/user.const";
-import { PendingGuideDTO } from "@/types/pendingGuide.types";
-import api from "@/utils/api/axios";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import api from "@/utils/api/axios";
+import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import { GUIDE_STATUS } from "@/constants/user.const";
+import { PendingGuideDTO } from "@/types/pendingGuide.types";
 
 const ROOT_DIR = "/users-management/guide";
+const CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_GUIDE_CACHE_TTL ?? 60_000);
 
-/* ============================================================
-
-* Types & Data Structures
-* ============================================================
-  */
-
-/**
-
-* Query parameters used when fetching pending guides.
-* Controls pagination, sorting, filtering, and search.
-  */
-export type QueryParams = {
-    page: number;
-    pageSize: number;
-    sortBy:
+/* ----------------------------- Types ----------------------------- */
+export type SortByTypes =
+    | "createdAt"
+    | "status"
     | "name"
     | "email"
     | "companyName"
-    | "status"
     | "appliedAt"
     | "reviewedAt"
-    | "createdAt"
     | "updatedAt";
-    sortDir: "asc" | "desc";
-    status?: GUIDE_STATUS | null; // Optional filter by approval status
-    search?: string;              // Free-text search
+
+export type SortDirTypes = "asc" | "desc";
+
+export type QueryParams = {
+    page: number;
+    pageSize: number;
+    sortBy: SortByTypes;
+    sortDir: SortDirTypes;
+    status?: GUIDE_STATUS | "";
+    search?: string;
 };
 
-/**
-
-* Standardized response shape for paginated API calls.
-  */
 export type PaginatedResponse<T> = {
     data: T[];
     total: number;
@@ -49,71 +39,36 @@ export type PaginatedResponse<T> = {
     hasPrev: boolean;
 };
 
-/**
-
-* Cache entry for a given query result.
-* Stores a list of IDs, total count, and timestamp.
-  */
 type CacheEntry = {
     ids: string[];
     total: number;
-    ts: number; // timestamp when cached
-    items: Record<string, PendingGuideDTO>; // cached items by ID
+    ts: number;
+    items: Record<string, PendingGuideDTO>;
 };
 
-/**
-
-* Zustand store state and actions for managing guides.
-  */
 type GuideStoreState = {
-    items: Record<string, PendingGuideDTO>; // All guide records, normalized by ID
-    ids: string[];                          // Current visible list of guide IDs
-    total: number;                          // Total number of guides in DB
-    query: QueryParams;                     // Current query parameters
-    loading: boolean;                       // Loading state
-    error: string | null;                   // Error message if request fails
-    cache: Record<string, CacheEntry>;      // Cached responses by serialized query
+    items: Record<string, PendingGuideDTO>;
+    ids: string[];
+    total: number;
+    query: QueryParams;
+    loading: boolean;
+    error: string | null;
+    cache: Record<string, CacheEntry>;
+    guides: PendingGuideDTO[];
+    counts: { total: number; pending: number; approved: number; rejected: number };
 
-    // Actions
     setQuery: (partial: Partial<QueryParams>) => void;
-    fetch: () => Promise<void>;
-    approve: (id: string) => Promise<void>;
-    reject: (id: string, reason?: string) => Promise<void>;
-    updateReviewComment: (id: string, reviewComment: string) => Promise<void>;
+    fetch: (force?: boolean, overrideQuery?: Partial<QueryParams>) => Promise<boolean>;
+    approve: (id: string) => Promise<boolean>;
+    reject: (id: string, reason?: string) => Promise<boolean>;
+    updateReviewComment: (id: string, reviewComment: string) => Promise<boolean>;
     invalidateCache: (key?: string) => void;
 };
 
-/* ============================================================
+/* ----------------------------- Helpers ----------------------------- */
 
-* Helpers
-* ============================================================
-  */
-
-const CACHE_TTL_MS = 60_000; // Cache entries are valid for 1 minute
-
-/**
-
-* Create a stable string key for query parameters.
-* Ensures consistent cache keys even if values are reordered.
-  */
-const stableSerializeQuery = (q: QueryParams): string => {
-    const normalized = {
-        page: q.page,
-        pageSize: q.pageSize,
-        sortBy: q.sortBy,
-        sortDir: q.sortDir,
-        status: q.status ?? undefined,
-        search: q.search ?? undefined,
-    };
-    return JSON.stringify(normalized);
-};
-
-/**
-
-* Normalize a list of guides into a dictionary keyed by ID
-* along with a separate array of IDs for ordering.
-  */
-const normalizeList = (list: PendingGuideDTO[]) => {
+// Normalize list into { items, ids }
+function normalizeList(list: PendingGuideDTO[]) {
     const items: Record<string, PendingGuideDTO> = {};
     const ids: string[] = [];
     for (const g of list) {
@@ -121,187 +76,193 @@ const normalizeList = (list: PendingGuideDTO[]) => {
         ids.push(g._id);
     }
     return { items, ids };
-};
+}
 
-/* ============================================================
+// Compute counts for status summary
+function computeCounts(items: Record<string, PendingGuideDTO>, total: number) {
+    const counts = { total, pending: 0, approved: 0, rejected: 0 };
+    Object.values(items).forEach((g) => {
+        if (g.status === GUIDE_STATUS.PENDING) counts.pending++;
+        else if (g.status === GUIDE_STATUS.APPROVED) counts.approved++;
+        else if (g.status === GUIDE_STATUS.REJECTED) counts.rejected++;
+    });
+    return counts;
+}
 
-* Zustand Store Hook
-* ============================================================
-  */
+// Cache key includes page so each page is cached separately
+function getCacheKey(query: Partial<QueryParams>): string {
+    return [
+        query.page ?? 1,
+        query.pageSize ?? 20,
+        query.sortBy ?? "createdAt",
+        query.sortDir ?? "desc",
+        query.status ?? "",
+        (query.search ?? "").trim().toLowerCase(),
+    ].join("|");
+}
+
+/* ----------------------------- Store ----------------------------- */
 export const useGuideStore = create<GuideStoreState>()(
     devtools((set, get) => ({
-        // Initial state
         items: {},
         ids: [],
         total: 0,
-        query: {
-            page: 1,
-            pageSize: 20,
-            sortBy: "createdAt",
-            sortDir: "desc",
-        },
+        query: { page: 1, pageSize: 20, sortBy: "createdAt", sortDir: "desc" },
+        guides: [],
+        counts: { total: 0, pending: 0, approved: 0, rejected: 0 },
         loading: false,
         error: null,
         cache: {},
 
-        /**
-         * Update the current query parameters (partial merge).
-         */
-        setQuery: (partial) => set((state) => ({ query: { ...state.query, ...partial } })),
+        // Update query params
+        setQuery: (partial) =>
+            set((state) => ({ query: { ...state.query, ...partial } })),
 
-        /**
-         * Fetch a list of guides from the API.
-         * Uses in-memory cache when possible to avoid redundant requests.
-         */
-        // --- fetch: use cached.items on cache hit; save items into cache after success ---
-        fetch: async () => {
+        // Unified fetch (cache-aware, force option, query override)
+        fetch: async (force = false, overrideQuery?: Partial<QueryParams>) => {
             const state = get();
-            const key = stableSerializeQuery(state.query);
-
-            // check cache before fetch
-            const cached = state.cache[key];
+            const query = { ...state.query, ...overrideQuery };
+            const key = getCacheKey(query);
             const now = Date.now();
-            if (cached && now - cached.ts < CACHE_TTL_MS) {
-                // restore both ids AND items so guides array can be built
-                set({
-                    items: { ...state.items, ...cached.items },
-                    ids: cached.ids,
-                    total: cached.total,
-                    loading: false,
-                    error: null,
-                });
-                return;
+
+            set({ query });
+
+            // Use cache if valid and not forcing
+            if (!force) {
+                const cached = state.cache[key];
+                if (cached && now - cached.ts < CACHE_TTL_MS) {
+                    set({
+                        items: cached.items,
+                        ids: cached.ids,
+                        total: cached.total,
+                        guides: cached.ids.map((id) => cached.items[id]),
+                        counts: computeCounts(cached.items, cached.total),
+                        loading: false,
+                        error: null,
+                    });
+                    return true;
+                }
             }
 
+            // Otherwise call API
             set({ loading: true, error: null });
             try {
-                const res = await api.get<PaginatedResponse<PendingGuideDTO>>(
-                    `${ROOT_DIR}`,
-                    { params: state.query }
-                );
-
+                const res = await api.get<PaginatedResponse<PendingGuideDTO>>(ROOT_DIR, {
+                    params: query,
+                });
                 const { items, ids } = normalizeList(res.data.data);
+                const counts = computeCounts(items, res.data.total);
 
                 set((prev) => ({
-                    items: { ...prev.items, ...items },
+                    items,
                     ids,
                     total: res.data.total,
+                    guides: ids.map((id) => items[id]),
+                    counts,
                     loading: false,
                     error: null,
                     cache: {
                         ...prev.cache,
-                        [key]: { ids, total: res.data.total, ts: now, items }, // <-- store items in cache
+                        [key]: { ids, total: res.data.total, ts: now, items },
                     },
                 }));
-            } catch (err: unknown) {
-                const errorMessage =
-                    err instanceof Error ? err.message : "Unknown error";
-                set({ error: errorMessage, loading: false });
+                return true;
+            } catch (err) {
+                set({ error: extractErrorMessage(err), loading: false });
+                return false;
             }
         },
 
-
-        /**
-         * Approve a pending guide by ID.
-         * Updates local state and invalidates cache.
-         */
-        approve: async (id: string) => {
-            set({ loading: true, error: null });
+        // Approve guide and update cache
+        approve: async (id) => {
             try {
-                await api.put(`${ROOT_DIR}/${id}/status`, {
-                    status: "APPROVED",
+                await api.put(`${ROOT_DIR}/${id}/status`, { status: "APPROVED" });
+                set((state) => {
+                    const updated = {
+                        ...state.items[id],
+                        status: GUIDE_STATUS.APPROVED,
+                        updatedAt: new Date().toISOString(),
+                    };
+                    const key = getCacheKey(state.query);
+                    const cacheEntry = state.cache[key];
+                    if (cacheEntry) cacheEntry.items[id] = updated;
+                    return {
+                        items: { ...state.items, [id]: updated },
+                        cache: { ...state.cache, [key]: cacheEntry },
+                    };
                 });
-                set((state) => ({
-                    items: {
-                        ...state.items,
-                        [id]: {
-                            ...state.items[id],
-                            status: GUIDE_STATUS.APPROVED,
-                            updatedAt: new Date().toISOString(),
-                        },
-                    },
-                    loading: false,
-                }));
-                get().invalidateCache();
-            } catch (err: unknown) {
-                const errorMessage =
-                    err instanceof Error ? err.message : "Unknown error";
-                set({ error: errorMessage, loading: false });
+                return true;
+            } catch (err) {
+                set({ error: extractErrorMessage(err) });
+                return false;
             }
         },
 
-        /**
-         * Reject a pending guide by ID, optionally with a reason.
-         * Updates local state and invalidates cache.
-         */
-        reject: async (id: string, reason: string) => {
-            set({ loading: true, error: null });
+        // Reject guide and update cache
+        reject: async (id, reason) => {
             try {
                 await api.put(`${ROOT_DIR}/${id}/status`, {
                     status: "REJECTED",
                     reason,
                 });
-                set((state) => ({
-                    items: {
-                        ...state.items,
-                        [id]: {
-                            ...state.items[id],
-                            status: GUIDE_STATUS.REJECTED,
-                            reviewComment: reason,
-                            updatedAt: new Date().toISOString(),
-                        },
-                    },
-                    loading: false,
-                }));
-                get().invalidateCache();
-            } catch (err: unknown) {
-                const errorMessage =
-                    err instanceof Error ? err.message : "Unknown error";
-                set({ error: errorMessage, loading: false });
+                set((state) => {
+                    const updated = {
+                        ...state.items[id],
+                        status: GUIDE_STATUS.REJECTED,
+                        reviewComment: reason,
+                        updatedAt: new Date().toISOString(),
+                    };
+                    const key = getCacheKey(state.query);
+                    const cacheEntry = state.cache[key];
+                    if (cacheEntry) cacheEntry.items[id] = updated;
+                    return {
+                        items: { ...state.items, [id]: updated },
+                        cache: { ...state.cache, [key]: cacheEntry },
+                    };
+                });
+                return true;
+            } catch (err) {
+                set({ error: extractErrorMessage(err) });
+                return false;
             }
         },
 
-        /**
-         * Update the review comment for a guide without changing its status.
-         */
+        // Update review comment and cache
         updateReviewComment: async (id, reviewComment) => {
-            set({ loading: true, error: null });
             try {
-                await api.post(
-                    `${ROOT_DIR}/${id}/review-comment`,
-                    { reviewComment }
-                );
-                set((state) => ({
-                    items: {
-                        ...state.items,
-                        [id]: {
-                            ...state.items[id],
-                            reviewComment,
-                            updatedAt: new Date().toISOString(),
-                        },
-                    },
-                    loading: false,
-                }));
-                get().invalidateCache();
-            } catch (err: unknown) {
-                const errorMessage =
-                    err instanceof Error ? err.message : "Unknown error";
-                set({ error: errorMessage, loading: false });
+                await api.post(`${ROOT_DIR}/${id}/review-comment`, { reviewComment });
+                set((state) => {
+                    const updated = {
+                        ...state.items[id],
+                        reviewComment,
+                        updatedAt: new Date().toISOString(),
+                    };
+                    const key = getCacheKey(state.query);
+                    const cacheEntry = state.cache[key];
+                    if (cacheEntry) cacheEntry.items[id] = updated;
+                    return {
+                        items: { ...state.items, [id]: updated },
+                        cache: { ...state.cache, [key]: cacheEntry },
+                    };
+                });
+                return true;
+            } catch (err) {
+                set({ error: extractErrorMessage(err) });
+                return false;
             }
         },
 
-        /**
-         * Invalidate cached results.
-         * - If a specific key is passed, removes only that entry.
-         * - If no key is passed, clears the entire cache.
-         */
-        invalidateCache: (key) =>
-            set((state) => {
-                if (!key) return { cache: {} };
-                const next = { ...state.cache };
-                delete next[key];
-                return { cache: next };
-            }),
-
+        // Invalidate cache (all or specific key)
+        invalidateCache: (key) => {
+            if (!key) {
+                set({ cache: {} });
+            } else {
+                set((state) => {
+                    const newCache = { ...state.cache };
+                    delete newCache[key];
+                    return { cache: newCache };
+                });
+            }
+        },
     }))
 );

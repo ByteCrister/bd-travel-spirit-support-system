@@ -201,3 +201,42 @@
     transform: translateY(-3px);
   }
 }
+
+
+
+/* Firefox (uncomment to work in Firefox, although other properties will not work!)  */
+/** {
+  scrollbar-width: thin;
+  scrollbar-color: #727272 #F2FDFF;
+}*/
+
+/* Chrome, Edge and Safari */
+*::-webkit-scrollbar {
+  height: 4px;
+  width: 4px;
+}
+*::-webkit-scrollbar-track {
+  border-radius: 2px;
+  background-color: #F2FDFF;
+}
+
+*::-webkit-scrollbar-track:hover {
+  background-color: #F2FCFF;
+}
+
+*::-webkit-scrollbar-track:active {
+  background-color: #F2FCFF;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background-color: #727272;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #8AA5FF;
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background-color: #8AA5FF;
+}

@@ -14,14 +14,15 @@ import React from "react";
 
 type BreadcrumbsProps = {
     items: Crumb[];
+    className?: string;
 };
 
-export function Breadcrumbs({ items }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
     const breadcrumbs = useBreadcrumbs(items);
 
     return (
         <Breadcrumb>
-            <BreadcrumbList>
+            <BreadcrumbList className={className}>
                 {breadcrumbs.map(({ href, label }, index) => {
                     const isLast = index === breadcrumbs.length - 1;
 

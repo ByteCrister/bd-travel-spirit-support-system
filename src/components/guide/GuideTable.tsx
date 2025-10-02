@@ -5,10 +5,8 @@ import { useState } from "react";
 import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/pendingGuide.types";
 import { GUIDE_STATUS } from "@/constants/user.const";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RejectReasonModal, ReviewCommentModal } from "../../components/guide/GuideModals";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -20,10 +18,10 @@ import {
     FiXCircle,
     FiMessageSquare,
     FiClock,
-    FiDownload,
     FiUser,
     FiMail,
     FiBriefcase,
+    FiInfo,
 } from "react-icons/fi";
 import {
     HiChevronUp,
@@ -32,18 +30,22 @@ import {
 } from "react-icons/hi";
 import { BiSort } from "react-icons/bi";
 import { AiOutlineInbox } from "react-icons/ai";
-import { BsFileEarmarkText, BsFileEarmarkPdf } from "react-icons/bs";
+import { BsFileEarmarkText } from "react-icons/bs";
 import { TableSkeleton } from "./TableSkeleton";
+import { SortByTypes, SortDirTypes } from "@/store/useGuideStore";
+import { GuideDetailsDialog } from "./GuideDetailsDialog";
+import StatusBadge from "./StatusBadge";
+import DocumentsPopover from "./DocumentsPopover";
 
 type Props = {
     guides: PendingGuideDTO[];
     loading?: boolean;
     error?: string | null;
-    sortBy: "status" | "name" | "email" | "companyName" | "appliedAt" | "reviewedAt" | "createdAt" | "updatedAt" | undefined;
-    sortDir: "asc" | "desc";
+    sortBy: SortByTypes;
+    sortDir: SortDirTypes;
     onSortChange: (
-        sortBy: "status" | "name" | "email" | "companyName" | "appliedAt" | "reviewedAt" | "createdAt" | "updatedAt" | undefined,
-        sortDir: "asc" | "desc"
+        sortBy: SortByTypes,
+        sortDir: SortDirTypes,
     ) => void;
     onApprove: (id: string) => void;
     onReject: (id: string, reason: string) => void;
@@ -53,113 +55,6 @@ type Props = {
     pageSize: number;
     total: number;
     onPageChange: (page: number) => void;
-    onPageSizeChange: (pageSize: number) => void;
-};
-
-const statusConfig = {
-    [GUIDE_STATUS.PENDING]: {
-        label: "Pending",
-        className: "bg-amber-50 text-amber-700 border border-amber-200",
-        icon: FiClock,
-        dotColor: "bg-amber-500"
-    },
-    [GUIDE_STATUS.APPROVED]: {
-        label: "Approved",
-        className: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-        icon: FiCheckCircle,
-        dotColor: "bg-emerald-500"
-    },
-    [GUIDE_STATUS.REJECTED]: {
-        label: "Rejected",
-        className: "bg-red-50 text-red-700 border border-red-200",
-        icon: FiXCircle,
-        dotColor: "bg-red-500"
-    },
-};
-
-const StatusBadge = ({ status }: { status: GUIDE_STATUS }) => {
-    const config = statusConfig[status];
-    const Icon = config.icon;
-
-    return (
-        <Badge className={cn("px-2.5 py-1 font-medium", config.className)}>
-            <div className="flex items-center gap-1.5">
-                <div className={cn("h-1.5 w-1.5 rounded-full", config.dotColor)} />
-                <Icon className="h-3 w-3" />
-                <span className="text-xs">{config.label}</span>
-            </div>
-        </Badge>
-    );
-};
-
-const DocumentsPopover = ({
-    guide,
-    onOpenDocument
-}: {
-    guide: PendingGuideDTO;
-    onOpenDocument: (guide: PendingGuideDTO, doc: PendingGuideDocumentDTO) => void;
-}) => {
-    const [open, setOpen] = useState(false);
-    const documents = guide.documents || [];
-
-    if (documents.length === 0) {
-        return (
-            <div className="flex items-center justify-center">
-                <span className="text-xs text-gray-400">No documents</span>
-            </div>
-        );
-    }
-
-    return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <button className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 transition-all">
-                    <HiDocumentText className="h-4 w-4 text-gray-500 group-hover:text-blue-600" />
-                    <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700">
-                        {documents.length} {documents.length === 1 ? 'file' : 'files'}
-                    </span>
-                </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
-                <div className="p-3 border-b border-gray-100 bg-gray-50">
-                    <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                        <BsFileEarmarkText className="h-4 w-4 text-gray-500" />
-                        Attached Documents
-                    </h4>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                        {documents.length} {documents.length === 1 ? 'document' : 'documents'} uploaded
-                    </p>
-                </div>
-                <div className="p-2 max-h-64 overflow-y-auto">
-                    {documents.map((doc, idx) => (
-                        <motion.button
-                            key={`${idx}-${doc.fileName}`}
-                            onClick={() => {
-                                onOpenDocument(guide, doc);
-                                setOpen(false);
-                            }}
-                            whileHover={{ scale: 1.01 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
-                        >
-                            <div className="flex-shrink-0 p-2 rounded-lg bg-blue-50 border border-blue-100 group-hover:bg-blue-100 group-hover:border-blue-200 transition-colors">
-                                <BsFileEarmarkPdf className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div className="flex-1 text-left min-w-0">
-                                <p className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-700 transition-colors">
-                                    {doc.fileName}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-0.5">
-                                    Click to view
-                                </p>
-                            </div>
-                            <FiDownload className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0" />
-                        </motion.button>
-                    ))}
-                </div>
-            </PopoverContent>
-        </Popover>
-    );
 };
 
 export function GuideTable({
@@ -179,6 +74,7 @@ export function GuideTable({
 }: Props) {
     const [rejectId, setRejectId] = useState<string | null>(null);
     const [commentId, setCommentId] = useState<string | null>(null);
+    const [detailGuide, setDetailGuide] = useState<PendingGuideDTO | undefined>(undefined);
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const canPrev = page > 1;
@@ -374,41 +270,59 @@ export function GuideTable({
                                             </TableCell>
                                             <TableCell className="py-3">
                                                 <div className="flex items-center gap-2">
-                                                    <button
+                                                    {/* Approve */}
+                                                    <Button
                                                         onClick={() => onApprove(g._id)}
                                                         disabled={g.status !== GUIDE_STATUS.PENDING}
                                                         title="Approve request"
+                                                        variant="outline"
+                                                        size="icon"
                                                         className={cn(
-                                                            "group p-2 rounded-lg border transition-all",
                                                             g.status === GUIDE_STATUS.PENDING
-                                                                ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-sm"
+                                                                ? "border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                                                                 : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
                                                         )}
                                                     >
                                                         <FiCheckCircle className="h-4 w-4" />
-                                                    </button>
+                                                    </Button>
 
-                                                    <button
+                                                    {/* Reject */}
+                                                    <Button
                                                         onClick={() => setRejectId(g._id)}
                                                         disabled={g.status !== GUIDE_STATUS.PENDING}
                                                         title="Reject request"
+                                                        variant="outline"
+                                                        size="icon"
                                                         className={cn(
-                                                            "group p-2 rounded-lg border transition-all",
                                                             g.status === GUIDE_STATUS.PENDING
-                                                                ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-300 hover:shadow-sm"
+                                                                ? "border-red-300 text-red-700 hover:bg-red-50"
                                                                 : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
                                                         )}
                                                     >
                                                         <FiXCircle className="h-4 w-4" />
-                                                    </button>
+                                                    </Button>
 
-                                                    <button
+                                                    {/* Comment */}
+                                                    <Button
                                                         onClick={() => setCommentId(g._id)}
                                                         title="Add comment"
-                                                        className="group p-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:shadow-sm transition-all"
+                                                        variant="outline"
+                                                        size="icon"
+                                                        className="border-blue-300 text-blue-700 hover:bg-blue-50"
                                                     >
                                                         <FiMessageSquare className="h-4 w-4" />
-                                                    </button>
+                                                    </Button>
+
+                                                    {/* Details */}
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        className="h-9 w-9 border-gray-300 hover:bg-gray-50"
+                                                        title="View details"
+                                                        onClick={() => setDetailGuide(g)}
+                                                    >
+                                                        <FiInfo className="h-4 w-4 text-gray-700" />
+                                                    </Button>
                                                 </div>
                                             </TableCell>
                                         </motion.tr>
@@ -480,6 +394,16 @@ export function GuideTable({
                     if (commentId) onComment(commentId, comment);
                     setCommentId(null);
                 }}
+            />
+
+            <GuideDetailsDialog
+                open={!!detailGuide}
+                guide={detailGuide}
+                onClose={() => setDetailGuide(undefined)}
+                onApprove={onApprove}
+                onReject={onReject}
+                onComment={onComment}
+                onOpenDocument={onOpenDocument}
             />
         </div>
     );
