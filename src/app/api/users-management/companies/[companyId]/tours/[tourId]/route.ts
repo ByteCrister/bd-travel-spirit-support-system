@@ -79,7 +79,7 @@ export async function GET(
     const bookingCount = faker.number.int({ min: 0, max: maxGroupSize });
 
     const tour: TourDetailDTO = {
-        id: params.tourId,
+        id: (await params).tourId,
         title: faker.lorem.words(4),
         slug: faker.lorem.slug(),
         status: randomEnum(Object.values(TOUR_STATUS)),

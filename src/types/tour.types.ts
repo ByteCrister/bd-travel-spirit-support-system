@@ -278,6 +278,7 @@ export interface TourListItemDTO {
     // Quality & demand
     averageRating: number;
     reviewCount: number;
+    reportCount: number;
     bookingCount: number;
     maxGroupSize: number;
     isFull: boolean;
@@ -323,6 +324,8 @@ export type TourTableColumns =
     | "durationDays"
     | "averageRating"
     | "bookingCount"
+    | "reviewCount"
+    | "reportCount"
     | "maxGroupSize"
     | "isFull"
     | "priceSummary"

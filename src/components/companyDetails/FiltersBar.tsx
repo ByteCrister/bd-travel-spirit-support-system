@@ -1,4 +1,5 @@
 // components/company/FiltersBar.tsx
+
 "use client";
 
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+
 import {
     MdSearch,
     MdSort,
@@ -16,6 +18,7 @@ import {
     MdClose,
     MdFilterList
 } from "react-icons/md";
+
 import { SortableTourKeys } from "@/types/tour.types";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -23,19 +26,14 @@ type TabKey = "tours" | "employees";
 
 interface Props {
     activeTab: TabKey;
-
     search: string;
     onSearch: (v: string) => void;
-
     limit: number;
     onLimitChange: (v: number) => void;
-
     sortOrder: "asc" | "desc";
     onSortOrderChange: (v: "asc" | "desc") => void;
-
     sortKey: SortableTourKeys;
     onSortKeyChange: (v: SortableTourKeys) => void;
-
     employeeSortKey: string;
     onEmployeeSortKeyChange: (v: string) => void;
 }
@@ -86,7 +84,6 @@ export function FiltersBar({
 
     return (
         <div className="space-y-4">
-
             {/* Main Filters Grid */}
             <div className="grid grid-cols-12 gap-5 items-end">
                 {/* Search Input */}
@@ -100,12 +97,14 @@ export function FiltersBar({
                         <div className="h-1 w-1 rounded-full bg-blue-600 dark:bg-blue-400" />
                         Search
                     </Label>
+
                     <div className="relative group">
                         <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-blue-500/10 rounded-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 blur transition-all duration-300" />
                         <div className="relative">
                             <div className="absolute left-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-md bg-blue-600/10">
                                 <MdSearch className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                             </div>
+
                             <Input
                                 id="search"
                                 value={search}
@@ -113,6 +112,7 @@ export function FiltersBar({
                                 placeholder={activeTab === "tours" ? "Search tours..." : "Search employees..."}
                                 className="pl-11 pr-10 h-11 transition-all duration-200"
                             />
+
                             <AnimatePresence>
                                 {search && (
                                     <motion.div
@@ -149,11 +149,13 @@ export function FiltersBar({
                         <div className="h-1 w-1 rounded-full bg-violet-500" />
                         Sort by
                     </Label>
+
                     <div className="relative group">
                         <div className="relative">
                             <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none flex h-7 w-7 items-center justify-center rounded-md bg-violet-500/10">
                                 <MdSort className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                             </div>
+
                             {activeTab === "tours" ? (
                                 <Select value={sortKey} onValueChange={(v) => onSortKeyChange(v as SortableTourKeys)}>
                                     <SelectTrigger id="sort-by" className="pl-11 h-11 transition-all duration-200">
@@ -201,17 +203,18 @@ export function FiltersBar({
 
                 {/* Order & Limit */}
                 <motion.div
-                    className="col-span-12 md:col-span-3 grid grid-cols-12 gap-5"
+                    className="col-span-12 md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-14"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
                 >
                     {/* Order */}
-                    <div className="col-span-12 md:col-span-6 space-y-2">
+                    <div className="space-y-2">
                         <Label htmlFor="sort-order" className="text-sm font-medium flex items-center gap-2">
                             <div className="h-1 w-1 rounded-full bg-emerald-500" />
                             Order
                         </Label>
+
                         <Select value={sortOrder} onValueChange={(v) => onSortOrderChange(v as "asc" | "desc")}>
                             <SelectTrigger id="sort-order" className="h-11 transition-all duration-200">
                                 <SelectValue />
@@ -234,11 +237,12 @@ export function FiltersBar({
                     </div>
 
                     {/* Limit */}
-                    <div className="col-span-12 md:col-span-6 space-y-2">
+                    <div className="space-y-2">
                         <Label htmlFor="limit" className="text-sm font-medium flex items-center gap-2">
                             <div className="h-1 w-1 rounded-full bg-amber-500" />
                             Show
                         </Label>
+
                         <Select value={String(limit)} onValueChange={(v) => onLimitChange(Number(v))}>
                             <SelectTrigger id="limit" className="h-11 transition-all duration-200">
                                 <SelectValue />
@@ -275,7 +279,9 @@ export function FiltersBar({
                                         Active Filters
                                     </span>
                                 </div>
+
                                 <Separator orientation="vertical" className="h-5" />
+
                                 <div className="flex flex-wrap items-center gap-2">
                                     <Badge
                                         variant="secondary"
@@ -284,6 +290,7 @@ export function FiltersBar({
                                         <MdSearch className="h-3.5 w-3.5" />
                                         <span className="max-w-[180px] truncate">{search}</span>
                                     </Badge>
+
                                     <Badge
                                         variant="secondary"
                                         className="gap-1.5 rounded-md border-violet-200 dark:border-violet-800/50 bg-violet-100/50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 font-medium shadow-sm"
@@ -291,6 +298,7 @@ export function FiltersBar({
                                         <MdSort className="h-3.5 w-3.5" />
                                         {getSortLabel(activeTab === "tours" ? sortKey : employeeSortKey)}
                                     </Badge>
+
                                     <Badge
                                         variant="secondary"
                                         className="gap-1.5 rounded-md border-emerald-200 dark:border-emerald-800/50 bg-emerald-100/50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 font-medium shadow-sm"
@@ -302,6 +310,7 @@ export function FiltersBar({
                                         )}
                                         {sortOrder === "asc" ? "Ascending" : "Descending"}
                                     </Badge>
+
                                     <Badge
                                         variant="secondary"
                                         className="gap-1.5 rounded-md border-amber-200 dark:border-amber-800/50 bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium shadow-sm"
@@ -310,6 +319,7 @@ export function FiltersBar({
                                         {limit} items
                                     </Badge>
                                 </div>
+
                                 <Button
                                     variant="ghost"
                                     size="sm"

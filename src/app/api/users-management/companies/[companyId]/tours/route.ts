@@ -32,6 +32,7 @@ function generateFakeTour(): TourListItemDTO {
         durationDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
         averageRating: faker.number.float({ min: 3, max: 5, fractionDigits: 1 }),
         reviewCount: faker.number.int({ min: 0, max: 300 }),
+        reportCount: faker.number.int({ min: 0, max: 300 }),
         bookingCount,
         maxGroupSize,
         isFull: bookingCount >= maxGroupSize,
@@ -93,7 +94,7 @@ export async function GET(req: NextRequest, { params }: { params: { companyId: s
 
     // --- Return paginated response ---
     return NextResponse.json({
-        companyId: await params.companyId,
+        companyId: (await params).companyId,
         data: {
             docs: pagedTours,
             total,

@@ -2,9 +2,9 @@ import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import api from "@/utils/api/axios";
 import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
-import { TourDetailDTO } from "@/types/company.tour.detail.types";
-import { ReviewDetailDTO } from "@/types/reviews.types";
-import { ReportDetailDTO } from "@/types/reports.types";
+import { ReviewDetailDTO } from "@/types/review.types";
+import { ReportDetailDTO } from "@/types/report.types";
+import { TourDetailDTO } from "@/types/tour.types";
 
 const ROOT_DIR = "/users-management/companies";
 

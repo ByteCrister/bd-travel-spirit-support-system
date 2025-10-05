@@ -40,7 +40,7 @@ export default function CompanyOverviewPage({ companyId }: Props) {
 
     return (
         <div className="min-h-screen bg-background">
-            <div className="mx-auto max-w-[1400px] space-y-6 px-4 py-6 md:px-6 md:py-8">
+            <div className="mx-auto max-w-[1400px] space-y-6">
                 {/* Header Section */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
@@ -48,7 +48,7 @@ export default function CompanyOverviewPage({ companyId }: Props) {
                     transition={{ duration: 0.4, ease: "easeOut" }}
                 >
                     <div className="flex items-start justify-between gap-4">
-                         <div className="flex items-start gap-4">
+                        <div className="flex items-start gap-4">
                             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg shadow-blue-500/30 dark:shadow-blue-500/20">
                                 <MdBusiness className="h-8 w-8 text-white" />
                             </div>
@@ -142,8 +142,8 @@ export default function CompanyOverviewPage({ companyId }: Props) {
                                                 <span>{config.label}</span>
                                                 {config.count !== undefined && (
                                                     <span className={`ml-1 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${isActive
-                                                            ? 'bg-primary/10 text-primary'
-                                                            : 'bg-muted-foreground/10 text-muted-foreground'
+                                                        ? 'bg-primary/10 text-primary'
+                                                        : 'bg-muted-foreground/10 text-muted-foreground'
                                                         }`}>
                                                         {config.count}
                                                     </span>
@@ -191,6 +191,8 @@ export default function CompanyOverviewPage({ companyId }: Props) {
                                                 />
                                             ) : (
                                                 <ToursTable
+                                                    companyId={companyId}
+                                                    fetchTourDetail={overview.handleFetchTourDetail}
                                                     items={overview.filteredTours}
                                                     total={overview.toursList?.total ?? 0}
                                                     page={overview.toursList?.page ?? 1}
@@ -226,6 +228,7 @@ export default function CompanyOverviewPage({ companyId }: Props) {
                                                 />
                                             ) : (
                                                 <EmployeesTable
+                                                    fetchEmployeeDetail={overview.handleFetchEmployeeDetail}
                                                     items={overview.filteredEmployees}
                                                     total={overview.employeesList?.total ?? 0}
                                                     page={overview.employeesList?.page ?? 1}
@@ -239,6 +242,7 @@ export default function CompanyOverviewPage({ companyId }: Props) {
                                                         sort: overview.employeeSortKey,
                                                         order: overview.sortOrder
                                                     })}
+
                                                 />
                                             )}
                                         </motion.div>

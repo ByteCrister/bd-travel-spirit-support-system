@@ -26,6 +26,8 @@ export function useCompanyOverview(companyId: string) {
     const {
         fetchCompany,
         fetchTours,
+        fetchTourDetail,
+        fetchEmployeeDetail,
         fetchEmployees,
         listCache,
         activeCacheKey,
@@ -135,6 +137,13 @@ export function useCompanyOverview(companyId: string) {
         setEmployeeSortKey(v as SortableEmployeeKeys);
     };
 
+    const handleFetchEmployeeDetail = async (employeeId: string, force?: boolean) => {
+        return await fetchEmployeeDetail(companyId, employeeId, force);
+    }
+    const handleFetchTourDetail = async (employeeId: string, force?: boolean) => {
+        return await fetchTourDetail(companyId, employeeId, force);
+    }
+
     return {
         activeTab,
         setActiveTab,
@@ -152,8 +161,10 @@ export function useCompanyOverview(companyId: string) {
         filteredTours,
         filteredEmployees,
         fetchTours,
+        handleFetchTourDetail,
         toursList,
         fetchEmployees,
+        handleFetchEmployeeDetail,
         employeesList,
         employeeCacheKey,
         loading,
@@ -162,6 +173,6 @@ export function useCompanyOverview(companyId: string) {
         handleRefresh,
         isCompanyLoading,
         isToursLoading,
-        isEmployeesLoading
+        isEmployeesLoading,
     };
 }

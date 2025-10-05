@@ -1,5 +1,6 @@
 // models/report.model.ts
 
+import { REPORT_PRIORITY, REPORT_REASON, REPORT_STATUS } from "@/constants/report.const";
 import mongoose, {
     Schema,
     model,
@@ -10,36 +11,6 @@ import mongoose, {
     FilterQuery,
     CallbackWithoutResultAndOptionalError,
 } from "mongoose";
-
-////////////////////////////////////////////////////////////////////////////////
-// ENUMS: Workflow states, reasons, and priorities
-////////////////////////////////////////////////////////////////////////////////
-
-/** Stages in the report review lifecycle */
-export enum REPORT_STATUS {
-    OPEN = "open",       // Newly created, awaiting triage
-    IN_REVIEW = "in_review",  // Assigned & being investigated
-    RESOLVED = "resolved",   // Issue addressed and closed
-    REJECTED = "rejected",   // Found invalid or out of scope
-}
-
-/** Standardized reasons for reporting */
-export enum REPORT_REASON {
-    FALSE_DESCRIPTION = "false_description",       // Info was misleading
-    LATE_PICKUP = "late_pickup",             // Start was delayed
-    SAFETY_ISSUE = "safety_issue",            // Hazard reported
-    UNPROFESSIONAL_GUIDE = "unprofessional_guide",    // Staff conduct
-    BILLING_PROBLEM = "billing_problem",         // Payment dispute
-    OTHER = "other",                   // Misc / uncategorized
-}
-
-/** Triage priority levels */
-export enum REPORT_PRIORITY {
-    LOW = "low",    // Handled in routine order
-    NORMAL = "normal", // Standard processing
-    HIGH = "high",   // Urgent attention
-    URGENT = "urgent", // Immediate action required
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // INTERFACE: The shape of a Report document

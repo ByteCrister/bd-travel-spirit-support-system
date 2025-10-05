@@ -1,69 +1,66 @@
-// /api/users-management/companies/[companyId]/tours/[tourId]/reports/route.ts
+// /app/api/users-management/companies/[companyId]/tours/[tourId]/reports/route.ts
 import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
-import { ReportsPageDTO, ReportListItemDTO } from "@/types/reports.types";
+import { REPORT_PRIORITY, REPORT_REASON, REPORT_STATUS } from "@/constants/report.const";
+import { TourReportListItemDTO } from "@/types/report.tour.response.types";
 
-// Match enums exactly to DTOs
-const reasons: ReportListItemDTO["reason"][] = [
-    "false_description",
-    "late_pickup",
-    "safety_issue",
-    "unprofessional_guide",
-    "billing_problem",
-    "other",
-];
-
-const statuses: ReportListItemDTO["status"][] = [
-    "open",
-    "in_review",
-    "resolved",
-    "rejected",
-];
-
-const priorities: ReportListItemDTO["priority"][] = [
-    "low",
-    "normal",
-    "high",
-    "urgent",
-];
+// enum arrays for faker
+const reasons = Object.values(REPORT_REASON);
+const statuses = Object.values(REPORT_STATUS);
+const priorities = Object.values(REPORT_PRIORITY);
 
 export async function GET(
     req: Request,
     { params }: { params: { companyId: string; tourId: string } }
 ) {
-    // Generate 5–10 fake reports with variations
-    const reports: ReportListItemDTO[] = Array.from(
-        { length: faker.number.int({ min: 0, max: 200 }) },
-        () => {
-            const createdAt = faker.date.past();
-            return {
-                id: faker.database.mongodbObjectId(),
-                reporterId: faker.database.mongodbObjectId(),
-                tourId: params.tourId,
-                reason: faker.helpers.arrayElement(reasons),
-                messageExcerpt: faker.lorem.sentence({ min: 5, max: 15 }),
-                status: faker.helpers.arrayElement(statuses),
-                priority: faker.helpers.arrayElement(priorities),
-                reopenedCount: faker.number.int({ min: 0, max: 3 }),
-                createdAt: createdAt.toISOString(),
-                updatedAt: faker.date.between({
-                    from: createdAt,
-                    to: new Date(),
-                }).toISOString(),
-            };
-        }
-    );
+    const url = new URL(req.url);
+    const page = Number(url.searchParams.get("page") ?? "1");
+    const limit = Number(url.searchParams.get("limit") ?? "10");
 
-    const dto: ReportsPageDTO = {
-        companyId: params.companyId,
-        tourId: params.tourId,
-        table: {
-            docs: reports,
-            total: reports.length,
-            page: 1,
-            pages: 1,
+    const { tourId } = await params;
+
+    // total count can be large; simulate with a reasonable upper bound
+    const total = faker.number.int({ min: 0, max: 200 });
+
+    // build page of fake items
+    const start = (page - 1) * limit;
+    const count = Math.max(0, Math.min(limit, total - start));
+
+    const docs: TourReportListItemDTO[] = Array.from({ length: count }, () => {
+        const createdAt = faker.date.past();
+        const updatedAt = faker.date.between({ from: createdAt, to: new Date() });
+        const lastActivityAt = faker.date.between({ from: createdAt, to: new Date() });
+
+        return {
+            id: faker.database.mongodbObjectId(),
+            reporterId: faker.database.mongodbObjectId(),
+            reporterName: faker.person.fullName(),
+            tourId: tourId,
+            tourTitle: faker.lorem.words({ min: 2, max: 4 }),
+            reason: faker.helpers.arrayElement(reasons) as REPORT_REASON,
+            messageExcerpt: faker.lorem.sentence({ min: 6, max: 20 }),
+            status: faker.helpers.arrayElement(statuses) as REPORT_STATUS,
+            priority: faker.helpers.arrayElement(priorities) as REPORT_PRIORITY,
+            assignedToId: faker.datatype.boolean() ? faker.database.mongodbObjectId() : null,
+            assignedToName: faker.datatype.boolean() ? faker.person.fullName() : null,
+            reopenedCount: faker.number.int({ min: 0, max: 5 }),
+            createdAt: createdAt.toISOString(),
+            updatedAt: updatedAt.toISOString(),
+            lastActivityAt: lastActivityAt.toISOString(),
+            flags: faker.datatype.boolean() ? ["escalated"] : [],
+            evidenceCount: faker.number.int({ min: 0, max: 6 }),
+        };
+    });
+
+    const pages = Math.max(1, Math.ceil(total / limit));
+
+    // response shape expected by your hook: res.data.data.docs
+    return NextResponse.json({
+        data: {
+            docs,
+            total,
+            page,
+            pages,
         },
-    };
-
-    return NextResponse.json({ data: dto });
+    });
 }

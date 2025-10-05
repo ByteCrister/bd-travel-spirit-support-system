@@ -1,19 +1,22 @@
-import { TRIP_TYPE } from "../constants/review.const";
+// reviews.dto.ts
+// DTOs for the reviews page: /companies/[companyId]/reviews
+// Includes table rows and a detailed view for moderation workflows.
+
+import { TRAVEL_TYPE } from "@/constants/tour.const";
 
 /**
- * Review DTO for frontend
+ * Table row for Reviews section.
+ * Focus: moderation state, rating, helpfulness, and trip context.
  */
-export interface ReviewDTO {
+interface BaseReviewDTO {
     id: string;
     tourId: string;
     userId: string;
 
-    rating: number;          // 1–5
+    rating: number;
     title?: string;
-    comment: string;
 
-    images: string[];
-    tripType?: TRIP_TYPE;
+    tripType?: TRAVEL_TYPE;
     travelDate?: string;
 
     isVerified: boolean;
@@ -23,3 +26,22 @@ export interface ReviewDTO {
     createdAt: string;
     updatedAt: string;
 }
+
+export interface ReviewDetailDTO extends BaseReviewDTO {
+    comment: string;
+    imageIds?: string[];
+}
+
+
+/**
+ * Optional table column hints for Reviews.
+ */
+export type ReviewTableColumns =
+    | "rating"
+    | "title"
+    | "commentExcerpt"
+    | "tripType"
+    | "isVerified"
+    | "isApproved"
+    | "helpfulCount"
+    | "createdAt";

@@ -126,14 +126,12 @@ export async function GET(
     const pagedEmployees = employees.slice(start, end);
 
     return NextResponse.json({
+        companyId: (await params).companyId,
         data: {
-            companyId: await params.companyId,
-            table: {
-                docs: pagedEmployees,
-                total,
-                page,
-                pages,
-            },
+            docs: pagedEmployees,
+            total,
+            page,
+            pages,
         },
     });
 }
