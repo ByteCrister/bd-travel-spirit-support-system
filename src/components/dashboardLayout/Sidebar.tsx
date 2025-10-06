@@ -15,6 +15,7 @@ import {
   FiX,
   FiChevronRight
 } from "react-icons/fi";
+import { FaUsers } from "react-icons/fa";
 import { HiOutlineChartSquareBar } from 'react-icons/hi';
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ const navigationGroups: NavGroup[] = [
       { href: "/users", label: "Users", icon: ShieldCheck },
       { href: "/guide", label: "Guide", icon: MdTravelExplore },
       { href: "/companies", label: "Companies", icon: MdBusiness },
+      { href: "/employees", label: "Employees", icon: FaUsers },
     ],
   },
   {
