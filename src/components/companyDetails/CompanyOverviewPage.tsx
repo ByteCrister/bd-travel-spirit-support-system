@@ -15,6 +15,8 @@ import { useCompanyOverview } from "@/hooks/useCompanyOverview";
 import { CompanyAccordionSkeleton } from "./CompanyAccordionSkeleton";
 import { FiltersBarSkeleton } from "./FiltersBarSkeleton";
 import { TableSkeleton } from "./TableSkeleton";
+import { Breadcrumbs } from "../global/Breadcrumbs";
+
 
 type TabKey = "tours" | "employees";
 
@@ -24,6 +26,11 @@ interface Props {
 
 export default function CompanyOverviewPage({ companyId }: Props) {
     const overview = useCompanyOverview(companyId);
+    const breadcrumbItems = [
+        { label: "Home", href: '/' },
+        { label: "Companies", href: "/companies" },
+        { label: overview.company?.companyName?.toLocaleUpperCase()??"-", href: `/companies/${companyId}` },
+    ];
 
     const tabConfig = {
         tours: {
@@ -40,6 +47,7 @@ export default function CompanyOverviewPage({ companyId }: Props) {
 
     return (
         <div className="min-h-screen bg-background">
+            <Breadcrumbs items={breadcrumbItems} className="p-4" />
             <div className="mx-auto max-w-[1400px] space-y-6">
                 {/* Header Section */}
                 <motion.div

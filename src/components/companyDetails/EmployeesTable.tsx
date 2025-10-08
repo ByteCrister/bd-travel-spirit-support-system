@@ -211,9 +211,9 @@ export function EmployeesTable({
                                                     <TableCell className="font-semibold text-foreground text-left align-middle h-16 min-w-0">
                                                         <div className="flex items-center gap-3 min-w-0">
                                                             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0 font-bold text-primary text-sm border-2 border-primary/10 group-hover:border-primary/30 transition-colors">
-                                                                {e.fullName?.charAt(0)?.toUpperCase() || "?"}
+                                                                {e.user.name?.charAt(0)?.toUpperCase() || "?"}
                                                             </div>
-                                                            <span className="group-hover:text-primary transition-colors truncate">{e.fullName || "Unknown"}</span>
+                                                            <span className="group-hover:text-primary transition-colors truncate">{e.user.name || "Unknown"}</span>
                                                         </div>
                                                     </TableCell>
 

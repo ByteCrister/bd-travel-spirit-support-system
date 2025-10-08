@@ -117,12 +117,25 @@ export function useCompanyOverview(companyId: string) {
         const items = employeesList?.items ?? [];
         if (!search.trim()) return items;
         const q = search.toLowerCase();
+
         return items.filter((e) =>
-            [e.fullName, e.position, e.department, e.team]
+            [
+                e.user?.name,          // from embedded user summary
+                e.user?.email,
+                e.user?.phone,
+                e.department,
+                e.role,
+                e.subRole,
+                e.position,
+                e.positionCategory,
+                e.employmentType,
+                e.status,
+            ]
                 .filter(Boolean)
                 .some((v) => String(v).toLowerCase().includes(q))
         );
     }, [employeesList?.items, search]);
+
 
     // --- Handlers ---
     const handleRefresh = async () => {

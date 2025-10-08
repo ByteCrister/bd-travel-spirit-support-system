@@ -96,6 +96,7 @@ export function Sidebar({
   setIsCollapsed }: SidebarProps) {
   const pathname = usePathname();
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+  const [hasAutoCollapsed, setHasAutoCollapsed] = useState(false);
 
   useEffect(() => {
     // find the group that matches the current route
@@ -106,7 +107,19 @@ export function Sidebar({
     if (activeGroup) {
       setExpandedGroups([activeGroup.title]);
     }
-  }, [pathname])
+    // auto-collapse logic
+    if (pathname.startsWith("/customer-support") && !hasAutoCollapsed) {
+      if (isMobile && isOpen && onClose) {
+        onClose();
+      } else if (!isMobile && !isCollapsed) {
+        setIsCollapsed(true);
+      }
+      setHasAutoCollapsed(true);
+    } else if (!pathname.startsWith("/customer-support")) {
+      setHasAutoCollapsed(false);
+    }
+
+  }, [hasAutoCollapsed, isCollapsed, isMobile, isOpen, onClose, pathname, setIsCollapsed])
 
   const toggleGroup = (groupTitle: string) => {
     setExpandedGroups(prev =>

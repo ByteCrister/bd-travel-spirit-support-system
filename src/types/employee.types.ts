@@ -378,3 +378,56 @@ export type EmployeesCacheKey = ValueOf<typeof EMPLOYEES_CACHE_KEYS>;
 // - Flatten contactInfo.phone/email to contactPhone/contactEmail in list DTO.
 // - Compute shiftSummary (e.g., "09:00–17:00, Mon–Fri") for list render.
 // ---------------------------------------------------------------------
+
+
+// For /User-management page
+export type EmployeeTableColumns =
+    | "user.name"
+    | "user.email"
+    | "role"
+    | "subRole"
+    | "position"
+    | "department"
+    | "status"
+    | "employmentType"
+    | "salary"
+    | "rating"
+    | "dateOfJoining"
+    | "dateOfLeaving"
+    | "createdAt"
+    | "updatedAt";
+
+export type SortableEmployeeKey =
+    | "user.name"
+    | "user.email"
+    | "role"
+    | "subRole"
+    | "position"
+    | "department"
+    | "employmentType"
+    | "status"
+    | "salary"
+    | "rating"
+    | "dateOfJoining"
+    | "dateOfLeaving"
+    | "createdAt"
+    | "updatedAt";
+
+
+export const sortableEmployeeFields: SortableEmployeeKey[] = [
+    "user.name",
+    "user.email",
+    "role",
+    "subRole",
+    "position",
+    "department",
+    "employmentType",
+    "status",
+    "salary",
+    "rating",
+    "dateOfJoining",
+    "dateOfLeaving",
+    "createdAt",
+    "updatedAt",
+];
+

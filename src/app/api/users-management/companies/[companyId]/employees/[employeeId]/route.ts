@@ -3,78 +3,60 @@ import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
 import { EmployeeDetailDTO } from "@/types/employee.types";
 import {
-    EmployeeRole,
-    EmployeeStatus,
-    EmployeeSubRole,
-    EmploymentType,
+    EMPLOYEE_ROLE,
+    EMPLOYEE_SUB_ROLE,
+    EMPLOYEE_STATUS,
+    EMPLOYMENT_TYPE,
+    EMPLOYEE_POSITIONS,
 } from "@/constants/employee.const";
 
 /**
- * Generate a fake EmployeeDetailDTO
+ * Generate a fake EmployeeDetailDTO (aligned with employee.types.ts)
  */
 function generateFakeEmployeeDetail(): EmployeeDetailDTO {
-    const gender = faker.helpers.arrayElement<"male" | "female" | undefined>([
-        "male",
-        "female",
-        undefined,
-    ]);
-
-    const dob = faker.date.birthdate({ min: 22, max: 60, mode: "age" }).toISOString();
+    const gender = faker.helpers.arrayElement<"male" | "female">(["male", "female"]);
     const dateOfJoining = faker.date.past({ years: 5 }).toISOString();
     const dateOfLeaving = faker.datatype.boolean()
         ? faker.date.recent().toISOString()
         : undefined;
+
+    const positionCategory = faker.helpers.arrayElement(
+        Object.keys(EMPLOYEE_POSITIONS)
+    ) as keyof typeof EMPLOYEE_POSITIONS;
+    const position = faker.helpers.arrayElement(EMPLOYEE_POSITIONS[positionCategory]);
 
     return {
         id: faker.database.mongodbObjectId(),
         userId: faker.database.mongodbObjectId(),
         hostId: faker.database.mongodbObjectId(),
 
-        fullName: faker.person.fullName({ sex: gender }),
-        profileImage: faker.image.avatar(),
-        dob,
-        gender,
+        user: {
+            id: faker.database.mongodbObjectId(),
+            name: faker.person.fullName({ sex: gender }),
+            email: faker.internet.email(),
+            phone: faker.phone.number(),
+            avatar: faker.image.avatar(),
+            role: faker.helpers.arrayElement(["traveler", "guide", "assistant", "support", "admin"]),
+            isVerified: faker.datatype.boolean(),
+            accountStatus: faker.helpers.arrayElement([
+                "pending",
+                "active",
+                "suspended",
+                "banned",
+            ]),
+        },
 
-        role: faker.helpers.arrayElement<EmployeeRole>(["assistant", "support"]),
-        subRole: faker.helpers.arrayElement<EmployeeSubRole>([
-            "product",
-            "order",
-            "support",
-            "marketing",
-            "finance",
-            "analytics",
-            "hr",
-        ]),
-        position: faker.person.jobTitle(),
-        status: faker.helpers.arrayElement<EmployeeStatus>([
-            "active",
-            "onLeave",
-            "suspended",
-            "terminated",
-        ]),
-        employmentType: faker.helpers.arrayElement<EmploymentType>([
-            "full_time",
-            "part_time",
-            "contract",
-            "intern",
-        ]),
+        role: faker.helpers.arrayElement(Object.values(EMPLOYEE_ROLE)),
+        subRole: faker.helpers.arrayElement(Object.values(EMPLOYEE_SUB_ROLE)),
+        position,
+        positionCategory,
+
+        status: faker.helpers.arrayElement(Object.values(EMPLOYEE_STATUS)),
+        employmentType: faker.helpers.arrayElement(Object.values(EMPLOYMENT_TYPE)),
+
         department: faker.commerce.department(),
-        team: faker.commerce.department(),
-        managerId: faker.database.mongodbObjectId(),
-        employeeCode: faker.string.alphanumeric({ length: 6 }).toUpperCase(),
-        workLocation: faker.helpers.arrayElement(["onsite", "remote", "branch"]),
-
-        salary: {
-            amount: faker.number.int({ min: 25000, max: 120000 }),
-            currency: "USD",
-        },
-        payroll: {
-            baseSalary: faker.number.int({ min: 25000, max: 120000 }),
-            currency: "USD",
-            bonuses: faker.number.int({ min: 0, max: 10000 }),
-            deductions: faker.number.int({ min: 0, max: 5000 }),
-            lastPaidAt: faker.date.recent().toISOString(),
-        },
+        salary: faker.number.int({ min: 25000, max: 120000 }),
+        salaryCurrency: "USD",
 
         dateOfJoining,
         dateOfLeaving,
@@ -89,13 +71,7 @@ function generateFakeEmployeeDetail(): EmployeeDetailDTO {
             },
         },
 
-        permissions: Array.from({ length: 3 }, () => ({
-            code: faker.helpers.slugify(faker.lorem.words(2)),
-            scope: faker.helpers.arrayElement(["finance", "orders", "hr", "marketing"]),
-            grantedBy: faker.database.mongodbObjectId(),
-            grantedAt: faker.date.past().toISOString(),
-        })),
-
+        permissions: faker.helpers.multiple(() => faker.word.noun(), { count: 3 }),
         shifts: [
             {
                 startTime: "09:00",
@@ -110,22 +86,33 @@ function generateFakeEmployeeDetail(): EmployeeDetailDTO {
             feedback: faker.lorem.sentences(),
         },
 
-        documents: Array.from({ length: 2 }, () => ({
-            type: faker.helpers.arrayElement(["passport", "contract", "id_card"]),
-            url: faker.internet.url(),
-            uploadedAt: faker.date.past().toISOString(),
-        })),
+        documents: faker.helpers.multiple(
+            () => ({
+                type: faker.helpers.arrayElement(["passport", "contract", "id_card"]),
+                url: faker.internet.url(),
+                uploadedAt: faker.date.past().toISOString(),
+            }),
+            { count: 2 }
+        ),
 
         notes: faker.lorem.paragraph(),
+
         audit: {
             createdBy: faker.database.mongodbObjectId(),
             updatedBy: faker.database.mongodbObjectId(),
         },
+
         isDeleted: false,
         createdAt: faker.date.past().toISOString(),
         updatedAt: faker.date.recent().toISOString(),
+
+        // Optional UI labels (can be computed server-side or client-side)
+        roleLabel: undefined,
+        subRoleLabel: undefined,
+        positionLabel: position,
     };
 }
+
 
 export async function GET(
     req: Request,

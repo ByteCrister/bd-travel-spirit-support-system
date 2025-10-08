@@ -72,7 +72,6 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden">
-                {/* Visually hidden title to satisfy Radix accessibility requirement */}
                 <DialogTitle className="sr-only">Employee Details</DialogTitle>
                 {loading ? (
                     <EmployeeDetailDialogSkeleton />
@@ -86,11 +85,11 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/40 bg-gradient-to-br from-primary/5 to-transparent">
                             <div className="flex items-start gap-4">
                                 <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0 font-bold text-primary text-3xl border-2 border-primary/10 shadow-lg">
-                                    {employee.fullName?.charAt(0)?.toUpperCase() || "?"}
+                                    {employee.user.name?.charAt(0)?.toUpperCase() || "?"}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <DialogTitle className="text-2xl font-bold text-foreground mb-2">
-                                        {employee.fullName}
+                                        {employee.user.name}
                                     </DialogTitle>
                                     <div className="flex flex-wrap items-center gap-2 mb-3">
                                         <Badge className="font-semibold">{employee.position}</Badge>
@@ -110,12 +109,6 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                             {formatStatus(employee.status)}
                                         </Badge>
                                     </div>
-                                    {employee.employeeCode && (
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <MdBadge className="h-4 w-4" />
-                                            <span>Employee Code: {employee.employeeCode}</span>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </DialogHeader>
@@ -123,15 +116,9 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                         {/* Scrollable Content */}
                         <ScrollArea className="flex-1 h-[calc(90vh-200px)]">
                             <div className="p-6 space-y-6">
-                                {/* Personal Information */}
-                                <Section icon={MdPerson} title="Personal Information">
+                                {/* Contact Information */}
+                                <Section icon={MdPerson} title="Contact Information">
                                     <InfoGrid>
-                                        {employee.dob && (
-                                            <InfoItem label="Date of Birth" value={formatDate(employee.dob)} />
-                                        )}
-                                        {employee.gender && (
-                                            <InfoItem label="Gender" value={employee.gender} capitalize />
-                                        )}
                                         {employee.contactInfo.email && (
                                             <InfoItem
                                                 label="Email"
@@ -176,12 +163,12 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                         {employee.department && (
                                             <InfoItem label="Department" value={employee.department} />
                                         )}
-                                        {employee.team && <InfoItem label="Team" value={employee.team} />}
                                         {employee.employmentType && (
-                                            <InfoItem label="Employment Type" value={employee.employmentType} capitalize />
-                                        )}
-                                        {employee.workLocation && (
-                                            <InfoItem label="Work Location" value={employee.workLocation} capitalize />
+                                            <InfoItem
+                                                label="Employment Type"
+                                                value={employee.employmentType}
+                                                capitalize
+                                            />
                                         )}
                                         <InfoItem
                                             label="Date of Joining"
@@ -195,49 +182,15 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                                 icon={MdCalendarToday}
                                             />
                                         )}
+                                        {employee.salary && (
+                                            <InfoItem
+                                                label="Base Salary"
+                                                value={formatCurrency(employee.salary, employee.salaryCurrency)}
+                                                icon={MdAttachMoney}
+                                            />
+                                        )}
                                     </InfoGrid>
                                 </Section>
-
-                                {/* Salary & Payroll */}
-                                {(employee.salary || employee.payroll) && (
-                                    <Section icon={MdAttachMoney} title="Compensation">
-                                        <InfoGrid>
-                                            {employee.salary && (
-                                                <InfoItem
-                                                    label="Base Salary"
-                                                    value={formatCurrency(
-                                                        employee.salary.amount,
-                                                        employee.salary.currency
-                                                    )}
-                                                />
-                                            )}
-                                            {employee.payroll?.bonuses && (
-                                                <InfoItem
-                                                    label="Bonuses"
-                                                    value={formatCurrency(
-                                                        employee.payroll.bonuses,
-                                                        employee.payroll.currency
-                                                    )}
-                                                />
-                                            )}
-                                            {employee.payroll?.deductions && (
-                                                <InfoItem
-                                                    label="Deductions"
-                                                    value={formatCurrency(
-                                                        employee.payroll.deductions,
-                                                        employee.payroll.currency
-                                                    )}
-                                                />
-                                            )}
-                                            {employee.payroll?.lastPaidAt && (
-                                                <InfoItem
-                                                    label="Last Paid"
-                                                    value={formatDate(employee.payroll.lastPaidAt)}
-                                                />
-                                            )}
-                                        </InfoGrid>
-                                    </Section>
-                                )}
 
                                 {/* Work Shifts */}
                                 {employee.shifts && employee.shifts.length > 0 && (
@@ -299,8 +252,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                         <div className="flex flex-wrap gap-2">
                                             {employee.permissions.map((perm, idx) => (
                                                 <Badge key={idx} variant="secondary" className="font-mono text-xs">
-                                                    {perm.code}
-                                                    {perm.scope && ` (${perm.scope})`}
+                                                    {perm}
                                                 </Badge>
                                             ))}
                                         </div>
@@ -365,6 +317,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
             </DialogContent>
         </Dialog>
     );
+
 }
 
 // Helper Components

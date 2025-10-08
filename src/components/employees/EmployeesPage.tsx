@@ -17,6 +17,8 @@ import { EmployeeTable } from "./EmployeeTable";
 import { PaginationControls } from "./PaginationControls";
 import { EmployeeDialog } from "./EmployeeDialog";
 import { AddEmployeeDialog } from "./AddEmployeeDialog";
+import { Breadcrumbs } from "../global/Breadcrumbs";
+
 
 export default function EmployeesPage() {
     const store = useEmployeeStore();
@@ -31,6 +33,10 @@ export default function EmployeesPage() {
     const [detail, setDetail] = useState<EmployeeDetailDTO | null>(null);
     const [openAdd, setOpenAdd] = useState(false);
     const [openDetail, setOpenDetail] = useState(false);
+    const breadcrumbItems = [
+        { label: "Home", href: '/' },
+        { label: "Employees", href: "/employees" },
+    ];
 
     // Hydrate list, using cache-first logic already inside store.
     useEffect(() => {
@@ -76,6 +82,8 @@ export default function EmployeesPage() {
 
     return (
         <div className="space-y-6">
+            <Breadcrumbs items={breadcrumbItems} />
+
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-semibold h-display tracking-tight text-foreground">
                     Employees

@@ -98,13 +98,36 @@ export interface PaginatedResponse<T> {
 }
 // DTO for conversation queries
 export interface ConversationQuery {
-    userA: string; // one participant
-    userB: string; // the other participant
+    sender: string; // one participant
+    receiver: string; // the other participant
     page?: number;
     limit?: number;
     sortBy?: "timestamp" | "createdAt" | "updatedAt";
     sortOrder?: "asc" | "desc";
 }
+
+/** Query for user list (conversation index) */
+export interface UserListQuery {
+    adminId: string;            // the admin/support user whose sidebar we show
+    search?: string;            // filter users by name/email/phone/etc. (backend-defined)
+    page?: number;
+    limit?: number;
+    sortBy?: "lastMessageAt" | "unreadCount" | "name";
+    sortOrder?: "asc" | "desc";
+}
+
+/** One row for the conversation sidebar */
+export interface UserConversationSummary {
+    user: IUserRef;             // other participant
+    lastMessage?: ChatMessage;  // optional if no messages yet
+    lastMessageAt?: string;     // ISO to sort efficiently without parsing lastMessage
+    unreadCount: number;        // unread for admin from that user
+}
+
+/** Paginated result for user list */
+export type UserListPaginated = PaginatedResponse<UserConversationSummary>;
+/** Response type */
+export type UserListResponse = ApiResponse<UserListPaginated>;
 
 // Response type for a conversation (paginated list of messages)
 export type ConversationResponse = ApiResponse<PaginatedResponse<ChatMessage>>;

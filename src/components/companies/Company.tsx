@@ -9,6 +9,12 @@ import { CompanyTable } from '@/components/companies/CompanyTable';
 import { CompanyPagination } from '@/components/companies/CompanyPagination';
 import { CompanySkeleton } from '@/components/companies/CompanySkeleton';
 import { useCompanyStore } from '@/store/useCompanyStore';
+import { Breadcrumbs } from '../global/Breadcrumbs';
+
+const breadcrumbItems = [
+    { label: "Home", href: '/' },
+    { label: "Companies", href: "/companies" },
+];
 
 /**
  * Company page: Admin dashboard for managing organizer companies.
@@ -68,6 +74,7 @@ export default function Company() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+            <Breadcrumbs items={breadcrumbItems} />
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 {/* Header */}
                 <motion.div

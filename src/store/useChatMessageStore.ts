@@ -16,6 +16,9 @@ import type {
     ChatMessageEvent,
     ConversationQuery,
     ConversationResponse,
+    UserConversationSummary,
+    UserListQuery,
+    UserListResponse,
 } from "@/types/chatMessage.types";
 import api from "@/utils/api/axios";
 import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
@@ -36,6 +39,7 @@ const ENDPOINTS = {
     markRead: (id: string) => `/chat/${id}/read`,
     markDelivered: (id: string) => `/chat/${id}/delivered`,
     moderate: (id: string) => `/chat/${id}/moderation`,
+    userList: "/chat/user-list",
 };
 
 /**
@@ -49,6 +53,7 @@ function buildQueryKey(q?: ChatMessageQuery): string {
     if (!q) return "default";
     if (q.sender) params.set("sender", q.sender);
     if (q.receiver) params.set("receiver", q.receiver);
+
     if (typeof q.isRead === "boolean") params.set("isRead", String(q.isRead));
     if (typeof q.isDelivered === "boolean") params.set("isDelivered", String(q.isDelivered));
     if (q.moderationStatus) params.set("moderationStatus", q.moderationStatus);
@@ -124,6 +129,29 @@ export interface ChatMessageStoreState {
         totalPages: number;
     };
 
+    // User list cache keyed by buildUserListKey()
+    userListsByKey: Record<
+        string,
+        {
+            users: UserConversationSummary[]; // materialized rows for sidebar
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+            lastFetchedAt?: number;
+        }
+    >;
+
+    // Loading/error states for user list
+    userListLoadingByKey: Record<string, boolean>;
+    userListErrorByKey: Record<string, string | undefined>;
+
+    // Actions
+    fetchUserList: (query: UserListQuery, options?: { force?: boolean }) => Promise<void>;
+    // Selectors
+    getUserList: (query: UserListQuery) => UserConversationSummary[];
+    getUserListMeta: (query: UserListQuery) => { total: number; page: number; limit: number; totalPages: number };
+
     sendMessage: (payload: CreateChatMessageDTO) => Promise<ChatMessage>;
     updateMessage: (id: string, payload: UpdateChatMessageDTO) => Promise<ChatMessage>;
     deleteMessage: (id: string) => Promise<void>;
@@ -148,6 +176,9 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
     devtools((set, get) => ({
         messagesById: {},
         listsByQueryKey: {},
+        userListsByKey: {},
+        userListLoadingByKey: {},
+        userListErrorByKey: {},
         messageLoadingById: {},
         messageErrorById: {},
         listLoadingByKey: {},
@@ -243,16 +274,9 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
          * Uses cached data unless `options.force` is true.
          */
         async fetchConversation(query, options) {
-            const key = buildQueryKey({
-                sender: query.userA,
-                receiver: query.userB,
-                page: query.page,
-                limit: query.limit,
-                sortBy: query.sortBy,
-                sortOrder: query.sortOrder,
-            });
-
+            const key = buildConversationKey(query.sender, query.receiver);
             const state = get();
+
             if (!options?.force && state.listsByQueryKey[key]?.lastFetchedAt) return;
 
             set(produce((draft: ChatMessageStoreState) => {
@@ -263,8 +287,8 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
             try {
                 const res = await api.get<ConversationResponse>(ENDPOINTS.conversation, {
                     params: {
-                        sender: query.userA,
-                        receiver: query.userB,
+                        sender: query.sender,
+                        receiver: query.receiver,
                         page: query.page ?? 1,
                         limit: query.limit ?? 20,
                         sortBy: query.sortBy ?? "createdAt",
@@ -280,14 +304,25 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
 
                 set(produce((draft: ChatMessageStoreState) => {
                     draft.messagesById = mergeMessages(draft.messagesById, items);
-                    draft.listsByQueryKey[key] = {
-                        ids: items.map((m) => m._id),
-                        total,
-                        page,
-                        limit,
-                        totalPages,
-                        lastFetchedAt: Date.now(),
-                    };
+
+                    const existing = draft.listsByQueryKey[key];
+                    if (existing && page > 1) {
+                        // append older messages
+                        existing.ids.push(...items.map(m => m._id));
+                        existing.page = page;
+                        existing.totalPages = totalPages;
+                        existing.total = total;
+                    } else {
+                        draft.listsByQueryKey[key] = {
+                            ids: items.map(m => m._id),
+                            total,
+                            page,
+                            limit,
+                            totalPages,
+                            lastFetchedAt: Date.now(),
+                        };
+                    }
+
                     draft.listLoadingByKey[key] = false;
                 }));
             } catch (err) {
@@ -302,32 +337,115 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
          * Get a conversation’s messages from the local store (no API call).
          */
         getConversation(query) {
-            const key = buildQueryKey({
-                sender: query.userA,
-                receiver: query.userB,
-                page: query.page,
-                limit: query.limit,
-                sortBy: query.sortBy,
-                sortOrder: query.sortOrder,
-            });
+            const key = buildConversationKey(query.sender, query.receiver);
             const { listsByQueryKey, messagesById } = get();
             const list = listsByQueryKey[key];
             if (!list) return [];
-            return list.ids.map((id) => messagesById[id]).filter(Boolean);
+            return list.ids.map(id => messagesById[id]).filter(Boolean);
         },
         /**
          * Get pagination metadata for a specific conversation.
          */
         getConversationMeta(query) {
-            const key = buildQueryKey({
-                sender: query.userA,
-                receiver: query.userB,
-                page: query.page,
-                limit: query.limit,
-                sortBy: query.sortBy,
-                sortOrder: query.sortOrder,
-            });
+            const key = buildConversationKey(query.sender, query.receiver);
             const list = get().listsByQueryKey[key];
+            return {
+                total: list?.total ?? 0,
+                page: list?.page ?? (query.page ?? 1),
+                limit: list?.limit ?? (query.limit ?? 20),
+                totalPages: list?.totalPages ?? 0,
+            };
+        },
+        /**
+               * Fetch and cache a paginated list of users based on the given query parameters.
+               * 
+               * - Skips fetching if cached data exists (unless `options.force` is true).
+               * - Populates message cache for each user's last message to ensure consistency.
+               * - Updates store state with pagination and error metadata.
+               */
+        async fetchUserList(query, options) {
+            const key = buildUserListKey(query);
+            const state = get();
+
+            if (!options?.force && state.userListsByKey[key]?.lastFetchedAt) return;
+
+            set(produce((draft: ChatMessageStoreState) => {
+                draft.userListLoadingByKey[key] = true;
+                draft.userListErrorByKey[key] = undefined;
+            }));
+
+            try {
+                const params = {
+                    adminId: query.adminId,
+                    search: query.search,
+                    page: query.page ?? 1,
+                    limit: query.limit ?? 20,
+                    sortBy: query.sortBy ?? "lastMessageAt",
+                    sortOrder: query.sortOrder ?? "desc",
+                };
+
+                const res = await api.get<UserListResponse>(ENDPOINTS.userList, { params });
+                if (!res.data.success || !res.data.data) {
+                    throw new Error(res.data.message || "Failed to fetch user list");
+                }
+
+                const { items, total, page, limit, totalPages } = res.data.data;
+
+                // Optionally hydrate messagesById with any lastMessage objects to keep cache consistent
+                set(produce((draft: ChatMessageStoreState) => {
+                    for (const row of items) {
+                        if (row.lastMessage) {
+                            draft.messagesById[row.lastMessage._id] = row.lastMessage;
+                        }
+                    }
+                    const existing = draft.userListsByKey[key];
+                    if (existing && (query.page ?? 1) > 1) {
+                        existing.users.push(...items);
+                        existing.total = total;
+                        existing.page = page;
+                        existing.limit = limit;
+                        existing.totalPages = totalPages;
+                        existing.lastFetchedAt = Date.now();
+                    } else {
+                        draft.userListsByKey[key] = {
+                            users: items,
+                            total,
+                            page,
+                            limit,
+                            totalPages,
+                            lastFetchedAt: Date.now(),
+                        };
+                    }
+                    draft.userListLoadingByKey[key] = false;
+                }));
+
+            } catch (err) {
+                const msg = extractErrorMessage(err);
+                set(produce((draft: ChatMessageStoreState) => {
+                    draft.userListLoadingByKey[key] = false;
+                    draft.userListErrorByKey[key] = msg;
+                }));
+            }
+        },
+        /**
+                * Retrieve the cached list of users for a given query.
+                * 
+                * @returns {User[]} - Returns the cached list of users, or an empty array if none exist.
+                */
+        getUserList(query) {
+            const key = buildUserListKey(query);
+            const list = get().userListsByKey[key];
+            return list?.users ?? [];
+        },
+        /**
+                * Get pagination metadata for a specific user list query.
+                * 
+                * @returns {{ total: number, page: number, limit: number, totalPages: number }}
+                * Returns pagination info including total items, current page, page size, and total pages.
+                */
+        getUserListMeta(query) {
+            const key = buildUserListKey(query);
+            const list = get().userListsByKey[key];
             return {
                 total: list?.total ?? 0,
                 page: list?.page ?? (query.page ?? 1),
@@ -387,7 +505,7 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
             const tempId = `temp_${Date.now()}`;
             const optimistic: ChatMessage = {
                 _id: tempId,
-                sender: "me", // Replace with authenticated user's id or IUserRef in your app shell
+                sender: "adminId", // Replace with authenticated user's id or IUserRef in your app shell
                 receiver: payload.receiver,
                 message: payload.message,
                 timestamp: new Date().toISOString(),
@@ -406,7 +524,7 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
             set(
                 produce((draft: ChatMessageStoreState) => {
                     draft.messagesById[optimistic._id] = optimistic;
-                    const key = buildQueryKey({ page: 1, limit: 20, sortBy: "createdAt", sortOrder: "desc" });
+                    const key = buildQueryKey({ sender: "adminId", receiver: payload.receiver, page: 1, limit: 20, sortBy: "createdAt", sortOrder: "desc" });
                     const existing = draft.listsByQueryKey[key];
                     if (existing) {
                         existing.ids = [optimistic._id, ...existing.ids];
@@ -770,3 +888,19 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
         },
     }))
 );
+
+
+// Optional: dedicated key builder for user list (keeps keys distinct from message queries)
+export function buildUserListKey(q: UserListQuery): string {
+    const params = new URLSearchParams();
+    params.set("adminId", q.adminId);
+    if (q.search && q.search.trim() !== "") params.set("search", q.search);
+    params.set("sortBy", q.sortBy ?? "lastMessageAt");
+    params.set("sortOrder", q.sortOrder ?? "desc");
+    //! IMPORTANT: do NOT include page/limit in the key
+    return `userList:${params.toString()}`;
+}
+
+function buildConversationKey(sender: string, receiver: string) {
+    return `conversation:${sender}:${receiver}`;
+}
