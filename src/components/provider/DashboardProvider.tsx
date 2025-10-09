@@ -12,7 +12,7 @@ const ADMIN_ROUTES = [
   "/companies",
   "/employees",
   "/customer-support",
-  "/blogs-and-articles",
+  "/articles",
   "/social/banner",
   "/social/promotions",
   "/setting/guide-banner",

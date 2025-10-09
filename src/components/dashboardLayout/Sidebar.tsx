@@ -67,7 +67,7 @@ const navigationGroups: NavGroup[] = [
     icon: FiFileText,
     items: [
       { href: "/customer-support", label: "Customer Support", icon: FiHeadphones },
-      { href: "/blogs-and-articles", label: "Blogs & Articles", icon: FiFileText },
+      { href: "/articles", label: "Articles", icon: FiFileText },
     ],
   },
   {

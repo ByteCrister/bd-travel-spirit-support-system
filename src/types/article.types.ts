@@ -1,30 +1,36 @@
-/**
- * travelArticle.dto.ts
- *
- * Data Transfer Object (DTO) types for Travel Articles.
- * These mirror the backend schema but are:
- *  - Free of Mongoose-specific types
- *  - Using ISO date strings for dates
- *  - Author expanded for display purposes
- * 
- * Use these in your Next.js client for:
- *  - Type-safe API responses
- *  - Type-safe create/update requests
- */
+// /types/article.types.ts
 
-/**
- * Enum for article publication status
- */
-export enum ArticleStatus {
+/* ============================================================
+   Core primitives and cross-cutting types
+   ============================================================ */
+
+export type ID = string; // string ObjectId in API payloads
+
+export type URL = string;
+
+export type ISODateString = string; // e.g., "2025-10-08T13:23:44.165Z"
+
+/** Minimal reference for users to keep payloads slim */
+export interface UserRef {
+    id: ID;
+    name?: string;
+    avatarUrl?: string;
+}
+
+/** Minimal reference for images (your Image model) */
+export type ImageUrl = URL;
+
+/* ============================================================
+   Domain enums (aligned with mongoose model)
+   ============================================================ */
+
+export enum ARTICLE_STATUS {
     DRAFT = 'draft',
     PUBLISHED = 'published',
     ARCHIVED = 'archived',
 }
 
-/**
- * Enum for high-level travel categories
- */
-export enum TravelCategory {
+export enum TRAVEL_CATEGORY {
     DESTINATION_GUIDE = 'destination_guide',
     BEACHES = 'beaches',
     FOOD_DRINK = 'food_drink',
@@ -34,117 +40,396 @@ export enum TravelCategory {
     ROMANTIC = 'romantic',
 }
 
-/**
- * Structured attraction inside an article
- */
-export interface AttractionDTO {
+export enum ARTICLE_TYPE {
+    SINGLE_DESTINATION = 'single_destination',
+    MULTI_DESTINATION = 'multi_destination',
+    GENERAL_TIPS = 'general_tips',
+}
+
+export enum COMMENT_STATUS {
+    PENDING = 'pending',
+    APPROVED = 'approved',
+    REJECTED = 'rejected',
+}
+
+/* ============================================================
+   Content blocks (aligned, but safe for UI)
+   ============================================================ */
+
+export type RichTextBlockType = 'paragraph' | 'link' | 'heading';
+
+export interface RichTextBlock {
+    type: RichTextBlockType;
+    text?: string;
+    href?: string;
+}
+
+export interface Activity {
+    title: string;
+    url?: string;
+    provider?: string;
+    duration?: string;
+    price?: string;
+    rating?: number;
+}
+
+export interface Attraction {
     title: string;
     description: string;
     bestFor?: string;
     insiderTip?: string;
     address?: string;
     openingHours?: string;
-    images: string[]; // URLs
+    images: ImageUrl[]; // normalized for UI
     coordinates?: { lat: number; lng: number };
 }
 
-/**
- * FAQ entry for the article
- */
-export interface FAQDTO {
+export interface DestinationBlock {
+    city: string;
+    country: string;
+    region?: string;
+    description: string;
+    content: RichTextBlock[];
+    highlights: string[];
+    attractions: Attraction[];
+    activities: Activity[];
+    images: ImageUrl[];
+}
+
+export interface FaqItem {
     question: string;
     answer: string;
 }
 
-/**
- * TipTap JSON document type
- * This is intentionally loose to allow any TipTap node/mark types.
- * You can replace `any` with a stricter type if you have a fixed schema.
- */
-export interface TipTapDocDTO {
-    type: 'doc';
-    content?: Array<Record<string, unknown>>;
-    [key: string]: unknown;
-}
+/* ============================================================
+   Article core DTOs
+   ============================================================ */
 
-/**
- * SEO metadata for the article
- */
-export interface SEODataDTO {
-    metaTitle: string;
-    metaDescription: string;
-    ogImage?: string;
-}
-
-/**
- * Query info for fetching related activities dynamically
- */
-export interface RelatedActivitiesQueryDTO {
-    provider: string;
-    query: string;
-    maxResults?: number;
-}
-
-/**
- * Author info returned with the article
- */
-export interface AuthorDTO {
-    _id: string;
-    name: string;
-    avatar?: string;
-}
-
-/**
- * Main Travel Article DTO
- * Shape of the data returned by the API to the client
- */
-export interface TravelArticleDTO {
-    _id: string;
+/** Minimal shape for table/list rows */
+export interface ArticleListItem {
+    id: ID;
     title: string;
     slug: string;
-    status: ArticleStatus;
-    author: AuthorDTO;
-    authorBio?: string;
+    status: ARTICLE_STATUS;
+    articleType: ARTICLE_TYPE;
+    author: UserRef;
     summary: string;
-    heroImage: string;
-    heroVideo?: string;
-    destination: { city: string; country: string; region?: string };
-    categories?: TravelCategory[];
+    heroImage?: ImageUrl;
+    categories?: TRAVEL_CATEGORY[];
     tags?: string[];
-    publishedAt?: string; // ISO date string
+    publishedAt?: ISODateString;
     readingTime?: number;
-    seo: SEODataDTO;
-    attractions?: AttractionDTO[];
-    content: TipTapDocDTO;
-    relatedActivitiesQuery?: RelatedActivitiesQueryDTO;
-    faqs?: FAQDTO[];
+    wordCount?: number;
     viewCount: number;
     likeCount: number;
     shareCount: number;
     allowComments: boolean;
-    createdAt: string; // ISO date string
-    updatedAt: string; // ISO date string
+    createdAt: ISODateString;
+    updatedAt: ISODateString;
+
+    // Derived/display helpers
+    destinationCount?: number; // quick glance in table
+    topDestinations?: string[]; // e.g., ["Sylhet", "Cox's Bazar"]
 }
 
-/**
- * DTO for creating a new travel article
- * Sent from client → server
- * Author is passed as `authorId` instead of full object
- */
-export interface CreateTravelArticleDTO
-    extends Omit<
-        TravelArticleDTO,
-        '_id' | 'author' | 'viewCount' | 'likeCount' | 'shareCount' | 'createdAt' | 'updatedAt'
-    > {
-    authorId: string;
+/** Detailed shape for /article/[articleId]/page.tsx */
+export interface ArticleDetail extends Omit<ArticleListItem, 'destinationCount' | 'topDestinations'> {
+    seo: {
+        metaTitle: string;
+        metaDescription: string;
+        ogImage?: ImageUrl | string; // support legacy string, prefer ImageUrl
+    };
+    destinations?: DestinationBlock[];
+    faqs?: FaqItem[];
+
+    // Optional aggregated counts for admin
+    commentCount?: number;
+    pendingCommentCount?: number;
 }
 
-/**
- * DTO for updating an existing travel article
- * Sent from client → server
- * All fields optional except `_id`
- */
-export interface UpdateTravelArticleDTO
-    extends Partial<CreateTravelArticleDTO> {
-    _id: string;
+/* ============================================================
+   Comments DTOs (for admin views)
+   ============================================================ */
+
+export interface CommentListItem {
+    id: ID;
+    articleId: ID;
+    parentId?: ID | null;
+    author: UserRef;
+    content: string;
+    likes: number;
+    replies: ID[];
+    status: COMMENT_STATUS;
+    createdAt: ISODateString;
+    updatedAt: ISODateString;
+    replyCount?: number; // virtual convenience
 }
+
+/* ============================================================
+   Filters, sorting, pagination, search
+   ============================================================ */
+
+export type ArticleSortField =
+    | 'publishedAt'
+    | 'createdAt'
+    | 'updatedAt'
+    | 'title'
+    | 'viewCount'
+    | 'likeCount'
+    | 'shareCount'
+    | 'readingTime'
+    | 'wordCount';
+
+export type SortOrder = 'asc' | 'desc';
+
+export interface ArticleSort {
+    field: ArticleSortField;
+    order: SortOrder;
+}
+
+/** Flexible filter set for server/API and client UI */
+export interface ArticleFilter {
+    status?: ARTICLE_STATUS[];
+    articleType?: ARTICLE_TYPE[];
+    categories?: TRAVEL_CATEGORY[];
+    tags?: string[];
+    authorIds?: ID[];
+    publishedFrom?: ISODateString;
+    publishedTo?: ISODateString;
+    minReadingTime?: number;
+    maxReadingTime?: number;
+    minWordCount?: number;
+    maxWordCount?: number;
+    allowComments?: boolean;
+    destinationCity?: string; // subdocument match
+    destinationCountry?: string;
+}
+
+/** Simple search model (can be extended with field-scoped queries) */
+export interface ArticleSearch {
+    query?: string; // free text across title/summary/tags
+}
+
+/** Cursor-based pagination for resilience and performance */
+export interface CursorPageRequest {
+    limit?: number; // default server-side e.g., 20
+    after?: ID | null; // last item id in current list
+}
+
+/** Alternative offset pagination if needed */
+export interface OffsetPageRequest {
+    page?: number; // 1-based
+    pageSize?: number;
+}
+
+export interface OffsetPageResponse<T> {
+    items: T[];
+    page: number;
+    pageSize: number;
+    totalPages?: number;
+    totalCount?: number;
+}
+
+/* ============================================================
+   Combined query request/response
+   ============================================================ */
+
+export interface ArticleListQueryRequest {
+    filter?: ArticleFilter;
+    search?: ArticleSearch;
+    sort?: ArticleSort;
+    pagination: OffsetPageRequest | undefined;
+}
+
+export type ArticleListQueryResponse = (OffsetPageResponse<ArticleListItem> & { paginationType: 'offset' });
+
+
+/* ============================================================
+   Admin stats DTOs
+   ============================================================ */
+
+export interface ArticleStatsSummary {
+    totalArticles: number;
+    draftCount: number;
+    publishedCount: number;
+    archivedCount: number;
+    totalViews: number;
+    totalLikes: number;
+    totalShares: number;
+    averageReadingTime?: number;
+    averageWordCount?: number;
+}
+
+export interface ArticleTimeBucketStat {
+    bucketLabel: string; // e.g., "2025-10", "Week 41"
+    count: number;
+}
+
+export interface ArticleDashboardStats {
+    summary: ArticleStatsSummary;
+    byStatusOverTime?: ArticleTimeBucketStat[]; // trend lines
+    topAuthors?: { author: UserRef; articleCount: number }[];
+    topDestinations?: { city: string; country: string; articleCount: number }[];
+    popularTags?: { tag: string; articleCount: number }[];
+}
+
+/* ============================================================
+   Mutation DTOs (create/update/delete)
+   ============================================================ */
+
+export interface CreateArticleInput {
+    title: string;
+    slug: string;
+    status: ARTICLE_STATUS;
+    articleType: ARTICLE_TYPE;
+    authorBio?: string;
+    summary: string;
+    heroImage: ImageUrl | null; // backend may accept image id; UI may carry ImageUrl
+    destinations?: DestinationBlock[];
+    categories?: TRAVEL_CATEGORY[];
+    tags?: string[];
+    seo?: {
+        metaTitle: string;
+        metaDescription: string;
+        ogImage?: ImageUrl | null;
+    };
+    faqs?: FaqItem[];
+    allowComments?: boolean;
+}
+
+export interface UpdateArticleInput extends Partial<CreateArticleInput> {
+    id: ID;
+}
+
+export interface DeleteArticleInput {
+    id: ID;
+}
+
+export interface MutationResult {
+    success: boolean;
+    message?: string;
+}
+
+export interface CreateArticleResponse extends MutationResult {
+    article?: ArticleDetail;
+}
+
+export interface UpdateArticleResponse extends MutationResult {
+    article?: ArticleDetail;
+}
+
+export interface DeleteArticleResponse extends MutationResult {
+    deletedId?: ID;
+}
+
+/* ============================================================
+   Cache keys and query identity
+   ============================================================ */
+
+export type CacheScope = 'list' | 'detail' | 'stats';
+
+export interface ArticleListCacheKey {
+    scope: 'list';
+    filter?: ArticleFilter;
+    search?: ArticleSearch;
+    sort?: ArticleSort;
+    pagination?: CursorPageRequest | OffsetPageRequest;
+}
+
+export interface ArticleDetailCacheKey {
+    scope: 'detail';
+    id: ID;
+}
+
+export interface ArticleStatsCacheKey {
+    scope: 'stats';
+}
+
+export type ArticleCacheKey = ArticleListCacheKey | ArticleDetailCacheKey | ArticleStatsCacheKey;
+
+/* ============================================================
+   UI helpers for table columns and actions
+   ============================================================ */
+
+export type ArticleTableColumnKey =
+    | 'title'
+    | 'status'
+    | 'articleType'
+    | 'author'
+    | 'categories'
+    | 'tags'
+    | 'publishedAt'
+    | 'viewCount'
+    | 'likeCount'
+    | 'shareCount'
+    | 'destinationCount'
+    | 'createdAt'
+    | 'updatedAt'
+    | 'actions';
+
+export interface ArticleRowAction {
+    type: 'view' | 'edit' | 'delete';
+    label: string;
+    href?: string; // for view/edit routing
+    confirm?: boolean; // for delete confirmations
+}
+
+/* ============================================================
+   Zustand store-friendly shapes
+   ============================================================ */
+
+export interface ArticleStoreState {
+    // data
+    listItems: ArticleListItem[];
+    detailById: Record<ID, ArticleDetail | undefined>;
+    stats?: ArticleDashboardStats;
+
+    // query state
+    currentFilter: ArticleFilter;
+    currentSearch: ArticleSearch;
+    currentSort: ArticleSort;
+    currentPagination: CursorPageRequest | OffsetPageRequest;
+    nextCursor?: ID | null;
+
+    // ui state
+    isLoadingList: boolean;
+    isLoadingDetail: boolean;
+    isLoadingStats: boolean;
+    error?: string;
+
+    // helpers
+    selectedArticleId?: ID;
+}
+
+export interface ArticleStoreActions {
+    setFilter: (filter: ArticleFilter) => void;
+    setSearch: (search: ArticleSearch) => void;
+    setSort: (sort: ArticleSort) => void;
+    setPagination: (pg: CursorPageRequest | OffsetPageRequest) => void;
+    setSelectedArticleId: (id?: ID) => void;
+
+    // data loaders
+    loadList: (req: ArticleListQueryRequest) => Promise<void>;
+    loadDetail: (id: ID) => Promise<void>;
+    loadStats: () => Promise<void>;
+
+    // mutations
+    createArticle: (input: CreateArticleInput) => Promise<CreateArticleResponse>;
+    updateArticle: (input: UpdateArticleInput) => Promise<UpdateArticleResponse>;
+    deleteArticle: (input: DeleteArticleInput) => Promise<DeleteArticleResponse>;
+}
+
+/* ============================================================
+   API route helpers (optional but convenient)
+   ============================================================ */
+
+export type ApiResult<T> =
+    | { ok: true; data: T }
+    | { ok: false; error: string; status?: number };
+
+export type ArticleListApi = ApiResult<ArticleListQueryResponse>;
+export type ArticleDetailApi = ApiResult<ArticleDetail>;
+export type ArticleStatsApi = ApiResult<ArticleDashboardStats>;
+export type CreateArticleApi = ApiResult<CreateArticleResponse>;
+export type UpdateArticleApi = ApiResult<UpdateArticleResponse>;
+export type DeleteArticleApi = ApiResult<DeleteArticleResponse>;
