@@ -15,7 +15,7 @@ import {
   FiX,
   FiChevronRight
 } from "react-icons/fi";
-import { FaUsers } from "react-icons/fa";
+import { FaComments, FaUsers } from "react-icons/fa";
 import { HiOutlineChartSquareBar } from 'react-icons/hi';
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
@@ -74,6 +74,7 @@ const navigationGroups: NavGroup[] = [
     title: "Social",
     icon: FiShare2,
     items: [
+      { href: "/article-comments", label: "Article Comments", icon: FaComments },
       { href: "/social/banner", label: "Banner", icon: FiImage },
       { href: "/social/promotions", label: "Promotions", icon: FiGift },
     ],

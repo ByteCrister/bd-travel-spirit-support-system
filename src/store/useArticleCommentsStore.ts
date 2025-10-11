@@ -33,6 +33,8 @@ import {
 
 import api from '@/utils/api/axios';
 
+const ROOT_DIRECTORY = '/articles/comments';
+
 /**
  * Map Axios errors into a normalized ApiErrorDTO for consistent UI handling.
  */
@@ -53,7 +55,7 @@ const toApiError = (err: unknown): ApiErrorDTO => {
 /* Cache, persistence, and keys                                               */
 /* ========================================================================== */
 
-const DEFAULT_TABLE_TTL_MS = 60_000;  // 1 min for article table
+const DEFAULT_TABLE_TTL_MS = 60_000; // 1 min for article table
 const DEFAULT_THREAD_TTL_MS = 60_000; // 1 min for per-thread comments
 
 const LS_KEYS = {
@@ -61,7 +63,7 @@ const LS_KEYS = {
 };
 
 /* ========================================================================== */
-/* Local store types                                                          */
+/* Local store types                                                           */
 /* ========================================================================== */
 
 type TableQuery = {
@@ -81,6 +83,22 @@ type TableCacheEntry = {
     fetchedAt: number; // for TTL enforcement
 };
 
+// Range-aware group cache (filters + sort canonical key)
+type TableGroupKey = string;
+
+type IndexRange = { start: number; end: number }; // inclusive indices
+
+type TableGroupCacheEntry = {
+    itemsByIndex: Record<number, ArticleCommentSummaryRowDTO>;
+    coveredRanges: IndexRange[]; // non-overlapping, merged
+    meta: {
+        pagination: OffsetPageMetaDTO;
+        sort: SortDTO<ArticleSortKey>;
+        filtersApplied: ArticleFiltersDTO;
+    };
+    fetchedAt: number;
+};
+
 // With this for production safety:
 type ThreadKey = string;
 
@@ -98,6 +116,55 @@ type ThreadCacheEntry = {
 type InFlightKey = string;
 
 /* ========================================================================== */
+/* Range helpers                                                              */
+/* ========================================================================== */
+
+const mergeRanges = (ranges: IndexRange[]): IndexRange[] => {
+    if (!ranges.length) return [];
+    const sorted = [...ranges].sort((a, b) => a.start - b.start);
+    const merged: IndexRange[] = [];
+    let cur = { ...sorted[0] };
+    for (let i = 1; i < sorted.length; i++) {
+        const r = sorted[i];
+        if (r.start <= cur.end + 1) {
+            cur.end = Math.max(cur.end, r.end);
+        } else {
+            merged.push(cur);
+            cur = { ...r };
+        }
+    }
+    merged.push(cur);
+    return merged;
+};
+
+const isRangeCovered = (ranges: IndexRange[], want: IndexRange): boolean => {
+    for (const r of ranges) {
+        if (want.start >= r.start && want.end <= r.end) return true;
+    }
+    return false;
+};
+
+const subtractCovered = (ranges: IndexRange[], want: IndexRange): IndexRange[] => {
+    // Return the uncovered subranges within 'want'
+    const uncovered: IndexRange[] = [];
+    let cursor = want.start;
+    const sorted = mergeRanges(ranges);
+    for (const r of sorted) {
+        if (r.end < cursor) continue; // range before cursor
+        if (r.start > want.end) break; // beyond want
+        if (cursor < r.start) {
+            uncovered.push({ start: cursor, end: Math.min(want.end, r.start - 1) });
+        }
+        cursor = Math.max(cursor, r.end + 1);
+        if (cursor > want.end) break;
+    }
+    if (cursor <= want.end) {
+        uncovered.push({ start: cursor, end: want.end });
+    }
+    return uncovered;
+};
+
+/* ========================================================================== */
 /* Store interface                                                            */
 /* ========================================================================== */
 
@@ -109,7 +176,8 @@ interface ArticleCommentsState {
 
     // Article table (summary)
     tableQuery: TableQuery;
-    tableCache: Record<string, TableCacheEntry>;
+    tableCache: Record<string, TableCacheEntry>; // legacy per-query cache (kept for compatibility)
+    tableGroupCache: Record<TableGroupKey, TableGroupCacheEntry>; // new range-aware cache
     tableLoading: boolean;
     tableError: ApiErrorDTO | null;
 
@@ -132,10 +200,12 @@ interface ArticleCommentsState {
     restoreTableQueryFromLS: () => void;
 
     fetchStats: () => Promise<void>;
-    fetchTable: (force?: boolean) => Promise<void>;
 
+    // Table
+    fetchTable: (force?: boolean) => Promise<void>; // range-aware
     toggleAccordion: (articleId: string, open?: boolean) => void;
 
+    // Threads
     fetchRootComments: (params: {
         articleId: string;
         pageSize?: number;
@@ -155,21 +225,25 @@ interface ArticleCommentsState {
 
     loadMoreComments: (req: LoadMoreCommentsRequestDTO) => Promise<void>;
 
+    // Mutations
     createReply: (payload: CreateCommentPayloadDTO) => Promise<CommentDetailDTO>;
     toggleLike: (payload: ToggleLikePayloadDTO) => Promise<void>;
     updateStatus: (payload: UpdateCommentStatusPayloadDTO) => Promise<void>;
 
+    // Selectors
     selectRowVMByArticleId: (articleId: string) => AdminArticleRowVM | undefined;
     selectThreadByKey: (key: ThreadKey) => ThreadCacheEntry | undefined;
 
     /* Internals */
-    assembleTableVM: () => void;
+    assembleTableVM: () => void; // legacy
+    assembleTableVMFromGroup: () => void; // new
     threadKeyOf: (articleId: string, parentId?: string | null) => ThreadKey;
     serializeTableQuery: (q: TableQuery) => string;
+    groupKeyOf: (sort: SortDTO<ArticleSortKey>, filters: ArticleFiltersDTO) => TableGroupKey;
 }
 
 /* ========================================================================== */
-/* Initial query                                                              */
+/* Initial query                                                               */
 /* ========================================================================== */
 
 const initialQuery: TableQuery = {
@@ -180,7 +254,7 @@ const initialQuery: TableQuery = {
 };
 
 /* ========================================================================== */
-/* Store implementation                                                       */
+/* Store implementation                                                        */
 /* ========================================================================== */
 
 export const useArticleCommentsStore = create<ArticleCommentsState>()(
@@ -193,6 +267,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                 tableQuery: initialQuery,
                 tableCache: {},
+                tableGroupCache: {},
                 tableLoading: false,
                 tableError: null,
 
@@ -214,16 +289,13 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     const prev = get().tableQuery;
                     const nextFilters = { ...prev.filters, ...partial.filters };
                     const filtersChanged =
-                        partial.filters &&
-                        JSON.stringify(prev.filters) !== JSON.stringify(nextFilters);
-
+                        partial.filters && JSON.stringify(prev.filters) !== JSON.stringify(nextFilters);
                     const next: TableQuery = {
                         page: filtersChanged ? 1 : (partial.page ?? prev.page),
                         pageSize: partial.pageSize ?? prev.pageSize,
                         sort: partial.sort ?? prev.sort,
                         filters: nextFilters,
                     };
-
                     set({ tableQuery: next });
 
                     if (persistToLS && typeof window !== 'undefined') {
@@ -252,16 +324,13 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                 fetchStats: async () => {
                     const inflightKey = 'stats';
                     if (get().inFlight.has(inflightKey)) return;
-
                     set((s) => ({
                         statsLoading: true,
                         statsError: null,
                         inFlight: new Set([...s.inFlight, inflightKey]),
                     }));
-
                     try {
-                        const { data } = await api.get<CommentAdminStatsDTO>('/article/comments/stats');
-
+                        const { data } = await api.get<CommentAdminStatsDTO>(`${ROOT_DIRECTORY}/stats`);
                         set((s) => {
                             const nextInFlight = new Set(s.inFlight);
                             nextInFlight.delete(inflightKey);
@@ -281,14 +350,16 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                 serializeTableQuery: (q) => JSON.stringify(q),
 
+                groupKeyOf: (sort, filters) => JSON.stringify({ sort, filters }),
+
                 /**
-                 * Assemble VM for table rows from cached summary + thread pagination state.
+                 * Assemble VM for table rows from legacy per-query cache + thread state.
+                 * Kept for compatibility. Prefer assembleTableVMFromGroup for range-aware cache.
                  */
                 assembleTableVM: () => {
                     const { tableQuery, tableCache } = get();
                     const key = get().serializeTableQuery(tableQuery);
                     const cache = tableCache[key];
-
                     if (!cache) {
                         set({ tableVM: [] });
                         return;
@@ -326,21 +397,98 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                 },
 
                 /**
-                 * Fetch article summary table with TTL cache and deduped requests.
+                 * Assemble VM for table rows from range-aware group cache and thread state.
+                 * Builds visible slice based on current page and pageSize using itemsByIndex.
                  */
-                fetchTable: async (force = false) => {
-                    const { tableQuery, tableCache, serializeTableQuery, inFlight } = get();
-                    const key = serializeTableQuery(tableQuery);
-                    const cache = tableCache[key];
-                    const now = Date.now();
-
-                    if (!force && cache && now - cache.fetchedAt < DEFAULT_TABLE_TTL_MS) {
-                        get().assembleTableVM();
+                assembleTableVMFromGroup: () => {
+                    const { tableQuery, tableGroupCache, groupKeyOf } = get();
+                    const groupKey = groupKeyOf(tableQuery.sort, tableQuery.filters);
+                    const group = tableGroupCache[groupKey];
+                    if (!group) {
+                        set({ tableVM: [] });
                         return;
                     }
 
-                    const inflightKey = `table:${key}`;
+                    const start = (tableQuery.page - 1) * tableQuery.pageSize;
+                    const end = start + tableQuery.pageSize - 1;
+
+                    const vm: AdminArticleRowVM[] = [];
+                    for (let i = start; i <= end; i++) {
+                        const row = group.itemsByIndex[i];
+                        if (!row) break; // gap; UI can show partial until fetch resolves
+                        const { article, metrics } = row;
+
+                        const accordionState = get().rowAccordionState[article.id] ?? { isOpen: false };
+                        const threadKey = get().threadKeyOf(article.id, null);
+                        const tCache = get().threadCache[threadKey];
+
+                        const hasNextPage = Boolean(tCache?.meta.pagination.hasNextPage);
+                        const lastLoadedCursor = tCache?.meta.pagination.cursor ?? null;
+
+                        vm.push({
+                            id: article.id,
+                            title: article.title,
+                            slug: article.slug,
+                            authorName: article.author.name,
+                            authorAvatarUrl: article.author.avatarUrl ?? null,
+                            totalComments: metrics.totalComments,
+                            pendingComments: metrics.pendingComments,
+                            approvedComments: metrics.approvedComments,
+                            rejectedComments: metrics.rejectedComments,
+                            latestCommentAt: metrics.latestCommentAt ?? null,
+                            accordion: {
+                                isOpen: accordionState.isOpen,
+                                isLoading: get().threadLoading[threadKey] ?? false,
+                                lastLoadedCursor,
+                                hasNextPage,
+                            },
+                        });
+                    }
+
+                    set({ tableVM: vm });
+                },
+
+                /**
+                 * Range-aware fetch for table rows.
+                 * - Caches by filters+sort (group key).
+                 * - Stores items by absolute index.
+                 * - Serves smaller page sizes from already-fetched larger ranges.
+                 * - Fetches only missing indices for larger page sizes or new pages.
+                 */
+                fetchTable: async (force = false) => {
+                    const { tableQuery, tableGroupCache, groupKeyOf, inFlight } = get();
+                    const groupKey = groupKeyOf(tableQuery.sort, tableQuery.filters);
+                    const now = Date.now();
+                    const group = tableGroupCache[groupKey];
+
+                    // Compute absolute indices for current page
+                    const start = (tableQuery.page - 1) * tableQuery.pageSize;
+                    const end = start + tableQuery.pageSize - 1;
+                    const want: IndexRange = { start, end };
+
+                    // Dedupe key per requested slice
+                    const inflightKey = `tableGroup:${groupKey}:${start}-${end}`;
                     if (inFlight.has(inflightKey)) return;
+
+                    const isStale = !group || (now - (group?.fetchedAt ?? 0) >= DEFAULT_TABLE_TTL_MS);
+
+                    // Fast path: fully covered and not stale → assemble immediately
+                    if (!force && !isStale && group && isRangeCovered(group.coveredRanges, want)) {
+                        get().assembleTableVMFromGroup();
+                        return;
+                    }
+
+                    // Determine uncovered ranges considering TTL/force
+                    const uncovered: IndexRange[] =
+                        force || isStale || !group
+                            ? [want]
+                            : subtractCovered(group.coveredRanges, want);
+
+                    if (uncovered.length === 0) {
+                        // Covered after subtraction → assemble
+                        get().assembleTableVMFromGroup();
+                        return;
+                    }
 
                     set((s) => ({
                         tableLoading: true,
@@ -349,27 +497,82 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     }));
 
                     try {
-                        const { data } = await api.get<ArticleCommentSummaryListResponseDTO>(
-                            '/articles/comments/articles',
-                            {
-                                params: {
-                                    page: tableQuery.page,
-                                    pageSize: tableQuery.pageSize,
-                                    sortKey: tableQuery.sort.key,
-                                    sortDir: tableQuery.sort.direction,
-                                    ...tableQuery.filters,
-                                },
-                            }
-                        );
+                        // Fetch minimal slices to cover uncovered ranges
+                        const fetchedSlices: {
+                            range: IndexRange;
+                            items: ArticleCommentSummaryRowDTO[];
+                            meta: ArticleCommentSummaryListResponseDTO['meta'];
+                        }[] = [];
+
+                        for (const u of uncovered) {
+                            const rangeSize = u.end - u.start + 1;
+
+                            // Virtual page based on requested range
+                            const page = Math.floor(u.start / rangeSize) + 1;
+                            const pageSize = rangeSize;
+
+                            const { data } = await api.get<ArticleCommentSummaryListResponseDTO>(
+                                `${ROOT_DIRECTORY}/articles`,
+                                {
+                                    params: {
+                                        page,
+                                        pageSize,
+                                        sortKey: tableQuery.sort.key,
+                                        sortDir: tableQuery.sort.direction,
+                                        ...tableQuery.filters,
+                                    },
+                                }
+                            );
+
+                            fetchedSlices.push({ range: u, items: data.data, meta: data.meta });
+                        }
 
                         set((s) => {
-                            const nextCache = { ...s.tableCache, [key]: { ...data, fetchedAt: now } };
+                            const prev = s.tableGroupCache[groupKey];
+                            const itemsByIndex = { ...(prev?.itemsByIndex ?? {}) };
+                            let latestMeta = prev?.meta;
+
+                            // Place fetched items into absolute indices
+                            for (const slice of fetchedSlices) {
+                                let idx = slice.range.start;
+                                for (const item of slice.items) {
+                                    itemsByIndex[idx++] = item;
+                                }
+                                latestMeta = slice.meta; // track last meta; typically identical across slices
+                            }
+
+                            const nextRanges = mergeRanges([...(prev?.coveredRanges ?? []), want]);
+
+                            const nextMeta =
+                                latestMeta ?? {
+                                    pagination: {
+                                        page: tableQuery.page,
+                                        pageSize: tableQuery.pageSize,
+                                        totalItems: prev?.meta.pagination.totalItems ?? 0,
+                                        totalPages: prev?.meta.pagination.totalPages ?? 1,
+                                    },
+                                    sort: tableQuery.sort,
+                                    filtersApplied: tableQuery.filters,
+                                };
+
+                            const nextGroup: TableGroupCacheEntry = {
+                                itemsByIndex,
+                                coveredRanges: nextRanges,
+                                meta: nextMeta,
+                                fetchedAt: Date.now(),
+                            };
+
                             const nextInFlight = new Set(s.inFlight);
                             nextInFlight.delete(inflightKey);
-                            return { tableCache: nextCache, tableLoading: false, inFlight: nextInFlight };
+
+                            return {
+                                tableGroupCache: { ...s.tableGroupCache, [groupKey]: nextGroup },
+                                tableLoading: false,
+                                inFlight: nextInFlight,
+                            };
                         });
 
-                        get().assembleTableVM();
+                        get().assembleTableVMFromGroup();
                     } catch (err) {
                         const apiErr = toApiError(err);
                         set((s) => {
@@ -379,6 +582,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                         });
                     }
                 },
+
 
                 /**
                  * Toggle a row’s accordion open/closed state.
@@ -402,7 +606,6 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     const threadKey = get().threadKeyOf(articleId, null);
                     const cache = get().threadCache[threadKey];
                     const now = Date.now();
-
                     if (!force && cache && now - cache.fetchedAt < DEFAULT_THREAD_TTL_MS) return;
 
                     const inflightKey = `thread:${threadKey}`;
@@ -416,7 +619,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                     try {
                         const { data } = await api.get<CommentThreadSegmentDTO>(
-                            `/articles/comments/${articleId}/root`,
+                            `${ROOT_DIRECTORY}/${articleId}/root`,
                             {
                                 params: {
                                     pageSize,
@@ -458,7 +661,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                             };
                         });
 
-                        get().assembleTableVM();
+                        get().assembleTableVMFromGroup();
                     } catch (err) {
                         const apiErr = toApiError(err);
                         set((s) => {
@@ -478,7 +681,6 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     const threadKey = get().threadKeyOf(articleId, parentId);
                     const cache = get().threadCache[threadKey];
                     const now = Date.now();
-
                     if (!force && cache && now - cache.fetchedAt < DEFAULT_THREAD_TTL_MS) return;
 
                     const inflightKey = `thread:${threadKey}`;
@@ -492,7 +694,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                     try {
                         const { data } = await api.get<CommentThreadSegmentDTO>(
-                            `/articles/comments/${articleId}/children/${parentId}`,
+                            `${ROOT_DIRECTORY}/${articleId}/children/${parentId}`,
                             {
                                 params: {
                                     pageSize,
@@ -561,13 +763,12 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                     try {
                         const { data } = await api.get<LoadMoreCommentsResponseDTO>(
-                            `/articles/comments/${req.articleId}/segment`,
+                            `${ROOT_DIRECTORY}/${req.articleId}/segment`,
                             { params: req }
                         );
 
                         set((s) => {
                             const existing = s.threadCache[threadKey];
-
                             const incoming = data.nodes.map((n) => ({
                                 id: n.id,
                                 articleId: n.articleId,
@@ -583,10 +784,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                             // Deduplicate by id when merging (preserve existing order, then append new)
                             const seen = new Set<string>();
-                            const mergedNodes = [
-                                ...(existing?.nodes ?? []),
-                                ...incoming,
-                            ].filter((n) => {
+                            const mergedNodes = [...(existing?.nodes ?? []), ...incoming].filter((n) => {
                                 if (seen.has(n.id)) return false;
                                 seen.add(n.id);
                                 return true;
@@ -606,7 +804,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                             return { threadCache: nextCache, threadLoading: nextLoading, inFlight: nextInFlight };
                         });
 
-                        get().assembleTableVM();
+                        get().assembleTableVMFromGroup();
                     } catch (err) {
                         const apiErr = toApiError(err);
                         set((s) => {
@@ -626,32 +824,44 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                  * Inserts the created node at the beginning of the relevant thread.
                  */
                 createReply: async (payload) => {
-                    const { data } = await api.post<CreateCommentResponseDTO>('/articles/comments/reply', payload);
-
+                    const { data } = await api.post<CreateCommentResponseDTO>(`${ROOT_DIRECTORY}/reply`, payload);
                     const threadKey = get().threadKeyOf(payload.articleId, payload.parentId ?? null);
 
                     set((s) => {
                         const entry = s.threadCache[threadKey];
                         const nextNodes = [data.data, ...(entry?.nodes ?? [])];
-                        const nextEntry: ThreadCacheEntry = entry
-                            ? { ...entry, nodes: nextNodes, fetchedAt: Date.now() }
-                            : {
-                                nodes: nextNodes,
-                                meta: {
-                                    pagination: {
-                                        cursor: null,
-                                        nextCursor: null,
-                                        pageSize: 100,
-                                        hasNextPage: true,
+                        const nextEntry: ThreadCacheEntry =
+                            entry
+                                ? { ...entry, nodes: nextNodes, fetchedAt: Date.now() }
+                                : {
+                                    nodes: nextNodes,
+                                    meta: {
+                                        pagination: {
+                                            cursor: null,
+                                            nextCursor: null,
+                                            pageSize: 100,
+                                            hasNextPage: true,
+                                        },
+                                        sort: { key: 'createdAt', direction: 'desc' },
+                                        filtersApplied: {},
+                                        scope: { articleId: payload.articleId, parentId: payload.parentId ?? null },
                                     },
-                                    sort: { key: 'createdAt', direction: 'desc' },
-                                    filtersApplied: {},
-                                    scope: { articleId: payload.articleId, parentId: payload.parentId ?? null },
-                                },
-                                fetchedAt: Date.now(),
-                            };
+                                    fetchedAt: Date.now(),
+                                };
                         return { threadCache: { ...s.threadCache, [threadKey]: nextEntry } };
                     });
+
+                    // Table counts might be stale; mark group TTL expired to revalidate on next fetch
+                    const groupKey = get().groupKeyOf(get().tableQuery.sort, get().tableQuery.filters);
+                    const group = get().tableGroupCache[groupKey];
+                    if (group) {
+                        set((s) => ({
+                            tableGroupCache: {
+                                ...s.tableGroupCache,
+                                [groupKey]: { ...group, fetchedAt: 0 },
+                            },
+                        }));
+                    }
 
                     return data.data;
                 },
@@ -678,7 +888,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     });
 
                     try {
-                        const { data } = await api.post<ToggleLikeResponseDTO>('/articles/comments/like', payload);
+                        const { data } = await api.post<ToggleLikeResponseDTO>(`${ROOT_DIRECTORY}/like`, payload);
                         // Reconcile server likes count
                         set((s) => {
                             const nextCache = { ...s.threadCache };
@@ -736,7 +946,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                     try {
                         const { data } = await api.post<UpdateCommentStatusResponseDTO>(
-                            '/articles/comments/status',
+                            `${ROOT_DIRECTORY}/status`,
                             payload
                         );
                         // Reconcile replaced node from server
@@ -751,6 +961,18 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                             }
                             return { threadCache: nextCache };
                         });
+
+                        // Table counts might have changed; mark table group stale to revalidate
+                        const groupKey = get().groupKeyOf(get().tableQuery.sort, get().tableQuery.filters);
+                        const group = get().tableGroupCache[groupKey];
+                        if (group) {
+                            set((s) => ({
+                                tableGroupCache: {
+                                    ...s.tableGroupCache,
+                                    [groupKey]: { ...group, fetchedAt: 0 },
+                                },
+                            }));
+                        }
                     } catch (err) {
                         const apiErr = toApiError(err);
                         // Rollback to exact previous status per thread entry
@@ -781,7 +1003,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
             }),
             {
                 name: 'articles-comments-store',
-                version: 1,
+                version: 2, // bump version due to structural changes (added tableGroupCache)
                 storage: createJSONStorage(() =>
                     typeof window !== 'undefined'
                         ? localStorage
