@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import api from "@/utils/api/axios";
 import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
-import { GUIDE_STATUS } from "@/constants/user.const";
+import { GUIDE_STATUS } from "@/constants/guide.const";
 import { PendingGuideDTO } from "@/types/pendingGuide.types";
 
 const ROOT_DIR = "/users-management/guide";

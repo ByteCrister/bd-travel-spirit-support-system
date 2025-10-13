@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/pendingGuide.types";
-import { GUIDE_STATUS } from "@/constants/user.const";
+import { GUIDE_STATUS } from "@/constants/guide.const";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

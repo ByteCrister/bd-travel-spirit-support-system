@@ -1,25 +1,10 @@
 // models/pendingGuide.model.ts
 import mongoose, { Schema, Document, model, models } from "mongoose";
-import { GUIDE_STATUS } from "./user.model";
+import { GUIDE_DOCUMENT_CATEGORY, GUIDE_DOCUMENT_TYPE, GUIDE_STATUS } from "@/constants/guide.const";
 
 /** ===============================
  * TYPES
  * =============================== */
-
-// Supported file types
-export enum GuideDocumentType {
-    IMAGE = 'image',
-    PDF = 'pdf',
-    DOCX = 'docx',
-}
-
-// Document categories
-export enum GuideDocumentCategory {
-    GOVERNMENT_ID = 'government_id',
-    BUSINESS_LICENSE = 'business_license',
-    PROFESSIONAL_PHOTO = 'professional_photo',
-    CERTIFICATION = 'certification',
-}
 
 /** Address type */
 export interface PendingOrganizerAddress {
@@ -32,9 +17,9 @@ export interface PendingOrganizerAddress {
 
 /** Organizer document type */
 export interface PendingOrganizerDocument {
-    category: GuideDocumentCategory;
+    category: GUIDE_DOCUMENT_CATEGORY;
     base64Content: string;
-    fileType: GuideDocumentType;
+    fileType: GUIDE_DOCUMENT_TYPE;
     fileName?: string;
     uploadedAt: Date;
 }
@@ -76,9 +61,9 @@ const AddressSchema = new Schema<PendingOrganizerAddress>(
 /** Document schema */
 const DocumentSchema = new Schema<PendingOrganizerDocument>(
     {
-        category: { type: String, enum: Object.values(GuideDocumentCategory), required: true },
+        category: { type: String, enum: Object.values(GUIDE_DOCUMENT_CATEGORY), required: true },
         base64Content: { type: String, required: true },
-        fileType: { type: String, enum: Object.values(GuideDocumentType), required: true },
+        fileType: { type: String, enum: Object.values(GUIDE_DOCUMENT_TYPE), required: true },
         fileName: { type: String, trim: true },
         uploadedAt: { type: Date, default: Date.now },
     },

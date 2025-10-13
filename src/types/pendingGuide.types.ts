@@ -1,7 +1,7 @@
 // types/pendingGuide.types.ts
 
 import { GUIDE_DOCUMENT_CATEGORY, GUIDE_DOCUMENT_TYPE } from "@/constants/guide.const";
-import { GUIDE_STATUS } from "@/constants/user.const";
+import { GUIDE_STATUS } from "@/constants/guide.const";
 
 /** Address DTO */
 export interface PendingGuideAddressDTO {

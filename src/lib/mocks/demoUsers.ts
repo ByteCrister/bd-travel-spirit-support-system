@@ -1,4 +1,5 @@
-import { ACCOUNT_STATUS, GUIDE_STATUS, USER_ROLE } from "@/constants/user.const";
+import { GUIDE_STATUS } from "@/constants/guide.const";
+import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
 import { User } from "@/types/user.types";
 
 export const demoUsers: User[] = Array.from({ length: 30 }).map((_, i) => {

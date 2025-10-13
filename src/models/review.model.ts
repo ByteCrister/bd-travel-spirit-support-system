@@ -11,18 +11,7 @@ import mongoose, {
     CallbackWithoutResultAndOptionalError
 } from "mongoose";
 import { TourModel } from "./tour.model";
-
-////////////////////////////////////////////////////////////////////////////////
-// ENUMS: Controlled values for trip context
-////////////////////////////////////////////////////////////////////////////////
-
-export enum TRIP_TYPE {
-    SOLO = "Solo",
-    COUPLE = "Couple",
-    FAMILY = "Family",
-    FRIENDS = "Friends",
-    BUSINESS = "Business",
-}
+import { TRAVEL_TYPE } from "@/constants/tour.const";
 
 ////////////////////////////////////////////////////////////////////////////////
 // INTERFACE: The shape of a Review document
@@ -35,7 +24,7 @@ export interface IReview extends Document {
     title?: string;               // Optional headline
     comment: string;              // Full textual feedback
     images: Types.ObjectId[];     // Attached review images
-    tripType?: TRIP_TYPE;         // Traveler context
+    tripType?: TRAVEL_TYPE;         // Traveler context
     travelDate?: Date;            // When the trip occurred
     isVerified: boolean;          // True if booking verified
     isApproved: boolean;          // Moderation state
@@ -108,7 +97,7 @@ const ReviewSchema = new Schema<IReview>(
         images: [{ type: Schema.Types.ObjectId, ref: "Image" }],
 
         // Trip context for other travelers
-        tripType: { type: String, enum: Object.values(TRIP_TYPE) },
+        tripType: { type: String, enum: Object.values(TRAVEL_TYPE) },
 
         // When the trip actually took place
         travelDate: { type: Date, index: true },

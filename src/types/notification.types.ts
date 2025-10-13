@@ -1,4 +1,4 @@
-import { NOTIFICATION_PRIORITY, USER_NOTIFICATION_TYPE } from "../constants/notification.const";
+import { NOTIFICATION_PRIORITY, USER_NOTIFICATION_TYPE } from "../constants/customerNotification.const";
 
 /**
  * Notification DTO for frontend

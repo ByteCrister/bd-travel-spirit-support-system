@@ -12,7 +12,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { GUIDE_STATUS } from "@/constants/user.const";
+import { GUIDE_STATUS } from "@/constants/guide.const";
 import { QueryParams } from "@/store/useGuideStore";
 import { Search, X } from "lucide-react";
 

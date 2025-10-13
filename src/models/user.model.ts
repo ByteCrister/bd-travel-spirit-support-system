@@ -1,81 +1,19 @@
 // * models/user.model.ts
+import {
+  GUIDE_DOCUMENT_CATEGORY,
+  GUIDE_DOCUMENT_TYPE,
+  GUIDE_STATUS,
+} from "@/constants/guide.const";
+import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
 import mongoose, { Schema, Document, Types, model } from "mongoose";
 import { models } from "mongoose";
 
-/**
- * =========================
- * CONST ENUMS
- * =========================
- */
-
-/** Roles supported by the platform */
-export enum USER_ROLE {
-    /** Regular user booking tours */
-    TRAVELER = "traveler",
-
-    /** Person conducting tours */
-    GUIDE = "guide",
-
-    /** Manages schedules, logistics */
-    ASSISTANT = "assistant",
-
-    /** Customer support staff */
-    SUPPORT = "support",
-
-    /** Platform administrator */
-    ADMIN = "admin",
-}
-
-/** Account lifecycle states */
-export enum ACCOUNT_STATUS {
-    /** Account created but not yet verified */
-    PENDING = "pending",
-
-    /** Account is active and in good standing */
-    ACTIVE = "active",
-
-    /** Temporarily disabled due to violations or inactivity */
-    SUSPENDED = "suspended",
-
-    /** Permanently banned from the platform */
-    BANNED = "banned",
-}
-
-/** Organizer profile verification states */
-export enum GUIDE_STATUS {
-    /** Awaiting admin review */
-    PENDING = "pending",
-
-    /** Approved and allowed to create/manage tours */
-    APPROVED = "approved",
-
-    /** Rejected after review */
-    REJECTED = "rejected",
-}
-
-// Document categories
-export enum OrganizerDocumentCategory {
-    GOVERNMENT_ID = 'government_id',
-    BUSINESS_LICENSE = 'business_license',
-    PROFESSIONAL_PHOTO = 'professional_photo',
-    CERTIFICATION = 'certification',
-}
-
-// Supported file types
-export enum OrganizerDocumentType {
-    IMAGE = 'image',
-    PDF = 'pdf',
-    DOCX = 'docx',
-}
-
 export interface OrganizerDocument {
-    category: OrganizerDocumentCategory;
-    base64Content: string;
-    fileType: OrganizerDocumentType;
-    fileName?: string;
+  category: GUIDE_DOCUMENT_CATEGORY;
+  base64Content: string;
+  fileType: GUIDE_DOCUMENT_TYPE;
+  fileName?: string;
 }
-
-
 
 /**
  * =========================
@@ -85,77 +23,79 @@ export interface OrganizerDocument {
 
 /** Shared address schema for billing, profile, etc. */
 const AddressSchema = new Schema(
-    {
-        street: { type: String, trim: true },
-        city: { type: String, trim: true },
-        state: { type: String, trim: true },
-        country: { type: String, trim: true },
-        zip: { type: String, trim: true },
-    },
-    { _id: false }
+  {
+    street: { type: String, trim: true },
+    city: { type: String, trim: true },
+    state: { type: String, trim: true },
+    country: { type: String, trim: true },
+    zip: { type: String, trim: true },
+  },
+  { _id: false }
 );
 
 /** Payment method with billing address */
 const PaymentMethodSchema = new Schema(
-    {
-        // Prefer storing only PSP token + brand + last4 + expiry (no PAN)
-        token: { type: String, required: true }, // PSP token/id
-        cardType: { type: String, required: true },
-        last4: { type: String, required: true },
-        expiryMonth: { type: Number, required: true },
-        expiryYear: { type: Number, required: true },
-        cardHolder: { type: String, required: true },
-        billingAddress: { type: AddressSchema, required: true },
-    },
-    { _id: false }
+  {
+    // Prefer storing only PSP token + brand + last4 + expiry (no PAN)
+    token: { type: String, required: true }, // PSP token/id
+    cardType: { type: String, required: true },
+    last4: { type: String, required: true },
+    expiryMonth: { type: Number, required: true },
+    expiryYear: { type: Number, required: true },
+    cardHolder: { type: String, required: true },
+    billingAddress: { type: AddressSchema, required: true },
+  },
+  { _id: false }
 );
 
 /** Embedded organizer profile for guides / agencies */
 const OrganizerProfileSchema = new Schema(
-    {
-        companyName: { type: String, trim: true },
-        bio: { type: String, trim: true },
-        social: { type: String, trim: true }, // could store URL or handle
-        documents: {
-            type: [
-                {
-                    category: {
-                        type: String,
-                        enum: Object.values(OrganizerDocumentCategory),
-                        required: true,
-                    },
-                    base64Content: { type: String, required: true }, // full base64 string
-                    fileType: {
-                        type: String,
-                        enum: Object.values(OrganizerDocumentType),
-                        required: true,
-                    },
-                    fileName: { type: String, trim: true },
-                    uploadedAt: { type: Date, default: Date.now },
-                },
-            ],
-            validate: [
-                (val: {
-                    category: OrganizerDocumentCategory;
-                    base64Content: string;
-                    fileType: OrganizerDocumentType;
-                    fileName?: string;
-                    uploadedAt: Date;
-                }[]) => val.length > 0,
-                "At least one verification document is required",
-            ],
-            required: true,
-        },
-        status: {
+  {
+    companyName: { type: String, trim: true },
+    bio: { type: String, trim: true },
+    social: { type: String, trim: true }, // could store URL or handle
+    documents: {
+      type: [
+        {
+          category: {
             type: String,
-            enum: Object.values(GUIDE_STATUS),
-            default: GUIDE_STATUS.PENDING,
+            enum: Object.values(GUIDE_DOCUMENT_CATEGORY),
+            required: true,
+          },
+          base64Content: { type: String, required: true }, // full base64 string
+          fileType: {
+            type: String,
+            enum: Object.values(GUIDE_DOCUMENT_TYPE),
+            required: true,
+          },
+          fileName: { type: String, trim: true },
+          uploadedAt: { type: Date, default: Date.now },
         },
-        appliedAt: Date,
-        reviewedAt: Date,
-        reviewer: { type: Schema.Types.ObjectId, ref: "User" }, // admin user who reviewed
+      ],
+      validate: [
+        (
+          val: {
+            category: GUIDE_DOCUMENT_CATEGORY;
+            base64Content: string;
+            fileType: GUIDE_DOCUMENT_TYPE;
+            fileName?: string;
+            uploadedAt: Date;
+          }[]
+        ) => val.length > 0,
+        "At least one verification document is required",
+      ],
+      required: true,
     },
-    { _id: false, timestamps: true } // timestamps track last update
+    status: {
+      type: String,
+      enum: Object.values(GUIDE_STATUS),
+      default: GUIDE_STATUS.PENDING,
+    },
+    appliedAt: Date,
+    reviewedAt: Date,
+    reviewer: { type: Schema.Types.ObjectId, ref: "User" }, // admin user who reviewed
+  },
+  { _id: false, timestamps: true } // timestamps track last update
 );
 
 /**
@@ -164,88 +104,88 @@ const OrganizerProfileSchema = new Schema(
  * =========================
  */
 export interface IUser extends Document {
-    /** Full name of the user */
-    name: string;
+  /** Full name of the user */
+  name: string;
 
-    /** Unique email address for login and communication */
-    email: string;
+  /** Unique email address for login and communication */
+  email: string;
 
-    /** Hashed password */
-    password?: string;
+  /** Hashed password */
+  password?: string;
 
-    /** Role-based permissions */
-    role: USER_ROLE;
+  /** Role-based permissions */
+  role: USER_ROLE;
 
-    /** Profile picture URL */
-    avatar?: string;
+  /** Profile picture URL */
+  avatar?: string;
 
-    /** Contact phone number */
-    phone?: string;
+  /** Contact phone number */
+  phone?: string;
 
-    /** Optional address details */
-    address?: mongoose.InferSchemaType<typeof AddressSchema>;
+  /** Optional address details */
+  address?: mongoose.InferSchemaType<typeof AddressSchema>;
 
-    /** Date of birth */
-    dateOfBirth?: Date;
+  /** Date of birth */
+  dateOfBirth?: Date;
 
-    /** Whether the email is verified */
-    isVerified: boolean;
+  /** Whether the email is verified */
+  isVerified: boolean;
 
-    /** Current account lifecycle state */
-    accountStatus: ACCOUNT_STATUS;
+  /** Current account lifecycle state */
+  accountStatus: ACCOUNT_STATUS;
 
-    /** Token for password reset */
-    resetPasswordToken?: string;
+  /** Token for password reset */
+  resetPasswordToken?: string;
 
-    /** Expiration date for password reset token */
-    resetPasswordExpires?: Date;
+  /** Expiration date for password reset token */
+  resetPasswordExpires?: Date;
 
-    /** Tours already booked */
-    bookingHistory: Types.ObjectId[];
+  /** Tours already booked */
+  bookingHistory: Types.ObjectId[];
 
-    /** Tours in cart */
-    cart: Types.ObjectId[];
+  /** Tours in cart */
+  cart: Types.ObjectId[];
 
-    /** Tours user might want later */
-    wishlist: Types.ObjectId[];
+  /** Tours user might want later */
+  wishlist: Types.ObjectId[];
 
-    /** Stored payment methods (tokenized/masked) */
-    paymentMethods: mongoose.InferSchemaType<typeof PaymentMethodSchema>[];
+  /** Stored payment methods (tokenized/masked) */
+  paymentMethods: mongoose.InferSchemaType<typeof PaymentMethodSchema>[];
 
-    /** User preferences for language and currency */
-    preferences: {
-        language: string;
-        currency: string;
-    };
+  /** User preferences for language and currency */
+  preferences: {
+    language: string;
+    currency: string;
+  };
 
-    /** Number of failed login attempts */
-    loginAttempts: number;
+  /** Number of failed login attempts */
+  loginAttempts: number;
 
-    /** Last login timestamp */
-    lastLogin?: Date;
+  /** Last login timestamp */
+  lastLogin?: Date;
 
-    lockUntil?: Date;
+  lockUntil?: Date;
 
-    /** Suspension details if applicable */
-    suspension?: {
-        reason: string;
-        suspendedBy: Types.ObjectId;
-        until: Date;
-        createdAt: Date;
-    };
+  /** Suspension details if applicable */
+  suspension?: {
+    reason: string;
+    suspendedBy: Types.ObjectId;
+    until: Date;
+    createdAt: Date;
+  };
 
-    /** Soft-delete timestamp */
-    deletedAt?: Date;
+  /** Soft-delete timestamp */
+  deletedAt?: Date;
 
-    /** Organizer-specific profile */
-    organizerProfile?: mongoose.InferSchemaType<typeof OrganizerProfileSchema>;
+  /** Organizer-specific profile */
+  organizerProfile?: mongoose.InferSchemaType<typeof OrganizerProfileSchema>;
 
-    /** Tours created by this user (if organizer) */
-    toursCreated?: Types.ObjectId[];
+  /** Tours created by this user (if organizer) */
+  toursCreated?: Types.ObjectId[];
 
-    // virtuals
-    isLocked?: boolean;
-    isSuspended?: boolean;
+  // virtuals
+  isLocked?: boolean;
+  isSuspended?: boolean;
 }
 
 /**
@@ -254,85 +194,91 @@ export interface IUser extends Document {
  * =========================
  */
 const UserSchema = new Schema<IUser>(
-    {
-        // Core identity
-        name: { type: String, required: true, trim: true },
-        email: { type: String, required: true, unique: true, index: true, trim: true },
-        password: { type: String, required: true },
-
-        // Role-based permissions
-        role: {
-            type: String,
-            enum: Object.values(USER_ROLE),
-            default: USER_ROLE.TRAVELER,
-            required: true,
-            index: true,
-        },
-
-        // Profile
-        avatar: String,
-        phone: String,
-        address: AddressSchema,
-        dateOfBirth: Date,
-
-        // Account status
-        isVerified: { type: Boolean, default: false },
-        accountStatus: {
-            type: String,
-            enum: Object.values(ACCOUNT_STATUS),
-            default: ACCOUNT_STATUS.PENDING,
-        },
-
-        // Password reset flow
-        resetPasswordToken: String,
-        resetPasswordExpires: Date,
-
-        // Tour interactions
-        bookingHistory: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
-        cart: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
-        wishlist: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
-
-        // Payments
-        paymentMethods: { type: [PaymentMethodSchema], default: [] },
-
-        // User preferences
-        preferences: {
-            language: { type: String, default: "en" },
-            currency: { type: String, default: "BDT" },
-        },
-
-        // Security & activity tracking
-        loginAttempts: { type: Number, default: 0 },
-        lockUntil: { type: Date },
-        lastLogin: Date,
-
-        // Soft delete and suspension
-        deletedAt: Date,
-        suspension: {
-            reason: String,
-            suspendedBy: { type: Schema.Types.ObjectId, ref: "User" },
-            until: Date,
-            createdAt: Date,
-        },
-
-        // Organizer data
-        organizerProfile: OrganizerProfileSchema,
-        toursCreated: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
+  {
+    // Core identity
+    name: { type: String, required: true, trim: true },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      trim: true,
     },
-    {
-        timestamps: true,
-        versionKey: false,
-        toJSON: {
-            virtuals: true,
-            transform: (_doc, ret) => {
-                delete ret.password;
-                delete ret.resetPasswordToken;
-                delete ret.resetPasswordExpires;
-                return ret;
-            }
-        },
-        toObject: { virtuals: true }
-    }
+    password: { type: String, required: true },
+
+    // Role-based permissions
+    role: {
+      type: String,
+      enum: Object.values(USER_ROLE),
+      default: USER_ROLE.TRAVELER,
+      required: true,
+      index: true,
+    },
+
+    // Profile
+    avatar: String,
+    phone: String,
+    address: AddressSchema,
+    dateOfBirth: Date,
+
+    // Account status
+    isVerified: { type: Boolean, default: false },
+    accountStatus: {
+      type: String,
+      enum: Object.values(ACCOUNT_STATUS),
+      default: ACCOUNT_STATUS.PENDING,
+    },
+
+    // Password reset flow
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
+
+    // Tour interactions
+    bookingHistory: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
+    cart: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
+    wishlist: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
+
+    // Payments
+    paymentMethods: { type: [PaymentMethodSchema], default: [] },
+
+    // User preferences
+    preferences: {
+      language: { type: String, default: "en" },
+      currency: { type: String, default: "BDT" },
+    },
+
+    // Security & activity tracking
+    loginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date },
+    lastLogin: Date,
+
+    // Soft delete and suspension
+    deletedAt: Date,
+    suspension: {
+      reason: String,
+      suspendedBy: { type: Schema.Types.ObjectId, ref: "User" },
+      until: Date,
+      createdAt: Date,
+    },
+
+    // Organizer data
+    organizerProfile: OrganizerProfileSchema,
+    toursCreated: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+    toJSON: {
+      virtuals: true,
+      transform: (_doc, ret) => {
+        delete ret.password;
+        delete ret.resetPasswordToken;
+        delete ret.resetPasswordExpires;
+        return ret;
+      },
+    },
+    toObject: { virtuals: true },
+  }
 );
 
 // Concrete document type (mongoose model instances)
@@ -340,13 +286,12 @@ export type IUserDoc = IUser & mongoose.Document;
 
 // Virtuals
 UserSchema.virtual("isLocked").get(function (this: IUserDoc) {
-    return !!(this.lockUntil && this.lockUntil.getTime() > Date.now());
+  return !!(this.lockUntil && this.lockUntil.getTime() > Date.now());
 });
 
 UserSchema.virtual("isSuspended").get(function (this: IUserDoc) {
-    return !!(this.suspension?.until && this.suspension.until > new Date());
+  return !!(this.suspension?.until && this.suspension.until > new Date());
 });
-
 
 /**
  * =========================
@@ -357,15 +302,15 @@ UserSchema.virtual("isSuspended").get(function (this: IUserDoc) {
 // TEXT INDEX (one compound index only)
 // =============================
 UserSchema.index({
-    name: "text",
-    email: "text",
-    phone: "text",
-    "address.street": "text",
-    "address.city": "text",
-    "address.state": "text",
-    "address.country": "text",
-    "address.zip": "text",
-    "organizerProfile.companyName": "text"
+  name: "text",
+  email: "text",
+  phone: "text",
+  "address.street": "text",
+  "address.city": "text",
+  "address.state": "text",
+  "address.country": "text",
+  "address.zip": "text",
+  "organizerProfile.companyName": "text",
 });
 
 // =============================
@@ -383,7 +328,6 @@ UserSchema.index({ lastLogin: -1 });
 
 // Optional: range queries
 UserSchema.index({ dateOfBirth: 1 });
-
 
 /**
  * =========================

@@ -5,7 +5,8 @@
  * ======================================
  */
 
-import { ACCOUNT_STATUS, GUIDE_STATUS, USER_ROLE } from "@/constants/user.const";
+import { GUIDE_STATUS } from "@/constants/guide.const";
+import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
 
 /** Postal address structure */
 export interface Address {

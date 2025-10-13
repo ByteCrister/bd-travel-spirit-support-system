@@ -1,4 +1,4 @@
-import { GUIDE_STATUS } from "@/constants/user.const";
+import { GUIDE_STATUS } from "@/constants/guide.const";
 import { Badge } from "../ui/badge";
 import { FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
 import { cn } from "@/lib/utils";

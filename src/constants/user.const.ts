@@ -6,45 +6,33 @@
 
 /** Roles supported by the platform */
 export enum USER_ROLE {
-    /** Regular user booking tours */
-    TRAVELER = "traveler",
+  /** Regular user booking tours */
+  TRAVELER = "traveler",
 
-    /** Person conducting tours */
-    GUIDE = "guide",
+  /** Person conducting tours */
+  GUIDE = "guide",
 
-    /** Manages schedules, logistics */
-    ASSISTANT = "assistant",
+  /** Manages schedules, logistics */
+  ASSISTANT = "assistant",
 
-    /** Customer support staff */
-    SUPPORT = "support",
+  /** Customer support staff */
+  SUPPORT = "support",
 
-    /** Platform administrator */
-    ADMIN = "admin",
+  /** Platform administrator */
+  ADMIN = "admin",
 }
 
 /** Account lifecycle states */
 export enum ACCOUNT_STATUS {
-    /** Account created but not yet verified */
-    PENDING = "pending",
+  /** Account created but not yet verified */
+  PENDING = "pending",
 
-    /** Account is active and in good standing */
-    ACTIVE = "active",
+  /** Account is active and in good standing */
+  ACTIVE = "active",
 
-    /** Temporarily disabled due to violations or inactivity */
-    SUSPENDED = "suspended",
+  /** Temporarily disabled due to violations or inactivity */
+  SUSPENDED = "suspended",
 
-    /** Permanently banned from the platform */
-    BANNED = "banned",
-}
-
-/** Organizer profile verification states */
-export enum GUIDE_STATUS {
-    /** Awaiting admin review */
-    PENDING = "pending",
-
-    /** Approved and allowed to create/manage tours */
-    APPROVED = "approved",
-
-    /** Rejected after review */
-    REJECTED = "rejected",
+  /** Permanently banned from the platform */
+  BANNED = "banned",
 }

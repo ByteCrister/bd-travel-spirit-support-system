@@ -29,3 +29,15 @@ export enum GUIDE_DOCUMENT_CATEGORY {
   PROFESSIONAL_PHOTO = "professional_photo", // Profile photo for public display
   CERTIFICATION = "certification",           // Relevant training or skill certificates
 }
+
+/** Organizer profile verification states */
+export enum GUIDE_STATUS {
+  /** Awaiting admin review */
+  PENDING = "pending",
+
+  /** Approved and allowed to create/manage tours */
+  APPROVED = "approved",
+
+  /** Rejected after review */
+  REJECTED = "rejected",
+}

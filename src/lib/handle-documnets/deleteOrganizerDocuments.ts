@@ -1,8 +1,9 @@
-import { OrganizerDocument, OrganizerDocumentCategory, UserModel } from "@/models/user.model";
+import { OrganizerDocument, UserModel } from "@/models/user.model";
 import { getDocumentStorageProvider } from "../storage-providers/documents";
 import { STORAGE_PROVIDER } from "@/models/image.model";
+import { GUIDE_DOCUMENT_CATEGORY } from "@/constants/guide.const";
 
-export async function deleteOrganizerDocuments(userId: string, categories: OrganizerDocumentCategory[]) {
+export async function deleteOrganizerDocuments(userId: string, categories: GUIDE_DOCUMENT_CATEGORY[]) {
     const user = await UserModel.findById(userId);
     if (!user || !user.organizerProfile) throw new Error("User or organizer profile not found");
 

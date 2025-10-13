@@ -8,8 +8,10 @@
 export enum TRAVEL_TYPE {
   COUPLES = "Couples",
   GROUP_OF_FRIENDS = "Group of friends",
-  SOLO_TRAVELERS = "Solo travelers",
+  SOLO = "Solo",
   FAMILIES = "Families",
+  BUSINESS = "Business",
+  ADVENTURE_SEEKERS = "Adventure Seekers",
 }
 
 /**
