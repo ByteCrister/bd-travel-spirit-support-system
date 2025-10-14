@@ -4,11 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ARTICLE_STATUS, ARTICLE_TYPE, TRAVEL_CATEGORY } from '@/types/article.types';
 import { TagInput } from './TagInput';
 import { ImageUploader } from './ImageUploader';
 import { FormikErrors, FormikTouched } from 'formik';
 import { CreateArticleFormValues } from '@/utils/validators/article.create.validator';
+import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
+import { TRAVEL_TYPE } from '@/constants/tour.const';
 
 export interface ArticleBasicsProps {
     values: CreateArticleFormValues;
@@ -92,7 +93,7 @@ export function ArticleBasics({ values, setFieldValue }: ArticleBasicsProps) {
             <div>
                 <label className="text-sm font-medium">Categories</label>
                 <div className="mt-2 flex flex-wrap gap-2">
-                    {Object.values(TRAVEL_CATEGORY).map((cat) => {
+                    {Object.values(TRAVEL_TYPE).map((cat) => {
                         const active = categories.includes(cat);
                         return (
                             <Badge
@@ -101,7 +102,7 @@ export function ArticleBasics({ values, setFieldValue }: ArticleBasicsProps) {
                                 className="cursor-pointer"
                                 onClick={() => {
                                     const next = active
-                                        ? categories.filter((c): c is TRAVEL_CATEGORY => typeof c === 'string' && c !== cat)
+                                        ? categories.filter((c): c is TRAVEL_TYPE => typeof c === 'string' && c !== cat)
                                         : [...categories, cat];
                                     setFieldValue('categories', next);
                                 }}

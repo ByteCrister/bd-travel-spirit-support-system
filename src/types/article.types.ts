@@ -1,5 +1,9 @@
 // /types/article.types.ts
 
+import { ARTICLE_STATUS, ARTICLE_TYPE } from "@/constants/article.const";
+import { COMMENT_STATUS } from "@/constants/articleComment.const";
+import { TRAVEL_TYPE } from "@/constants/tour.const";
+
 /* ============================================================
    Core primitives and cross-cutting types
    ============================================================ */
@@ -20,37 +24,6 @@ export interface UserRef {
 /** Minimal reference for images (your Image model) */
 export type ImageUrl = URL;
 
-/* ============================================================
-   Domain enums (aligned with mongoose model)
-   ============================================================ */
-
-export enum ARTICLE_STATUS {
-    DRAFT = 'draft',
-    PUBLISHED = 'published',
-    ARCHIVED = 'archived',
-}
-
-export enum TRAVEL_CATEGORY {
-    DESTINATION_GUIDE = 'destination_guide',
-    BEACHES = 'beaches',
-    FOOD_DRINK = 'food_drink',
-    CULTURE_HISTORY = 'culture_history',
-    ADVENTURE = 'adventure',
-    FAMILY = 'family',
-    ROMANTIC = 'romantic',
-}
-
-export enum ARTICLE_TYPE {
-    SINGLE_DESTINATION = 'single_destination',
-    MULTI_DESTINATION = 'multi_destination',
-    GENERAL_TIPS = 'general_tips',
-}
-
-export enum COMMENT_STATUS {
-    PENDING = 'pending',
-    APPROVED = 'approved',
-    REJECTED = 'rejected',
-}
 
 /* ============================================================
    Content blocks (aligned, but safe for UI)
@@ -115,7 +88,7 @@ export interface ArticleListItem {
     author: UserRef;
     summary: string;
     heroImage?: ImageUrl;
-    categories?: TRAVEL_CATEGORY[];
+    categories?: TRAVEL_TYPE[];
     tags?: string[];
     publishedAt?: ISODateString;
     readingTime?: number;
@@ -191,7 +164,7 @@ export interface ArticleSort {
 export interface ArticleFilter {
     status?: ARTICLE_STATUS[];
     articleType?: ARTICLE_TYPE[];
-    categories?: TRAVEL_CATEGORY[];
+    categories?: TRAVEL_TYPE[];
     tags?: string[];
     authorIds?: ID[];
     publishedFrom?: ISODateString;
@@ -286,7 +259,7 @@ export interface CreateArticleInput {
     summary: string;
     heroImage: ImageUrl | null; // backend may accept image id; UI may carry ImageUrl
     destinations?: DestinationBlock[];
-    categories?: TRAVEL_CATEGORY[];
+    categories?: TRAVEL_TYPE[];
     tags?: string[];
     seo?: {
         metaTitle: string;

@@ -8,13 +8,13 @@
  * - Easy reuse across services, controllers, and tests
  */
 export enum ADMIN_NOTIFICATION_TYPE {
-    NEW_USER_SIGNUP = 'new_user_signup',       // A new user has registered
-    NEW_BOOKING = 'new_booking',               // A booking/reservation has been made
-    LOW_INVENTORY = 'low_inventory',           // Stock or inventory is running low
-    HIGH_TRAFFIC_ALERT = 'high_traffic_alert', // Unusually high traffic detected
-    FAILED_PAYMENT = 'failed_payment',         // A payment attempt failed
-    SYSTEM_ERROR = 'system_error',             // A critical system error occurred
-    CONTENT_FLAGGED = 'content_flagged',       // User-generated content was flagged
+  NEW_USER_SIGNUP = "new_user_signup", // A new user has registered
+  NEW_BOOKING = "new_booking", // A booking/reservation has been made
+  LOW_INVENTORY = "low_inventory", // Stock or inventory is running low
+  HIGH_TRAFFIC_ALERT = "high_traffic_alert", // Unusually high traffic detected
+  FAILED_PAYMENT = "failed_payment", // A payment attempt failed
+  SYSTEM_ERROR = "system_error", // A critical system error occurred
+  CONTENT_FLAGGED = "content_flagged", // User-generated content was flagged
 }
 
 /**
@@ -24,8 +24,8 @@ export enum ADMIN_NOTIFICATION_TYPE {
  * require immediate attention vs. those that can be handled later.
  */
 export enum ADMIN_NOTIFICATION_PRIORITY {
-    LOW = 'low',           // Informational, no immediate action needed
-    MEDIUM = 'medium',     // Normal priority, should be addressed in due course
-    HIGH = 'high',         // Important, requires timely attention
-    CRITICAL = 'critical', // Urgent, immediate action required
+  LOW = "low", // Informational, no immediate action needed
+  MEDIUM = "medium", // Normal priority, should be addressed in due course
+  HIGH = "high", // Important, requires timely attention
+  CRITICAL = "critical", // Urgent, immediate action required
 }

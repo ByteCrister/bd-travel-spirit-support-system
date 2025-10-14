@@ -8,11 +8,6 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import {
-    ARTICLE_STATUS,
-    ARTICLE_TYPE,
-    TRAVEL_CATEGORY,
-} from '@/types/article.types';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import {
     FiFileText,
@@ -29,6 +24,8 @@ import {
 } from 'react-icons/fi';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
+import { TRAVEL_TYPE } from '@/constants/tour.const';
 
 type Values = {
     title: string;
@@ -37,7 +34,7 @@ type Values = {
     heroImage: string | null;
     status: ARTICLE_STATUS;
     articleType: ARTICLE_TYPE;
-    categories: TRAVEL_CATEGORY[];
+    categories: TRAVEL_TYPE[];
     tags: string[];
 };
 
@@ -405,7 +402,7 @@ export function OverviewSection() {
                             Select relevant categories for your article
                         </p>
                         <div className="flex flex-wrap gap-2">
-                            {Object.values(TRAVEL_CATEGORY).map((c) => {
+                            {Object.values(TRAVEL_TYPE).map((c) => {
                                 const selected = values.categories.includes(c);
                                 return (
                                     <motion.div

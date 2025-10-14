@@ -12,6 +12,10 @@ export enum TRAVEL_TYPE {
   FAMILIES = "Families",
   BUSINESS = "Business",
   ADVENTURE_SEEKERS = "Adventure Seekers",
+  DESTINATION_GUIDE = "destination_guide",
+  BEACHES = "beaches",
+  FOOD_DRINK = "food_drink",
+  CULTURE_HISTORY = "culture_history",
 }
 
 /**

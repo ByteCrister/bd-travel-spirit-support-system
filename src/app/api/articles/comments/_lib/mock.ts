@@ -1,7 +1,6 @@
 // app/api/article/comments/_lib/mock.ts
 import { faker } from '@faker-js/faker';
 import {
-    COMMENT_STATUS,
     type ArticlePreviewDTO,
     type ArticleCommentMetricsDTO,
     type ArticleCommentSummaryRowDTO,
@@ -17,6 +16,7 @@ import {
     type CommentAdminStatsDTO,
 } from '@/types/article-comment.types';
 import { USER_ROLE } from '@/constants/user.const';
+import { COMMENT_STATUS } from '@/constants/articleComment.const';
 
 // --- Mock dataset sizes (tune for realism) ---
 const ARTICLE_COUNT = 35;

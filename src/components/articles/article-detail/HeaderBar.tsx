@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { ARTICLE_STATUS } from '@/types/article.types';
+import { ARTICLE_STATUS } from '@/constants/article.const';
 
 type Props = {
     title: string;

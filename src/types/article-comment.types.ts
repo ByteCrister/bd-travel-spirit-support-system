@@ -1,5 +1,6 @@
 // /types/article-comment.types.ts
 
+import { COMMENT_STATUS } from "@/constants/articleComment.const";
 import { USER_ROLE } from "@/constants/user.const";
 
 /**
@@ -20,16 +21,6 @@ import { USER_ROLE } from "@/constants/user.const";
 /* ========================================================================== */
 /* Domain enums & base primitives                                             */
 /* ========================================================================== */
-
-/**
- * Matches your Mongoose COMMENT_STATUS and normalizes to lowercase strings.
- * Keep this the single source of truth for status in the frontend.
- */
-export enum COMMENT_STATUS {
-    PENDING = 'pending',
-    APPROVED = 'approved',
-    REJECTED = 'rejected',
-}
 
 /**
  * Safe identifier used across DTOs.

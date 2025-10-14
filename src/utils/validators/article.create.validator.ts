@@ -3,8 +3,8 @@ import * as Yup from 'yup';
 import {
     ARTICLE_STATUS,
     ARTICLE_TYPE,
-    TRAVEL_CATEGORY,
-} from '@/types/article.types';
+} from '@/constants/article.const';
+import { TRAVEL_TYPE } from '@/constants/tour.const';
 
 const richTextBlockSchema = Yup.object({
     type: Yup.string()
@@ -70,7 +70,7 @@ export const createArticleSchema = Yup.object().shape({
     heroImage: Yup.string().url().nullable(),
     destinations: Yup.array().of(destinationSchema).default([]),
     categories: Yup.array()
-        .of(Yup.mixed<TRAVEL_CATEGORY>().oneOf(Object.values(TRAVEL_CATEGORY)))
+        .of(Yup.mixed<TRAVEL_TYPE>().oneOf(Object.values(TRAVEL_TYPE)))
         .default([]),
     tags: Yup.array().of(Yup.string()).default([]),
     seo: Yup.object({

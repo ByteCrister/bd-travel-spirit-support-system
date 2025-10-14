@@ -2,7 +2,7 @@
 'use client';
 
 import { memo, useState } from 'react';
-import { CommentDetailDTO, COMMENT_STATUS } from '@/types/article-comment.types';
+import { CommentDetailDTO } from '@/types/article-comment.types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { ReplyEditor } from './ReplyEditor';
 import { ModerationReasonDialog } from './ModerationReasonDialog';
 import { useArticleCommentsStore } from '@/store/useArticleCommentsStore';
+import { COMMENT_STATUS } from '@/constants/articleComment.const';
 
 export const CommentItem = memo(function CommentItem({
     node,

@@ -23,10 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { showToast } from '@/components/global/showToast';
 import { useArticleStore } from '@/store/useArticleStore';
 import {
-    ARTICLE_STATUS,
-    ARTICLE_TYPE,
     CreateArticleInput,
-    TRAVEL_CATEGORY,
 } from '@/types/article.types';
 import { ArticleBasics } from './ArticleBasics';
 import { DestinationBlockForm } from './DestinationBlockForm';
@@ -34,6 +31,8 @@ import { FaqForm } from './FaqForm';
 import { SeoForm } from './SeoForm';
 import { CreateArticleFormValues, createArticleSchema } from '@/utils/validators/article.create.validator';
 import { playfair, inter } from '@/styles/fonts';
+import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
+import { TRAVEL_TYPE } from '@/constants/tour.const';
 
 interface TabConfig {
     value: string;
@@ -125,8 +124,8 @@ export function ArticleForm() {
                         images: dest.images?.filter((img): img is string => !!img) ?? [],
                     }))
                     : undefined,
-                categories: values.categories?.filter((c): c is TRAVEL_CATEGORY => Boolean(c))?.length
-                    ? values.categories.filter((c): c is TRAVEL_CATEGORY => Boolean(c))
+                categories: values.categories?.filter((c): c is TRAVEL_TYPE => Boolean(c))?.length
+                    ? values.categories.filter((c): c is TRAVEL_TYPE => Boolean(c))
                     : undefined,
                 tags: values.tags?.filter(Boolean).length
                     ? values.tags.filter((t): t is string => Boolean(t))

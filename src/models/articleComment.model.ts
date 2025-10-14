@@ -1,17 +1,6 @@
 // models/travelComment.model.ts
+import { COMMENT_STATUS } from "@/constants/articleComment.const";
 import { Schema, model, models, Types, Document } from "mongoose";
-
-/**
- * Enum representing the moderation status of a comment.
- * - PENDING: Awaiting review or automatic moderation.
- * - APPROVED: Visible to all users.
- * - REJECTED: Hidden due to moderation rules.
- */
-export enum CommentStatus {
-  PENDING = "pending",
-  APPROVED = "approved",
-  REJECTED = "rejected",
-}
 
 /**
  * Interface describing the shape of a Travel Comment document.
@@ -24,7 +13,7 @@ export interface ITravelComment extends Document {
   content: string; // The actual text content of the comment
   likes: number; // Number of likes/upvotes this comment has received
   replies: Types.ObjectId[]; // Array of child comment IDs (nested replies)
-  status: CommentStatus; // Moderation status (pending/approved/rejected)
+  status: COMMENT_STATUS; // Moderation status (pending/approved/rejected)
   createdAt: Date; // Auto-managed timestamp when created
   updatedAt: Date; // Auto-managed timestamp when last updated
 }
@@ -71,8 +60,8 @@ const TravelCommentSchema = new Schema<ITravelComment>(
     // Moderation status with default set to "pending"
     status: {
       type: String,
-      enum: Object.values(CommentStatus),
-      default: CommentStatus.PENDING,
+      enum: Object.values(COMMENT_STATUS),
+      default: COMMENT_STATUS.PENDING,
       index: true,
     },
   },
@@ -121,13 +110,13 @@ TravelCommentSchema.methods.like = async function (): Promise<ITravelComment> {
 
 TravelCommentSchema.methods.approve =
   async function (): Promise<ITravelComment> {
-    this.status = CommentStatus.APPROVED;
+    this.status = COMMENT_STATUS.APPROVED;
     return this.save();
   };
 
 TravelCommentSchema.methods.reject =
   async function (): Promise<ITravelComment> {
-    this.status = CommentStatus.REJECTED;
+    this.status = COMMENT_STATUS.REJECTED;
     return this.save();
   };
 
@@ -136,7 +125,7 @@ TravelCommentSchema.methods.reject =
  */
 TravelCommentSchema.statics.findByArticle = function (
   articleId: Types.ObjectId,
-  status: CommentStatus = CommentStatus.APPROVED
+  status: COMMENT_STATUS = COMMENT_STATUS.APPROVED
 ): Promise<ITravelComment[]> {
   return this.find({ articleId, status }).sort({ createdAt: -1 }).exec();
 };

@@ -13,9 +13,9 @@
  * applicants can submit during the verification process.
  */
 export enum GUIDE_DOCUMENT_TYPE {
-  IMAGE = "image",   // Standard image formats (JPEG, PNG, etc.)
-  PDF = "pdf",       // Portable Document Format
-  DOCX = "docx",     // Microsoft Word document
+  IMAGE = "image", // Standard image formats (JPEG, PNG, etc.)
+  PDF = "pdf", // Portable Document Format
+  DOCX = "docx", // Microsoft Word document
 }
 
 /**
@@ -24,10 +24,10 @@ export enum GUIDE_DOCUMENT_TYPE {
  * Each uploaded document must belong to one of these categories.
  */
 export enum GUIDE_DOCUMENT_CATEGORY {
-  GOVERNMENT_ID = "government_id",           // Passport, National ID, Driver’s License
-  BUSINESS_LICENSE = "business_license",     // Proof of business registration
+  GOVERNMENT_ID = "government_id", // Passport, National ID, Driver’s License
+  BUSINESS_LICENSE = "business_license", // Proof of business registration
   PROFESSIONAL_PHOTO = "professional_photo", // Profile photo for public display
-  CERTIFICATION = "certification",           // Relevant training or skill certificates
+  CERTIFICATION = "certification", // Relevant training or skill certificates
 }
 
 /** Organizer profile verification states */

@@ -26,9 +26,10 @@ import {
     HiXMark,
     HiChevronDown,
 } from 'react-icons/hi2';
-import { ArticleSortKey, COMMENT_STATUS } from '@/types/article-comment.types';
+import { ArticleSortKey } from '@/types/article-comment.types';
 import { useArticleCommentsStore } from '@/store/useArticleCommentsStore';
 import { exportSliceToCsv, useDebouncedCallback } from '@/utils/helpers/article-comments.debounce';
+import { COMMENT_STATUS } from '@/constants/articleComment.const';
 
 // ---------------------------------------------------------------------------
 // Defaults

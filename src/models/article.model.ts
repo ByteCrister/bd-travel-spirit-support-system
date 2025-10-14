@@ -1,36 +1,8 @@
 // models/travelArticle.model.ts
+import { ARTICLE_STATUS, ARTICLE_TYPE } from "@/constants/article.const";
+import { TRAVEL_TYPE } from "@/constants/tour.const";
 import { model, models, Schema, Types, Document } from "mongoose";
 
-/**
- * Enum for article publication status
- */
-export enum ARTICLE_STATUS {
-  DRAFT = "draft",
-  PUBLISHED = "published",
-  ARCHIVED = "archived",
-}
-
-/**
- * Enum for high-level travel categories
- */
-export enum TRAVEL_CATEGORY {
-  DESTINATION_GUIDE = "destination_guide",
-  BEACHES = "beaches",
-  FOOD_DRINK = "food_drink",
-  CULTURE_HISTORY = "culture_history",
-  ADVENTURE = "adventure",
-  FAMILY = "family",
-  ROMANTIC = "romantic",
-}
-
-/**
- * Enum for article type (single vs multi-destination, etc.)
- */
-export enum ARTICLE_TYPE {
-  SINGLE_DESTINATION = "single_destination",
-  MULTI_DESTINATION = "multi_destination",
-  GENERAL_TIPS = "general_tips",
-}
 
 /**
  * Interface for structured activities
@@ -100,7 +72,7 @@ export interface ITravelArticle extends Document {
   summary: string;
   heroImage: string;
   destinations?: IDestinationBlock[]; // replaces single `destination`
-  categories?: TRAVEL_CATEGORY[];
+  categories?: TRAVEL_TYPE[];
   tags?: string[];
   publishedAt?: Date;
   readingTime?: number;
@@ -187,7 +159,7 @@ const TravelArticleSchema = new Schema<ITravelArticle>(
     ],
 
     categories: [
-      { type: String, enum: Object.values(TRAVEL_CATEGORY), index: true },
+      { type: String, enum: Object.values(TRAVEL_TYPE), index: true },
     ],
     tags: [{ type: String, trim: true, index: true }],
     publishedAt: { type: Date, index: true },

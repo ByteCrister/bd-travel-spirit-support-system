@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { HiExclamationTriangle } from 'react-icons/hi2';
-import { COMMENT_STATUS } from '@/types/article-comment.types';
 import { useArticleCommentsStore } from '@/store/useArticleCommentsStore';
+import { COMMENT_STATUS } from '@/constants/articleComment.const';
 
 export function ModerationReasonDialog({
     open,

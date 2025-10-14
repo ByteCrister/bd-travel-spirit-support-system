@@ -6,7 +6,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { AxiosError } from 'axios';
 
 import {
-    COMMENT_STATUS,
     type AdminArticleRowVM,
     type ArticleCommentSummaryListResponseDTO,
     type ArticleFiltersDTO,
@@ -32,6 +31,7 @@ import {
 } from '@/types/article-comment.types';
 
 import api from '@/utils/api/axios';
+import { COMMENT_STATUS } from '@/constants/articleComment.const';
 
 const ROOT_DIRECTORY = '/articles/comments';
 

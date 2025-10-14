@@ -36,8 +36,6 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import {
-    ARTICLE_STATUS,
-    ARTICLE_TYPE,
     ArticleDetail,
     UpdateArticleInput,
     DeleteArticleInput,
@@ -53,6 +51,7 @@ import { ContentSection } from './ContentSection';
 import { SeoSection } from './SeoSection';
 import { FaqsSection } from './FaqsSection';
 import { SettingsSection } from './SettingsSection';
+import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
 
 
 // ---------------------

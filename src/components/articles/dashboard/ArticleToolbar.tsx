@@ -4,9 +4,6 @@
 
 import * as React from 'react';
 import {
-    ARTICLE_STATUS,
-    ARTICLE_TYPE,
-    TRAVEL_CATEGORY,
     ArticleFilter,
     ArticleSort,
     ArticleSortField,
@@ -38,6 +35,8 @@ import { FiRotateCcw } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useArticleStore } from '@/store/useArticleStore';
 import { useRouter } from 'next/navigation';
+import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
+import { TRAVEL_TYPE } from '@/constants/tour.const';
 
 type Preset = {
     id: string;
@@ -51,7 +50,7 @@ const PRESET_STORAGE_KEY = 'article_filter_presets';
 
 const STATUS_OPTIONS = Object.values(ARTICLE_STATUS);
 const TYPE_OPTIONS = Object.values(ARTICLE_TYPE);
-const CATEGORY_OPTIONS = Object.values(TRAVEL_CATEGORY);
+const CATEGORY_OPTIONS = Object.values(TRAVEL_TYPE);
 
 const SORT_FIELDS: ArticleSortField[] = [
     'updatedAt',
@@ -436,7 +435,7 @@ export default function ArticleToolbar() {
                                     <Select
                                         value={(localFilter.categories?.[0] as string) ?? ''}
                                         onValueChange={(val) =>
-                                            setLocalFilter((f) => ({ ...f, categories: val ? [val as TRAVEL_CATEGORY] : [] }))
+                                            setLocalFilter((f) => ({ ...f, categories: val ? [val as TRAVEL_TYPE] : [] }))
                                         }
                                     >
                                         <SelectTrigger className="bg-white dark:bg-slate-900" aria-label="Category filter">

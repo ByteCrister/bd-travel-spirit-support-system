@@ -1,13 +1,13 @@
 // app/api/articles/comments/articles/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import {
-    COMMENT_STATUS,
     type ArticleCommentSummaryListResponseDTO,
     type SortDTO,
     type ArticleSortKey,
     type ArticleFiltersDTO,
 } from '@/types/article-comment.types';
 import { queryArticleSummary } from '../_lib/mock';
+import { COMMENT_STATUS } from '@/constants/articleComment.const';
 
 export async function GET(req: NextRequest) {
     const url = new URL(req.url);
