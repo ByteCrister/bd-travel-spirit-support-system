@@ -1,20 +1,25 @@
-import { EMPLOYEE_POSITIONS, EMPLOYEE_ROLE, EMPLOYEE_STATUS, EMPLOYEE_SUB_ROLE, EmployeePosition, EmployeeRole, EmployeeStatus, EMPLOYMENT_TYPE, EmploymentType } from "@/constants/employee.const";
+import {
+    EMPLOYEE_POSITIONS,
+    EMPLOYEE_ROLE,
+    EMPLOYEE_STATUS,
+    EMPLOYEE_SUB_ROLE,
+    EmployeePosition,
+    EmployeeRole,
+    EmployeeStatus,
+    EMPLOYMENT_TYPE,
+    EmploymentType,
+} from "@/constants/employee.const";
 import { UpdateQuery } from "mongoose";
 import { FilterQuery } from "mongoose";
 import { Query } from "mongoose";
-import {
-    Schema,
-    Document,
-    Types,
-    models,
-    model,
-    Model,
-} from "mongoose";
+import { Schema, Document, Types, models, model, Model } from "mongoose";
 
 /* ------------------------------------------------------------------
    PLUGIN: Soft Delete (no `any`)
 ------------------------------------------------------------------- */
-function softDeletePlugin<T extends Document, M extends Model<T>>(schema: Schema<T, M>) {
+function softDeletePlugin<T extends Document, M extends Model<T>>(
+    schema: Schema<T, M>
+) {
     function autoFilter(this: Query<T[], T>) {
         if (!this.getQuery().includeDeleted) {
             this.where({ isDeleted: false });
@@ -44,10 +49,7 @@ function softDeletePlugin<T extends Document, M extends Model<T>>(schema: Schema
 
     schema.static(
         "findDeleted",
-        function (
-            this: M,
-            filter: FilterQuery<T> = {}
-        ): Query<T[], T> {
+        function (this: M, filter: FilterQuery<T> = {}): Query<T[], T> {
             return this.find({ ...filter, isDeleted: true });
         }
     );
@@ -68,10 +70,9 @@ interface PaginateResult<T> {
     pages: number;
 }
 
-function paginatePlugin<
-    T extends Document,
-    M extends Model<T>
->(schema: Schema<T, M>) {
+function paginatePlugin<T extends Document, M extends Model<T>>(
+    schema: Schema<T, M>
+) {
     schema.static(
         "paginate",
         async function (
@@ -147,9 +148,26 @@ export interface IShift {
 }
 const ShiftSchema = new Schema<IShift>(
     {
-        startTime: { type: String, trim: true, required: true, match: /^([01]\d|2[0-3]):([0-5]\d)$/ },
-        endTime: { type: String, trim: true, required: true, match: /^([01]\d|2[0-3]):([0-5]\d)$/ },
-        days: [{ type: String, trim: true, enum: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], required: true }],
+        startTime: {
+            type: String,
+            trim: true,
+            required: true,
+            match: /^([01]\d|2[0-3]):([0-5]\d)$/,
+        },
+        endTime: {
+            type: String,
+            trim: true,
+            required: true,
+            match: /^([01]\d|2[0-3]):([0-5]\d)$/,
+        },
+        days: [
+            {
+                type: String,
+                trim: true,
+                enum: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                required: true,
+            },
+        ],
     },
     { _id: false }
 );
@@ -237,17 +255,38 @@ export interface IEmployee extends Document {
 
 const EmployeeSchema = new Schema<IEmployee>(
     {
-        userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true, unique: true },
+        userId: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            index: true,
+            unique: true,
+        },
         hostId: { type: Schema.Types.ObjectId, ref: "User", index: true },
 
-        role: { type: String, enum: Object.values(EMPLOYEE_ROLE), required: true, index: true },
-        subRole: { type: String, enum: Object.values(EMPLOYEE_SUB_ROLE), required: true, index: true },
+        role: {
+            type: String,
+            enum: Object.values(EMPLOYEE_ROLE),
+            required: true,
+            index: true,
+        },
+        subRole: {
+            type: String,
+            enum: Object.values(EMPLOYEE_SUB_ROLE),
+            required: true,
+            index: true,
+        },
         position: {
             type: String,
             enum: Object.values(EMPLOYEE_POSITIONS).flat(),
             required: true,
         },
-        status: { type: String, enum: Object.values(EMPLOYEE_STATUS), default: EMPLOYEE_STATUS.ACTIVE, index: true },
+        status: {
+            type: String,
+            enum: Object.values(EMPLOYEE_STATUS),
+            default: EMPLOYEE_STATUS.ACTIVE,
+            index: true,
+        },
         employmentType: { type: String, enum: Object.values(EMPLOYMENT_TYPE) },
         department: { type: String, trim: true, maxlength: 100, index: true },
         salary: { type: Number, default: 0, min: 0 },
@@ -270,11 +309,11 @@ const EmployeeSchema = new Schema<IEmployee>(
         isDeleted: { type: Boolean, default: false, index: true },
     },
     {
-        timestamps: true,          // auto-manage `createdAt` & `updatedAt`
-        strict: true,          // remove extraneous fields
-        versionKey: "version",     // rename `__v` → `version`
-        optimisticConcurrency: true,          // prevent silent overwrites
-        collection: "employees",   // explicit collection name
+        timestamps: true, // auto-manage `createdAt` & `updatedAt`
+        strict: true, // remove extraneous fields
+        versionKey: "version", // rename `__v` → `version`
+        optimisticConcurrency: true, // prevent silent overwrites
+        collection: "employees", // explicit collection name
     }
 );
 

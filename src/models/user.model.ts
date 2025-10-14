@@ -156,7 +156,11 @@ export interface IUser extends Document {
   preferences: {
     language: string;
     currency: string;
+    recommendationWeights: Record<string, number>;
   };
+
+  hiddenTours: Types.ObjectId[];
+  preferredTravelDates: { start: Date; end: Date }[];
 
   /** Number of failed login attempts */
   loginAttempts: number;
@@ -245,7 +249,21 @@ const UserSchema = new Schema<IUser>(
     preferences: {
       language: { type: String, default: "en" },
       currency: { type: String, default: "BDT" },
+      recommendationWeights: {
+        type: Map,
+        of: Number,
+        default: {},
+      },
     },
+
+    hiddenTours: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
+
+    preferredTravelDates: [
+      {
+        start: { type: Date, required: true },
+        end: { type: Date, required: true },
+      },
+    ],
 
     // Security & activity tracking
     loginAttempts: { type: Number, default: 0 },

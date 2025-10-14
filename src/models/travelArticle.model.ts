@@ -3,7 +3,6 @@ import { ARTICLE_STATUS, ARTICLE_TYPE } from "@/constants/article.const";
 import { TRAVEL_TYPE } from "@/constants/tour.const";
 import { model, models, Schema, Types, Document } from "mongoose";
 
-
 /**
  * Interface for structured activities
  */
@@ -79,6 +78,8 @@ export interface ITravelArticle extends Document {
   wordCount?: number;
   seo: { metaTitle: string; metaDescription: string; ogImage?: string };
   faqs?: IFAQ[];
+  contentEmbeddingId?: Types.ObjectId;
+  topicTags?: string[];
   viewCount: number;
   likeCount: number;
   shareCount: number;
@@ -179,6 +180,12 @@ const TravelArticleSchema = new Schema<ITravelArticle>(
         answeredBy: { type: String, default: "User" },
       },
     ],
+    contentEmbeddingId: {
+      type: Schema.Types.ObjectId,
+      ref: "ContentEmbedding",
+      index: true,
+    },
+    topicTags: [{ type: String, trim: true, index: true }],
     viewCount: { type: Number, default: 0 },
     likeCount: { type: Number, default: 0 },
     shareCount: { type: Number, default: 0 },
@@ -193,6 +200,8 @@ TravelArticleSchema.index({
   "destinations.city": 1,
   "destinations.country": 1,
 });
+TravelArticleSchema.index({ topicTags: 1 });
+TravelArticleSchema.index({ contentEmbeddingId: 1 });
 
 export const TravelArticleModel =
   models.TravelArticle ||
