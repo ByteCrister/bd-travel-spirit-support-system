@@ -329,38 +329,27 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                 <p className="text-gray-600 text-sm mb-4">{formData.companyDetails.bio}</p>
               </div>
 
-              {(formData.companyDetails.website || formData.companyDetails.socialMedia) && (
-                <div className="space-y-2">
-                  {formData.companyDetails.website && (
-                    <div className="flex items-center space-x-3">
+              {/* Social Links */}
+              {(formData.companyDetails.social ?? []).length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {(formData.companyDetails.social ?? []).map((social, index) => (
+                    <div key={index} className="flex items-center space-x-3">
                       <Globe className="w-4 h-4 text-gray-500" />
                       <a
-                        href={formData.companyDetails.website}
+                        href={social.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:underline"
                       >
-                        {formData.companyDetails.website}
+                        {social.platform.charAt(0).toUpperCase() + social.platform.slice(1)}: {social.url}
                       </a>
                     </div>
-                  )}
-                  {formData.companyDetails.socialMedia && (
-                    <div className="flex items-center space-x-3">
-                      <Globe className="w-4 h-4 text-gray-500" />
-                      <a
-                        href={formData.companyDetails.socialMedia}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline"
-                      >
-                        {formData.companyDetails.socialMedia}
-                      </a>
-                    </div>
-                  )}
+                  ))}
                 </div>
               )}
             </CardContent>
           </Card>
+
 
           {/* Documents Review */}
           <Card className="border-0 shadow-lg" style={{
