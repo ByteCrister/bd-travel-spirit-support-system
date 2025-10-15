@@ -1,410 +1,398 @@
 // models/tour.model.ts
+import {
+  AUDIENCE_TYPE,
+  CONTENT_CATEGORY,
+  TOUR_STATUS,
+  DIFFICULTY_LEVEL,
+  SEASON,
+  TRANSPORT_MODE,
+  PAYMENT_METHOD,
+  CURRENCY,
+  Price,
+  Discount,
+  CancellationPolicy,
+  RefundPolicy,
+  Address,
+  GeoPoint,
+  OperatingWindow,
+  Departure,
+  Inclusion,
+  Exclusion,
+  TranslationBlock,
+} from "@/constants/tour.const";
+import { Schema, model, models, Types, Document } from "mongoose";
 
-import { TOUR_STATUS, TRAVEL_TYPE } from "@/constants/tour.const";
-import mongoose, { Schema, model, models, Document, Query, FilterQuery, Types } from "mongoose";
-import slugify from "slugify";
-
-////////////////////////////////////////////////////////////////////////////////
-// INTERFACES: Reusable structures
-////////////////////////////////////////////////////////////////////////////////
-
-/** Emergency/local contact for tour emergencies */
-export interface EmergencyContact {
-    phone?: string;
-    email?: string;
+interface IAttraction {
+  title: string;
+  description?: string;
+  bestFor?: string;
+  insiderTip?: string;
+  address?: string;
+  openingHours?: string;
+  images?: Types.ObjectId[]; // refs to ImageAsset
+  coordinates?: GeoPoint;
 }
 
-/** Age restriction for participants */
-export interface AgeRestriction {
-    minAge?: number;
-    maxAge?: number;
+interface IActivity {
+  title: string;
+  url?: string;
+  provider?: string;
+  duration?: string; // "3h", "2d 1n"
+  price?: Price;
+  rating?: number;
 }
 
-/** Cancellation policy for bookings */
-export interface CancellationPolicy {
-    freeCancellationUntil?: string; // ISO date string
-    refundPercentage?: number; // 0–100
-    notes?: string;
+interface IDestinationBlock {
+  city?: string;
+  district?: string; // Chattogram, Sylhet, etc.
+  country: string; // "Bangladesh"
+  region?: string; // Division
+  description?: string;
+  content?: {
+    type: "paragraph" | "link" | "heading";
+    text?: string;
+    href?: string;
+  }[];
+  highlights?: string[];
+  attractions?: IAttraction[];
+  activities?: IActivity[];
+  images?: Types.ObjectId[]; // ImageAsset refs
+  coordinates?: GeoPoint;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// SUB-SCHEMAS: Reusable pieces for main schema
-////////////////////////////////////////////////////////////////////////////////
-
-/** Price tier (Standard, Premium, VIP) */
-const PriceOptionSchema = new Schema(
-    {
-        name: { type: String, required: true, trim: true },
-        amount: { type: Number, required: true, min: 0 },
-        currency: { type: String, required: true, default: "BDT", trim: true },
-    },
-    { _id: false }
-);
-
-/** Discount codes with validity */
-const DiscountSchema = new Schema(
-    {
-        code: { type: String, required: true, trim: true },
-        description: { type: String, trim: true },
-        percentage: { type: Number, required: true, min: 0, max: 100 },
-        validFrom: { type: Date },
-        validUntil: { type: Date },
-    },
-    { _id: false }
-);
-
-/** GeoJSON Point for maps */
-const GeoPointSchema = new Schema(
-    {
-        type: { type: String, enum: ["Point"], default: "Point" },
-        coordinates: {
-            type: [Number],
-            required: true,
-            validate: {
-                validator: (arr: number[]) => arr.length === 2,
-                message: "Coordinates must be [lng, lat]",
-            },
-        },
-    },
-    { _id: false }
-);
-
-/** Starting meetup details */
-const MeetingPointSchema = new Schema(
-    {
-        title: { type: String, required: true, trim: true },
-        description: { type: String, trim: true },
-        location: {
-            address: { type: String, trim: true },
-            coordinates: { type: GeoPointSchema, required: true },
-        },
-        time: { type: Date, required: true },
-    },
-    { _id: false }
-);
-
-/** Stops along the route */
-const RoadMapPointSchema = new Schema(
-    {
-        title: { type: String, required: true, trim: true },
-        description: { type: String, trim: true },
-        image: { type: Types.ObjectId, ref: "Image" },
-        location: {
-            address: { type: String, trim: true },
-            coordinates: { type: GeoPointSchema, required: true },
-        },
-    },
-    { _id: false }
-);
-
-/** Include/exclude checklist items */
-const IncludeItemSchema = new Schema(
-    {
-        label: { type: String, required: true, trim: true },
-        included: { type: Boolean, required: true, default: false },
-    },
-    { _id: false }
-);
-
-/** Daily itinerary details */
-const ItinerarySchema = new Schema(
-    {
-        day: { type: Number, required: true, min: 1 },
-        title: { type: String, required: true, trim: true },
-        description: { type: String, trim: true },
-        mealsProvided: [{ type: String, enum: ["Breakfast", "Lunch", "Dinner"] }],
-        accommodation: { type: String, trim: true },
-        activities: [{ type: String, trim: true }],
-        images: [{ type: Types.ObjectId, ref: "Image" }],
-    },
-    { _id: false }
-);
-
-/** Seasonal highlights for promotions */
-const SeasonalHighlightSchema = new Schema(
-    {
-        season: { type: String, trim: true },
-        description: { type: String, trim: true },
-        image: { type: Types.ObjectId, ref: "Image" },
-    },
-    { _id: false }
-);
-
-////////////////////////////////////////////////////////////////////////////////
-// SOFT-DELETE PLUGIN: Adds deletedAt and filters out deleted docs
-////////////////////////////////////////////////////////////////////////////////
-
-function softDeletePlugin(schema: Schema) {
-    schema.add({ deletedAt: { type: Date, default: null } });
-
-    schema.pre<Query<ITour[], ITour>>(/^find/, function (next) {
-        this.where({ deletedAt: null });
-        next();
-    });
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// MAIN INTERFACE: TypeScript type for Tour documents
-////////////////////////////////////////////////////////////////////////////////
 
 export interface ITour extends Document {
-    // Core metadata
-    title: string;
-    slug: string;
-    status: TOUR_STATUS;
-    highlights: string[];
-    description: string;
+  // Identity & SEO
+  title: string;
+  slug: string;
+  status: TOUR_STATUS;
+  summary: string;
+  heroImage?: Types.ObjectId; // ImageAsset
+  gallery?: Types.ObjectId[];
+  videos?: string[]; // URLs
+  seo?: { metaTitle?: string; metaDescription?: string; ogImage?: string };
 
-    // Inclusions & info
-    includes: Types.Subdocument[];
-    importantInfo: string[];
-    packingList?: { item: string; required: boolean; notes?: string }[];
+  // Content & structure
+  destinations?: IDestinationBlock[];
+  itinerary?: {
+    dayNumber: number;
+    title?: string;
+    description?: string;
+    images?: Types.ObjectId[];
+  }[];
+  inclusions?: Inclusion[];
+  exclusions?: Exclusion[];
+  difficulty?: DIFFICULTY_LEVEL;
+  bestSeason?: SEASON[];
+  audience?: AUDIENCE_TYPE[];
+  categories?: CONTENT_CATEGORY[];
+  translations?: TranslationBlock[];
 
-    // Logistics & categorization
-    meetingPoints: Types.Subdocument[];
-    roadMap: Types.Subdocument[];
-    itinerary?: Types.Subdocument[];
-    activities: string[];
-    tags: string[];
-    travelTypes: TRAVEL_TYPE[];
-    accessibilityFeatures?: string[];
+  // Logistics
+  mainLocation?: { address?: Address; coordinates?: GeoPoint };
+  transportModes?: TRANSPORT_MODE[];
+  pickupOptions?: { city?: string; price?: number; currency?: CURRENCY }[];
+  meetingPoint?: string;
 
-    // Pricing & discounts
-    priceOptions: Types.Subdocument[];
-    discounts: Types.Subdocument[];
+  // Commerce
+  basePrice: Price;
+  discounts?: Discount[];
+  duration?: { days: number; nights?: number };
+  operatingWindows?: OperatingWindow[]; // seasonal windows
+  departures?: Departure[]; // specific dated departures
+  paymentMethods?: PAYMENT_METHOD[];
 
-    // Schedule & capacity
-    startDate: Date;
-    endDate: Date;
-    maxGroupSize: number;
-    minGroupSize?: number;
-    repeatCount: number;
-    bookingInfo: { users: Types.ObjectId[] };
-    bookingDeadline?: string; // ISO or human-readable string
+  // Compliance & partnerships
+  operatorId?: Types.ObjectId; // Operator
+  guideIds?: Types.ObjectId[]; // Guide[]
+  licenseRequired?: boolean;
+  ageSuitability?: "all" | "kids" | "adults" | "seniors";
+  accessibility?: {
+    wheelchair?: boolean;
+    familyFriendly?: boolean;
+    petFriendly?: boolean;
+    notes?: string;
+  };
 
-    // Compliance & restrictions
-    cancellationPolicy?: CancellationPolicy;
-    ageRestriction?: AgeRestriction;
-    emergencyContact?: EmergencyContact;
-    requiredDocuments?: string[];
-    insuranceProvided?: boolean;
+  // Policies
+  cancellationPolicy?: CancellationPolicy;
+  refundPolicy?: RefundPolicy;
+  terms?: string; // rich text, or HTML/MD string
 
-    // Host / guide info
-    host?: {
-        name: string;
-        bio: string;
-        avatar?: Types.ObjectId;
-        languagesSpoken?: string[];
-        rating?: number;
-    };
+  // Engagement
+  ratings?: { average: number; count: number };
+  wishlistCount?: number;
+  popularityScore?: number;
+  featured?: boolean;
+  trendingUntil?: Date;
 
-    // Media
-    images: Types.ObjectId[];
-    heroImage?: Types.ObjectId;
-    gallery?: Types.ObjectId[];
-    videoUrls?: string[];
-    virtualTourUrl?: string;
-
-    // Customer experience
-    healthAndSafety?: { title: string; description: string }[];
-    difficultyLevel?: "easy" | "moderate" | "challenging";
-    childPolicy?: string;
-    languageOptions?: string[];
-
-    // Marketing & SEO
-    seoTitle?: string;
-    seoDescription?: string;
-    seasonalHighlights?: Types.Subdocument[];
-    featured?: boolean;
-    earlyBirdDiscount?: number;
-    lastMinuteDeal?: number;
-    popularityScore?: number;
-
-    // System
-    averageRating: number;
-    viewCount?: number;
-    wishlistCount?: number;
-    shareCount?: number;
-    lastBookedAt?: Date;
-    lastViewedAt?: Date;
-    owner?: Types.ObjectId;
-    deletedAt?: Date;
-
-    // Virtuals
-    durationDays: number;
-
-    // Instance methods
-    isFull(): boolean;
+  // System
+  authorId: Types.ObjectId; // creator
+  tags?: string[];
+  publishedAt?: Date;
+  readingTime?: number;
+  wordCount?: number;
+  allowComments?: boolean;
+  viewCount?: number;
+  likeCount?: number;
+  shareCount?: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// SCHEMA: Fields, validations, indexes, hooks, virtuals
-////////////////////////////////////////////////////////////////////////////////
-
 const TourSchema = new Schema<ITour>(
-    {
-        // Core metadata
-        title: { type: String, required: true, trim: true },
-        slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
-        status: { type: String, enum: Object.values(TOUR_STATUS), default: TOUR_STATUS.DRAFT },
+  {
+    title: { type: String, required: true, trim: true },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    status: {
+      type: String,
+      enum: Object.values(TOUR_STATUS),
+      default: TOUR_STATUS.DRAFT,
+      index: true,
+    },
+    summary: { type: String, required: true, trim: true },
+    heroImage: { type: Schema.Types.ObjectId, ref: "ImageAsset" },
+    gallery: [{ type: Schema.Types.ObjectId, ref: "ImageAsset" }],
+    videos: [{ type: String, trim: true }],
+    seo: {
+      metaTitle: { type: String, trim: true },
+      metaDescription: { type: String, trim: true },
+      ogImage: { type: String, trim: true },
+    },
 
-        // Marketing content
-        highlights: [{ type: String, required: true, trim: true }],
-        description: { type: String, required: true, trim: true },
+    destinations: [
+      new Schema<IDestinationBlock>(
+        {
+          city: { type: String, trim: true },
+          district: { type: String, trim: true },
+          country: { type: String, required: true, trim: true },
+          region: { type: String, trim: true },
+          description: { type: String, trim: true },
+          content: [
+            {
+              type: {
+                type: String,
+                enum: ["paragraph", "link", "heading"],
+                required: true,
+              },
+              text: { type: String, trim: true },
+              href: { type: String, trim: true },
+            },
+          ],
+          highlights: [{ type: String, trim: true }],
+          attractions: [
+            new Schema<IAttraction>(
+              {
+                title: { type: String, required: true, trim: true },
+                description: { type: String, trim: true },
+                bestFor: { type: String, trim: true },
+                insiderTip: { type: String, trim: true },
+                address: { type: String, trim: true },
+                openingHours: { type: String, trim: true },
+                images: [{ type: Schema.Types.ObjectId, ref: "ImageAsset" }],
+                coordinates: { lat: Number, lng: Number },
+              },
+              { _id: false }
+            ),
+          ],
+          activities: [
+            new Schema<IActivity>(
+              {
+                title: { type: String, required: true, trim: true },
+                url: { type: String, trim: true },
+                provider: { type: String, trim: true },
+                duration: { type: String, trim: true },
+                price: {
+                  amount: { type: Number, min: 0 },
+                  currency: { type: String, enum: Object.values(CURRENCY) },
+                },
+                rating: { type: Number, min: 0, max: 5 },
+              },
+              { _id: false }
+            ),
+          ],
+          images: [{ type: Schema.Types.ObjectId, ref: "ImageAsset" }],
+          coordinates: { lat: Number, lng: Number },
+        },
+        { _id: false }
+      ),
+    ],
 
-        // Inclusions & info
-        includes: [IncludeItemSchema],
-        importantInfo: [{ type: String, trim: true }],
-        packingList: [
-            { item: String, required: { type: Boolean, default: false }, notes: String },
+    itinerary: [
+      {
+        dayNumber: { type: Number, required: true, min: 1 },
+        title: { type: String, trim: true },
+        description: { type: String, trim: true },
+        images: [{ type: Schema.Types.ObjectId, ref: "ImageAsset" }],
+      },
+    ],
+    inclusions: [
+      {
+        label: { type: String, trim: true },
+        description: { type: String, trim: true },
+      },
+    ],
+    exclusions: [
+      {
+        label: { type: String, trim: true },
+        description: { type: String, trim: true },
+      },
+    ],
+    difficulty: { type: String, enum: Object.values(DIFFICULTY_LEVEL) },
+    bestSeason: [{ type: String, enum: Object.values(SEASON) }],
+    audience: [
+      { type: String, enum: Object.values(AUDIENCE_TYPE), index: true },
+    ],
+    categories: [
+      { type: String, enum: Object.values(CONTENT_CATEGORY), index: true },
+    ],
+    translations: [
+      {
+        language: { type: String, required: true, trim: true },
+        title: { type: String, trim: true },
+        summary: { type: String, trim: true },
+        content: [
+          {
+            type: {
+              type: String,
+              enum: ["paragraph", "heading", "link"],
+              required: true,
+            },
+            text: { type: String, trim: true },
+            href: { type: String, trim: true },
+          },
         ],
+      },
+    ],
 
-        // Logistics & categorization
-        meetingPoints: [MeetingPointSchema],
-        roadMap: [RoadMapPointSchema],
-        itinerary: [ItinerarySchema],
-        activities: [{ type: String, trim: true }],
-        tags: [{ type: String, trim: true, index: true }],
-        travelTypes: [{ type: String, enum: Object.values(TRAVEL_TYPE), required: true }],
-        accessibilityFeatures: [{ type: String, trim: true }],
+    mainLocation: {
+      address: {
+        line1: { type: String, trim: true },
+        line2: { type: String, trim: true },
+        city: { type: String, trim: true },
+        district: { type: String, trim: true },
+        region: { type: String, trim: true },
+        country: { type: String, trim: true },
+        postalCode: { type: String, trim: true },
+      },
+      coordinates: { lat: Number, lng: Number },
+    },
+    transportModes: [{ type: String, enum: Object.values(TRANSPORT_MODE) }],
+    pickupOptions: [
+      {
+        city: { type: String, trim: true },
+        price: { type: Number, min: 0 },
+        currency: { type: String, enum: Object.values(CURRENCY) },
+      },
+    ],
+    meetingPoint: { type: String, trim: true },
 
-        // Pricing & discounts
-        priceOptions: [PriceOptionSchema],
-        discounts: [DiscountSchema],
-
-        // Schedule & capacity
+    basePrice: {
+      amount: { type: Number, required: true, min: 0 },
+      currency: { type: String, required: true, enum: Object.values(CURRENCY) },
+    },
+    discounts: [
+      {
+        type: {
+          type: String,
+          enum: ["seasonal", "early_bird", "group", "promo"],
+        },
+        value: { type: Number, min: 0, max: 100 },
+        code: { type: String, trim: true },
+        validFrom: { type: Date },
+        validUntil: { type: Date },
+      },
+    ],
+    duration: {
+      days: { type: Number, min: 0 },
+      nights: { type: Number, min: 0 },
+    },
+    operatingWindows: [
+      {
         startDate: { type: Date, required: true },
         endDate: { type: Date, required: true },
-        maxGroupSize: { type: Number, required: true, min: 1 },
-        minGroupSize: { type: Number, min: 1 },
-        repeatCount: { type: Number, default: 1, min: 1 },
-        bookingInfo: { users: [{ type: Types.ObjectId, ref: "User" }] },
-        bookingDeadline: { type: String },
+        seatsTotal: { type: Number, min: 0 },
+        seatsBooked: { type: Number, min: 0 },
+      },
+    ],
+    departures: [
+      {
+        date: { type: Date, required: true },
+        seatsTotal: { type: Number, required: true, min: 0 },
+        seatsBooked: { type: Number, default: 0, min: 0 },
+        meetingPoint: { type: String, trim: true },
+        meetingCoordinates: { lat: Number, lng: Number },
+      },
+    ],
+    paymentMethods: [{ type: String, enum: Object.values(PAYMENT_METHOD) }],
 
-        // Compliance & restrictions
-        cancellationPolicy: { type: Object },
-        ageRestriction: { type: Object },
-        emergencyContact: { type: Object },
-        requiredDocuments: [{ type: String }],
-        insuranceProvided: { type: Boolean, default: false },
-
-        // Host / guide info
-        host: {
-            name: { type: String, trim: true },
-            bio: { type: String, trim: true },
-            avatar: { type: Types.ObjectId, ref: "Image" },
-            languagesSpoken: [{ type: String, trim: true }],
-            rating: { type: Number, min: 0, max: 5 },
-        },
-
-        // Media
-        images: [{ type: Types.ObjectId, ref: "Image" }],
-        heroImage: { type: Types.ObjectId, ref: "Image" },
-        gallery: [{ type: Types.ObjectId, ref: "Image" }],
-        videoUrls: [{ type: String, trim: true }],
-        virtualTourUrl: { type: String, trim: true },
-
-        // Customer experience
-        healthAndSafety: [{ title: String, description: String }],
-        difficultyLevel: { type: String, enum: ["easy", "moderate", "challenging"] },
-        childPolicy: { type: String },
-        languageOptions: [{ type: String }],
-
-        // Marketing & SEO
-        seoTitle: { type: String, trim: true },
-        seoDescription: { type: String, trim: true },
-        seasonalHighlights: [SeasonalHighlightSchema],
-        featured: { type: Boolean, default: false },
-        earlyBirdDiscount: { type: Number, min: 0, max: 100 },
-        lastMinuteDeal: { type: Number, min: 0, max: 100 },
-        popularityScore: { type: Number, default: 0 },
-
-        // System fields, (images, reviews and reports have separate models)
-        averageRating: { type: Number, default: 0, min: 0, max: 5 },
-        viewCount: { type: Number, default: 0 },
-        wishlistCount: { type: Number, default: 0 },
-        shareCount: { type: Number, default: 0 },
-        lastBookedAt: { type: Date },
-        lastViewedAt: { type: Date },
-        owner: { type: Types.ObjectId, ref: "User" },
+    operatorId: { type: Schema.Types.ObjectId, ref: "Operator", index: true },
+    guideIds: [{ type: Schema.Types.ObjectId, ref: "Guide" }],
+    licenseRequired: { type: Boolean, default: false },
+    ageSuitability: {
+      type: String,
+      enum: ["all", "kids", "adults", "seniors"],
     },
-    {
-        timestamps: true,
-        toJSON: { virtuals: true },
-        toObject: { virtuals: true },
-        versionKey: "__v",
-    }
+    accessibility: {
+      wheelchair: { type: Boolean, default: false },
+      familyFriendly: { type: Boolean, default: false },
+      petFriendly: { type: Boolean, default: false },
+      notes: { type: String, trim: true },
+    },
+
+    cancellationPolicy: {
+      refundable: { type: Boolean, default: true },
+      rules: [
+        {
+          daysBefore: { type: Number, min: 0 },
+          refundPercent: { type: Number, min: 0, max: 100 },
+        },
+      ],
+    },
+    refundPolicy: {
+      method: [{ type: String, enum: Object.values(PAYMENT_METHOD) }],
+      processingDays: { type: Number, min: 0 },
+    },
+    terms: { type: String },
+
+    ratings: {
+      average: { type: Number, min: 0, max: 5, default: 0 },
+      count: { type: Number, min: 0, default: 0 },
+    },
+    wishlistCount: { type: Number, default: 0, min: 0 },
+    popularityScore: { type: Number, default: 0, min: 0 },
+    featured: { type: Boolean, default: false },
+    trendingUntil: { type: Date },
+
+    authorId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    tags: [{ type: String, trim: true, index: true }],
+    publishedAt: { type: Date, index: true },
+    readingTime: { type: Number, default: 0 },
+    wordCount: { type: Number, default: 0 },
+    allowComments: { type: Boolean, default: true },
+    viewCount: { type: Number, default: 0 },
+    likeCount: { type: Number, default: 0 },
+    shareCount: { type: Number, default: 0 },
+  },
+  { timestamps: true }
 );
 
-// Apply soft-delete plugin
-TourSchema.plugin(softDeletePlugin);
+// Indexes
+TourSchema.index({ status: 1, publishedAt: -1 });
+TourSchema.index({ slug: 1 });
+TourSchema.index({ "destinations.city": 1, "destinations.country": 1 });
+TourSchema.index({ categories: 1 });
+TourSchema.index({ audience: 1 });
+TourSchema.index({ featured: 1, trendingUntil: -1 });
 
-////////////////////////////////////////////////////////////////////////////////
-// HOOKS: Pre-validate
-////////////////////////////////////////////////////////////////////////////////
-
-TourSchema.pre<ITour>("validate", function (next) {
-    // Auto-generate slug from title if missing
-    if (!this.slug && this.title) {
-        this.slug = slugify(this.title, { lower: true, strict: true });
-    }
-
-    // Ensure startDate < endDate
-    if (this.startDate >= this.endDate) {
-        return next(new Error("startDate must be earlier than endDate"));
-    }
-
-    next();
-});
-
-////////////////////////////////////////////////////////////////////////////////
-// INDEXES
-////////////////////////////////////////////////////////////////////////////////
-
-TourSchema.index({ slug: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
-TourSchema.index({ title: "text", highlights: "text", tags: "text" }, { weights: { title: 5, highlights: 3, tags: 2 } });
-MeetingPointSchema.index({ "location": "2dsphere" });
-
-////////////////////////////////////////////////////////////////////////////////
-// VIRTUALS
-////////////////////////////////////////////////////////////////////////////////
-
-TourSchema.virtual("durationDays").get(function (this: ITour) {
-    const msPerDay = 1000 * 60 * 60 * 24;
-    return Math.ceil((this.endDate.getTime() - this.startDate.getTime()) / msPerDay);
-});
-
-////////////////////////////////////////////////////////////////////////////////
-// METHODS
-////////////////////////////////////////////////////////////////////////////////
-
-TourSchema.methods.isFull = function (this: ITour) {
-    return this.bookingInfo.users.length >= this.maxGroupSize;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// STATICS
-////////////////////////////////////////////////////////////////////////////////
-
-TourSchema.statics.paginate = async function (
-    filter: FilterQuery<ITour> = {},
-    options: { page?: number; limit?: number } = {}
-) {
-    const page = options.page && options.page > 0 ? options.page : 1;
-    const limit = options.limit && options.limit > 0 ? options.limit : 10;
-    const skip = (page - 1) * limit;
-
-    const [docs, total] = await Promise.all([
-        this.find(filter).skip(skip).limit(limit),
-        this.countDocuments(filter),
-    ]);
-
-    return { docs, total, page, pages: Math.ceil(total / limit) };
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// EXPORT
-////////////////////////////////////////////////////////////////////////////////
-
-export const TourModel =
-    (models.Tour as mongoose.Model<ITour>) || model<ITour>("Tour", TourSchema);
+export const TourModel = models.Tour || model<ITour>("Tour", TourSchema);
