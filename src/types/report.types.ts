@@ -1,5 +1,9 @@
 // report.types.ts
-import { REPORT_PRIORITY, REPORT_REASON, REPORT_STATUS } from "@/constants/report.const";
+import {
+    REPORT_PRIORITY,
+    REPORT_REASON,
+    REPORT_STATUS,
+} from "@/constants/report.const";
 import { USER_ROLE } from "@/constants/user.const";
 
 /**

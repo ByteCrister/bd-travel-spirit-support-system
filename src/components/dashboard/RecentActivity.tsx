@@ -4,11 +4,11 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  FiUser, 
-  FiCalendar, 
-  FiFlag, 
-  FiMapPin, 
+import {
+  FiUser,
+  FiCalendar,
+  FiFlag,
+  FiMapPin,
   FiSettings,
   FiClock,
   FiAlertCircle,
@@ -16,7 +16,7 @@ import {
   FiInfo
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
-import { RecentActivity as RecentActivityType } from "@/store/useDashboardStore";
+import { RecentActivity as RecentActivityType } from "@/types/dashboard.types"
 
 interface RecentActivityProps {
   activities: RecentActivityType[];
@@ -136,7 +136,7 @@ export function RecentActivity({ activities, loading = false, className }: Recen
                   )}>
                     {getActivityIcon(activity.type)}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
@@ -152,11 +152,11 @@ export function RecentActivity({ activities, loading = false, className }: Recen
                         </div>
                       )}
                     </div>
-                    
+
                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
                       {activity.description}
                     </p>
-                    
+
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-slate-500 dark:text-slate-500">
                         {formatTimeAgo(activity.timestamp)}

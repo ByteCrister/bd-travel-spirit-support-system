@@ -41,3 +41,14 @@ export enum GUIDE_STATUS {
   /** Rejected after review */
   REJECTED = "rejected",
 }
+
+// =========================
+// SOCIAL PLATFORM ENUM
+// =========================
+export enum GUIDE_SOCIAL_PLATFORM {
+  FACEBOOK = "facebook",
+  WHATSAPP = "whatsapp",
+  IMO = "imo",
+  TWITTER = "twitter",
+  INSTAGRAM = "instagram",
+}

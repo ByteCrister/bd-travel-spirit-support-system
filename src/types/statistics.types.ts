@@ -38,7 +38,7 @@ export interface KpiMetrics {
 export interface UsersStats {
     signupsOverTime: TimeSeriesPoint[];
     statusDistribution: CategoryCount[];
-    organizerApplications: {
+    guideApplications: {
         pending: number;
         approved: number;
         rejected: number;

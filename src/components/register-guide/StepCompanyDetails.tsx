@@ -20,6 +20,8 @@ import {
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { features, useCompanyDetailsHandler } from '@/hooks/useCompanyDetailsHandler'
+import { GUIDE_SOCIAL_PLATFORM } from '@/constants/guide.const'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 
 interface StepCompanyDetailsProps {
   onNext: () => void
@@ -32,7 +34,8 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
     isValidating,
     handleInputChange,
     handleBlur,
-    handleUrlChange,
+    handleSocialUrlChange,
+    updateCompanyDetails,
     getFieldError,
     isFieldValid,
     handleNext,
@@ -237,110 +240,127 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Website */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-                className="space-y-2"
-              >
-                <Label htmlFor="website" className="text-sm font-semibold flex items-center space-x-2">
-                  <Globe className="w-4 h-4" />
-                  <span>Website URL</span>
-                  <span className="text-xs text-muted-foreground">(Optional)</span>
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="website"
-                    type="url"
-                    placeholder="https://yourcompany.com"
-                    value={formData.companyDetails.website}
-                    onChange={(e) => handleUrlChange('website', e.target.value)}
-                    className={cn(
-                      "h-12 pl-4 pr-12 transition-all duration-300",
-                      getFieldError('website') && "border-red-500 bg-red-50",
-                      isFieldValid('website') && "border-green-500 bg-green-50",
-                      "focus:border-blue-500"
-                    )}
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <AnimatePresence mode="wait">
-                      {getFieldError('website') ? (
-                        <AlertCircle className="w-5 h-5 text-red-500" />
-                      ) : isFieldValid('website') ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : null}
-                    </AnimatePresence>
-                  </div>
-                </div>
-                <AnimatePresence>
-                  {getFieldError('website') && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-sm text-red-500 flex items-center space-x-1"
-                    >
-                      <AlertCircle className="w-4 h-4" />
-                      <span>{getFieldError('website')}</span>
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </motion.div>
 
-              {/* Social Media */}
+            <CardContent className="space-y-6">
+              {/* Section Header */}
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
                 className="space-y-2"
               >
-                <Label htmlFor="socialMedia" className="text-sm font-semibold flex items-center space-x-2">
-                  <Share2 className="w-4 h-4" />
-                  <span>Social Media URL</span>
+                <Label className="text-sm font-medium flex items-center gap-2 text-foreground">
+                  <Share2 className="w-4 h-4 text-muted-foreground" />
+                  <span>Social Media Links</span>
                   <span className="text-xs text-muted-foreground">(Optional)</span>
                 </Label>
-                <div className="relative">
-                  <Input
-                    id="socialMedia"
-                    type="url"
-                    placeholder="https://facebook.com/yourcompany or https://instagram.com/yourcompany"
-                    value={formData.companyDetails.socialMedia}
-                    onChange={(e) => handleUrlChange('socialMedia', e.target.value)}
-                    className={cn(
-                      "h-12 pl-4 pr-12 transition-all duration-300",
-                      getFieldError('socialMedia') && "border-red-500 bg-red-50",
-                      isFieldValid('socialMedia') && "border-green-500 bg-green-50",
-                      "focus:border-blue-500"
-                    )}
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <AnimatePresence mode="wait">
-                      {getFieldError('socialMedia') ? (
-                        <AlertCircle className="w-5 h-5 text-red-500" />
-                      ) : isFieldValid('socialMedia') ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : null}
-                    </AnimatePresence>
-                  </div>
-                </div>
-                <AnimatePresence>
-                  {getFieldError('socialMedia') && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-sm text-red-500 flex items-center space-x-1"
-                    >
-                      <AlertCircle className="w-4 h-4" />
-                      <span>{getFieldError('socialMedia')}</span>
-                    </motion.p>
-                  )}
-                </AnimatePresence>
                 <p className="text-xs text-muted-foreground">
-                  Share your Facebook, Instagram, or other social media profile to help travelers connect with you.
+                  Add links to your company’s social profiles. Up to 5 platforms.
                 </p>
               </motion.div>
+
+              {/* Social Links */}
+              <div className="space-y-4">
+                {(formData.companyDetails.social ?? []).map((social, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3"
+                  >
+                    {/* Platform Select */}
+                    <Select
+                      value={social.platform}
+                      onValueChange={(newPlatform: GUIDE_SOCIAL_PLATFORM) => {
+                        const updated = { ...formData.companyDetails };
+                        updated.social = [...(updated.social ?? [])];
+                        updated.social[index].platform = newPlatform;
+                        updateCompanyDetails(updated);
+                      }}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Platform" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.values(GUIDE_SOCIAL_PLATFORM).map((platform) => (
+                          <SelectItem key={platform} value={platform}>
+                            {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* URL Input */}
+                    <div className="relative flex-1">
+                      <Input
+                        type="url"
+                        placeholder={`https://${social.platform}.com/yourcompany`}
+                        value={social.url}
+                        onChange={(e) => handleSocialUrlChange(index, e.target.value)}
+                        className={cn(
+                          "h-10 pr-10",
+                          getFieldError(`socialMedia_${index}`) && "border-destructive/70 bg-destructive/5",
+                          isFieldValid(`socialMedia_${index}`) && "border-green-500/70 bg-green-50"
+                        )}
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <AnimatePresence mode="wait">
+                          {getFieldError(`socialMedia_${index}`) ? (
+                            <AlertCircle className="w-4 h-4 text-destructive" />
+                          ) : isFieldValid(`socialMedia_${index}`) ? (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          ) : null}
+                        </AnimatePresence>
+                      </div>
+                    </div>
+
+                    {/* Remove Button */}
+                    {formData.companyDetails.social.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const updated = { ...formData.companyDetails };
+                          updated.social = updated.social.filter((_, i) => i !== index);
+                          updateCompanyDetails(updated);
+                        }}
+                        className="text-destructive hover:text-destructive/80"
+                      >
+                        ✕
+                      </Button>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Add Button */}
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={(formData.companyDetails.social ?? []).length >= 5}
+                  onClick={() => {
+                    updateCompanyDetails({
+                      ...formData.companyDetails,
+                      social: [
+                        ...(formData.companyDetails.social ?? []),
+                        { platform: GUIDE_SOCIAL_PLATFORM.FACEBOOK, url: "" },
+                      ],
+                    });
+                  }}
+                >
+                  + Add another platform
+                </Button>
+                {(formData.companyDetails.social ?? []).length >= 5 && (
+                  <p className="text-xs text-muted-foreground">
+                    Maximum of 5 social links allowed.
+                  </p>
+                )}
+              </div>
             </CardContent>
+
+
           </Card>
         </div>
 

@@ -69,7 +69,7 @@ export async function fetchUsersStats(dateRange: DateRange): Promise<UsersStats>
             { label: 'Suspended', count: 734, percentage: 5.7 },
             { label: 'Banned', count: 334, percentage: 2.6 },
         ],
-        organizerApplications: {
+        guideApplications: {
             pending: 45,
             approved: 234,
             rejected: 67,

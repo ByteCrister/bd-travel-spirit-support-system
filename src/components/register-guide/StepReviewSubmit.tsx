@@ -37,12 +37,13 @@ interface StepReviewSubmitProps {
 export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, onSuccess }) => {
   const { formData, isSubmitting, setSubmitting, resetForm } = useRegisterGuideStore()
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const totalDocuments = Object.values(formData.documents || {}).flat().length
 
   // Handle form submission
   const handleSubmit = async () => {
-    if (formData.documents.length === 0) {
-      showToast.error('Please upload at least one document before submitting')
-      return
+    if (totalDocuments === 0) {
+      showToast.error('Please upload at least one document before submitting');
+      return;
     }
 
     setSubmitting(true)
@@ -374,16 +375,16 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                 </div>
                 <div>
                   <CardTitle className="text-xl" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
-                    Verification Documents ({formData.documents.length})
+                    Verification Documents ({totalDocuments})
                   </CardTitle>
                   <p className="text-sm text-gray-600">Uploaded files</p>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              {formData.documents.length > 0 ? (
+              {totalDocuments > 0 ? (
                 <div className="space-y-3">
-                  {formData.documents.map((doc, index) => (
+                  {Object.values(formData.documents || {}).flat().map((doc, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                       <div className="flex items-center space-x-3">
                         {getFileIcon(doc.type)}
@@ -495,7 +496,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           </div>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || formData.documents.length === 0}
+            disabled={isSubmitting || totalDocuments === 0}
             className="flex items-center space-x-2 px-8 py-3 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
             style={{ boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' }}
           >

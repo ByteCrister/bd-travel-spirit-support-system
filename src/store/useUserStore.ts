@@ -1,8 +1,7 @@
 // stores/useUserStore.ts
 import { UserNotificationDTO } from "@/types/notification.types";
-import { ReportDTO } from "@/types/report.types";
-import { ReviewDTO } from "@/types/review.types";
-import { TourDTO } from "@/types/tour.types";
+import { ReportDetailDTO } from "@/types/report.types";
+import { ReviewDTO } from "@/types/review.tour.response.type";
 import { User } from "@/types/user.types";
 import api from "@/utils/api/axios";
 import { create } from "zustand";
@@ -20,7 +19,7 @@ export type SegmentKey =
     | "security"
     | "notifications"
     | "audit"
-    | "organizer"
+    | "guide"
     | "tours";
 
 // Each segment can be in one of these loading states
@@ -42,13 +41,15 @@ interface ActivityDTO {
     cart: string[];
     wishlist: string[];
     reviews: ReviewDTO[];
-    reports: ReportDTO[];
+    reports: ReportDetailDTO[];
 }
 
 interface RolesDTO {
     role: User["role"];
     isVerified: boolean;
-    organizerStatus?: User["organizerProfile"] extends { status: infer S } ? S : undefined;
+    guideStatus?: User["guideProfile"] extends { status: infer S }
+    ? S
+    : undefined;
 }
 
 interface SecurityDTO {
@@ -58,9 +59,9 @@ interface SecurityDTO {
     suspension?: User["suspension"];
 }
 
-interface OrganizerDTO {
-    profile?: User["organizerProfile"];
-    documents?: NonNullable<User["organizerProfile"]>["documents"];
+interface GuideDTO {
+    profile?: User["guideProfile"];
+    documents?: NonNullable<User["guideProfile"]>["documents"];
 }
 
 interface AuditDTO {
@@ -75,7 +76,7 @@ interface AuditDTO {
 }
 
 interface ToursDTO {
-    created: TourDTO[];
+    created: ToursDTO[];
 }
 
 // Mapping between segment key and its data type
@@ -86,7 +87,7 @@ interface SegmentDataMap {
     security: SecurityDTO;
     notifications: { items: UserNotificationDTO[]; unreadCount: number };
     audit: AuditDTO;
-    organizer: OrganizerDTO;
+    guide: GuideDTO;
     tours: ToursDTO;
 }
 
@@ -101,7 +102,7 @@ interface UserCacheEntry {
 }
 
 // Factory for empty segment state
-const emptySegment = <T,>(): SegmentState<T> => ({
+const emptySegment = <T>(): SegmentState<T> => ({
     data: null,
     status: "idle",
     error: null,
@@ -159,9 +160,12 @@ function newUserEntry(): UserCacheEntry {
             activity: emptySegment<ActivityDTO>(),
             roles: emptySegment<RolesDTO>(),
             security: emptySegment<SecurityDTO>(),
-            notifications: emptySegment<{ items: UserNotificationDTO[]; unreadCount: number }>(),
+            notifications: emptySegment<{
+                items: UserNotificationDTO[];
+                unreadCount: number;
+            }>(),
             audit: emptySegment<AuditDTO>(),
-            organizer: emptySegment<OrganizerDTO>(),
+            guide: emptySegment<GuideDTO>(),
             tours: emptySegment<ToursDTO>(),
         },
     };
@@ -190,7 +194,7 @@ const endpoints = {
     security: (id: string) => `/users-management/users/${id}/security`,
     notifications: (id: string) => `/users-management/users/${id}/notifications`,
     audit: (id: string) => `/users-management/users/${id}/audit`,
-    organizer: (id: string) => `/users-management/users/${id}/organizer`,
+    guide: (id: string) => `/users-management/users/${id}/guide`,
     tours: (id: string) => `/users-management/users/${id}/tours`,
 };
 
@@ -229,11 +233,19 @@ export const useUserStore = create<UseUserStoreState>()(
             get().ensureUserEntry(userId);
 
             const cache = users.get(userId)!;
-            const segState = cache.segments[segment] as SegmentState<SegmentDataMap[K]>;
-            const isFresh = segState.lastFetched && now() - segState.lastFetched < ttlMs;
+            const segState = cache.segments[segment] as SegmentState<
+                SegmentDataMap[K]
+            >;
+            const isFresh =
+                segState.lastFetched && now() - segState.lastFetched < ttlMs;
 
             // Return cached data if fresh
-            if (!opts?.force && segState.status === "success" && isFresh && segState.data) {
+            if (
+                !opts?.force &&
+                segState.status === "success" &&
+                isFresh &&
+                segState.data
+            ) {
                 lruTouch(get(), userId);
                 return segState.data;
             }
@@ -273,8 +285,12 @@ export const useUserStore = create<UseUserStoreState>()(
                 } catch (err: unknown) {
                     // Fallback error extraction
                     const message =
-                        (err as { response?: { data?: { message?: string } }; message?: string })
-                            ?.response?.data?.message ||
+                        (
+                            err as {
+                                response?: { data?: { message?: string } };
+                                message?: string;
+                            }
+                        )?.response?.data?.message ||
                         (err as Error).message ||
                         "Failed to fetch segment";
 
@@ -299,9 +315,14 @@ export const useUserStore = create<UseUserStoreState>()(
 
         // Prefetch multiple segments for a user
         prefetchUser: async (userId: string, segments?: SegmentKey[]) => {
-            const segs = segments ?? (["profile", "roles", "security"] as SegmentKey[]);
+            const segs =
+                segments ?? (["profile", "roles", "security"] as SegmentKey[]);
             await Promise.all(
-                segs.map((seg) => get().fetchSegment(userId, seg).catch(() => undefined))
+                segs.map((seg) =>
+                    get()
+                        .fetchSegment(userId, seg)
+                        .catch(() => undefined)
+                )
             );
         },
 
@@ -319,7 +340,9 @@ export const useUserStore = create<UseUserStoreState>()(
             set((s) => {
                 const entry = s.users.get(userId);
                 if (entry) {
-                    entry.segments[segment] = emptySegment<SegmentDataMap[K]>() as UserSegments[K];
+                    entry.segments[segment] = emptySegment<
+                        SegmentDataMap[K]
+                    >() as UserSegments[K];
                 }
                 return { users: s.users };
             }),
@@ -338,16 +361,20 @@ export const useUserStore = create<UseUserStoreState>()(
 // -----------------------------
 // Typed selectors for components
 // -----------------------------
-export const selectSegment = <K extends SegmentKey>(userId: string, segment: K) =>
-    (state: UseUserStoreState) =>
-        state.users.get(userId)?.segments[segment] as
-        | SegmentState<SegmentDataMap[K]>
-        | undefined;
+export const selectSegment =
+    <K extends SegmentKey>(userId: string, segment: K) =>
+        (state: UseUserStoreState) =>
+            state.users.get(userId)?.segments[segment] as
+            | SegmentState<SegmentDataMap[K]>
+            | undefined;
 
-export const selectStatus = (userId: string, segment: SegmentKey) =>
-    (state: UseUserStoreState) => state.users.get(userId)?.segments[segment]?.status ?? "idle";
+export const selectStatus =
+    (userId: string, segment: SegmentKey) => (state: UseUserStoreState) =>
+        state.users.get(userId)?.segments[segment]?.status ?? "idle";
 
-export const selectError = (userId: string, segment: SegmentKey) =>
-    (state: UseUserStoreState) => state.users.get(userId)?.segments[segment]?.error ?? null;
+export const selectError =
+    (userId: string, segment: SegmentKey) => (state: UseUserStoreState) =>
+        state.users.get(userId)?.segments[segment]?.error ?? null;
 
-export const selectActiveUserId = (state: UseUserStoreState) => state.activeUserId;
+export const selectActiveUserId = (state: UseUserStoreState) =>
+    state.activeUserId;

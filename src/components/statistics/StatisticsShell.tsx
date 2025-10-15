@@ -73,19 +73,19 @@ export function StatisticsShell() {
                             <div className="space-y-2">
                                 <div className="flex justify-between">
                                     <span className="text-sm text-gray-600 dark:text-gray-400">Pending:</span>
-                                    <span className="font-medium">{data.users?.organizerApplications.pending}</span>
+                                    <span className="font-medium">{data.users?.guideApplications.pending}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-sm text-gray-600 dark:text-gray-400">Approved:</span>
-                                    <span className="font-medium text-green-600">{data.users?.organizerApplications.approved}</span>
+                                    <span className="font-medium text-green-600">{data.users?.guideApplications.approved}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-sm text-gray-600 dark:text-gray-400">Rejected:</span>
-                                    <span className="font-medium text-red-600">{data.users?.organizerApplications.rejected}</span>
+                                    <span className="font-medium text-red-600">{data.users?.guideApplications.rejected}</span>
                                 </div>
                                 <div className="flex justify-between pt-2 border-t">
                                     <span className="text-sm text-gray-600 dark:text-gray-400">Avg Review Time:</span>
-                                    <span className="font-medium">{data.users?.organizerApplications.avgReviewTime}d</span>
+                                    <span className="font-medium">{data.users?.guideApplications.avgReviewTime}d</span>
                                 </div>
                             </div>
                         </div>

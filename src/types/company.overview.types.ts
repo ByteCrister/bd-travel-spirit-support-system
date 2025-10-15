@@ -20,7 +20,7 @@ export interface CompanyKpisDTO {
  */
 export interface CompanyOverviewDTO {
     companyId: string;
-    companyName?: string; // organizerProfile.companyName (if available)
+    companyName?: string; // guideProfile.companyName (if available)
 
     kpis: CompanyKpisDTO;
     // Server timestamp used for discount activation and SLA clocks

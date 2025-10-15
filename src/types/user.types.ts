@@ -27,8 +27,8 @@ export interface PaymentMethod {
     billingAddress: Address;  // associated billing address
 }
 
-/** Organizer profile for guides / agencies */
-export interface OrganizerProfile {
+/** Guide's company profile for guides / agencies */
+export interface GuideProfile {
     companyName?: string;
     bio?: string;
     social?: string; // URL or handle
@@ -122,8 +122,8 @@ export interface User {
     /** Suspension details if applicable */
     suspension?: Suspension;
 
-    /** Organizer-specific profile */
-    organizerProfile?: OrganizerProfile;
+    /** Guide-specific profile */
+    guideProfile?: GuideProfile;
 
     /** IDs of tours created by this user */
     toursCreated?: string[];

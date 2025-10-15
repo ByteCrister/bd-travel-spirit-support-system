@@ -70,7 +70,7 @@ export interface CompanyMetricsDTO {
 export interface CompanyRowDTO {
     /** Stable id for the company (host user id). */
     id: string;
-    /** Human-friendly company name (prefer organizerProfile.companyName, fallback to host name). */
+    /** Human-friendly company name (prefer guideProfile.companyName, fallback to host name). */
     name: string;
     /** Host summary. */
     host: HostSummaryDTO;

@@ -21,7 +21,7 @@ export const demoUsers: User[] = Array.from({ length: 30 }).map((_, i) => {
         ACCOUNT_STATUS.PENDING,
     ] as const;
 
-    const rand = <T,>(arr: readonly T[]): T =>
+    const rand = <T>(arr: readonly T[]): T =>
         arr[Math.floor(Math.random() * arr.length)];
 
     return {
@@ -69,7 +69,7 @@ export const demoUsers: User[] = Array.from({ length: 30 }).map((_, i) => {
         isActive: i % 7 !== 0,
         deletedAt: undefined,
         suspension: undefined,
-        organizerProfile:
+        guideProfile:
             i % 10 === 0
                 ? {
                     companyName: `Company ${id}`,

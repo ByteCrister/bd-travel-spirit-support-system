@@ -2,13 +2,12 @@
 import {
   GUIDE_DOCUMENT_CATEGORY,
   GUIDE_DOCUMENT_TYPE,
-  GUIDE_STATUS,
 } from "@/constants/guide.const";
 import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
 import mongoose, { Schema, Document, Types, model } from "mongoose";
 import { models } from "mongoose";
 
-export interface OrganizerDocument {
+export interface GuideDocument {
   category: GUIDE_DOCUMENT_CATEGORY;
   base64Content: string;
   fileType: GUIDE_DOCUMENT_TYPE;
@@ -46,56 +45,6 @@ const PaymentMethodSchema = new Schema(
     billingAddress: { type: AddressSchema, required: true },
   },
   { _id: false }
-);
-
-/** Embedded organizer profile for guides / agencies */
-const OrganizerProfileSchema = new Schema(
-  {
-    companyName: { type: String, trim: true },
-    bio: { type: String, trim: true },
-    social: { type: String, trim: true }, // could store URL or handle
-    documents: {
-      type: [
-        {
-          category: {
-            type: String,
-            enum: Object.values(GUIDE_DOCUMENT_CATEGORY),
-            required: true,
-          },
-          base64Content: { type: String, required: true }, // full base64 string
-          fileType: {
-            type: String,
-            enum: Object.values(GUIDE_DOCUMENT_TYPE),
-            required: true,
-          },
-          fileName: { type: String, trim: true },
-          uploadedAt: { type: Date, default: Date.now },
-        },
-      ],
-      validate: [
-        (
-          val: {
-            category: GUIDE_DOCUMENT_CATEGORY;
-            base64Content: string;
-            fileType: GUIDE_DOCUMENT_TYPE;
-            fileName?: string;
-            uploadedAt: Date;
-          }[]
-        ) => val.length > 0,
-        "At least one verification document is required",
-      ],
-      required: true,
-    },
-    status: {
-      type: String,
-      enum: Object.values(GUIDE_STATUS),
-      default: GUIDE_STATUS.PENDING,
-    },
-    appliedAt: Date,
-    reviewedAt: Date,
-    reviewer: { type: Schema.Types.ObjectId, ref: "User" }, // admin user who reviewed
-  },
-  { _id: false, timestamps: true } // timestamps track last update
 );
 
 /**
@@ -178,14 +127,10 @@ export interface IUser extends Document {
     createdAt: Date;
   };
 
+  guide?: Types.ObjectId;
+
   /** Soft-delete timestamp */
   deletedAt?: Date;
-
-  /** Organizer-specific profile */
-  organizerProfile?: mongoose.InferSchemaType<typeof OrganizerProfileSchema>;
-
-  /** Tours created by this user (if organizer) */
-  toursCreated?: Types.ObjectId[];
 
   // virtuals
   isLocked?: boolean;
@@ -279,9 +224,7 @@ const UserSchema = new Schema<IUser>(
       createdAt: Date,
     },
 
-    // Organizer data
-    organizerProfile: OrganizerProfileSchema,
-    toursCreated: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
+    guide: { type: Schema.Types.ObjectId, ref: "Guide" },
   },
   {
     timestamps: true,
@@ -328,7 +271,7 @@ UserSchema.index({
   "address.state": "text",
   "address.country": "text",
   "address.zip": "text",
-  "organizerProfile.companyName": "text",
+  "preferences.language": "text",
 });
 
 // =============================

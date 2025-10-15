@@ -1,4 +1,5 @@
 import { documentTypes } from '@/components/register-guide/StepDocuments'
+import { GUIDE_SOCIAL_PLATFORM } from '@/constants/guide.const'
 import { z } from 'zod'
 
 // Personal Info validation schema
@@ -59,8 +60,17 @@ export const personalInfoSchema = z.object({
 export const companyDetailsSchema = z.object({
   companyName: z.string().trim().min(2, 'Company name must be at least 2 characters'),
   bio: z.string().trim().min(50, 'Bio must be at least 50 characters').max(500, 'Bio must not exceed 500 characters'),
-  website: z.string().trim().url('Please enter a valid website URL').optional().or(z.literal('')),
-  socialMedia: z.string().trim().url('Please enter a valid social media URL').optional().or(z.literal(''))
+  social: z.array(
+    z.object({
+      platform: z.nativeEnum(GUIDE_SOCIAL_PLATFORM),
+      url: z
+        .string()
+        .trim()
+        .url('Please enter a valid social media URL')
+        .optional()
+        .or(z.literal(''))
+    })
+  )
 })
 
 // Document validation schema

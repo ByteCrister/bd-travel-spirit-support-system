@@ -5,7 +5,7 @@ export interface GuideApplicationPayload {
   personalInfo: FormData['personalInfo']
   companyDetails: FormData['companyDetails']
   documents: FormData['documents']
-  organizerProfile: {
+  guideProfile: {
     status: 'pending'
     submittedAt: string
   }
@@ -19,7 +19,7 @@ export const submitGuideApplication = async (data: FormData): Promise<{ success:
       personalInfo: data.personalInfo,
       companyDetails: data.companyDetails,
       documents: data.documents,
-      organizerProfile: {
+      guideProfile: {
         status: 'pending',
         submittedAt: new Date().toISOString()
       }

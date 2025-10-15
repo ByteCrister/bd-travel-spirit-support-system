@@ -59,12 +59,12 @@ export function UserRolesTab({ userId }: UserRolesTabProps) {
                         </div>
                     </div>
 
-                    {rolesSegment.data.organizerStatus && (
+                    {rolesSegment.data.guideStatus && (
                         <div className="space-y-4">
-                            <h3 className="font-medium text-foreground">Organizer Status</h3>
+                            <h3 className="font-medium text-foreground">Guide Status</h3>
                             <div className="p-4 border rounded-lg space-y-3">
                                 <div className="flex items-center gap-2">
-                                    <Badge variant="outline">{rolesSegment.data.organizerStatus}</Badge>
+                                    <Badge variant="outline">{rolesSegment.data.guideStatus}</Badge>
                                 </div>
                             </div>
                         </div>
