@@ -1,6 +1,8 @@
-import { STORAGE_PROVIDER } from "@/models/image.model"; // Reuse same enum for consistency across media types
-import { DocumentStorageProvider } from "./document-storage.interface";
-import { CloudinaryDocProvider } from "./cloudinary-doc.provider";
+// src/lib/storage-providers/index.ts
+
+import { CloudinaryAssetProvider } from "./cloudinary-doc.provider";
+import { STORAGE_PROVIDER } from "@/models/asset.model";
+import { AssetStorageProvider } from "./asset-storage.interface";
 // import { S3DocProvider } from "./s3-doc.provider";
 // import { LocalDocProvider } from "./local-doc.provider";
 // import { GCSDocProvider } from "./gcs-doc.provider";
@@ -21,8 +23,8 @@ import { CloudinaryDocProvider } from "./cloudinary-doc.provider";
  * 2. Import the class here.
  * 3. Register it in the `providers` map with the corresponding enum key.
  */
-const providers: Partial<Record<STORAGE_PROVIDER, DocumentStorageProvider>> = {
-    [STORAGE_PROVIDER.CLOUDINARY]: new CloudinaryDocProvider(),
+const providers: Partial<Record<STORAGE_PROVIDER, AssetStorageProvider>> = {
+    [STORAGE_PROVIDER.CLOUDINARY]: new CloudinaryAssetProvider(),
     // [STORAGE_PROVIDER.S3]: new S3DocProvider(),
     // [STORAGE_PROVIDER.LOCAL]: new LocalDocProvider(),
     // [STORAGE_PROVIDER.GCS]: new GCSDocProvider(),
@@ -44,10 +46,12 @@ const providers: Partial<Record<STORAGE_PROVIDER, DocumentStorageProvider>> = {
  * This function enforces that only registered providers can be used,
  * preventing silent failures or misconfigurations.
  */
-export function getDocumentStorageProvider(provider: STORAGE_PROVIDER): DocumentStorageProvider {
+export function getDocumentStorageProvider(
+    provider: STORAGE_PROVIDER
+): AssetStorageProvider {
     const instance = providers[provider];
     if (!instance) {
-        throw new Error(`No document storage provider found for: ${provider}`);
+        throw new Error(`No asset storage provider found for: ${provider}`);
     }
     return instance;
 }

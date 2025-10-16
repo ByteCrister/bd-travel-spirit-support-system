@@ -29,7 +29,7 @@ interface IAttraction {
   insiderTip?: string;
   address?: string;
   openingHours?: string;
-  images?: Types.ObjectId[]; // refs to ImageAsset
+  images?: Types.ObjectId[]; // refs to Asset
   coordinates?: GeoPoint;
 }
 
@@ -56,17 +56,18 @@ interface IDestinationBlock {
   highlights?: string[];
   attractions?: IAttraction[];
   activities?: IActivity[];
-  images?: Types.ObjectId[]; // ImageAsset refs
+  images?: Types.ObjectId[]; // Asset refs
   coordinates?: GeoPoint;
 }
 
 export interface ITour extends Document {
+  companyId?: Types.ObjectId; // Operator company
   // Identity & SEO
   title: string;
   slug: string;
   status: TOUR_STATUS;
   summary: string;
-  heroImage?: Types.ObjectId; // ImageAsset
+  heroImage?: Types.ObjectId; // Asset
   gallery?: Types.ObjectId[];
   videos?: string[]; // URLs
   seo?: { metaTitle?: string; metaDescription?: string; ogImage?: string };
@@ -141,6 +142,7 @@ export interface ITour extends Document {
 
 const TourSchema = new Schema<ITour>(
   {
+    companyId: { type: Schema.Types.ObjectId, ref: "Guide" },
     title: { type: String, required: true, trim: true },
     slug: {
       type: String,
@@ -156,8 +158,8 @@ const TourSchema = new Schema<ITour>(
       index: true,
     },
     summary: { type: String, required: true, trim: true },
-    heroImage: { type: Schema.Types.ObjectId, ref: "ImageAsset" },
-    gallery: [{ type: Schema.Types.ObjectId, ref: "ImageAsset" }],
+    heroImage: { type: Schema.Types.ObjectId, ref: "Asset" },
+    gallery: [{ type: Schema.Types.ObjectId, ref: "Asset" }],
     videos: [{ type: String, trim: true }],
     seo: {
       metaTitle: { type: String, trim: true },
@@ -194,7 +196,7 @@ const TourSchema = new Schema<ITour>(
                 insiderTip: { type: String, trim: true },
                 address: { type: String, trim: true },
                 openingHours: { type: String, trim: true },
-                images: [{ type: Schema.Types.ObjectId, ref: "ImageAsset" }],
+                images: [{ type: Schema.Types.ObjectId, ref: "Asset" }],
                 coordinates: { lat: Number, lng: Number },
               },
               { _id: false }
@@ -216,7 +218,7 @@ const TourSchema = new Schema<ITour>(
               { _id: false }
             ),
           ],
-          images: [{ type: Schema.Types.ObjectId, ref: "ImageAsset" }],
+          images: [{ type: Schema.Types.ObjectId, ref: "Asset" }],
           coordinates: { lat: Number, lng: Number },
         },
         { _id: false }
@@ -228,7 +230,7 @@ const TourSchema = new Schema<ITour>(
         dayNumber: { type: Number, required: true, min: 1 },
         title: { type: String, trim: true },
         description: { type: String, trim: true },
-        images: [{ type: Schema.Types.ObjectId, ref: "ImageAsset" }],
+        images: [{ type: Schema.Types.ObjectId, ref: "Asset" }],
       },
     ],
     inclusions: [

@@ -99,7 +99,7 @@ const ReportSchema = new Schema<IReport>(
         },
 
         evidenceImages: [
-            { type: Schema.Types.ObjectId, ref: "Image" }
+            { type: Schema.Types.ObjectId, ref: "Asset" }
         ],
 
         evidenceLinks: [

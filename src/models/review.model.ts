@@ -94,7 +94,7 @@ const ReviewSchema = new Schema<IReview>(
         comment: { type: String, required: true, trim: true },
 
         // Array of image references
-        images: [{ type: Schema.Types.ObjectId, ref: "Image" }],
+        images: [{ type: Schema.Types.ObjectId, ref: "Asset" }],
 
         // Trip context for other travelers
         tripType: { type: String, enum: Object.values(TRAVEL_TYPE) },

@@ -141,7 +141,7 @@ const TravelArticleSchema = new Schema<ITravelArticle>(
             insiderTip: { type: String, trim: true },
             address: { type: String, trim: true },
             openingHours: { type: String, trim: true },
-            images: [{ type: Schema.Types.ObjectId, ref: "Image" }], // ref to Image model
+            images: [{ type: Schema.Types.ObjectId, ref: "Asset" }], // ref to Image model
             coordinates: { lat: Number, lng: Number },
           },
         ],
@@ -155,7 +155,7 @@ const TravelArticleSchema = new Schema<ITravelArticle>(
             rating: { type: Number },
           },
         ],
-        images: [{ type: Schema.Types.ObjectId, ref: "Image" }], // ref to Image model
+        images: [{ type: Schema.Types.ObjectId, ref: "Asset" }], // ref to Image model
       },
     ],
 

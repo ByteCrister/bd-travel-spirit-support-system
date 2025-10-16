@@ -1,12 +1,30 @@
-// * models/user.model.ts
+// ============================================
+// user.model.ts
+// Production-grade User schema with lifecycle,
+// security, and extensibility considerations.
+// ============================================
+
 import {
   GUIDE_DOCUMENT_CATEGORY,
   GUIDE_DOCUMENT_TYPE,
 } from "@/constants/guide.const";
 import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
-import mongoose, { Schema, Document, Types, model } from "mongoose";
-import { models } from "mongoose";
+import mongoose, {
+  Schema,
+  Document,
+  Types,
+  model,
+  models,
+  Query,
+} from "mongoose";
 
+/**
+ * =========================
+ * SUB‑DOCUMENT INTERFACES
+ * =========================
+ */
+
+/** Guide document metadata (for KYC, verification, etc.) */
 export interface GuideDocument {
   category: GUIDE_DOCUMENT_CATEGORY;
   base64Content: string;
@@ -35,7 +53,7 @@ const AddressSchema = new Schema(
 /** Payment method with billing address */
 const PaymentMethodSchema = new Schema(
   {
-    // Prefer storing only PSP token + brand + last4 + expiry (no PAN)
+    // Store only PSP token + metadata (never raw PAN)
     token: { type: String, required: true }, // PSP token/id
     cardType: { type: String, required: true },
     last4: { type: String, required: true },
@@ -43,6 +61,7 @@ const PaymentMethodSchema = new Schema(
     expiryYear: { type: Number, required: true },
     cardHolder: { type: String, required: true },
     billingAddress: { type: AddressSchema, required: true },
+    isDefault: { type: Boolean, default: false }, // NEW: mark default card
   },
   { _id: false }
 );
@@ -53,83 +72,38 @@ const PaymentMethodSchema = new Schema(
  * =========================
  */
 export interface IUser extends Document {
-  /** Full name of the user */
   name: string;
-
-  /** Unique email address for login and communication */
   email: string;
-
-  /** Hashed password */
-  password?: string;
-
-  /** Role-based permissions */
+  password?: string; // optional for OAuth users
   role: USER_ROLE;
-
-  /** Profile picture URL */
   avatar?: string;
-
-  /** Contact phone number */
   phone?: string;
-
-  /** Optional address details */
   address?: mongoose.InferSchemaType<typeof AddressSchema>;
-
-  /** Date of birth */
   dateOfBirth?: Date;
-
-  /** Whether the email is verified */
   isVerified: boolean;
-
-  /** Current account lifecycle state */
   accountStatus: ACCOUNT_STATUS;
-
-  /** Token for password reset */
   resetPasswordToken?: string;
-
-  /** Expiration date for password reset token */
   resetPasswordExpires?: Date;
-
-  /** Tours already booked */
   bookingHistory: Types.ObjectId[];
-
-  /** Tours in cart */
   cart: Types.ObjectId[];
-
-  /** Tours user might want later */
   wishlist: Types.ObjectId[];
-
-  /** Stored payment methods (tokenized/masked) */
   paymentMethods: mongoose.InferSchemaType<typeof PaymentMethodSchema>[];
-
-  /** User preferences for language and currency */
   preferences: {
     language: string;
     currency: string;
     recommendationWeights: Record<string, number>;
   };
-
   hiddenTours: Types.ObjectId[];
   preferredTravelDates: { start: Date; end: Date }[];
-
-  /** Number of failed login attempts */
   loginAttempts: number;
-
-  /** Last login timestamp */
   lastLogin?: Date;
-
   lockUntil?: Date;
-
-  /** Suspension details if applicable */
   suspension?: {
     reason: string;
     suspendedBy: Types.ObjectId;
     until: Date;
     createdAt: Date;
   };
-
-  guide?: Types.ObjectId;
-
-  /** Soft-delete timestamp */
   deletedAt?: Date;
 
   // virtuals
@@ -152,8 +126,15 @@ const UserSchema = new Schema<IUser>(
       unique: true,
       index: true,
       trim: true,
+      lowercase: true, // NEW: normalize emails
     },
-    password: { type: String, required: true },
+    password: {
+      type: String,
+      // Allow null for OAuth users
+      required: function (this: IUser) {
+        return this.role === USER_ROLE.TRAVELER;
+      },
+    },
 
     // Role-based permissions
     role: {
@@ -165,7 +146,7 @@ const UserSchema = new Schema<IUser>(
     },
 
     // Profile
-    avatar: String,
+    avatar: { type: Schema.Types.ObjectId, ref: "Asset" },
     phone: String,
     address: AddressSchema,
     dateOfBirth: Date,
@@ -221,10 +202,8 @@ const UserSchema = new Schema<IUser>(
       reason: String,
       suspendedBy: { type: Schema.Types.ObjectId, ref: "User" },
       until: Date,
-      createdAt: Date,
+      createdAt: { type: Date, default: Date.now },
     },
-
-    guide: { type: Schema.Types.ObjectId, ref: "Guide" },
   },
   {
     timestamps: true,
@@ -232,6 +211,7 @@ const UserSchema = new Schema<IUser>(
     toJSON: {
       virtuals: true,
       transform: (_doc, ret) => {
+        // Strip sensitive fields
         delete ret.password;
         delete ret.resetPasswordToken;
         delete ret.resetPasswordExpires;
@@ -242,16 +222,33 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-// Concrete document type (mongoose model instances)
-export type IUserDoc = IUser & mongoose.Document;
-
-// Virtuals
-UserSchema.virtual("isLocked").get(function (this: IUserDoc) {
+/**
+ * =========================
+ * VIRTUALS
+ * =========================
+ */
+UserSchema.virtual("isLocked").get(function (this: IUser) {
   return !!(this.lockUntil && this.lockUntil.getTime() > Date.now());
 });
 
-UserSchema.virtual("isSuspended").get(function (this: IUserDoc) {
+UserSchema.virtual("isSuspended").get(function (this: IUser) {
   return !!(this.suspension?.until && this.suspension.until > new Date());
+});
+
+UserSchema.virtual("isActive").get(function (this: IUser) {
+  return !this.deletedAt && this.accountStatus === ACCOUNT_STATUS.ACTIVE;
+});
+
+/**
+ * =========================
+ * QUERY MIDDLEWARE
+ * =========================
+ */
+
+// Exclude soft-deleted users by default
+UserSchema.pre<Query<IUserDoc, IUser>>(/^find/, function (next) {
+  this.where({ deletedAt: null });
+  next();
 });
 
 /**
@@ -259,35 +256,18 @@ UserSchema.virtual("isSuspended").get(function (this: IUserDoc) {
  * INDEXES FOR PERFORMANCE
  * =========================
  */
-// =============================
-// TEXT INDEX (one compound index only)
-// =============================
+// Text search (only one text index allowed per collection)
 UserSchema.index({
   name: "text",
   email: "text",
   phone: "text",
-  "address.street": "text",
   "address.city": "text",
-  "address.state": "text",
-  "address.country": "text",
-  "address.zip": "text",
-  "preferences.language": "text",
 });
 
-// =============================
-// FILTERING + SORTING INDEXES
-// =============================
-// For dropdowns, filters, and sorting
-UserSchema.index({ role: 1 });
-UserSchema.index({ accountStatus: 1 });
-UserSchema.index({ isVerified: 1 });
-UserSchema.index({ isActive: 1 });
-
-// For frequent sorting
+// Filtering + sorting
+UserSchema.index({ role: 1, accountStatus: 1, isVerified: 1 });
 UserSchema.index({ createdAt: -1 });
 UserSchema.index({ lastLogin: -1 });
-
-// Optional: range queries
 UserSchema.index({ dateOfBirth: 1 });
 
 /**
@@ -295,4 +275,5 @@ UserSchema.index({ dateOfBirth: 1 });
  * MODEL FACTORY
  * =========================
  */
+export type IUserDoc = IUser & mongoose.Document;
 export const UserModel = models.User || model<IUserDoc>("User", UserSchema);

@@ -6,21 +6,23 @@
  * Core job roles determining base permissions.
  */
 export const EMPLOYEE_ROLE = {
-  ASSISTANT: "assistant",
-  SUPPORT: "support",
+  ASSISTANT: "assistant",   // limited scope, task-based
+  SUPPORT: "support",       // customer/order/product support
 } as const;
+
 
 /**
  * Sub-categories of each role (support/assistant).
  */
 export const EMPLOYEE_SUB_ROLE = {
-  PRODUCT: "product",
-  ORDER: "order",
-  SUPPORT: "support", // generic support staff
-  MARKETING: "marketing",
-  FINANCE: "finance",
-  ANALYTICS: "analytics",
-  HR: "hr",
+  PRODUCT: "product",       // catalog, packages
+  ORDER: "order",           // bookings, cancellations
+  SUPPORT: "support",       // customer queries
+  MARKETING: "marketing",   // campaigns, SEO
+  FINANCE: "finance",       // invoices, payroll
+  ANALYTICS: "analytics",   // reporting, BI
+  HR: "hr",                 // employee management
+  IT: "it",                 // system maintenance
 } as const;
 
 /**
@@ -48,7 +50,7 @@ export const EMPLOYEE_POSITIONS = {
   hr: ["HR Executive", "HR Manager", "Recruiter"],
   marketing: ["SEO Specialist", "Marketing Executive", "Campaign Manager"],
   product: ["Catalog Executive", "Inventory Specialist"],
-  order: ["Order Associate", "Warehouse Manager"],
+  order: ["Order Associate", "Booking Manager"],
   analytics: ["Data Analyst", "Business Analyst"],
   customer: ["Customer Care Executive", "Customer Support Lead"],
   technical: ["Tech Support Executive", "Escalation Engineer"],

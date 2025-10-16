@@ -22,9 +22,9 @@ export interface PendingGuideAddress {
 /** Organizer document type */
 export interface PendingGuideDocument {
     category: GUIDE_DOCUMENT_CATEGORY;
-    base64Content: string;
     fileType: GUIDE_DOCUMENT_TYPE;
     fileName?: string;
+    fileUrl: Schema.Types.ObjectId;
     uploadedAt: Date;
 }
 
@@ -70,13 +70,13 @@ const DocumentSchema = new Schema<PendingGuideDocument>(
             enum: Object.values(GUIDE_DOCUMENT_CATEGORY),
             required: true,
         },
-        base64Content: { type: String, required: true },
         fileType: {
             type: String,
             enum: Object.values(GUIDE_DOCUMENT_TYPE),
             required: true,
         },
         fileName: { type: String, trim: true },
+        fileUrl: { type: Schema.Types.ObjectId, ref: "Asset" },
         uploadedAt: { type: Date, default: Date.now },
     },
     { _id: false }

@@ -1,4 +1,12 @@
-import { Schema, Document, Types, model, models } from "mongoose";
+// ============================================================
+// guide.model.ts
+// ------------------------------------------------------------
+// Production-grade Guide schema for service providers.
+// This model is completely separate from User, with its own
+// lifecycle, authentication, and verification process.
+// ============================================================
+
+import { Schema, Document, Types, model, models, Query } from "mongoose";
 import {
     GUIDE_DOCUMENT_CATEGORY,
     GUIDE_DOCUMENT_TYPE,
@@ -10,14 +18,16 @@ import {
 // INTERFACES
 // =========================
 
+/** Metadata for uploaded verification documents */
 export interface IGuideDocument {
     category: GUIDE_DOCUMENT_CATEGORY;
-    base64Content: string;
     fileType: GUIDE_DOCUMENT_TYPE;
     fileName?: string;
+    fileUrl: string; // store URL instead of base64 for scalability
     uploadedAt?: Date;
 }
 
+/** Main Guide interface */
 export interface IGuide extends Document {
     // Core company identity
     companyName: string;
@@ -31,8 +41,9 @@ export interface IGuide extends Document {
     owner: {
         name: string;
         email: string;
-        password?: string; // hashed, optional so we can safely delete in toJSON
+        password?: string; // hashed, optional for OAuth
         phone?: string;
+        oauthProvider?: string; // e.g. "google", "facebook"
     };
 
     // Verification documents
@@ -44,7 +55,7 @@ export interface IGuide extends Document {
     reviewedAt?: Date;
     reviewer?: Types.ObjectId;
 
-    // Suspension (same as User)
+    // Suspension lifecycle
     suspension?: {
         reason: string;
         suspendedBy: Types.ObjectId;
@@ -55,11 +66,9 @@ export interface IGuide extends Document {
     // Soft delete
     deletedAt?: Date;
 
-    // Tours created by this guide
-    toursCreated?: Types.ObjectId[];
-
     // Virtuals
     isSuspended?: boolean;
+    isActive?: boolean;
 }
 
 // =========================
@@ -68,8 +77,11 @@ export interface IGuide extends Document {
 
 const GuideSchema = new Schema<IGuide>(
     {
+        // Core identity
         companyName: { type: String, required: true, trim: true },
         bio: { type: String, trim: true },
+
+        // Social links
         social: [
             {
                 platform: {
@@ -90,10 +102,23 @@ const GuideSchema = new Schema<IGuide>(
             },
         ],
 
+        // Owner credentials
         owner: {
             name: { type: String, required: true, trim: true },
-            email: { type: String, required: true, unique: true, trim: true },
-            password: { type: String, required: true }, // hashed
+            email: {
+                type: String,
+                required: true,
+                unique: true,
+                trim: true,
+                lowercase: true, // normalize for uniqueness
+            },
+            password: {
+                type: String,
+                required: function (this: IGuide) {
+                    // allow optional password for OAuth
+                    return !this.owner?.["oauthProvider"];
+                },
+            },
             phone: {
                 type: String,
                 trim: true,
@@ -108,6 +133,7 @@ const GuideSchema = new Schema<IGuide>(
             },
         },
 
+        // Verification documents
         documents: [
             {
                 category: {
@@ -115,37 +141,37 @@ const GuideSchema = new Schema<IGuide>(
                     enum: Object.values(GUIDE_DOCUMENT_CATEGORY),
                     required: true,
                 },
-                base64Content: { type: String, required: true },
                 fileType: {
                     type: String,
                     enum: Object.values(GUIDE_DOCUMENT_TYPE),
                     required: true,
                 },
                 fileName: { type: String, trim: true },
+                fileUrl: { type: Schema.Types.ObjectId, ref: "Document" }, // scalable storage
                 uploadedAt: { type: Date, default: Date.now },
             },
         ],
 
+        // Verification lifecycle
         status: {
             type: String,
             enum: Object.values(GUIDE_STATUS),
             default: GUIDE_STATUS.PENDING,
         },
-
         appliedAt: Date,
         reviewedAt: Date,
         reviewer: { type: Schema.Types.ObjectId, ref: "User" },
 
+        // Suspension
         suspension: {
             reason: String,
             suspendedBy: { type: Schema.Types.ObjectId, ref: "User" },
             until: Date,
-            createdAt: Date,
+            createdAt: { type: Date, default: Date.now },
         },
 
+        // Soft delete
         deletedAt: Date,
-
-        toursCreated: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
     },
     {
         timestamps: true,
@@ -167,17 +193,32 @@ const GuideSchema = new Schema<IGuide>(
 // VIRTUALS
 // =========================
 
+/** Whether the guide is currently suspended */
 GuideSchema.virtual("isSuspended").get(function (this: IGuide) {
     return !!(this.suspension?.until && this.suspension.until > new Date());
 });
 
+/** Whether the guide is active (not deleted + approved) */
+GuideSchema.virtual("isActive").get(function (this: IGuide) {
+    return !this.deletedAt && this.status === GUIDE_STATUS.APPROVED;
+});
+
+// =========================
+// MIDDLEWARE
+// =========================
+
+/** Normalize phone numbers before saving */
 GuideSchema.pre("save", function (next) {
     if (this.owner?.phone) {
-        // Normalize: if starts with 0, replace with +880
-        if (this.owner.phone.startsWith("0")) {
-            this.owner.phone = "+88" + this.owner.phone;
-        }
+        // Normalize: replace leading 0 with +880
+        this.owner.phone = this.owner.phone.replace(/^0/, "+880");
     }
+    next();
+});
+
+/** Exclude soft-deleted guides from queries by default */
+GuideSchema.pre<Query<IGuide, IGuide>>(/^find/, function (next) {
+    this.where({ deletedAt: null });
     next();
 });
 
@@ -185,8 +226,15 @@ GuideSchema.pre("save", function (next) {
 // INDEXES
 // =========================
 
-GuideSchema.index({ companyName: "text", bio: "text", social: "text" });
-GuideSchema.index({ status: 1 });
+// Text search (only one text index allowed per collection)
+GuideSchema.index({
+    companyName: "text",
+    bio: "text",
+    "social.url": "text", // index actual URL field
+});
+
+// Filtering + sorting
+GuideSchema.index({ status: 1, deletedAt: 1 });
 GuideSchema.index({ createdAt: -1 });
 
 // =========================
