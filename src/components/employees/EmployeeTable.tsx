@@ -55,10 +55,8 @@ export function EmployeeTable({
             { key: "user.name", label: "Name", icon: <FaUser className="h-3 w-3" />, width: "w-48" },
             { key: "user.email", label: "Email", icon: <FaEnvelope className="h-3 w-3" />, width: "w-56" },
             { key: "role", label: "Role", icon: <FaBriefcase className="h-3 w-3" />, width: "w-36" },
-            { key: "subRole", label: "Sub-role", icon: <FaBriefcase className="h-3 w-3" />, hideOnMobile: true, width: "w-32" },
             { key: "position", label: "Position", icon: <FaBriefcase className="h-3 w-3" />, width: "w-40" },
             { key: "status", label: "Status", icon: <FaUsers className="h-3 w-3" />, width: "w-28" },
-            { key: "department", label: "Department", icon: <FaUsers className="h-3 w-3" />, hideOnMobile: true, width: "w-36" },
             { key: "rating", label: "Rating", icon: <FaStar className="h-3 w-3" />, width: "w-20" },
             { key: "dateOfJoining", label: "Joined", icon: <FaCalendarAlt className="h-3 w-3" />, width: "w-28" },
             { key: "salary", label: "Salary", icon: <FaMoneyBill className="h-3 w-3" />, hideOnMobile: true, width: "w-32" },
@@ -236,12 +234,6 @@ function EmployeeTableRow({ row, onClick }: { row: EmployeeListItemDTO; onClick:
                 </span>
             </TableCell>
 
-            <TableCell className="w-36 px-3 py-3">
-                <span className="text-xs text-foreground/90 line-clamp-1">
-                    {row.role}
-                </span>
-            </TableCell>
-
             <TableCell className="hidden w-32 px-3 py-3 lg:table-cell">
                 <span className="text-xs text-foreground/70 line-clamp-1">
                     {row.subRole ?? "-"}
@@ -261,12 +253,6 @@ function EmployeeTableRow({ row, onClick }: { row: EmployeeListItemDTO; onClick:
                 >
                     {statusData.label}
                 </Badge>
-            </TableCell>
-
-            <TableCell className="hidden w-36 px-3 py-3 lg:table-cell">
-                <span className="text-xs text-foreground/70 line-clamp-1">
-                    {row.department ?? "-"}
-                </span>
             </TableCell>
 
             <TableCell className="w-20 px-3 py-3">

@@ -4,24 +4,12 @@ import { faker } from "@faker-js/faker";
 import {
     EmployeeListItemDTO,
     EmployeesListResponse,
-    EmployeeRole,
     EmployeeSubRole,
     EmployeeStatus,
     EmploymentType,
     EmployeePosition,
-    PositionCategory,
 } from "@/types/employee.types";
 import { EMPLOYEE_POSITIONS } from "@/constants/employee.const";
-
-/**
- * Derive positionCategory by scanning EMPLOYEE_POSITIONS
- */
-function getPositionCategory(position: EmployeePosition): PositionCategory {
-    const found = Object.entries(EMPLOYEE_POSITIONS).find(([, list]) =>
-        (list as readonly string[]).includes(position)
-    );
-    return (found?.[0] as PositionCategory) ?? "general";
-}
 
 /**
  * Generate a single fake employee list item
@@ -31,18 +19,18 @@ function generateEmployee(id: string): EmployeeListItemDTO {
         Object.values(EMPLOYEE_POSITIONS).flat()
     ) as EmployeePosition;
 
+    // Salary & position summaries
+    const salary = faker.number.int({ min: 20000, max: 120000 });
+    const salaryCurrency = "USD";
+
     return {
         id,
-        userId: faker.database.mongodbObjectId(),
         user: {
-            id: faker.database.mongodbObjectId(),
             name: faker.person.fullName(),
             email: faker.internet.email(),
             phone: faker.phone.number(),
             avatar: faker.image.avatar(),
         },
-
-        role: faker.helpers.arrayElement(["assistant", "support"]) as EmployeeRole,
         subRole: faker.helpers.arrayElement([
             "product",
             "order",
@@ -53,8 +41,6 @@ function generateEmployee(id: string): EmployeeListItemDTO {
             "hr",
         ]) as EmployeeSubRole,
         position,
-        positionCategory: getPositionCategory(position),
-
         status: faker.helpers.arrayElement([
             "active",
             "onLeave",
@@ -68,9 +54,8 @@ function generateEmployee(id: string): EmployeeListItemDTO {
             "intern",
         ]) as EmploymentType,
 
-        department: faker.commerce.department(),
-        salary: faker.number.int({ min: 20000, max: 120000 }),
-        salaryCurrency: "USD",
+        salary,
+        salaryCurrency,
 
         dateOfJoining: faker.date.past().toISOString(),
         dateOfLeaving: faker.datatype.boolean()
@@ -111,7 +96,6 @@ export async function GET(req: NextRequest) {
         pages: Math.ceil(200 / limit),
     };
 
-    // Return wrapped ApiResult
     return NextResponse.json({
         ok: true,
         data: response,

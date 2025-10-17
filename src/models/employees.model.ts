@@ -50,9 +50,23 @@ export interface IShift {
 }
 const ShiftSchema = new Schema<IShift>(
     {
-        startTime: { type: String, required: true, match: /^([01]\d|2[0-3]):([0-5]\d)$/ },
-        endTime: { type: String, required: true, match: /^([01]\d|2[0-3]):([0-5]\d)$/ },
-        days: [{ type: String, enum: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], required: true }],
+        startTime: {
+            type: String,
+            required: true,
+            match: /^([01]\d|2[0-3]):([0-5]\d)$/,
+        },
+        endTime: {
+            type: String,
+            required: true,
+            match: /^([01]\d|2[0-3]):([0-5]\d)$/,
+        },
+        days: [
+            {
+                type: String,
+                enum: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                required: true,
+            },
+        ],
     },
     { _id: false }
 );
@@ -125,8 +139,11 @@ export interface IPositionHistory {
 }
 const PositionHistorySchema = new Schema<IPositionHistory>(
     {
-        position: { type: String, enum: Object.values(EMPLOYEE_POSITIONS).flat(), required: true },
-        department: { type: String, trim: true, maxlength: 100 },
+        position: {
+            type: String,
+            enum: Object.values(EMPLOYEE_POSITIONS).flat(),
+            required: true,
+        },
         effectiveFrom: { type: Date, required: true },
         effectiveTo: Date,
     },
@@ -172,7 +189,13 @@ export interface IEmployee extends Document {
 
 const EmployeeSchema = new Schema<IEmployee>(
     {
-        userId: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true, index: true },
+        userId: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            unique: true,
+            index: true,
+        },
 
         companyId: {
             type: Schema.Types.ObjectId,
@@ -183,15 +206,35 @@ const EmployeeSchema = new Schema<IEmployee>(
                     if (this.role === EMPLOYEE_ROLE.SUPPORT && v) return false;
                     return true;
                 },
-                message: "companyId is required for assistants and must be empty for support staff",
+                message:
+                    "companyId is required for assistants and must be empty for support staff",
             },
         },
 
-        role: { type: String, enum: Object.values(EMPLOYEE_ROLE), required: true, index: true },
-        subRole: { type: String, enum: Object.values(EMPLOYEE_SUB_ROLE), required: true, index: true },
-        position: { type: String, enum: Object.values(EMPLOYEE_POSITIONS).flat(), required: true },
+        role: {
+            type: String,
+            enum: Object.values(EMPLOYEE_ROLE),
+            required: true,
+            index: true,
+        },
+        subRole: {
+            type: String,
+            enum: Object.values(EMPLOYEE_SUB_ROLE),
+            required: true,
+            index: true,
+        },
+        position: {
+            type: String,
+            enum: Object.values(EMPLOYEE_POSITIONS).flat(),
+            required: true,
+        },
 
-        status: { type: String, enum: Object.values(EMPLOYEE_STATUS), default: EMPLOYEE_STATUS.ACTIVE, index: true },
+        status: {
+            type: String,
+            enum: Object.values(EMPLOYEE_STATUS),
+            default: EMPLOYEE_STATUS.ACTIVE,
+            index: true,
+        },
         employmentType: { type: String, enum: Object.values(EMPLOYMENT_TYPE) },
         department: { type: String, trim: true, maxlength: 100, index: true },
 
@@ -244,4 +287,5 @@ EmployeeSchema.index({ status: 1, department: 1, isDeleted: 1 });
 ------------------------------------------------------------------- */
 
 export const EmployeeModel: Model<IEmployee> =
-    (models.employees as Model<IEmployee>) || model<IEmployee>("employees", EmployeeSchema);
+    (models.employees as Model<IEmployee>) ||
+    model<IEmployee>("employees", EmployeeSchema);

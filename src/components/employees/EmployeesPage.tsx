@@ -1,11 +1,10 @@
-// app/(admin)/employees/page.tsx
+// app//employees/page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
     EmployeesListResponse,
     EmployeesQuery,
-    EmployeeDetailDTO,
     EmployeeSortKey,
 } from "@/types/employee.types";
 import { Button } from "@/components/ui/button";
@@ -15,12 +14,14 @@ import { EmployeeSummary } from "./EmployeeSummary";
 import { EmployeeFilters } from "./EmployeeFilters";
 import { EmployeeTable } from "./EmployeeTable";
 import { PaginationControls } from "./PaginationControls";
-import { EmployeeDialog } from "./EmployeeDialog";
 import { AddEmployeeDialog } from "./AddEmployeeDialog";
 import { Breadcrumbs } from "../global/Breadcrumbs";
+import { useRouter } from "next/navigation";
+import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 
 
 export default function EmployeesPage() {
+    const router = useRouter();
     const store = useEmployeeStore();
     const [query, setQuery] = useState<EmployeesQuery>({
         page: 1,
@@ -30,9 +31,7 @@ export default function EmployeesPage() {
         filters: {},
     });
     const [list, setList] = useState<EmployeesListResponse | null>(null);
-    const [detail, setDetail] = useState<EmployeeDetailDTO | null>(null);
     const [openAdd, setOpenAdd] = useState(false);
-    const [openDetail, setOpenDetail] = useState(false);
     const breadcrumbItems = [
         { label: "Home", href: '/' },
         { label: "Employees", href: "/employees" },
@@ -63,14 +62,7 @@ export default function EmployeesPage() {
 
     // Open detail dialog with fresh fetch (cache-aware in store)
     const onRowClick = async (id: string) => {
-        setOpenDetail(true); // open first
-        try {
-            const d = await store.fetchEmployeeDetail(id);
-            console.log(d);
-            setDetail(d);
-        } catch (e) {
-            console.error(e);
-        }
+        router.push(`/employees/${encodeId(id)}`);
     };
 
     const onSort = (sortBy: EmployeeSortKey, sortOrder: "asc" | "desc") =>
@@ -123,16 +115,6 @@ export default function EmployeesPage() {
                 onPageChange={onPageChange}
                 onLimitChange={onLimitChange}
                 loading={store.loadingList}
-            />
-
-            <EmployeeDialog
-                open={openDetail}
-                onOpenChange={setOpenDetail}
-                detail={detail}
-                loadingById={store.loadingById}
-                onSoftDelete={store.softDeleteEmployee}
-                onRestore={store.restoreEmployee}
-                onUpdate={store.updateEmployee}
             />
 
             <AddEmployeeDialog

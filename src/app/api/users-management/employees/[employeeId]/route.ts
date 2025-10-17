@@ -1,4 +1,3 @@
-// app/users-management/employees/[employeeId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
 import {
@@ -7,10 +6,9 @@ import {
     PositionCategory,
 } from "@/types/employee.types";
 import { EMPLOYEE_POSITIONS } from "@/constants/employee.const";
+import { ACCOUNT_STATUS } from "@/constants/user.const";
+import { decodeId } from "@/utils/helpers/mongodb-id-conversions";
 
-/**
- * Utility: Derive positionCategory by scanning EMPLOYEE_POSITIONS keys
- */
 function getPositionCategory(position: EmployeePosition): PositionCategory {
     const found = Object.entries(EMPLOYEE_POSITIONS).find(([, list]) =>
         (list as readonly string[]).includes(position)
@@ -18,48 +16,34 @@ function getPositionCategory(position: EmployeePosition): PositionCategory {
     return (found?.[0] as PositionCategory) ?? "general";
 }
 
-/**
- * GET /users-management/employees/:employeeId
- * Returns a fully typed mock employee detail
- */
 export async function GET(
     _req: NextRequest,
     { params }: { params: { employeeId: string } }
 ) {
     const { employeeId } = await params;
+    const encodedId = decodeId(decodeURIComponent(employeeId));
 
     const position = faker.helpers.arrayElement(
         Object.values(EMPLOYEE_POSITIONS).flat()
     ) as EmployeePosition;
 
     const detail: EmployeeDetailDTO = {
-        id: employeeId,
-        userId: faker.database.mongodbObjectId(),
-        hostId: faker.database.mongodbObjectId(),
+        id: encodedId!,
+        companyId: faker.database.mongodbObjectId(),
 
         user: {
-            id: faker.database.mongodbObjectId(),
             name: faker.person.fullName(),
             email: faker.internet.email(),
             phone: faker.phone.number(),
             avatar: faker.image.avatar(),
-            role: faker.helpers.arrayElement([
-                "traveler",
-                "guide",
-                "assistant",
-                "support",
-                "admin",
-            ]),
             isVerified: faker.datatype.boolean(),
             accountStatus: faker.helpers.arrayElement([
-                "pending",
-                "active",
-                "suspended",
-                "banned",
+                ACCOUNT_STATUS.PENDING,
+                ACCOUNT_STATUS.ACTIVE,
+                ACCOUNT_STATUS.SUSPENDED,
+                ACCOUNT_STATUS.BANNED,
             ]),
         },
-
-        role: faker.helpers.arrayElement(["assistant", "support"]),
         subRole: faker.helpers.arrayElement([
             "product",
             "order",
@@ -70,8 +54,6 @@ export async function GET(
             "hr",
         ]),
         position,
-        positionCategory: getPositionCategory(position),
-
         status: faker.helpers.arrayElement([
             "active",
             "onLeave",
@@ -84,7 +66,22 @@ export async function GET(
             "contract",
             "intern",
         ]),
-        department: faker.commerce.department(),
+
+        salaryHistory: [
+            {
+                amount: faker.number.int({ min: 20000, max: 120000 }),
+                currency: "USD",
+                effectiveFrom: faker.date.past().toISOString(),
+                reason: "Initial salary",
+            },
+        ],
+        positionHistory: [
+            {
+                position: getPositionCategory(position),
+                effectiveFrom: faker.date.past().toISOString(),
+            },
+        ],
+
         salary: faker.number.int({ min: 20000, max: 120000 }),
         salaryCurrency: "USD",
 
@@ -139,11 +136,6 @@ export async function GET(
         isDeleted: false,
         createdAt: faker.date.past().toISOString(),
         updatedAt: faker.date.recent().toISOString(),
-
-        // UI convenience fields
-        roleLabel: "Assistant",
-        subRoleLabel: "Support",
-        positionLabel: position,
     };
 
     return NextResponse.json({
