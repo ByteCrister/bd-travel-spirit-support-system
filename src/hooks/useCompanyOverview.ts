@@ -123,11 +123,8 @@ export function useCompanyOverview(companyId: string) {
                 e.user?.name,          // from embedded user summary
                 e.user?.email,
                 e.user?.phone,
-                e.department,
-                e.role,
                 e.subRole,
                 e.position,
-                e.positionCategory,
                 e.employmentType,
                 e.status,
             ]

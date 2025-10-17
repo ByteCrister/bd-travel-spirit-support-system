@@ -19,7 +19,6 @@ import {
     MdDescription,
     MdSecurity,
     MdContactEmergency,
-    MdBadge,
 } from "react-icons/md";
 import { EmployeeDetailDialogSkeleton } from "./EmployeeDetailDialogSkeleton";
 

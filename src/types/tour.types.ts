@@ -1,4 +1,8 @@
-import { TOUR_STATUS, TRAVEL_TYPE } from "@/constants/tour.const";
+import {
+    DIFFICULTY_LEVEL,
+    TOUR_STATUS,
+    TRAVEL_TYPE,
+} from "@/constants/tour.const";
 
 /* ----------------------------- Sub Types ----------------------------- */
 
@@ -191,9 +195,28 @@ export interface TourDetailDTO {
     activities: string[];
     tags: string[];
     travelTypes: TRAVEL_TYPE[];
-    difficulty?: "easy" | "moderate" | "challenging"; // aligned with schema
+    difficulty?: DIFFICULTY_LEVEL; // aligned with schema
     category?: string;
     subCategory?: string;
+
+    //  New fields from model
+    audience?: string[]; // AUDIENCE_TYPE[]
+    categories?: string[]; // CONTENT_CATEGORY[]
+    bestSeason?: string[]; // SEASON[]
+    transportModes?: string[];
+    pickupOptions?: { city?: string; price?: number; currency?: string }[];
+    mainLocation?: {
+        address?: {
+            line1?: string;
+            line2?: string;
+            city?: string;
+            district?: string;
+            region?: string;
+            country: string;
+            postalCode?: string;
+        };
+        coordinates?: GeoPointDTO;
+    };
 
     // Pricing & discounts
     priceOptions: TourPriceOptionDTO[];
@@ -219,7 +242,12 @@ export interface TourDetailDTO {
         isFull: boolean;
         remaining: number;
     };
+
     cancellationPolicy?: CancellationPolicyDTO;
+    refundPolicy?: {
+        method: string[];
+        processingDays: number;
+    };
     ageRestriction?: AgeRestrictionDTO;
 
     // Relations
@@ -251,6 +279,26 @@ export interface TourDetailDTO {
     weatherTips?: string[];
     seasonalHighlights?: SeasonalHighlightDTO[];
 
+    // New engagement & content fields
+    wishlistCount?: number;
+    popularityScore?: number;
+    featured?: boolean;
+    trendingUntil?: string;
+    viewCount?: number;
+    likeCount?: number;
+    shareCount?: number;
+    terms?: string;
+    translations?: {
+        language: string;
+        title?: string;
+        summary?: string;
+        content?: {
+            type: "paragraph" | "heading" | "link";
+            text?: string;
+            href?: string;
+        }[];
+    }[];
+
     // SEO
     seoTitle?: string;
     seoDescription?: string;
@@ -279,6 +327,7 @@ export interface TourListItemDTO {
     averageRating: number;
     reviewCount: number;
     reportCount: number;
+    faqCount: number;
     bookingCount: number;
     maxGroupSize: number;
     isFull: boolean;
@@ -288,6 +337,10 @@ export interface TourListItemDTO {
     travelTypes: TRAVEL_TYPE[];
     category?: string;
     subCategory?: string;
+
+    // New
+    categories?: string[];
+    audience?: string[];
 
     // Pricing summary
     priceSummary?: {
@@ -302,6 +355,15 @@ export interface TourListItemDTO {
     // Media
     heroImageId?: string;
     isFeatured?: boolean;
+
+    // New engagement fields
+    wishlistCount?: number;
+    popularityScore?: number;
+    featured?: boolean;
+    trendingUntil?: string;
+    viewCount?: number;
+    likeCount?: number;
+    shareCount?: number;
 
     // Visibility & ops
     visibility?: "public" | "private" | "archived";

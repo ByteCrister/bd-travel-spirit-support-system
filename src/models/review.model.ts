@@ -8,28 +8,68 @@ import mongoose, {
     Types,
     Query,
     FilterQuery,
-    CallbackWithoutResultAndOptionalError
+    CallbackWithoutResultAndOptionalError,
 } from "mongoose";
 import { TourModel } from "./tour.model";
 import { TRAVEL_TYPE } from "@/constants/tour.const";
+
+export interface IReviewReply {
+    _id: Types.ObjectId;
+    employee: Types.ObjectId; // ref: "Employee"
+    message: string;
+    isApproved: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt?: Date | null;
+}
+
+const ReviewReplySchema = new Schema<IReviewReply>(
+    {
+        employee: {
+            type: Schema.Types.ObjectId,
+            ref: "Employee",
+            required: true,
+            index: true,
+        },
+        message: {
+            type: String,
+            required: true,
+            trim: true,
+            maxlength: 1000,
+        },
+        isApproved: {
+            type: Boolean,
+            default: true,
+            index: true,
+        },
+        deletedAt: { type: Date, default: null, index: true },
+    },
+    {
+        timestamps: true,
+        _id: true, // automatically add _id for replies
+    }
+);
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // INTERFACE: The shape of a Review document
 ////////////////////////////////////////////////////////////////////////////////
 
 export interface IReview extends Document {
-    tour: Types.ObjectId;         // Which Tour is being reviewed
-    user: Types.ObjectId;         // Who wrote the review
-    rating: number;               // 1–5 star scale
-    title?: string;               // Optional headline
-    comment: string;              // Full textual feedback
-    images: Types.ObjectId[];     // Attached review images
-    tripType?: TRAVEL_TYPE;         // Traveler context
-    travelDate?: Date;            // When the trip occurred
-    isVerified: boolean;          // True if booking verified
-    isApproved: boolean;          // Moderation state
-    helpfulCount: number;         // “Helpful” vote tally
-    deletedAt?: Date;             // Soft-delete timestamp
+    tour: Types.ObjectId; // Which Tour is being reviewed
+    user: Types.ObjectId; // Who wrote the review
+    rating: number; // 1–5 star scale
+    title?: string; // Optional headline
+    comment: string; // Full textual feedback
+    images: Types.ObjectId[]; // Attached review images
+    tripType?: TRAVEL_TYPE; // Traveler context
+    travelDate?: Date; // When the trip occurred
+    isVerified: boolean; // True if booking verified
+    isApproved: boolean; // Moderation state
+    helpfulCount: number; // “Helpful” vote tally
+    deletedAt?: Date; // Soft-delete timestamp
+
+    replies: IReviewReply[];
 
     createdAt: Date;
     updatedAt: Date;
@@ -49,7 +89,10 @@ function softDeletePlugin(schema: Schema) {
     // Pre-find middleware excludes soft-deleted documents
     schema.pre<Query<IReview[], IReview>>(
         /^find/,
-        function (this: Query<IReview[], IReview>, next: CallbackWithoutResultAndOptionalError) {
+        function (
+            this: Query<IReview[], IReview>,
+            next: CallbackWithoutResultAndOptionalError
+        ) {
             this.where({ deletedAt: null });
             next();
         }
@@ -108,12 +151,17 @@ const ReviewSchema = new Schema<IReview>(
         // Moderation flag: only approved reviews are shown publicly
         isApproved: { type: Boolean, default: true, index: true },
 
+        replies: {
+            type: [ReviewReplySchema],
+            default: [],
+        },
+
         // Tally of how many users found this review helpful
         helpfulCount: { type: Number, default: 0, min: 0, index: true },
     },
     {
-        timestamps: true,   // Adds createdAt & updatedAt
-        versionKey: "__v",  // Enable document versioning
+        timestamps: true, // Adds createdAt & updatedAt
+        versionKey: "__v", // Enable document versioning
         toJSON: { virtuals: true },
         toObject: { virtuals: true },
     }
@@ -160,12 +208,10 @@ ReviewSchema.methods.incrementHelpful = async function (
  * after each review save or removal.
  */
 async function recalcAverageRating(doc: IReview) {
-    const stats = await mongoose
-        .model<IReview>("Review")
-        .aggregate<{ _id: Types.ObjectId; avgRating: number }>([
-            { $match: { tour: doc.tour, deletedAt: null, isApproved: true } },
-            { $group: { _id: "$tour", avgRating: { $avg: "$rating" } } },
-        ]);
+    const stats = await mongoose.model<IReview>("Review").aggregate<{
+        _id: Types.ObjectId;
+        avgRating: number;
+    }>([{ $match: { tour: doc.tour, deletedAt: null, isApproved: true } }, { $group: { _id: "$tour", avgRating: { $avg: "$rating" } } }]);
 
     const avgRating = stats[0]?.avgRating ?? 0;
     await TourModel.findByIdAndUpdate(doc.tour, { averageRating: avgRating });
@@ -204,7 +250,6 @@ ReviewSchema.post(
     }
 );
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // STATICS: Model-level utilities
 ////////////////////////////////////////////////////////////////////////////////
@@ -241,6 +286,27 @@ ReviewSchema.statics.paginate = async function (
         page,
         pages: Math.ceil(total / limit),
     };
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// INSTANCE METHODS
+////////////////////////////////////////////////////////////////////////////////
+
+ReviewSchema.methods.addReply = async function (
+    this: IReview,
+    employeeId: Types.ObjectId,
+    message: string
+): Promise<IReview> {
+    this.replies.push({
+        _id: new mongoose.Types.ObjectId(),
+        employee: employeeId,
+        message,
+        isApproved: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    } as IReviewReply);
+    await this.save();
+    return this;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

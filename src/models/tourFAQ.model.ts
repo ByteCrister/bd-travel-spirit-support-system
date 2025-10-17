@@ -1,5 +1,4 @@
 // models/tourFAQ.model.ts
-// models/tourFAQ.model.ts
 import mongoose, {
     Schema,
     Document,

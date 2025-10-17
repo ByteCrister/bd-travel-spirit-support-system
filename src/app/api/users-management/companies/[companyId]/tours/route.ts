@@ -1,15 +1,28 @@
 // /api/users-management/companies/[companyId]/tours/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
-import { SortableTourKeys, TourListItemDTO } from "@/types/tour.types";
-import { TOUR_STATUS, TRAVEL_TYPE } from "@/constants/tour.const";
+import {
+    SortableTourKeys,
+    TourListItemDTO,
+} from "@/types/tour.types";
+import {
+    TOUR_STATUS,
+    TRAVEL_TYPE,
+    AUDIENCE_TYPE,
+    CONTENT_CATEGORY,
+} from "@/constants/tour.const";
 
 // --- Helper: pick random enum value ---
 function randomEnum<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// --- Helper to generate one fake tour ---
+// --- Helper: pick random subset ---
+function randomSubset<T>(arr: T[], count: number): T[] {
+    return faker.helpers.shuffle(arr).slice(0, count);
+}
+
+// --- Generate one fake tour aligned with new fields ---
 function generateFakeTour(): TourListItemDTO {
     const startDate = faker.date.future();
     const endDate = faker.date.soon({
@@ -27,23 +40,51 @@ function generateFakeTour(): TourListItemDTO {
         title: faker.lorem.words(3),
         slug: faker.lorem.slug(),
         status: randomEnum(Object.values(TOUR_STATUS)),
+
+        // Schedule
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-        durationDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
+        durationDays: Math.ceil(
+            (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+        ),
+
+        // Ratings & bookings
         averageRating: faker.number.float({ min: 3, max: 5, fractionDigits: 1 }),
         reviewCount: faker.number.int({ min: 0, max: 300 }),
-        reportCount: faker.number.int({ min: 0, max: 300 }),
+        reportCount: faker.number.int({ min: 0, max: 20 }),
+        faqCount: faker.number.int({ min: 0, max: 20 }),
         bookingCount,
         maxGroupSize,
         isFull: bookingCount >= maxGroupSize,
+
+        // Categorization
         tags: [faker.word.noun(), faker.word.noun()],
-        travelTypes: [randomEnum(Object.values(TRAVEL_TYPE)), randomEnum(Object.values(TRAVEL_TYPE))],
+        travelTypes: randomSubset(Object.values(TRAVEL_TYPE), 2),
         category: faker.helpers.arrayElement(["Adventure", "Cultural", "Leisure"]),
         subCategory: faker.helpers.arrayElement(["Hiking", "City Tour", "Safari"]),
+        categories: randomSubset(Object.values(CONTENT_CATEGORY), 2),
+        audience: randomSubset(Object.values(AUDIENCE_TYPE), 2),
+
+        // Pricing
         priceSummary: { minAmount, maxAmount, currency: "USD" },
-        activeDiscountPercentage: faker.datatype.boolean() ? faker.number.int({ min: 5, max: 30 }) : undefined,
+        activeDiscountPercentage: faker.datatype.boolean()
+            ? faker.number.int({ min: 5, max: 30 })
+            : undefined,
+
+        // Media
         heroImageId: faker.database.mongodbObjectId(),
         isFeatured: faker.datatype.boolean(),
+
+        // Engagement & metrics
+        wishlistCount: faker.number.int({ min: 0, max: 1000 }),
+        popularityScore: faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
+        featured: faker.datatype.boolean(),
+        trendingUntil: faker.date.future().toISOString(),
+        viewCount: faker.number.int({ min: 100, max: 10000 }),
+        likeCount: faker.number.int({ min: 10, max: 5000 }),
+        shareCount: faker.number.int({ min: 5, max: 2000 }),
+
+        // Operational metadata
         visibility: randomEnum(["public", "private", "archived"]),
         lastBookingDate: faker.date.soon({ days: 7 }).toISOString(),
         bookingTrend: randomEnum(["increasing", "stable", "decreasing"]),
@@ -52,30 +93,29 @@ function generateFakeTour(): TourListItemDTO {
     };
 }
 
+// --- Handler ---
 export async function GET(req: NextRequest, { params }: { params: { companyId: string } }) {
     const { searchParams } = new URL(req.url);
 
-    // --- Parse query parameters ---
     const page = Number(searchParams.get("page") || 1);
     const limit = Number(searchParams.get("limit") || 10);
     const sortParam = (searchParams.get("sort") || "createdAt") as SortableTourKeys;
     const order = (searchParams.get("order") as "asc" | "desc") || "desc";
     const search = searchParams.get("search")?.toLowerCase() || "";
 
-    // --- Generate 200 fake tours ---
+    // Generate mock tours
     let tours = Array.from({ length: 200 }, generateFakeTour);
 
-    // --- Apply search filter ---
+    // Filter by search
     if (search) {
-        tours = tours.filter(t => t.title.toLowerCase().includes(search));
+        tours = tours.filter((t) => t.title.toLowerCase().includes(search));
     }
 
-    // --- Apply sorting ---
+    // Sort
     tours.sort((a, b) => {
         const aVal = a[sortParam];
         const bVal = b[sortParam];
 
-        // Handle strings (including ISO dates) and numbers
         if (typeof aVal === "string" && typeof bVal === "string") {
             return order === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
         }
@@ -85,14 +125,13 @@ export async function GET(req: NextRequest, { params }: { params: { companyId: s
         return 0;
     });
 
-    // --- Apply pagination ---
+    // Paginate
     const total = tours.length;
     const pages = Math.ceil(total / limit);
     const start = (page - 1) * limit;
-    const end = start + limit;
-    const pagedTours = tours.slice(start, end);
+    const pagedTours = tours.slice(start, start + limit);
 
-    // --- Return paginated response ---
+    // Response
     return NextResponse.json({
         companyId: (await params).companyId,
         data: {

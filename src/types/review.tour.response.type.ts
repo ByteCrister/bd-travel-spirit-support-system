@@ -1,4 +1,28 @@
+// src/types/review/tour.response.type.ts
+
 import { TRAVEL_TYPE } from "@/constants/tour.const";
+
+/**
+ * Minimal info about an employee replying to a review
+ */
+export interface ReviewReplyEmployeeDTO {
+    id: string;
+    name: string;
+    avatar?: string; // optional, if you want to show employee avatar
+}
+
+/**
+ * Single reply object attached to a review
+ */
+export interface ReviewReplyDTO {
+    id: string; // reply id (_id)
+    employee: ReviewReplyEmployeeDTO;
+    message: string;
+    isApproved: boolean;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt?: string | null;
+}
 
 /**
  * Minimal info about the user who wrote a review
@@ -16,15 +40,18 @@ export interface ReviewListItemDTO {
     id: string;
     tourId: string;
     user: ReviewUserDTO;
-    rating: number;
+    rating: number; // 1-5
     title?: string;
     comment?: string;
+    images?: string[]; // asset ids
     tripType?: TRAVEL_TYPE;
-    travelDate?: string;
+    travelDate?: string; // ISO date string
     isVerified: boolean;
     isApproved: boolean;
     helpfulCount: number;
     createdAt: string;
+
+    replies?: ReviewReplyDTO[];
 }
 
 /**
@@ -35,19 +62,23 @@ export interface ReviewDTO {
     tourId: string;
     user: ReviewUserDTO;
     rating: number;
-    title: string;
+    title?: string;
     comment: string;
+    images?: string[]; // asset ids
     tripType?: TRAVEL_TYPE;
-    travelDate?: string;
+    travelDate?: string; // ISO date string
     isVerified: boolean;
     isApproved: boolean;
     helpfulCount: number;
+    deletedAt?: string | null;
     createdAt: string;
     updatedAt: string;
+
+    replies?: ReviewReplyDTO[];
 }
 
 /**
- * Aggregated summary information for a tour’s reviews
+ * Aggregated summary information for a tour's reviews
  */
 export interface ReviewSummaryDTO {
     totalReviews: number;

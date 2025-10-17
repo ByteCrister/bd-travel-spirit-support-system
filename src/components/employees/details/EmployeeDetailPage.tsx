@@ -64,7 +64,7 @@ import {
     fromLocalInput,
     latestEffectiveFrom,
     toLocalInput,
-} from "@/utils/helpers/employee-details";
+} from "@/utils/helpers/employees.details";
 import { showToast } from "@/components/global/showToast";
 import InfoCard from "./InfoCard";
 import InfoField from "./InfoField";

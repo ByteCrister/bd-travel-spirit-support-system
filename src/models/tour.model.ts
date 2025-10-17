@@ -68,6 +68,7 @@ export interface ITour extends Document {
   status: TOUR_STATUS;
   summary: string;
   heroImage?: Types.ObjectId; // Asset
+  isFeatured?: boolean;
   gallery?: Types.ObjectId[];
   videos?: string[]; // URLs
   seo?: { metaTitle?: string; metaDescription?: string; ogImage?: string };
@@ -159,6 +160,7 @@ const TourSchema = new Schema<ITour>(
     },
     summary: { type: String, required: true, trim: true },
     heroImage: { type: Schema.Types.ObjectId, ref: "Asset" },
+    isFeatured: { type: Boolean, default: false },
     gallery: [{ type: Schema.Types.ObjectId, ref: "Asset" }],
     videos: [{ type: String, trim: true }],
     seo: {

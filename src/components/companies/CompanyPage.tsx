@@ -17,10 +17,10 @@ const breadcrumbItems = [
 ];
 
 /**
- * Company page: Admin dashboard for managing organizer companies.
+ * CompanyPage page: Admin dashboard for managing organizer companies.
  * Integrates with useCompanyStore for query params, data, loading, and errors.
  */
-export default function Company() {
+export default function CompanyPage() {
     const {
         params,
         loading,

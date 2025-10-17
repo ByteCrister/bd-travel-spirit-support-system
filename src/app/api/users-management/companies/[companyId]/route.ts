@@ -4,12 +4,14 @@ import { faker } from "@faker-js/faker";
 import {
     CompanyOverviewDTO,
 } from "@/types/company.overview.types";
+import { decodeId } from "@/utils/helpers/mongodb-id-conversions";
 
 export async function GET(
     req: Request,
     { params }: { params: { companyId: string } }
 ) {
-    const { companyId } = params;
+    const { companyId } = await params;
+    const decodeCompanyId = decodeId(decodeURIComponent(companyId));
 
     // Generate collections
     const tours = 200;

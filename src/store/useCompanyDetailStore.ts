@@ -5,8 +5,9 @@ import { CompanyOverviewDTO, CompanyOverviewResponse } from "@/types/company.ove
 import { TourDetailDTO, TourListItemDTO } from "@/types/tour.types";
 import { EmployeeDetailDTO, EmployeeListItemDTO } from "@/types/employee.types";
 import api from "@/utils/api/axios";
-import { GetTourReviewsResponse, ReviewListItemDTO } from "@/types/review.tour.response.type";
+import { GetTourReviewsResponse, ReviewListItemDTO, ReviewSummaryDTO } from "@/types/review.tour.response.type";
 import { GetTourReportsResponse, TourReportListItemDTO } from "@/types/report.tour.response.types";
+import { GetTourFaqsResponse, TourFAQDTO } from "@/types/faqs.types";
 
 const ROOT_DIR = "/users-management/companies";
 
@@ -37,6 +38,10 @@ interface ListCache<T> {
     page: number;
     pages: number;
     params: PaginationParams;
+    meta?: {
+        // only add what's needed; for reviews include ReviewSummaryDTO
+        summary?: ReviewSummaryDTO;
+    };
 }
 
 interface CompanyDetailState {
@@ -50,6 +55,7 @@ interface CompanyDetailState {
         // per-tour lists
         tourReviews: Record<string, Record<string, ListCache<ReviewListItemDTO>>>; // keyed by tourId
         tourReports: Record<string, Record<string, ListCache<TourReportListItemDTO>>>; // keyed by tourId
+        tourFaqs: Record<string, Record<string, ListCache<TourFAQDTO>>>; // NEW
     };
 
     params: {
@@ -57,6 +63,7 @@ interface CompanyDetailState {
         employees: Record<string, PaginationParams>;
         tourReviews: Record<string, PaginationParams>; // keyed by tourId
         tourReports: Record<string, PaginationParams>; // keyed by tourId
+        tourFaqs: Record<string, PaginationParams>; // NEW
     };
 
     activeCacheKey: {
@@ -64,6 +71,7 @@ interface CompanyDetailState {
         employees: Record<string, string | undefined>;
         tourReviews: Record<string, string | undefined>; // keyed by tourId
         tourReports: Record<string, string | undefined>; // keyed by tourId
+        tourFaqs: Record<string, string | undefined>; // NEW
     };
 
     // Details
@@ -97,7 +105,6 @@ interface CompanyDetailState {
         force?: boolean
     ) => Promise<EmployeeDetailDTO>;
 
-    // New actions
     fetchReviews: (
         companyId: string,
         tourId: string,
@@ -111,6 +118,13 @@ interface CompanyDetailState {
         params?: Partial<PaginationParams>,
         force?: boolean
     ) => Promise<ListCache<TourReportListItemDTO>>;
+
+    fetchFaqs: (
+        companyId: string,
+        tourId: string,
+        params?: Partial<PaginationParams>,
+        force?: boolean
+    ) => Promise<ListCache<TourFAQDTO>>;
 }
 
 // --------------------
@@ -128,8 +142,8 @@ const tourDetailErrorKey = (id: string) => `tourDetailError:${id}`;
 const employeeDetailErrorKey = (id: string) => `employeeDetailError:${id}`;
 
 // per-tour list loading/error keys
-const tourListLoadingKey = (tourId: string, type: "reviews" | "reports") => `${type}List:${tourId}`;
-const tourListErrorKey = (tourId: string, type: "reviews" | "reports") => `${type}ListError:${tourId}`;
+const tourListLoadingKey = (tourId: string, type: "reviews" | "reports" | "faqs") => `${type}List:${tourId}`;
+const tourListErrorKey = (tourId: string, type: "reviews" | "reports" | "faqs") => `${type}ListError:${tourId}`;
 
 // --------------------
 // Store
@@ -140,9 +154,9 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
         persist(
             (set, get) => ({
                 companies: {},
-                listCache: { tours: {}, employees: {}, tourReviews: {}, tourReports: {} },
-                params: { tours: {}, employees: {}, tourReviews: {}, tourReports: {} },
-                activeCacheKey: { tours: {}, employees: {}, tourReviews: {}, tourReports: {} },
+                listCache: { tours: {}, employees: {}, tourReviews: {}, tourReports: {}, tourFaqs: {} },
+                params: { tours: {}, employees: {}, tourReviews: {}, tourReports: {}, tourFaqs: {} },
+                activeCacheKey: { tours: {}, employees: {}, tourReviews: {}, tourReports: {}, tourFaqs: {} },
                 tourDetails: {},
                 employeeDetails: {},
                 loading: {},
@@ -293,8 +307,10 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                     const errorKey = tourDetailErrorKey(tourId);
                     if (!force && tourDetails[tourId]) return tourDetails[tourId]!;
 
-                    set((state) => ({ loading: { ...state.loading, [loadingKey]: true } }));
-                    set((state) => ({ error: { ...state.error, [errorKey]: undefined } }));
+                    set((state) => ({
+                        loading: { ...state.loading, [loadingKey]: true },
+                        error: { ...state.error, [errorKey]: undefined },
+                    }));
 
                     try {
                         const res = await api.get<{ data: TourDetailDTO }>(`${ROOT_DIR}/${companyId}/tours/${tourId}`);
@@ -319,8 +335,10 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                     const errorKey = employeeDetailErrorKey(employeeId);
                     if (!force && employeeDetails[employeeId]) return employeeDetails[employeeId]!;
 
-                    set((state) => ({ loading: { ...state.loading, [loadingKey]: true } }));
-                    set((state) => ({ error: { ...state.error, [errorKey]: undefined } }));
+                    set((state) => ({
+                        loading: { ...state.loading, [loadingKey]: true },
+                        error: { ...state.error, [errorKey]: undefined },
+                    }));
 
                     try {
                         const res = await api.get<{ data: EmployeeDetailDTO }>(`${ROOT_DIR}/${companyId}/employees/${employeeId}`);
@@ -340,7 +358,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                 },
 
                 // --------------------
-                // New: Fetch reviews for a specific tour (paginated, cached per tour)
+                // Fetch reviews for a specific tour (paginated, cached per tour)
                 // --------------------
                 fetchReviews: async (companyId, tourId, overrideParams = {}, force = false) => {
                     // Ensure params.tourReviews and tourReviews[tourId] exist
@@ -370,8 +388,10 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                     const loadingKey = tourListLoadingKey(tourId, "reviews");
                     const errorKey = tourListErrorKey(tourId, "reviews");
 
-                    set((state) => ({ loading: { ...state.loading, [loadingKey]: true } }));
-                    set((state) => ({ error: { ...state.error, [errorKey]: undefined } }));
+                    set((state) => ({
+                        loading: { ...state.loading, [loadingKey]: true },
+                        error: { ...state.error, [errorKey]: undefined },
+                    }));
 
                     try {
                         const res = await api.get<GetTourReviewsResponse>(`${ROOT_DIR}/${companyId}/tours/${tourId}/reviews`, { params });
@@ -381,6 +401,9 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                             total: res.data.data.total,
                             page: res.data.data.page,
                             pages: res.data.data.pages,
+                            meta: {
+                                summary: res.data.data.summary, // <-- include server summary
+                            },
                             params,
                         };
 
@@ -412,7 +435,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                 },
 
                 // --------------------
-                // New: Fetch reports for a specific tour (paginated, cached per tour)
+                // Fetch reports for a specific tour (paginated, cached per tour)
                 // --------------------
                 fetchReports: async (companyId, tourId, overrideParams = {}, force = false) => {
                     const state = get();
@@ -443,8 +466,10 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                     const loadingKey = tourListLoadingKey(tourId, "reports");
                     const errorKey = tourListErrorKey(tourId, "reports");
 
-                    set((state) => ({ loading: { ...state.loading, [loadingKey]: true } }));
-                    set((state) => ({ error: { ...state.error, [errorKey]: undefined } }));
+                    set((state) => ({
+                        loading: { ...state.loading, [loadingKey]: true },
+                        error: { ...state.error, [errorKey]: undefined },
+                    }));
 
                     try {
                         const res = await api.get<GetTourReportsResponse>(
@@ -486,6 +511,98 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                         throw new Error(message);
                     }
                 },
+
+                // --------------------
+                // Fetch FAQs for a specific tour (paginated, cached per tour)
+                // --------------------
+                fetchFaqs: async (companyId, tourId, overrideParams = {}, force = false) => {
+                    const state = get();
+
+                    if (!state.params.tourFaqs) state.params.tourFaqs = {};
+                    if (!state.params.tourFaqs[tourId]) state.params.tourFaqs[tourId] = { ...defaultParams };
+
+                    const currentParams = state.params.tourFaqs[tourId];
+                    const params = { ...defaultParams, ...currentParams, ...overrideParams };
+
+                    const cacheKey = makeCacheKey(params);
+                    const cached = state.listCache.tourFaqs?.[tourId]?.[cacheKey];
+
+                    if (!force && cached) {
+                        set((state) => ({
+                            params: { ...state.params, tourFaqs: { ...state.params.tourFaqs, [tourId]: params } },
+                            activeCacheKey: {
+                                ...state.activeCacheKey,
+                                tourFaqs: { ...state.activeCacheKey.tourFaqs, [tourId]: cacheKey },
+                            },
+                            loading: { ...state.loading, [tourListLoadingKey(tourId, "faqs")]: false },
+                            error: { ...state.error, [tourListErrorKey(tourId, "faqs")]: undefined },
+                        }));
+                        return cached;
+                    }
+
+                    const loadingKey = tourListLoadingKey(tourId, "faqs");
+                    const errorKey = tourListErrorKey(tourId, "faqs");
+
+                    set((state) => ({
+                        loading: { ...state.loading, [loadingKey]: true },
+                        error: { ...state.error, [errorKey]: undefined },
+                    }));
+
+                    try {
+                        const res = await api.get<GetTourFaqsResponse>(
+                            `${ROOT_DIR}/${companyId}/tours/${tourId}/faqs`,
+                            { params }
+                        );
+
+                        const list: ListCache<TourFAQDTO> = {
+                            items: res.data.data.docs,
+                            total: res.data.data.total,
+                            page: res.data.data.page,
+                            pages: res.data.data.pages,
+                            params,
+                        };
+
+                      set((state) => ({
+  listCache: {
+    ...state.listCache,
+    tourFaqs: {
+      ...(state.listCache.tourFaqs || {}), // ensure object
+      [tourId]: {
+        ...(state.listCache.tourFaqs?.[tourId] || {}), // ensure object
+        [cacheKey]: list,
+      },
+    },
+  },
+  params: {
+    ...state.params,
+    tourFaqs: {
+      ...(state.params.tourFaqs || {}),
+      [tourId]: params,
+    },
+  },
+  activeCacheKey: {
+    ...state.activeCacheKey,
+    tourFaqs: {
+      ...(state.activeCacheKey.tourFaqs || {}),
+      [tourId]: cacheKey,
+    },
+  },
+  loading: { ...state.loading, [loadingKey]: false },
+}));
+
+
+                        return list;
+                    } catch (err: unknown) {
+                        const message = extractErrorMessage(err);
+                        console.log(err);
+                        set((state) => ({
+                            error: { ...state.error, [errorKey]: message },
+                            loading: { ...state.loading, [loadingKey]: false },
+                        }));
+                        throw new Error(message);
+                    }
+                },
+
             }),
             {
                 name: "company-detail-store",

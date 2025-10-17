@@ -1,8 +1,8 @@
-import Company from "@/components/companies/Company"
+import CompanyPage from "@/components/companies/CompanyPage"
 
 const page = () => {
   return (
-    <Company />
+    <CompanyPage />
   )
 }
 

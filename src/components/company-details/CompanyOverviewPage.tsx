@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { MdOutlineRefresh, MdBusiness, MdPeople, MdTour } from "react-icons/md";
 import { CompanyAccordion } from "./CompanyAccordion";
 import { FiltersBar } from "./FiltersBar";
-import { ToursTable } from "./ToursTable";
-import { EmployeesTable } from "./EmployeesTable";
+import { ToursTable } from "./tours/ToursTable";
+import { EmployeesTable } from "./employees/EmployeesTable";
 import { useCompanyOverview } from "@/hooks/useCompanyOverview";
 import { CompanyAccordionSkeleton } from "./CompanyAccordionSkeleton";
 import { FiltersBarSkeleton } from "./FiltersBarSkeleton";
@@ -200,7 +200,6 @@ export default function CompanyOverviewPage({ companyId }: Props) {
                                             ) : (
                                                 <ToursTable
                                                     companyId={companyId}
-                                                    fetchTourDetail={overview.handleFetchTourDetail}
                                                     items={overview.filteredTours}
                                                     total={overview.toursList?.total ?? 0}
                                                     page={overview.toursList?.page ?? 1}
