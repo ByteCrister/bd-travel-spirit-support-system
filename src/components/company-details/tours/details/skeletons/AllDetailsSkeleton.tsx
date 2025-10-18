@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -20,7 +20,7 @@ function Skeleton({ className }: { className?: string }) {
 }
 
 /**
- * Main skeleton for the AllDetails page
+ * Updated skeleton for the AllDetails page (left column now on top)
  */
 export default function AllDetailsSkeleton() {
     return (
@@ -47,8 +47,8 @@ export default function AllDetailsSkeleton() {
 
                 {/* Body layout */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Left column */}
-                    <div className="col-span-2 space-y-6">
+                    {/* Left column now spans only 1 col (on top for mobile) */}
+                    <div className="space-y-6 md:col-span-1">
                         {/* Overview */}
                         <div className="space-y-2">
                             <Skeleton className="h-4 w-32" />
@@ -58,7 +58,7 @@ export default function AllDetailsSkeleton() {
                         </div>
 
                         {/* Stats grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {Array.from({ length: 3 }).map((_, i) => (
                                 <div key={i} className="p-3 rounded-lg border border-slate-100 bg-white">
                                     <div className="flex items-center gap-3">
@@ -90,24 +90,10 @@ export default function AllDetailsSkeleton() {
                                 ))}
                             </div>
                         </div>
-
-                        {/* FAQs */}
-                        <div className="space-y-3">
-                            <Skeleton className="h-4 w-20" />
-                            {Array.from({ length: 3 }).map((_, i) => (
-                                <div
-                                    key={i}
-                                    className="p-3 rounded-md border border-slate-100 bg-gradient-to-r from-white to-slate-50 space-y-2"
-                                >
-                                    <Skeleton className="h-3 w-3/4" />
-                                    <Skeleton className="h-2.5 w-2/3" />
-                                </div>
-                            ))}
-                        </div>
                     </div>
 
                     {/* Right sidebar */}
-                    <aside className="space-y-4">
+                    <aside className="space-y-4 md:col-span-2">
                         {/* Host */}
                         <div className="p-4 rounded-lg border border-slate-100 bg-slate-50 space-y-3">
                             <Skeleton className="h-4 w-20" />

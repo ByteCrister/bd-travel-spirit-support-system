@@ -1,4 +1,3 @@
-// /api/users-management/companies/[companyId]/tours/[tourId]/route.ts
 import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
 import { TourDetailDTO } from "@/types/tour.types";
@@ -13,25 +12,25 @@ import {
     DIFFICULTY_LEVEL,
 } from "@/constants/tour.const";
 
+// --- Helpers ---
+function generateImageUrls(prefix: string, count = 3, width = 800, height = 600): string[] {
+    return Array.from({ length: count }, () => {
+        const seed = faker.number.int({ min: 1, max: 1000 });
+        return `https://picsum.photos/seed/${prefix}-${seed}/${width}/${height}`;
+    });
+}
 function randomEnum<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
-
 function randomSubset<T>(arr: T[], count: number): T[] {
     return faker.helpers.shuffle(arr).slice(0, count);
 }
-
-// --- Helpers for nested structures ---
 function generateGeoPoint() {
     return {
         type: "Point" as const,
-        coordinates: [faker.location.longitude(), faker.location.latitude()] as [
-            number,
-            number,
-        ],
+        coordinates: [faker.location.longitude(), faker.location.latitude()] as [number, number],
     };
 }
-
 function generateMeetingPoint() {
     return {
         title: faker.lorem.words(2),
@@ -43,19 +42,18 @@ function generateMeetingPoint() {
         time: faker.date.future().toISOString(),
     };
 }
-
 function generateRoadMapPoint() {
+    const seed = faker.number.int({ min: 1, max: 1000 });
     return {
         title: faker.lorem.words(2),
         description: faker.lorem.sentence(),
-        imageId: faker.database.mongodbObjectId(),
+        imageUrl: `https://picsum.photos/seed/roadmap-${seed}/800/600`,
         location: {
             address: faker.location.streetAddress(),
             coordinates: generateGeoPoint(),
         },
     };
 }
-
 function generateItineraryEntry(day: number) {
     return {
         day,
@@ -67,10 +65,9 @@ function generateItineraryEntry(day: number) {
         ),
         accommodation: faker.company.name(),
         activities: [faker.word.noun()],
-        imageIds: [faker.database.mongodbObjectId()],
+        imageUrls: generateImageUrls(`itinerary-${day}`, 3),
     };
 }
-
 function generateFAQ(id: string) {
     return {
         id,
@@ -81,15 +78,16 @@ function generateFAQ(id: string) {
     };
 }
 
+// 🧑‍💼 Realistic face generator
 function generateHost() {
+    const gender = faker.helpers.arrayElement(["men", "women"]);
+    const id = faker.number.int({ min: 1, max: 99 }); // avatar index for pravatar
+    const name = faker.person.fullName();
     return {
-        name: faker.person.fullName(),
+        name,
         bio: faker.lorem.sentences(),
-        avatarId: faker.database.mongodbObjectId(),
-        languagesSpoken: faker.helpers.arrayElements(
-            ["English", "Spanish", "French"],
-            1
-        ),
+        avatarUrl: `https://randomuser.me/api/portraits/${gender}/${id}.jpg`,
+        languagesSpoken: faker.helpers.arrayElements(["English", "Spanish", "French"], 1),
         rating: faker.number.float({ min: 3, max: 5, fractionDigits: 1 }),
     };
 }
@@ -107,12 +105,18 @@ export async function GET(
     const maxGroupSize = faker.number.int({ min: 10, max: 50 });
     const bookingCount = faker.number.int({ min: 0, max: maxGroupSize });
 
+    // --- Scenic tour images ---
+    const heroSeed = faker.number.int({ min: 1, max: 1000 });
+    const gallerySeeds = Array.from({ length: 3 }, () =>
+        faker.number.int({ min: 1, max: 1000 })
+    );
+
     const tour: TourDetailDTO = {
-        id: (await params).tourId,
+        id: params.tourId,
         title: faker.lorem.words(4),
         slug: faker.lorem.slug(),
         status: randomEnum(Object.values(TOUR_STATUS)),
-        owner: faker.database.mongodbObjectId(),
+        owner: faker.company.name(),
 
         // Marketing
         highlights: [faker.lorem.words(2), faker.lorem.words(2)],
@@ -143,6 +147,7 @@ export async function GET(
         mainLocation: {
             address: {
                 line1: faker.location.streetAddress(),
+                line2: faker.location.streetAddress(),
                 city: faker.location.city(),
                 district: faker.location.state(),
                 region: faker.location.state(),
@@ -157,9 +162,7 @@ export async function GET(
             { name: "Standard", amount: 200, currency: "USD" },
             { name: "Premium", amount: 400, currency: "USD" },
         ],
-        discounts: [
-            { code: "SUMMER23", percentage: 10, description: "Summer special" },
-        ],
+        discounts: [{ code: "SUMMER23", percentage: 10, description: "Summer special" }],
         priceSummary: { minAmount: 200, maxAmount: 400, currency: "USD" },
 
         // Schedule & Booking
@@ -207,21 +210,18 @@ export async function GET(
         reportCount: faker.number.int({ min: 0, max: 20 }),
         averageRating: faker.number.float({ min: 3, max: 5, fractionDigits: 1 }),
 
-        // Media
-        imageIds: [
-            faker.database.mongodbObjectId(),
-            faker.database.mongodbObjectId(),
-        ],
-        heroImageId: faker.database.mongodbObjectId(),
-        galleryImageIds: [faker.database.mongodbObjectId()],
+        // 🖼️ Real images instead of fake IDs
+        heroImageUrl: `https://picsum.photos/seed/hero-${heroSeed}/1200/800`,
+        galleryImageUrls: gallerySeeds.map(
+            (s) => `https://picsum.photos/seed/gallery-${s}/800/600`
+        ),
+
         videoUrls: [faker.internet.url()],
         virtualTourUrl: faker.internet.url(),
 
-        // Content & Structure
         roadMap: Array.from({ length: 3 }, generateRoadMapPoint),
-        itinerary: Array.from({ length: 3 }, (_, i) =>
-            generateItineraryEntry(i + 1)
-        ),
+        itinerary: Array.from({ length: 3 }, (_, i) => generateItineraryEntry(i + 1)),
+
         packingList: [
             { item: "Backpack", required: true },
             { item: "Sunscreen", required: false, notes: "Optional but recommended" },
@@ -230,7 +230,6 @@ export async function GET(
             generateFAQ(faker.database.mongodbObjectId())
         ),
 
-        // People & Safety
         host: generateHost(),
         healthAndSafety: [{ title: "COVID-19", description: "Masks recommended" }],
         accessibilityFeatures: ["Wheelchair accessible"],
@@ -239,18 +238,18 @@ export async function GET(
             phone: faker.phone.number(),
             email: faker.internet.email(),
         },
-
-        // Seasonal / Tips
         weatherTips: ["Raincoat recommended", "Sunscreen required"],
         seasonalHighlights: [
             {
                 season: "Summer",
                 description: "Ideal for hiking",
-                imageId: faker.database.mongodbObjectId(),
+                imageUrl: `https://picsum.photos/seed/summer-${faker.number.int({
+                    min: 1,
+                    max: 1000,
+                })}/800/600`,
             },
         ],
 
-        // 🆕 Translations
         translations: [
             {
                 language: "en",
@@ -269,11 +268,8 @@ export async function GET(
             },
         ],
 
-        // SEO
         seoTitle: faker.lorem.sentence(),
         seoDescription: faker.lorem.sentence(),
-
-        // System
         createdAt: faker.date.past().toISOString(),
         updatedAt: faker.date.recent().toISOString(),
         serverNow: new Date().toISOString(),

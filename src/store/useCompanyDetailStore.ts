@@ -97,13 +97,14 @@ interface CompanyDetailState {
         force?: boolean
     ) => Promise<ListCache<EmployeeListItemDTO>>;
 
-    fetchTourDetail: (companyId: string, tourId: string, force?: boolean) => Promise<TourDetailDTO>;
 
     fetchEmployeeDetail: (
         companyId: string,
         employeeId: string,
         force?: boolean
     ) => Promise<EmployeeDetailDTO>;
+
+    fetchTourDetail: (companyId: string, tourId: string, force?: boolean) => Promise<TourDetailDTO>;
 
     fetchReviews: (
         companyId: string,
@@ -562,33 +563,33 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                             params,
                         };
 
-                      set((state) => ({
-  listCache: {
-    ...state.listCache,
-    tourFaqs: {
-      ...(state.listCache.tourFaqs || {}), // ensure object
-      [tourId]: {
-        ...(state.listCache.tourFaqs?.[tourId] || {}), // ensure object
-        [cacheKey]: list,
-      },
-    },
-  },
-  params: {
-    ...state.params,
-    tourFaqs: {
-      ...(state.params.tourFaqs || {}),
-      [tourId]: params,
-    },
-  },
-  activeCacheKey: {
-    ...state.activeCacheKey,
-    tourFaqs: {
-      ...(state.activeCacheKey.tourFaqs || {}),
-      [tourId]: cacheKey,
-    },
-  },
-  loading: { ...state.loading, [loadingKey]: false },
-}));
+                        set((state) => ({
+                            listCache: {
+                                ...state.listCache,
+                                tourFaqs: {
+                                    ...(state.listCache.tourFaqs || {}), // ensure object
+                                    [tourId]: {
+                                        ...(state.listCache.tourFaqs?.[tourId] || {}), // ensure object
+                                        [cacheKey]: list,
+                                    },
+                                },
+                            },
+                            params: {
+                                ...state.params,
+                                tourFaqs: {
+                                    ...(state.params.tourFaqs || {}),
+                                    [tourId]: params,
+                                },
+                            },
+                            activeCacheKey: {
+                                ...state.activeCacheKey,
+                                tourFaqs: {
+                                    ...(state.activeCacheKey.tourFaqs || {}),
+                                    [tourId]: cacheKey,
+                                },
+                            },
+                            loading: { ...state.loading, [loadingKey]: false },
+                        }));
 
 
                         return list;
@@ -607,12 +608,8 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
             {
                 name: "company-detail-store",
                 partialize: (state) => ({
-                    companies: state.companies,
-                    listCache: state.listCache,
-                    params: state.params,
-                    activeCacheKey: state.activeCacheKey,
-                    tourDetails: state.tourDetails,
-                    employeeDetails: state.employeeDetails,
+                    params: state.params,                 // store all query parameters
+                    activeCacheKey: state.activeCacheKey, // optional: remember which cache key was active for each list
                 }),
             }
         )

@@ -12,12 +12,17 @@ import AllDetails from "./AllDetails";
 import ReviewsPanel from "./ReviewsPanel";
 import ReportsPanel from "./ReportsPanel";
 import TourFaqs from "./TourFaqs";
+import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 
 type Props = { companyId: string; tourId: string };
 
 export default function TourDetailPage({ companyId, tourId }: Props) {
     const [tab, setTab] = useState<string>("details");
     const [copied, setCopied] = useState(false);
+    const [breadcrumbItems, setBreadcrumbItems] = useState<{ label: string; href: string; }[]>([
+        { label: "Home", href: '/' },
+        { label: "Companies", href: "/companies" }
+    ])
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -45,6 +50,7 @@ export default function TourDetailPage({ companyId, tourId }: Props) {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Breadcrumbs items={breadcrumbItems} className="pb-4" />
             {/* Hero Header */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-blue-500 to-cyan-500 p-[1px] shadow-lg">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-6 py-8">
@@ -122,7 +128,7 @@ export default function TourDetailPage({ companyId, tourId }: Props) {
 
                     <div className="mt-8">
                         <TabsContent value="details">
-                            <AllDetails companyId={companyId} tourId={tourId} />
+                            <AllDetails companyId={companyId} tourId={tourId} setBredCrumbs={(items) => setBreadcrumbItems(prev => [...prev, ...items])} />
                         </TabsContent>
                         <TabsContent value="reviews">
                             <ReviewsPanel companyId={companyId} tourId={tourId} />

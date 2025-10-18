@@ -54,7 +54,7 @@ export interface MeetingPointDTO {
 export interface RoadMapPointDTO {
     title: string;
     description?: string;
-    imageId?: string;
+    imageUrl?: string;
     location: {
         address?: string;
         coordinates: GeoPointDTO;
@@ -79,7 +79,7 @@ export interface ItineraryEntryDTO {
     mealsProvided?: Array<"Breakfast" | "Lunch" | "Dinner">;
     accommodation?: string;
     activities?: string[];
-    imageIds?: string[];
+    imageUrls?: string[];
 }
 
 /* ----------------------------- FAQ DTOs ----------------------------- */
@@ -113,7 +113,7 @@ export interface TourFAQDetailDTO extends FAQEntryDTO {
 export interface SeasonalHighlightDTO {
     season?: string;
     description?: string;
-    imageId?: string;
+    imageUrl?: string;
 }
 
 /**
@@ -122,7 +122,7 @@ export interface SeasonalHighlightDTO {
 export interface TourHostDTO {
     name?: string;
     bio?: string;
-    avatarId?: string;
+    avatarUrl?: string;
     languagesSpoken?: string[];
     rating?: number; // 0–5
 }
@@ -256,9 +256,8 @@ export interface TourDetailDTO {
     averageRating: number;
 
     // Media
-    imageIds: string[];
-    heroImageId?: string;
-    galleryImageIds?: string[];
+    heroImageUrl?: string;
+    galleryImageUrls?: string[];
     videoUrls?: string[];
     virtualTourUrl?: string;
 
