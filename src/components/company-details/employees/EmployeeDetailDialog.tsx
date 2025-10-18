@@ -92,7 +92,6 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                     </DialogTitle>
                                     <div className="flex flex-wrap items-center gap-2 mb-3">
                                         <Badge className="font-semibold">{employee.position}</Badge>
-                                        <Badge variant="outline">{employee.role}</Badge>
                                         {employee.subRole && (
                                             <Badge variant="secondary">{employee.subRole}</Badge>
                                         )}
@@ -159,9 +158,6 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                 {/* Employment Details */}
                                 <Section icon={MdWork} title="Employment Details">
                                     <InfoGrid>
-                                        {employee.department && (
-                                            <InfoItem label="Department" value={employee.department} />
-                                        )}
                                         {employee.employmentType && (
                                             <InfoItem
                                                 label="Employment Type"

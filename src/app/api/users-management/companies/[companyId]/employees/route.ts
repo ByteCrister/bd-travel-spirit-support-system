@@ -7,7 +7,7 @@ import {
     sortableEmployeeFields,
 } from "@/types/employee.types";
 import {
-    EMPLOYEE_ROLE,
+    // EMPLOYEE_ROLE,
     EMPLOYEE_SUB_ROLE,
     EMPLOYEE_STATUS,
     EMPLOYMENT_TYPE,
@@ -15,7 +15,7 @@ import {
 } from "@/constants/employee.const";
 
 function generateFakeEmployee(): EmployeeListItemDTO {
-    const role = faker.helpers.arrayElement(Object.values(EMPLOYEE_ROLE));
+    // const role = faker.helpers.arrayElement(Object.values(EMPLOYEE_ROLE));
     const subRole = faker.helpers.arrayElement(Object.values(EMPLOYEE_SUB_ROLE));
     const status = faker.helpers.arrayElement(Object.values(EMPLOYEE_STATUS));
     const employmentType = faker.helpers.arrayElement(Object.values(EMPLOYMENT_TYPE));
@@ -28,21 +28,16 @@ function generateFakeEmployee(): EmployeeListItemDTO {
 
     return {
         id: faker.database.mongodbObjectId(),
-        userId: faker.database.mongodbObjectId(),
         user: {
-            id: faker.database.mongodbObjectId(),
             name: fullName,
             email,
             phone,
             avatar: faker.image.avatar(),
         },
-        role,
         subRole,
         position,
-        positionCategory,
         status,
         employmentType,
-        department: faker.commerce.department(),
         salary: faker.number.int({ min: 20000, max: 90000 }),
         salaryCurrency: "USD",
         dateOfJoining: faker.date.past().toISOString(),
@@ -64,10 +59,8 @@ function generateFakeEmployee(): EmployeeListItemDTO {
 const sortFieldResolvers: Record<EmployeeTableColumns, (e: EmployeeListItemDTO) => any> = {
     "user.name": (e) => e.user.name,
     "user.email": (e) => e.user.email,
-    role: (e) => e.role,
     subRole: (e) => e.subRole,
     position: (e) => e.position,
-    department: (e) => e.department,
     status: (e) => e.status,
     employmentType: (e) => e.employmentType,
     salary: (e) => e.salary,
@@ -113,7 +106,6 @@ export async function GET(
             [
                 e.user.name,
                 e.position,
-                e.department ?? "",
                 e.user.email ?? "",
                 e.contactPhone ?? "",
             ]

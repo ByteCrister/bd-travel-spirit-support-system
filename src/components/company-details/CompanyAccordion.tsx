@@ -4,7 +4,6 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import CountUp from "react-countup";
 import { CompanyOverviewDTO } from "@/types/company.overview.types";
 import {
     MdBusiness,
@@ -17,7 +16,18 @@ import {
     MdStar,
     MdFingerprint
 } from "react-icons/md";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { Button } from "../ui/button";
+import { useCallback, useState } from "react";
+import clsx from "clsx";
+import Kpi from "./Kpi";
+
+const CONTAINER =
+    "flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 transition-colors group";
+const ICON_WRAPPER =
+    "flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/50 group-hover:scale-110 transition-transform";
+const LABEL = "text-sm font-medium text-slate-600 dark:text-slate-400";
+const MONO_PILL = "font-mono text-xs px-3 py-1 bg-slate-100 dark:bg-slate-700/50 border-0";
 
 interface Props {
     overview: CompanyOverviewDTO;
@@ -25,6 +35,26 @@ interface Props {
 
 export function CompanyAccordion({ overview }: Props) {
     const { companyId, companyName, kpis, serverNow } = overview;
+
+    const [copiedAt, setCopiedAt] = useState<Record<string, number | undefined>>({});
+
+    const handleCopy = useCallback((key: string, text: string) => {
+        // try clipboard then show pop
+        navigator.clipboard?.writeText(text).then(
+            () => {
+                const now = Date.now();
+                setCopiedAt((s) => ({ ...s, [key]: now }));
+                // clear after 1.5s
+                setTimeout(() => setCopiedAt((s) => ({ ...s, [key]: undefined })), 1500);
+            },
+            () => {
+                // fallback: still show pop (optional)
+                const now = Date.now();
+                setCopiedAt((s) => ({ ...s, [key]: now }));
+                setTimeout(() => setCopiedAt((s) => ({ ...s, [key]: undefined })), 1500);
+            }
+        );
+    }, []);
 
     const infoItems = [
         { icon: MdFingerprint, label: "Company ID", value: companyId, color: "text-blue-600 dark:text-blue-400" },
@@ -113,23 +143,61 @@ export function CompanyAccordion({ overview }: Props) {
                                 <div className="space-y-3">
                                     {infoItems.map((item, index) => {
                                         const Icon = item.icon;
+                                        const key = item.label;
+                                        const isCopied = Boolean(copiedAt[key]);
+
                                         return (
                                             <motion.div
-                                                key={item.label}
+                                                key={key}
                                                 initial={{ opacity: 0, x: -20 }}
                                                 animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: index * 0.1, duration: 0.3 }}
-                                                className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 transition-colors group"
+                                                transition={{ delay: index * 0.08, duration: 0.28 }}
+                                                className={CONTAINER}
+                                                title={item.label}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/50 group-hover:scale-110 transition-transform`}>
-                                                        <Icon className={`h-4 w-4 ${item.color}`} />
+                                                    <div className={ICON_WRAPPER}>
+                                                        <Icon className={clsx("h-4 w-4", item.color)} />
                                                     </div>
-                                                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{item.label}</span>
+                                                    <span className={LABEL}>{item.label}</span>
                                                 </div>
-                                                <Badge variant="secondary" className="font-mono text-xs px-3 py-1 bg-slate-100 dark:bg-slate-700/50 border-0">
-                                                    {item.value}
-                                                </Badge>
+
+                                                <div className="relative flex items-center">
+                                                    <AnimatePresence>
+                                                        {index === 0 && isCopied && (
+                                                            <motion.div
+                                                                key="pop"
+                                                                initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                                exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                                                                transition={{ duration: 0.18 }}
+                                                                className="absolute -top-9 right-0 z-10"
+                                                                aria-hidden
+                                                            >
+                                                                <div className="rounded-md bg-black/90 text-white text-xs px-2 py-1 shadow-md">
+                                                                    Copied
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+
+                                                    {index === 0 ? (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleCopy(key, item.value)}
+                                                            className="ml-2 px-3 py-1"
+                                                            title={`Copy ${item.label}`}
+                                                            aria-label={`Copy ${item.label}`}
+                                                        >
+                                                            Copy
+                                                        </Button>
+                                                    ) : (
+                                                        <Badge variant="secondary" className={MONO_PILL}>
+                                                            {item.value}
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </motion.div>
                                         );
                                     })}
@@ -165,42 +233,5 @@ export function CompanyAccordion({ overview }: Props) {
                 </AccordionContent>
             </AccordionItem>
         </Accordion>
-    );
-}
-
-interface KpiProps {
-    icon: React.ComponentType<{ className?: string }>;
-    label: string;
-    value: number;
-    decimals?: number;
-    color: string;
-    bgColor: string;
-    iconBg: string;
-    delay?: number;
-}
-
-function Kpi({ icon: Icon, label, value, decimals = 0, color, bgColor, iconBg, delay = 0 }: KpiProps) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay, duration: 0.3 }}
-            className={`relative overflow-hidden rounded-xl border border-slate-200/60 dark:border-slate-700/60 bg-gradient-to-br ${bgColor} p-4 hover:shadow-md transition-all duration-200 group hover:scale-105`}
-        >
-            <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br from-white/50 to-transparent dark:from-white/5 blur-2xl" />
-            <div className="relative space-y-2">
-                <div className="flex items-center justify-between">
-                    <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${iconBg} shadow-lg shadow-black/10 group-hover:scale-110 transition-transform`}>
-                        <Icon className="h-4 w-4 text-white" />
-                    </div>
-                    <div className={`text-2xl font-bold bg-gradient-to-r ${color} bg-clip-text text-transparent`}>
-                        <CountUp end={value} decimals={decimals} duration={1.5} separator="," />
-                    </div>
-                </div>
-                <div className="text-xs font-medium text-slate-600 dark:text-slate-400 leading-tight">
-                    {label}
-                </div>
-            </div>
-        </motion.div>
     );
 }

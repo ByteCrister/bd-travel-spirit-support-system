@@ -153,10 +153,8 @@ export function EmployeesTable({
                                 <TableHeader>
                                     <TableRow className="border-b border-border/40 bg-muted/40 hover:bg-muted/40 backdrop-blur-sm">
                                         <TableHead className="font-bold text-foreground text-xs uppercase tracking-wider text-left h-12 min-w-[150px]">Employee Name</TableHead>
-                                        <TableHead className="font-bold text-foreground text-xs uppercase tracking-wider text-left h-12 min-w-[120px]">Role</TableHead>
                                         <TableHead className="font-bold text-foreground text-xs uppercase tracking-wider text-left h-12 min-w-[120px]">Sub-Role</TableHead>
                                         <TableHead className="font-bold text-foreground text-xs uppercase tracking-wider text-left h-12 min-w-[120px]">Position</TableHead>
-                                        <TableHead className="font-bold text-foreground text-xs uppercase tracking-wider text-left h-12 min-w-[140px]">Department</TableHead>
                                         <TableHead className="font-bold text-foreground text-xs uppercase tracking-wider text-left h-12 min-w-[120px]">Status</TableHead>
                                         <TableHead className="font-bold text-foreground text-xs uppercase tracking-wider text-left h-12 min-w-[140px]">Joined Date</TableHead>
                                         <TableHead className="font-bold text-foreground text-xs uppercase tracking-wider text-left h-12 min-w-[140px]">Last Updated</TableHead>
@@ -217,27 +215,12 @@ export function EmployeesTable({
                                                         </div>
                                                     </TableCell>
 
-                                                    <TableCell className="text-foreground/80 font-medium text-left align-middle h-16 min-w-0 whitespace-nowrap">
-                                                        {e.role || "—"}
-                                                    </TableCell>
-
                                                     <TableCell className="text-foreground/70 text-left align-middle h-16 min-w-0 whitespace-nowrap">
                                                         {e.subRole || "—"}
                                                     </TableCell>
 
                                                     <TableCell className="text-foreground/70 text-left align-middle h-16 min-w-0 whitespace-nowrap">
                                                         {e.position || "—"}
-                                                    </TableCell>
-
-                                                    <TableCell className="text-left align-middle h-16 min-w-0">
-                                                        {e.department ? (
-                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-xs font-semibold border border-border/50 shadow-sm whitespace-nowrap truncate">
-                                                                <div className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
-                                                                <span className="truncate">{e.department}</span>
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-muted-foreground text-sm">No department</span>
-                                                        )}
                                                     </TableCell>
 
                                                     <TableCell className="text-left align-middle h-16 min-w-0">

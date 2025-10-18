@@ -65,13 +65,8 @@ export function FiltersBar({
             maxGroupSize: "Group Size",
             fullName: "Name",
             position: "Position",
-            role: "Role",
             subRole: "Sub-role",
-            department: "Department",
-            team: "Team",
-            employmentType: "Type",
             dateOfJoining: "Joined",
-            dateOfLeaving: "Left",
             createdAt: "Created",
             updatedAt: "Updated"
         };
