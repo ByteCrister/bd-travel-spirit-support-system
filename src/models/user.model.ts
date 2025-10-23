@@ -4,11 +4,7 @@
 // security, and extensibility considerations.
 // ============================================
 
-import {
-  GUIDE_DOCUMENT_CATEGORY,
-  GUIDE_DOCUMENT_TYPE,
-} from "@/constants/guide.const";
-import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
+import { ACCOUNT_STATUS, AccountStatus, USER_ROLE, UserRole } from "@/constants/user.const";
 import mongoose, {
   Schema,
   Document,
@@ -23,14 +19,6 @@ import mongoose, {
  * SUB‑DOCUMENT INTERFACES
  * =========================
  */
-
-/** Guide document metadata (for KYC, verification, etc.) */
-export interface GuideDocument {
-  category: GUIDE_DOCUMENT_CATEGORY;
-  base64Content: string;
-  fileType: GUIDE_DOCUMENT_TYPE;
-  fileName?: string;
-}
 
 /**
  * =========================
@@ -75,13 +63,13 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password?: string; // optional for OAuth users
-  role: USER_ROLE;
+  role: UserRole;
   avatar?: string;
   phone?: string;
   address?: mongoose.InferSchemaType<typeof AddressSchema>;
   dateOfBirth?: Date;
   isVerified: boolean;
-  accountStatus: ACCOUNT_STATUS;
+  accountStatus: AccountStatus;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   bookingHistory: Types.ObjectId[];

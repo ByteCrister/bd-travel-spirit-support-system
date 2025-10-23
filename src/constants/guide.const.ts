@@ -6,7 +6,8 @@
  * Keeping them centralized ensures consistency across both
  * backend (Mongoose models) and frontend (Next.js DTOs).
  * ============================================================ */
-
+// Utility type to extract enum values
+type EnumValues<T> = T[keyof T];
 /**
  * File types supported for guide document uploads.
  * Used to validate and restrict the kind of files
@@ -17,6 +18,7 @@ export enum GUIDE_DOCUMENT_TYPE {
   PDF = "pdf", // Portable Document Format
   DOCX = "docx", // Microsoft Word document
 }
+export type GuideDocumentType = EnumValues<typeof GUIDE_DOCUMENT_TYPE>;
 
 /**
  * Categories of documents required or accepted
@@ -29,6 +31,7 @@ export enum GUIDE_DOCUMENT_CATEGORY {
   PROFESSIONAL_PHOTO = "professional_photo", // Profile photo for public display
   CERTIFICATION = "certification", // Relevant training or skill certificates
 }
+export type GuideDocumentCategory = EnumValues<typeof GUIDE_DOCUMENT_CATEGORY>;
 
 /** Organizer profile verification states */
 export enum GUIDE_STATUS {
@@ -41,6 +44,7 @@ export enum GUIDE_STATUS {
   /** Rejected after review */
   REJECTED = "rejected",
 }
+export type GuideStatus = EnumValues<GUIDE_STATUS>;
 
 // =========================
 // SOCIAL PLATFORM ENUM
@@ -52,3 +56,4 @@ export enum GUIDE_SOCIAL_PLATFORM {
   TWITTER = "twitter",
   INSTAGRAM = "instagram",
 }
+export type GuideSocialPlatform = EnumValues<GUIDE_SOCIAL_PLATFORM>;

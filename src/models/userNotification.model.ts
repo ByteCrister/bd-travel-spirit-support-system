@@ -2,7 +2,10 @@
 import {
   NOTIFICATION_PRIORITY,
   NOTIFICATION_RELATED_MODAL,
+  NotificationPriority,
+  NotificationRelatedModal,
   USER_NOTIFICATION_TYPE,
+  UserNotificationType,
 } from "@/constants/customerNotification.const";
 import { Schema, Document, Types, models, model } from "mongoose";
 
@@ -14,12 +17,12 @@ import { Schema, Document, Types, models, model } from "mongoose";
  */
 export interface IUserNotification extends Document {
   recipient: Types.ObjectId; // Target user
-  type: USER_NOTIFICATION_TYPE; // Category
-  priority: NOTIFICATION_PRIORITY;
+  type: UserNotificationType; // Category
+  priority: NotificationPriority;
   title: string; // Short heading
   message: string; // Longer descriptive body
   link?: string; // URL to open in UI
-  relatedModel?: NOTIFICATION_RELATED_MODAL;
+  relatedModel?: NotificationRelatedModal;
   relatedId?: Types.ObjectId;
   isRead: boolean; // UI read/unread state
   deliveredAt?: Date; // Time it was actually sent to user

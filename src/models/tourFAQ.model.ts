@@ -7,12 +7,12 @@ import mongoose, {
     models,
     Query,
 } from "mongoose";
-import { MODERATION_STATUS } from "@/constants/tour.const";
-import { FAQ_REPORT_REASON } from "@/constants/faqReport.const";
+import { MODERATION_STATUS, ModerationStatus } from "@/constants/tour.const";
+import { FAQ_REPORT_REASON, FaqReportReason } from "@/constants/faqReport.const";
 
 export interface ITourFAQReport {
     reportedBy: Types.ObjectId;
-    reason?: FAQ_REPORT_REASON; // optional enum
+    reason?: FaqReportReason; // optional enum
     customReason?: string; // user-provided reason (when no enum used)
     explanation?: string;
     createdAt: Date;
@@ -24,7 +24,7 @@ export interface ITourFAQ extends Document {
     answeredBy?: Types.ObjectId;
     question: string;
     answer?: string;
-    status: MODERATION_STATUS;
+    status: ModerationStatus;
     order?: number;
     isActive: boolean;
     deletedAt?: Date | null;

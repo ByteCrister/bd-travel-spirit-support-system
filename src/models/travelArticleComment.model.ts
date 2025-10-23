@@ -1,5 +1,5 @@
 // models/travelComment.model.ts
-import { COMMENT_STATUS } from "@/constants/articleComment.const";
+import { COMMENT_STATUS, CommentStatus } from "@/constants/articleComment.const";
 import { Schema, model, models, Types, Document } from "mongoose";
 
 /**
@@ -13,7 +13,7 @@ export interface ITravelComment extends Document {
   content: string; // The actual text content of the comment
   likes: number; // Number of likes/upvotes this comment has received
   replies: Types.ObjectId[]; // Array of child comment IDs (nested replies)
-  status: COMMENT_STATUS; // Moderation status (pending/approved/rejected)
+  status: CommentStatus; // Moderation status (pending/approved/rejected)
   createdAt: Date; // Auto-managed timestamp when created
   updatedAt: Date; // Auto-managed timestamp when last updated
 }

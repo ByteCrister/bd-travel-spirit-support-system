@@ -4,6 +4,9 @@ import {
     GUIDE_DOCUMENT_CATEGORY,
     GUIDE_DOCUMENT_TYPE,
     GUIDE_STATUS,
+    GuideDocumentCategory,
+    GuideDocumentType,
+    GuideStatus,
 } from "@/constants/guide.const";
 
 /** ===============================
@@ -21,8 +24,8 @@ export interface PendingGuideAddress {
 
 /** Organizer document type */
 export interface PendingGuideDocument {
-    category: GUIDE_DOCUMENT_CATEGORY;
-    fileType: GUIDE_DOCUMENT_TYPE;
+    category: GuideDocumentCategory;
+    fileType: GuideDocumentType;
     fileName?: string;
     fileUrl: Schema.Types.ObjectId;
     uploadedAt: Date;
@@ -39,7 +42,7 @@ export interface IPendingGuide extends Document {
     bio?: string;
     social?: string;
     documents: PendingGuideDocument[];
-    status: GUIDE_STATUS;
+    status: GuideStatus;
     appliedAt: Date;
     reviewComment?: string;
     reviewer?: mongoose.Types.ObjectId;

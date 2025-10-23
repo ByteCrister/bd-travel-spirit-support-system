@@ -1,6 +1,6 @@
 // models/travelArticle.model.ts
-import { ARTICLE_STATUS, ARTICLE_TYPE } from "@/constants/article.const";
-import { TRAVEL_TYPE } from "@/constants/tour.const";
+import { ARTICLE_STATUS, ARTICLE_TYPE, ArticleStatus, ArticleType } from "@/constants/article.const";
+import { TRAVEL_TYPE, TravelType } from "@/constants/tour.const";
 import { model, models, Schema, Types, Document } from "mongoose";
 
 /**
@@ -64,14 +64,14 @@ interface IRichTextBlock {
 export interface ITravelArticle extends Document {
   title: string;
   slug: string;
-  status: ARTICLE_STATUS;
-  articleType: ARTICLE_TYPE;
+  status: ArticleStatus;
+  articleType: ArticleType;
   author: Types.ObjectId;
   authorBio?: string;
   summary: string;
   heroImage: string;
   destinations?: IDestinationBlock[]; // replaces single `destination`
-  categories?: TRAVEL_TYPE[];
+  categories?: TravelType[];
   tags?: string[];
   publishedAt?: Date;
   readingTime?: number;

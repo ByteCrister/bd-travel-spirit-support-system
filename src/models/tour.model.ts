@@ -19,6 +19,13 @@ import {
   Inclusion,
   Exclusion,
   TranslationBlock,
+  TourStatus,
+  AudienceType,
+  ContentCategory,
+  Season,
+  TransportMode,
+  PaymentMethod,
+  Currency,
 } from "@/constants/tour.const";
 import { Schema, model, models, Types, Document } from "mongoose";
 
@@ -65,7 +72,7 @@ export interface ITour extends Document {
   // Identity & SEO
   title: string;
   slug: string;
-  status: TOUR_STATUS;
+  status: TourStatus;
   summary: string;
   heroImage?: Types.ObjectId; // Asset
   isFeatured?: boolean;
@@ -84,15 +91,15 @@ export interface ITour extends Document {
   inclusions?: Inclusion[];
   exclusions?: Exclusion[];
   difficulty?: DIFFICULTY_LEVEL;
-  bestSeason?: SEASON[];
-  audience?: AUDIENCE_TYPE[];
-  categories?: CONTENT_CATEGORY[];
+  bestSeason?: Season[];
+  audience?: AudienceType[];
+  categories?: ContentCategory[];
   translations?: TranslationBlock[];
 
   // Logistics
   mainLocation?: { address?: Address; coordinates?: GeoPoint };
-  transportModes?: TRANSPORT_MODE[];
-  pickupOptions?: { city?: string; price?: number; currency?: CURRENCY }[];
+  transportModes?: TransportMode[];
+  pickupOptions?: { city?: string; price?: number; currency?: Currency }[];
   meetingPoint?: string;
 
   // Commerce
@@ -101,7 +108,7 @@ export interface ITour extends Document {
   duration?: { days: number; nights?: number };
   operatingWindows?: OperatingWindow[]; // seasonal windows
   departures?: Departure[]; // specific dated departures
-  paymentMethods?: PAYMENT_METHOD[];
+  paymentMethods?: PaymentMethod[];
 
   // Compliance & partnerships
   operatorId?: Types.ObjectId; // Operator

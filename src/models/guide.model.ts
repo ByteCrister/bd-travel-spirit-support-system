@@ -12,6 +12,11 @@ import {
     GUIDE_DOCUMENT_TYPE,
     GUIDE_SOCIAL_PLATFORM,
     GUIDE_STATUS,
+    
+    GuideDocumentCategory,
+    GuideDocumentType,
+    GuideSocialPlatform,
+    GuideStatus,
 } from "@/constants/guide.const";
 
 // =========================
@@ -20,8 +25,8 @@ import {
 
 /** Metadata for uploaded verification documents */
 export interface IGuideDocument {
-    category: GUIDE_DOCUMENT_CATEGORY;
-    fileType: GUIDE_DOCUMENT_TYPE;
+    category: GuideDocumentCategory;
+    fileType: GuideDocumentType;
     fileName?: string;
     fileUrl: string; // store URL instead of base64 for scalability
     uploadedAt?: Date;
@@ -33,7 +38,7 @@ export interface IGuide extends Document {
     companyName: string;
     bio?: string;
     social?: {
-        platform: GUIDE_SOCIAL_PLATFORM;
+        platform: GuideSocialPlatform;
         url: string;
     }[];
 
@@ -50,7 +55,7 @@ export interface IGuide extends Document {
     documents: IGuideDocument[];
 
     // Verification status
-    status: GUIDE_STATUS;
+    status: GuideStatus;
     appliedAt?: Date;
     reviewedAt?: Date;
     reviewer?: Types.ObjectId;

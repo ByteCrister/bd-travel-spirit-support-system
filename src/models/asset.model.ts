@@ -1,34 +1,9 @@
+import { ASSET_TYPE, AssetType, MODERATION_STATUS, ModerationStatus, STORAGE_PROVIDER, StorageProvider, VISIBILITY, Visibility } from "@/constants/asset.const";
 import { Schema, model, models, Document, Types } from "mongoose";
 
-export enum STORAGE_PROVIDER {
-    S3 = "s3",
-    GCS = "gcs",
-    LOCAL = "local",
-    CLOUDINARY = "cloudinary",
-}
-
-export enum VISIBILITY {
-    PRIVATE = "private",
-    UNLISTED = "unlisted",
-    PUBLIC = "public",
-}
-
-export enum MODERATION_STATUS {
-    PENDING = "pending",
-    APPROVED = "approved",
-    REJECTED = "rejected",
-}
-
-export enum ASSET_TYPE {
-    IMAGE = "image",
-    VIDEO = "video",
-    DOCUMENT = "document",
-    AUDIO = "audio",
-    OTHER = "other",
-}
 
 export interface IAsset extends Document {
-    storageProvider: STORAGE_PROVIDER;
+    storageProvider: StorageProvider;
     objectKey: string;       // e.g., bucket/key or provider ID
     publicUrl: string;       // https URL to the file
     contentType: string;     // MIME type (image/jpeg, application/pdf, video/mp4, etc.)
@@ -36,7 +11,7 @@ export interface IAsset extends Document {
     checksum: string;        // sha256 for deduplication
 
     // Classification
-    assetType: ASSET_TYPE;
+    assetType: AssetType;
 
     // Optional metadata
     title?: string;
@@ -45,10 +20,10 @@ export interface IAsset extends Document {
 
     // Ownership & access
     uploadedBy: Types.ObjectId;
-    visibility: VISIBILITY;
+    visibility: Visibility;
 
     // Moderation
-    moderationStatus: MODERATION_STATUS;
+    moderationStatus: ModerationStatus;
     reviewedAt?: Date;
     reviewedBy?: Types.ObjectId;
 

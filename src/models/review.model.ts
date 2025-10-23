@@ -11,7 +11,7 @@ import mongoose, {
     CallbackWithoutResultAndOptionalError,
 } from "mongoose";
 import { TourModel } from "./tour.model";
-import { TRAVEL_TYPE } from "@/constants/tour.const";
+import { TRAVEL_TYPE, TravelType } from "@/constants/tour.const";
 
 export interface IReviewReply {
     _id: Types.ObjectId;
@@ -62,7 +62,7 @@ export interface IReview extends Document {
     title?: string; // Optional headline
     comment: string; // Full textual feedback
     images: Types.ObjectId[]; // Attached review images
-    tripType?: TRAVEL_TYPE; // Traveler context
+    tripType?: TravelType; // Traveler context
     travelDate?: Date; // When the trip occurred
     isVerified: boolean; // True if booking verified
     isApproved: boolean; // Moderation state
