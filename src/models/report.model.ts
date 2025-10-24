@@ -1,6 +1,6 @@
 // models/report.model.ts
 
-import { REPORT_PRIORITY, REPORT_REASON, REPORT_STATUS } from "@/constants/report.const";
+import { REPORT_PRIORITY, REPORT_REASON, REPORT_STATUS, ReportPriority, ReportReason, ReportStatus } from "@/constants/report.const";
 import mongoose, {
     Schema,
     model,
@@ -19,13 +19,13 @@ import mongoose, {
 export interface IReport extends Document {
     reporter: Types.ObjectId;          // Who filed the report
     tour: Types.ObjectId;              // Which Tour is affected
-    reason: REPORT_REASON;             // Categorized cause
+    reason: ReportReason;             // Categorized cause
     message: string;                   // Detailed description
-    evidenceImages?: Types.ObjectId[]; // Image references
+    evidenceImages?: Types.ObjectId[]; // Image references to Assets model
     evidenceLinks?: string[];          // External proof URLs
-    status: REPORT_STATUS;             // Current workflow state
+    status: ReportStatus;             // Current workflow state
     assignedTo?: Types.ObjectId;       // Admin/User handling it
-    priority: REPORT_PRIORITY;         // Triage urgency
+    priority: ReportPriority;         // Triage urgency
     resolutionNotes?: string;          // Internal post-resolution notes
     resolvedAt?: Date;                 // When it was resolved
     reopenedCount: number;             // Times reopened after resolution
