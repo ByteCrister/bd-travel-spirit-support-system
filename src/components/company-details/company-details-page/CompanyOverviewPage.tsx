@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button";
 import { MdOutlineRefresh, MdBusiness, MdPeople, MdTour } from "react-icons/md";
 import { CompanyAccordion } from "./CompanyAccordion";
 import { FiltersBar } from "./FiltersBar";
-import { ToursTable } from "./tours/ToursTable";
-import { EmployeesTable } from "./employees/EmployeesTable";
+import { ToursTable } from ".././tours/ToursTable";
+import { EmployeesTable } from ".././employees/EmployeesTable";
 import { useCompanyOverview } from "@/hooks/useCompanyOverview";
 import { CompanyAccordionSkeleton } from "./CompanyAccordionSkeleton";
 import { FiltersBarSkeleton } from "./FiltersBarSkeleton";
 import { TableSkeleton } from "./TableSkeleton";
-import { Breadcrumbs } from "../global/Breadcrumbs";
+import { Breadcrumbs } from "../../global/Breadcrumbs";
 
 
 type TabKey = "tours" | "employees";
@@ -29,7 +29,7 @@ export default function CompanyOverviewPage({ companyId }: Props) {
     const breadcrumbItems = [
         { label: "Home", href: '/' },
         { label: "Companies", href: "/companies" },
-        { label: overview.company?.companyName?.toLocaleUpperCase()??"-", href: `/companies/${companyId}` },
+        { label: overview.company?.companyName?.toLocaleUpperCase() ?? "-", href: `/companies/${companyId}` },
     ];
 
     const tabConfig = {

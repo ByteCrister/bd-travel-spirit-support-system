@@ -17,7 +17,7 @@ import {
     MdFingerprint
 } from "react-icons/md";
 import { AnimatePresence, motion } from "framer-motion";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 import { useCallback, useState } from "react";
 import clsx from "clsx";
 import Kpi from "./Kpi";

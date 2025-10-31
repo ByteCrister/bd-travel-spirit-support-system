@@ -1,6 +1,3 @@
-// components/company/FiltersBarSkeleton.tsx
-"use client";
-
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function FiltersBarSkeleton() {

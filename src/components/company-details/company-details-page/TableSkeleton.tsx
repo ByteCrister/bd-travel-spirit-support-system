@@ -1,6 +1,3 @@
-// components/company/TableSkeleton.tsx
-"use client";
-
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 
