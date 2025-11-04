@@ -1,3 +1,4 @@
+// 
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import api from "@/utils/api/axios";
@@ -56,6 +57,7 @@ type GuideStoreState = {
     cache: Record<string, CacheEntry>;
     guides: PendingGuideDTO[];
     counts: { total: number; pending: number; approved: number; rejected: number };
+    _inflight: Record<string, Promise<boolean> | undefined>;
 
     setQuery: (partial: Partial<QueryParams>) => void;
     fetch: (force?: boolean, overrideQuery?: Partial<QueryParams>) => Promise<boolean>;
@@ -113,6 +115,7 @@ export const useGuideStore = create<GuideStoreState>()(
         loading: false,
         error: null,
         cache: {},
+        _inflight: {},
 
         // Update query params
         setQuery: (partial) =>
@@ -125,9 +128,10 @@ export const useGuideStore = create<GuideStoreState>()(
             const key = getCacheKey(query);
             const now = Date.now();
 
+            // persist the query
             set({ query });
 
-            // Use cache if valid and not forcing
+            // fast cache check (no network if cached and not forced)
             if (!force) {
                 const cached = state.cache[key];
                 if (cached && now - cached.ts < CACHE_TTL_MS) {
@@ -144,33 +148,51 @@ export const useGuideStore = create<GuideStoreState>()(
                 }
             }
 
-            // Otherwise call API
-            set({ loading: true, error: null });
-            try {
-                const res = await api.get<PaginatedResponse<PendingGuideDTO>>(ROOT_DIR, {
-                    params: query,
-                });
-                const { items, ids } = normalizeList(res.data.data);
-                const counts = computeCounts(items, res.data.total);
+            // If a request for this key is already in-flight, return that Promise (dedupe)
+            const existing = get()._inflight[key];
+            if (existing) return existing;
 
-                set((prev) => ({
-                    items,
-                    ids,
-                    total: res.data.total,
-                    guides: ids.map((id) => items[id]),
-                    counts,
-                    loading: false,
-                    error: null,
-                    cache: {
-                        ...prev.cache,
-                        [key]: { ids, total: res.data.total, ts: now, items },
-                    },
-                }));
-                return true;
-            } catch (err) {
-                set({ error: extractErrorMessage(err), loading: false });
-                return false;
-            }
+            // Build the in-flight Promise
+            const p = (async (): Promise<boolean> => {
+                set({ loading: true, error: null });
+                try {
+                    const res = await api.get<PaginatedResponse<PendingGuideDTO>>(ROOT_DIR, {
+                        params: query,
+                    });
+                    const { items, ids } = normalizeList(res.data.data);
+                    const counts = computeCounts(items, res.data.total);
+
+                    set((prev) => ({
+                        items,
+                        ids,
+                        total: res.data.total,
+                        guides: ids.map((id) => items[id]),
+                        counts,
+                        loading: false,
+                        error: null,
+                        cache: {
+                            ...prev.cache,
+                            [key]: { ids, total: res.data.total, ts: now, items },
+                        },
+                    }));
+
+                    return true;
+                } catch (err) {
+                    set({ error: extractErrorMessage(err), loading: false });
+                    return false;
+                } finally {
+                    // remove the inflight entry
+                    set((s) => {
+                        const next = { ...s._inflight };
+                        delete next[key];
+                        return { _inflight: next };
+                    });
+                }
+            })();
+
+            // store the Promise and return it
+            set((s) => ({ _inflight: { ...s._inflight, [key]: p } }));
+            return p;
         },
 
         // Approve guide and update cache

@@ -1,7 +1,7 @@
 // app/guide/page.tsx
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SortByTypes, SortDirTypes, useGuideStore } from "@/store/useGuideStore";
 import { GuideFilters } from "@/components/guide/GuideFilters";
 import { GuideKPI } from "@/components/guide/GuideKPI";
@@ -33,8 +33,8 @@ export default function Guide() {
     } = useGuideStore();
 
     const [selectedDoc, setSelectedDoc] = useState<{ guide?: PendingGuideDTO; doc?: PendingGuideDocumentDTO } | null>(null);
+    const mountedRef = useRef(false);
 
-    // ✅ Stable callbacks (don’t depend on query)
     const handleQueryChange = useCallback(
         (partial: Partial<typeof query>) => {
             fetch(false, partial);
@@ -64,6 +64,8 @@ export default function Guide() {
     );
 
     useEffect(() => {
+        if (mountedRef.current) return;
+        mountedRef.current = true;
         fetch(true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

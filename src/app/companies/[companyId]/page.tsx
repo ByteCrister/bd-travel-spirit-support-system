@@ -1,5 +1,6 @@
 // app/companies/[companyId]/page.tsx
-import CompanyOverviewPage from "@/components/company-details/CompanyOverviewPage";
+
+import CompanyOverviewPage from "@/components/company-details/company-details-page/CompanyOverviewPage";
 
 interface PageProps {
     params: { companyId: string };
