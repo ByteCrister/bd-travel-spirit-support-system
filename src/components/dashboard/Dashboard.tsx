@@ -124,12 +124,9 @@ export default function Dashboard() {
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
             >
                 {loading.stats ? (
-                    <>
-                        <StatsCardSkeleton />
-                        <StatsCardSkeleton />
-                        <StatsCardSkeleton />
-                        <StatsCardSkeleton />
-                    </>
+                    Array.from({ length: 10 }).map((_, i) => {
+                        return <StatsCardSkeleton key={i} />
+                    })
                 ) : (
                     <>
                         <StatsCard

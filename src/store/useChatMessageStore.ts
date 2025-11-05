@@ -1,4 +1,4 @@
-// stores/useChatMessage.store.ts
+// stores/useChatMessage.ts
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { produce } from "immer";
@@ -23,23 +23,25 @@ import type {
 import api from "@/utils/api/axios";
 import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
 
+const URL_AFTER_API = "/mock/chat";
+
 /**
  * =========================
  * Endpoint configuration
  * =========================
  */
 const ENDPOINTS = {
-    conversation: "/chat/conversation",
-    list: "/chat",
-    byId: (id: string) => `/chat/${id}`,
-    create: "/chat",
-    update: (id: string) => `/chat/${id}`,
-    delete: (id: string) => `/chat/${id}`,
-    stats: "/chat/stats",
-    markRead: (id: string) => `/chat/${id}/read`,
-    markDelivered: (id: string) => `/chat/${id}/delivered`,
-    moderate: (id: string) => `/chat/${id}/moderation`,
-    userList: "/chat/user-list",
+    conversation: `${URL_AFTER_API}/conversation`,
+    list: `${URL_AFTER_API}`,
+    byId: (id: string) => `${URL_AFTER_API}/${id}`,
+    create: `${URL_AFTER_API}`,
+    update: (id: string) => `${URL_AFTER_API}/${id}`,
+    delete: (id: string) => `${URL_AFTER_API}/${id}`,
+    stats: `${URL_AFTER_API}/stats`,
+    markRead: (id: string) => `${URL_AFTER_API}/${id}/read`,
+    markDelivered: (id: string) => `${URL_AFTER_API}/${id}/delivered`,
+    moderate: (id: string) => `${URL_AFTER_API}/${id}/moderation`,
+    userList: `${URL_AFTER_API}/user-list`,
 };
 
 /**

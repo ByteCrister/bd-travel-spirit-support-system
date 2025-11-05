@@ -1,5 +1,3 @@
-// components/employees/AddEmployeeDialog.tsx
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -9,7 +7,6 @@ import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import { Field } from "./primitives/Field";
 import { Skeleton } from "./primitives/Skeleton";
 
@@ -21,8 +18,8 @@ import {
     EmploymentType,
     EmployeePosition,
     PositionCategory,
-    ObjectIdString,
     EmployeeDetailDTO,
+    ContactInfoDTO,
 } from "@/types/employee.types";
 
 import {
@@ -32,6 +29,7 @@ import {
     EMPLOYEE_STATUS,
     EMPLOYMENT_TYPE,
 } from "@/constants/employee.const";
+
 import { createEmployeeSchemaWithDates } from "@/utils/validators/employee.validator";
 
 type EnumsShape = {
@@ -42,8 +40,16 @@ type EnumsShape = {
     positionCategories: PositionCategory[];
 };
 
-type FormData = Omit<CreateEmployeePayload, 'audit'>;
-type ValidationErrors = Partial<Record<keyof FormData | 'contactInfo.email' | 'contactInfo.phone' | 'dateOfJoining' | 'dateOfLeaving', string>>;
+type FormData = Omit<CreateEmployeePayload, "audit"> & {
+  salary?: number;
+  salaryCurrency?: string;
+};
+type ValidationErrors = Partial<
+    Record<
+        keyof FormData | "contactInfo.email" | "contactInfo.phone" | "dateOfJoining" | "dateOfLeaving",
+        string
+    >
+>;
 
 export function AddEmployeeDialog({
     open,
@@ -59,17 +65,16 @@ export function AddEmployeeDialog({
     const [enums, setEnums] = useState<EnumsShape | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState<ValidationErrors>({});
-
     const [positionCategory, setPositionCategory] = useState<PositionCategory | "">("");
     const [position, setPosition] = useState<EmployeePosition | "">("");
 
+    // Initialize minimal form. contactInfo required by CreateEmployeePayload.
     const [form, setForm] = useState<Partial<FormData>>({
         role: undefined,
         subRole: undefined,
         status: "active",
         employmentType: undefined,
-        department: "",
-        contactInfo: { email: "", phone: "" },
+        contactInfo: { email: "", phone: "" } as ContactInfoDTO,
     });
 
     useEffect(() => {
@@ -81,7 +86,6 @@ export function AddEmployeeDialog({
                 // fallback to constants
             }
             if (!mounted) return;
-
             const cats = Object.keys(EMPLOYEE_POSITIONS) as PositionCategory[];
             const shape: EnumsShape = {
                 roles: Object.values(EMPLOYEE_ROLE),
@@ -106,7 +110,6 @@ export function AddEmployeeDialog({
                 subRole: undefined,
                 status: "active",
                 employmentType: undefined,
-                department: "",
                 contactInfo: { email: "", phone: "" },
             });
             setPosition("");
@@ -125,13 +128,12 @@ export function AddEmployeeDialog({
 
     const validateForm = (): boolean => {
         const payload = {
-            userId: form.userId,
+            companyId: form.companyId,
             role: form.role,
             subRole: form.subRole,
-            position: position as EmployeePosition,
+            position: (position as EmployeePosition) || form.position,
             status: form.status ?? "active",
             employmentType: form.employmentType,
-            department: form.department,
             salary: form.salary,
             salaryCurrency: form.salaryCurrency,
             dateOfJoining: form.dateOfJoining,
@@ -142,9 +144,11 @@ export function AddEmployeeDialog({
             performance: form.performance,
             documents: form.documents,
             notes: form.notes,
+            avatar: form.avatar,
         };
 
         try {
+            // throws ZodError when invalid
             createEmployeeSchemaWithDates.parse(payload);
             setErrors({});
             return true;
@@ -152,7 +156,7 @@ export function AddEmployeeDialog({
             if (err instanceof z.ZodError) {
                 const newErrors: ValidationErrors = {};
                 err.issues.forEach((issue) => {
-                    const path = issue.path.join('.');
+                    const path = issue.path.join(".");
                     newErrors[path as keyof ValidationErrors] = issue.message;
                 });
                 setErrors(newErrors);
@@ -165,36 +169,37 @@ export function AddEmployeeDialog({
 
     const submit = async () => {
         if (!validateForm()) return;
-
         setSubmitting(true);
         try {
-            await onCreate({
-                userId: form.userId!,
+            const payload: CreateEmployeePayload = {
+                companyId: form.companyId,
                 role: form.role!,
                 subRole: form.subRole!,
-                position: position as EmployeePosition,
+                position: (position as EmployeePosition) || form.position!,
                 status: (form.status as EmployeeStatus) ?? "active",
                 employmentType: form.employmentType,
-                department: form.department,
-                salary: form.salary,
-                salaryCurrency: form.salaryCurrency,
+                avatar: form.avatar,
+                salaryHistory: form.salaryHistory,
+                positionHistory: form.positionHistory,
                 dateOfJoining: form.dateOfJoining,
                 dateOfLeaving: form.dateOfLeaving,
-                contactInfo: form.contactInfo!,
+                contactInfo: form.contactInfo as ContactInfoDTO,
                 permissions: form.permissions,
                 shifts: form.shifts,
                 performance: form.performance,
                 documents: form.documents,
                 notes: form.notes,
                 audit: {
-                    createdBy: "currentUserId", // provide actual user ID
-                    updatedBy: "userId",
+                    // Replace with actual current user id in calling code/system
+                    createdBy: "000000000000000000000000",
+                    updatedBy: "000000000000000000000000",
                 },
-            });
+            };
+
+            await onCreate(payload);
             onOpenChange(false);
         } catch (err) {
-            // Handle server errors if needed
-            console.error('Failed to create employee:', err);
+            console.error("Failed to create employee:", err);
         } finally {
             setSubmitting(false);
         }
@@ -205,9 +210,7 @@ export function AddEmployeeDialog({
             <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto rounded-xl border border-border/60 p-0">
                 {/* Sticky header */}
                 <DialogHeader className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-6 py-4">
-                    <DialogTitle className="text-lg font-semibold tracking-tight">
-                        Add employee
-                    </DialogTitle>
+                    <DialogTitle className="text-lg font-semibold tracking-tight">Add employee</DialogTitle>
                 </DialogHeader>
 
                 {!enums ? (
@@ -224,39 +227,11 @@ export function AddEmployeeDialog({
                         {/* Section: Identity & employment */}
                         <Section title="Identity and employment">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <Field
-                                    label="User ID"
-                                    hint="24-character hexadecimal ObjectId"
-                                    error={errors.userId}
-                                >
-                                    <Input
-                                        placeholder="e.g., 652f1a0b3c0c8b001234abcd"
-                                        className="h-10"
-                                        value={(form.userId as string) ?? ""}
-                                        onChange={(e) =>
-                                            setForm((f) => ({ ...f, userId: e.target.value as ObjectIdString }))
-                                        }
-                                    />
-                                </Field>
-
-                                <Field label="Department" hint="Optional" error={errors.department}>
-                                    <Input
-                                        placeholder="e.g., Operations"
-                                        className="h-10"
-                                        value={form.department ?? ""}
-                                        onChange={(e) =>
-                                            setForm((f) => ({ ...f, department: e.target.value || undefined }))
-                                        }
-                                    />
-                                </Field>
-
                                 <Field label="Role" error={errors.role}>
                                     <SelectNative
                                         placeholder="Select role"
                                         value={(form.role as string) ?? ""}
-                                        onChange={(v) =>
-                                            setForm((f) => ({ ...f, role: (v as EmployeeRole) || undefined }))
-                                        }
+                                        onChange={(v) => setForm((f) => ({ ...f, role: (v as EmployeeRole) || undefined }))}
                                         options={enums.roles}
                                     />
                                 </Field>
@@ -265,12 +240,7 @@ export function AddEmployeeDialog({
                                     <SelectNative
                                         placeholder="Select sub-role"
                                         value={(form.subRole as string) ?? ""}
-                                        onChange={(v) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                subRole: (v as EmployeeSubRole) || undefined,
-                                            }))
-                                        }
+                                        onChange={(v) => setForm((f) => ({ ...f, subRole: (v as EmployeeSubRole) || undefined }))}
                                         options={enums.subRoles}
                                     />
                                 </Field>
@@ -302,12 +272,7 @@ export function AddEmployeeDialog({
                                     <SelectNative
                                         placeholder="Select type"
                                         value={(form.employmentType as string) ?? ""}
-                                        onChange={(v) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                employmentType: (v as EmploymentType) || undefined,
-                                            }))
-                                        }
+                                        onChange={(v) => setForm((f) => ({ ...f, employmentType: (v as EmploymentType) || undefined }))}
                                         options={enums.employmentTypes}
                                     />
                                 </Field>
@@ -316,12 +281,7 @@ export function AddEmployeeDialog({
                                     <SelectNative
                                         placeholder="Select status"
                                         value={(form.status as string) ?? "active"}
-                                        onChange={(v) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                status: (v as EmployeeStatus) || "active",
-                                            }))
-                                        }
+                                        onChange={(v) => setForm((f) => ({ ...f, status: (v as EmployeeStatus) || "active" }))}
                                         options={enums.statuses}
                                     />
                                 </Field>
@@ -331,31 +291,25 @@ export function AddEmployeeDialog({
                         {/* Section: Contact */}
                         <Section title="Contact information">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <Field label="Contact email" error={errors['contactInfo.email']}>
+                                <Field label="Contact email" error={errors["contactInfo.email"]}>
                                     <Input
                                         placeholder="email@example.com"
                                         className="h-10"
                                         type="email"
                                         value={form.contactInfo?.email ?? ""}
                                         onChange={(e) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                contactInfo: { ...(f.contactInfo ?? {}), email: e.target.value },
-                                            }))
+                                            setForm((f) => ({ ...f, contactInfo: { ...(f.contactInfo ?? {}), email: e.target.value } }))
                                         }
                                     />
                                 </Field>
 
-                                <Field label="Contact phone" error={errors['contactInfo.phone']}>
+                                <Field label="Contact phone" error={errors["contactInfo.phone"]}>
                                     <Input
                                         placeholder="+880..."
                                         className="h-10"
                                         value={form.contactInfo?.phone ?? ""}
                                         onChange={(e) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                contactInfo: { ...(f.contactInfo ?? {}), phone: e.target.value },
-                                            }))
+                                            setForm((f) => ({ ...f, contactInfo: { ...(f.contactInfo ?? {}), phone: e.target.value } }))
                                         }
                                     />
                                 </Field>
@@ -371,25 +325,16 @@ export function AddEmployeeDialog({
                                         className="h-10"
                                         type="number"
                                         value={String(form.salary ?? "")}
-                                        onChange={(e) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                salary: e.target.value ? Number(e.target.value) : undefined,
-                                            }))
-                                        }
+                                        onChange={(e) => setForm((f) => ({ ...f, salary: e.target.value ? Number(e.target.value) : undefined }))}
                                     />
                                 </Field>
+
                                 <Field label="Currency" error={errors.salaryCurrency}>
                                     <Input
                                         placeholder="e.g., BDT"
                                         className="h-10"
                                         value={form.salaryCurrency ?? ""}
-                                        onChange={(e) =>
-                                            setForm((f) => ({
-                                                ...f,
-                                                salaryCurrency: e.target.value || undefined,
-                                            }))
-                                        }
+                                        onChange={(e) => setForm((f) => ({ ...f, salaryCurrency: e.target.value || undefined }))}
                                     />
                                 </Field>
 
@@ -398,9 +343,7 @@ export function AddEmployeeDialog({
                                         className="h-10"
                                         type="date"
                                         value={form.dateOfJoining ?? ""}
-                                        onChange={(e) =>
-                                            setForm((f) => ({ ...f, dateOfJoining: e.target.value || undefined }))
-                                        }
+                                        onChange={(e) => setForm((f) => ({ ...f, dateOfJoining: e.target.value || undefined }))}
                                     />
                                 </Field>
 
@@ -409,9 +352,7 @@ export function AddEmployeeDialog({
                                         className="h-10"
                                         type="date"
                                         value={form.dateOfLeaving ?? ""}
-                                        onChange={(e) =>
-                                            setForm((f) => ({ ...f, dateOfLeaving: e.target.value || undefined }))
-                                        }
+                                        onChange={(e) => setForm((f) => ({ ...f, dateOfLeaving: e.target.value || undefined }))}
                                     />
                                 </Field>
                             </div>
@@ -421,24 +362,15 @@ export function AddEmployeeDialog({
                         <div className="sticky bottom-0 z-10 -mx-6 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-6 py-4">
                             <div className="flex items-center justify-between">
                                 <p className="text-sm text-muted-foreground">
-                                    {Object.keys(errors).length > 0
-                                        ? "Please fix the validation errors above."
-                                        : "Fill all required fields to create employee."}
+                                    {Object.keys(errors).length > 0 ? "Please fix the validation errors above." : "Fill all required fields to create employee."}
                                 </p>
+
                                 <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        className="h-9 px-4"
-                                        onClick={() => onOpenChange(false)}
-                                        disabled={submitting}
-                                    >
+                                    <Button variant="outline" className="h-9 px-4" onClick={() => onOpenChange(false)} disabled={submitting}>
                                         Cancel
                                     </Button>
-                                    <Button
-                                        className="h-9 px-4"
-                                        onClick={submit}
-                                        disabled={submitting}
-                                    >
+
+                                    <Button className="h-9 px-4" onClick={submit} disabled={submitting}>
                                         {submitting ? "Creating..." : "Create"}
                                     </Button>
                                 </div>

@@ -11,7 +11,7 @@ import type {
 import api from "@/utils/api/axios";
 import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
 
-const ROOT_DIR = "/users-management/companies";
+const ROOT_DIR = "/mock/users/companies";
 
 /**
  * Build a stable cache key string from query params.

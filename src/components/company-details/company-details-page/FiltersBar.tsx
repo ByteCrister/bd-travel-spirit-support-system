@@ -1,5 +1,3 @@
-// components/company/FiltersBar.tsx
-
 "use client";
 
 import { Input } from "@/components/ui/input";

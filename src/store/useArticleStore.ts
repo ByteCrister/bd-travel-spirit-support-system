@@ -2,7 +2,6 @@
 import { create } from 'zustand';
 
 import {
-    ARTICLE_STATUS,
     ArticleCacheKey,
     ArticleDashboardStats,
     ArticleDetail,
@@ -32,6 +31,9 @@ import {
 
 import api from '@/utils/api/axios';
 import { extractErrorMessage } from '@/utils/api/extractErrorMessage';
+import { ARTICLE_STATUS } from '@/constants/article.const';
+
+const URL_AFTER_API = "/mock/articles";
 
 // ===== Cache helpers =====
 
@@ -285,7 +287,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
                 params.sortOrder = normalizedReq.sort.order;
             }
 
-            const { data } = await api.get<ArticleListApi>('/articles', { params });
+            const { data } = await api.get<ArticleListApi>(`${URL_AFTER_API}`, { params });
             if (!data.ok) throw new Error(data.error || 'Failed to load articles');
 
             const response = data.data;
@@ -345,7 +347,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
         set({ loading: { ...state.loading, isLoadingDetail: true }, error: undefined });
 
         try {
-            const { data } = await api.get<ArticleDetailApi>(`/articles/${id}`);
+            const { data } = await api.get<ArticleDetailApi>(`${URL_AFTER_API}/${id}`);
             if (!data.ok) throw new Error(data.error || 'Failed to load article');
 
             const detail = data.data;
@@ -380,7 +382,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
         set({ loading: { ...state.loading, isLoadingStats: true }, error: undefined });
 
         try {
-            const { data } = await api.get<ArticleStatsApi>('/articles/stats');
+            const { data } = await api.get<ArticleStatsApi>(`${URL_AFTER_API}/stats`);
             if (!data.ok) throw new Error(data.error || 'Failed to load stats');
 
             const stats = data.data;
@@ -401,7 +403,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
     // mutations
     createArticle: async (input) => {
         try {
-            const { data } = await api.post<CreateArticleApi>('/articles', input);
+            const { data } = await api.post<CreateArticleApi>(`${URL_AFTER_API}`, input);
             if (!data.ok) throw new Error(data.error || 'Failed to create article');
 
             const created = data.data.article;
@@ -426,7 +428,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
     updateArticle: async (input) => {
         const { id, ...payload } = input;
         try {
-            const { data } = await api.put<UpdateArticleApi>(`/articles/${id}`, payload);
+            const { data } = await api.put<UpdateArticleApi>(`${URL_AFTER_API}/${id}`, payload);
             if (!data.ok) throw new Error(data.error || 'Failed to update article');
 
             const updated = data.data.article;
@@ -458,7 +460,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
         set({ listItems: prevList.filter((a) => a.id !== id) });
 
         try {
-            const { data } = await api.delete<DeleteArticleApi>(`/articles/${id}`);
+            const { data } = await api.delete<DeleteArticleApi>(`${URL_AFTER_API}/${id}`);
             if (!data.ok) throw new Error(data.error || 'Failed to delete article');
 
             // Invalidate caches

@@ -6,9 +6,9 @@ import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
 import { GUIDE_STATUS } from "@/constants/guide.const";
 import { PendingGuideDTO } from "@/types/pendingGuide.types";
 
-const ROOT_DIR = "/users-management/guide";
-const CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_GUIDE_CACHE_TTL ?? 60_000);
+const ROOT_DIR = "/mock/users/guide";
 
+const CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_GUIDE_CACHE_TTL ?? 60_000);
 /* ----------------------------- Types ----------------------------- */
 export type SortByTypes =
     | "createdAt"

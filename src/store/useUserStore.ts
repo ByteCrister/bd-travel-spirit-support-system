@@ -7,9 +7,7 @@ import api from "@/utils/api/axios";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-// -----------------------------
-// Types for segments and states
-// -----------------------------
+const URL_AFTER_API = "/mock/users/traveler";
 
 // All user data is organized into "segments"
 export type SegmentKey =
@@ -188,14 +186,14 @@ function lruTouch(state: UseUserStoreState, userId: string) {
 // API endpoints (without /api prefix)
 // -----------------------------
 const endpoints = {
-    profile: (id: string) => `/users-management/users/${id}`,
-    activity: (id: string) => `/users-management/users/${id}/activity`,
-    roles: (id: string) => `/users-management/users/${id}/roles`,
-    security: (id: string) => `/users-management/users/${id}/security`,
-    notifications: (id: string) => `/users-management/users/${id}/notifications`,
-    audit: (id: string) => `/users-management/users/${id}/audit`,
-    guide: (id: string) => `/users-management/users/${id}/guide`,
-    tours: (id: string) => `/users-management/users/${id}/tours`,
+    profile: (id: string) => `${URL_AFTER_API}/${id}`,
+    activity: (id: string) => `${URL_AFTER_API}/${id}/activity`,
+    roles: (id: string) => `${URL_AFTER_API}/${id}/roles`,
+    security: (id: string) => `${URL_AFTER_API}/${id}/security`,
+    notifications: (id: string) => `${URL_AFTER_API}/${id}/notifications`,
+    audit: (id: string) => `${URL_AFTER_API}/${id}/audit`,
+    guide: (id: string) => `${URL_AFTER_API}/${id}/guide`,
+    tours: (id: string) => `${URL_AFTER_API}/${id}/tours`,
 };
 
 // -----------------------------

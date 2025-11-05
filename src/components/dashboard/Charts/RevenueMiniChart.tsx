@@ -30,7 +30,7 @@ export function RevenueMiniChart({ data, className }: { data: Point[]; className
               <div className="absolute inset-0 border-l border-b border-slate-200 dark:border-slate-800" />
               <div className="flex items-end gap-1 h-36 px-1">
                 {last14.map((d, i) => (
-                  <motion.div key={d.date}
+                  <motion.div key={`${d.date}-${i}`}
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: `${(d.amount / max) * 100}%`, opacity: 1 }}
                     transition={{ delay: i * 0.02 }}

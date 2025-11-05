@@ -1,4 +1,3 @@
-// app/articles/create/ArticleForm.tsx
 'use client';
 
 import { useRouter } from 'next/navigation';

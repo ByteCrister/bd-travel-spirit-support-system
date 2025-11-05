@@ -34,7 +34,8 @@ export function BookingsLineChart({ data, className }: { data: Point[]; classNam
               <div className="absolute inset-0 border-l border-b border-slate-200 dark:border-slate-800" />
               <div className="grid grid-cols-14 gap-2 items-end h-48 px-1">
                 {last14.map((d, i) => (
-                  <motion.div key={d.date}
+                  <motion.div
+                    key={`${d.date}-${i}`}
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: `${(d.count / max) * 100}%`, opacity: 1 }}
                     transition={{ delay: i * 0.03 }}

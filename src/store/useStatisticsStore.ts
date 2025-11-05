@@ -6,22 +6,24 @@ import {
     Preset,
     SectionKey,
     StatisticsState,
+    DateRange,
+    KpiMetrics,
+    UsersStats,
+    ToursStats,
+    ReviewsStats,
+    ReportsStats,
+    ImagesStats,
+    NotificationsStats,
+    ChatStats,
+    EmployeesStats,
 } from '@/types/statistics.types';
-import {
-    fetchChatStats,
-    fetchEmployeesStats,
-    fetchImagesStats,
-    fetchKpis,
-    fetchNotificationsStats,
-    fetchReportsStats,
-    fetchReviewsStats,
-    fetchToursStats,
-    fetchUsersStats,
-} from '@/utils/api/statisticsApi';
+import api from '@/utils/api/axios';
+import { extractErrorMessage } from '@/utils/api/extractErrorMessage';
+
+const URL_AFTER_API = "/mock/statistics";
 
 /**
- * Combined store type:
- * Includes state and all actions that can update it
+ * Combined store type: state + actions
  */
 type StatisticsStore = StatisticsState & {
     setDateRange: (from: Date | null, to: Date | null) => void;
@@ -31,9 +33,18 @@ type StatisticsStore = StatisticsState & {
     clearError: (sectionKey: SectionKey) => void;
 };
 
-/**
- * Default initial state for the store
- */
+type SectionResponse =
+    | KpiMetrics
+    | UsersStats
+    | ToursStats
+    | ReviewsStats
+    | ReportsStats
+    | ImagesStats
+    | NotificationsStats
+    | ChatStats
+    | EmployeesStats;
+
+/* Default initial state */
 const initialState: StatisticsState = {
     filters: {
         dateRange: { from: null, to: null },
@@ -74,20 +85,28 @@ const initialState: StatisticsState = {
     },
 };
 
-/**
- * Main Zustand store
- * - All state, actions, and API calls are inside the store
- * - Persist only the filters (with timestamps for stable storage)
- */
+/* Helper: call the backend endpoints that follow the Next.js App Router API shape.
+   These endpoints are expected to be available under `${NEXT_PUBLIC_DOMAIN}/api/statistics/*`
+   Example routes used below:
+     GET /api/statistics/kpis?from=...&to=...
+     GET /api/statistics/users?from=...&to=...
+   Each handler returns a JSON payload matching the corresponding TypeScript shape.
+*/
+async function fetchSection<T extends SectionResponse>(path: string, range: DateRange): Promise<T> {
+    const params: Record<string, string | undefined> = {};
+    if (range.from) params.from = range.from.toISOString();
+    if (range.to) params.to = range.to.toISOString();
+
+    const resp = await api.get<T>(`${URL_AFTER_API}/${path}`, { params });
+    return resp.data;
+}
+
 export const useStatisticsStore = create<StatisticsStore>()(
     persist(
         (set, get) => ({
             ...initialState,
 
-            /**
-             * Set a custom date range
-             */
-            setDateRange: (from, to) => {
+            setDateRange: (from: Date | null, to: Date | null) => {
                 set((state) => ({
                     filters: {
                         ...state.filters,
@@ -97,10 +116,7 @@ export const useStatisticsStore = create<StatisticsStore>()(
                 }));
             },
 
-            /**
-             * Set a predefined date preset (LAST_7, LAST_30, YTD)
-             */
-            setPreset: (preset) => {
+            setPreset: (preset: Preset) => {
                 const now = new Date();
                 let from: Date | null = null;
                 const to: Date = now;
@@ -116,44 +132,81 @@ export const useStatisticsStore = create<StatisticsStore>()(
                         from = new Date(now.getFullYear(), 0, 1);
                         break;
                     case 'CUSTOM':
-                        return; // Do not change existing dateRange
+                        return;
                 }
 
                 set((state) => ({
                     filters: { ...state.filters, dateRange: { from, to }, preset },
                 }));
-                // Automatically refresh all data when preset changes
+
+                // fire-and-forget refresh all (keeps UI responsive)
                 get().refreshAll();
             },
 
-            /**
-             * Refresh all sections concurrently
-             */
             refreshAll: async () => {
                 const { filters } = get();
                 const sections: SectionKey[] = [
-                    'kpis', 'users', 'tours', 'reviews', 'reports',
-                    'images', 'notifications', 'chat', 'employees',
+                    'kpis',
+                    'users',
+                    'tours',
+                    'reviews',
+                    'reports',
+                    'images',
+                    'notifications',
+                    'chat',
+                    'employees',
                 ];
 
-                // Set loading = true for all
+                // mark all loading
                 set((state) => ({
-                    loading: sections.reduce((acc, key) => ({ ...acc, [key]: true }), state.loading),
+                    loading: sections.reduce(
+                        (acc, key) => ({ ...acc, [key]: true }),
+                        state.loading
+                    ),
                 }));
 
                 const promises = sections.map(async (sectionKey) => {
                     try {
-                        let data;
+                        let data:
+                            | KpiMetrics
+                            | UsersStats
+                            | ToursStats
+                            | ReviewsStats
+                            | ReportsStats
+                            | ImagesStats
+                            | NotificationsStats
+                            | ChatStats
+                            | EmployeesStats
+                            | null = null;
+
                         switch (sectionKey) {
-                            case 'kpis': data = await fetchKpis(filters.dateRange); break;
-                            case 'users': data = await fetchUsersStats(filters.dateRange); break;
-                            case 'tours': data = await fetchToursStats(filters.dateRange); break;
-                            case 'reviews': data = await fetchReviewsStats(filters.dateRange); break;
-                            case 'reports': data = await fetchReportsStats(filters.dateRange); break;
-                            case 'images': data = await fetchImagesStats(filters.dateRange); break;
-                            case 'notifications': data = await fetchNotificationsStats(filters.dateRange); break;
-                            case 'chat': data = await fetchChatStats(filters.dateRange); break;
-                            case 'employees': data = await fetchEmployeesStats(filters.dateRange); break;
+                            case 'kpis':
+                                data = await fetchSection<KpiMetrics>('kpis', filters.dateRange);
+                                break;
+                            case 'users':
+                                data = await fetchSection<UsersStats>('users', filters.dateRange);
+                                break;
+                            case 'tours':
+                                data = await fetchSection<ToursStats>('tours', filters.dateRange);
+                                break;
+                            case 'reviews':
+                                data = await fetchSection<ReviewsStats>('reviews', filters.dateRange);
+                                break;
+                            case 'reports':
+                                data = await fetchSection<ReportsStats>('reports', filters.dateRange);
+                                break;
+                            case 'images':
+                                data = await fetchSection<ImagesStats>('images', filters.dateRange);
+                                break;
+                            case 'notifications':
+                                data = await fetchSection<NotificationsStats>('notifications', filters.dateRange);
+                                break;
+                            case 'chat':
+                                data = await fetchSection<ChatStats>('chat', filters.dateRange);
+                                break;
+                            case 'employees':
+                                data = await fetchSection<EmployeesStats>('employees', filters.dateRange);
+                                break;
                         }
 
                         set((state) => ({
@@ -161,10 +214,11 @@ export const useStatisticsStore = create<StatisticsStore>()(
                             loading: { ...state.loading, [sectionKey]: false },
                             error: { ...state.error, [sectionKey]: null },
                         }));
-                    } catch (error) {
+                    } catch (err) {
+                        const message = extractErrorMessage(err);
                         set((state) => ({
                             loading: { ...state.loading, [sectionKey]: false },
-                            error: { ...state.error, [sectionKey]: (error as Error).message },
+                            error: { ...state.error, [sectionKey]: message },
                         }));
                     }
                 });
@@ -172,10 +226,7 @@ export const useStatisticsStore = create<StatisticsStore>()(
                 await Promise.allSettled(promises);
             },
 
-            /**
-             * Refresh a single section
-             */
-            refreshSection: async (sectionKey) => {
+            refreshSection: async (sectionKey: SectionKey) => {
                 const { filters } = get();
 
                 set((state) => ({
@@ -184,43 +235,69 @@ export const useStatisticsStore = create<StatisticsStore>()(
                 }));
 
                 try {
-                    let data;
+                    let data:
+                        | KpiMetrics
+                        | UsersStats
+                        | ToursStats
+                        | ReviewsStats
+                        | ReportsStats
+                        | ImagesStats
+                        | NotificationsStats
+                        | ChatStats
+                        | EmployeesStats
+                        | null = null;
+
                     switch (sectionKey) {
-                        case 'kpis': data = await fetchKpis(filters.dateRange); break;
-                        case 'users': data = await fetchUsersStats(filters.dateRange); break;
-                        case 'tours': data = await fetchToursStats(filters.dateRange); break;
-                        case 'reviews': data = await fetchReviewsStats(filters.dateRange); break;
-                        case 'reports': data = await fetchReportsStats(filters.dateRange); break;
-                        case 'images': data = await fetchImagesStats(filters.dateRange); break;
-                        case 'notifications': data = await fetchNotificationsStats(filters.dateRange); break;
-                        case 'chat': data = await fetchChatStats(filters.dateRange); break;
-                        case 'employees': data = await fetchEmployeesStats(filters.dateRange); break;
+                        case 'kpis':
+                            data = await fetchSection<KpiMetrics>('kpis', filters.dateRange);
+                            break;
+                        case 'users':
+                            data = await fetchSection<UsersStats>('users', filters.dateRange);
+                            break;
+                        case 'tours':
+                            data = await fetchSection<ToursStats>('tours', filters.dateRange);
+                            break;
+                        case 'reviews':
+                            data = await fetchSection<ReviewsStats>('reviews', filters.dateRange);
+                            break;
+                        case 'reports':
+                            data = await fetchSection<ReportsStats>('reports', filters.dateRange);
+                            break;
+                        case 'images':
+                            data = await fetchSection<ImagesStats>('images', filters.dateRange);
+                            break;
+                        case 'notifications':
+                            data = await fetchSection<NotificationsStats>('notifications', filters.dateRange);
+                            break;
+                        case 'chat':
+                            data = await fetchSection<ChatStats>('chat', filters.dateRange);
+                            break;
+                        case 'employees':
+                            data = await fetchSection<EmployeesStats>('employees', filters.dateRange);
+                            break;
                     }
 
                     set((state) => ({
                         data: { ...state.data, [sectionKey]: data },
                         loading: { ...state.loading, [sectionKey]: false },
                     }));
-                } catch (error) {
+                } catch (err) {
+                    const message = extractErrorMessage(err);
                     set((state) => ({
                         loading: { ...state.loading, [sectionKey]: false },
-                        error: { ...state.error, [sectionKey]: (error as Error).message },
+                        error: { ...state.error, [sectionKey]: message },
                     }));
                 }
             },
 
-            /**
-             * Clear error for a specific section
-             */
-            clearError: (sectionKey) => {
+            clearError: (sectionKey: SectionKey) => {
                 set((state) => ({
                     error: { ...state.error, [sectionKey]: null },
                 }));
             },
         }),
-        // Persist configuration
         {
-            name: "statistics-store",
+            name: 'statistics-store',
             partialize: (state) => ({
                 filters: {
                     preset: state.filters.preset,
@@ -230,10 +307,11 @@ export const useStatisticsStore = create<StatisticsStore>()(
                 },
             }),
             onRehydrateStorage: () => (state) => {
-                // Ensure dateRange always exists
+                // Ensure dateRange always exists and rehydrate Date objects
                 if (!state?.filters?.dateRange) {
                     state!.filters.dateRange = { from: null, to: null };
                 }
+
                 if (state?.filters?.dateRange?.from) {
                     state.filters.dateRange.from = new Date(state.filters.dateRange.from);
                 }

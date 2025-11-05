@@ -1,4 +1,3 @@
-// components/article-comments/Thread.tsx
 'use client';
 
 import { memo } from 'react';

@@ -16,10 +16,6 @@ const breadcrumbItems = [
     { label: "Companies", href: "/companies" },
 ];
 
-/**
- * CompanyPage page: Admin dashboard for managing organizer companies.
- * Integrates with useCompanyStore for query params, data, loading, and errors.
- */
 export default function CompanyPage() {
     const {
         params,
@@ -31,7 +27,6 @@ export default function CompanyPage() {
         clearError,
     } = useCompanyStore();
 
-    // Fetch on mount and whenever params change (cache-aware in store).
     useEffect(() => {
         fetchCompanies();
         // eslint-disable-next-line react-hooks/exhaustive-deps

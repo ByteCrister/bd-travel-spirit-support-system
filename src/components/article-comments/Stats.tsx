@@ -1,5 +1,3 @@
-
-// components/article-comments/Stats.tsx
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

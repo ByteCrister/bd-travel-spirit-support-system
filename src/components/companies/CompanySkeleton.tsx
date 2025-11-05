@@ -11,10 +11,6 @@ import {
 } from '@/components/ui/table';
 import { motion } from 'framer-motion';
 
-/**
- * CompanySkeleton: Loading state for the companies table.
- * Uses shadcn Skeleton with a subtle shimmer and animated table mount.
- */
 export function CompanySkeleton() {
     const rows = Array.from({ length: 8 });
 

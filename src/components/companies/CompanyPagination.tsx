@@ -16,10 +16,6 @@ export interface CompanyPaginationProps {
     pages: number;
 }
 
-/**
- * CompanyPagination: Advanced pagination controls with first/last page navigation.
- * Animates page number transitions via framer-motion.
- */
 export const CompanyPagination = memo(function CompanyPagination({
     page,
     pages,

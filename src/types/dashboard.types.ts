@@ -1,8 +1,9 @@
-// Central dashboard types for state, data models, and analytics
+// src/types/dashboard.types.ts
+// Production-ready types for dashboard domain
+
 
 export type UserRole = 'admin' | 'support';
 
-// Aggregate KPIs shown in stats cards
 export interface DashboardStats {
   totalUsers: number;
   totalOrganizers: number;
@@ -12,34 +13,47 @@ export interface DashboardStats {
   totalBookings: number;
   pendingReports: number;
   suspendedUsers: number;
-  totalRevenue?: number; // Admin only
-  topDestinationTrends?: string[]; // Admin only
+  totalRevenue?: number;
+  topDestinationTrends?: string[];
+  // metadata
+  lastUpdated?: string; // ISO date on server
 }
 
-// Activity feed entries
+export type RecentActivityType = 'signup' | 'booking' | 'report' | 'tour' | 'user_action';
+export type Severity = 'low' | 'medium' | 'high';
+
 export interface RecentActivity {
   id: string;
-  type: 'signup' | 'booking' | 'report' | 'tour' | 'user_action';
+  type: RecentActivityType;
   title: string;
   description: string;
-  timestamp: string;
+  timestamp: string; // ISO
   user?: string;
-  severity?: 'low' | 'medium' | 'high';
+  severity?: Severity;
 }
 
-// Items requiring attention on the right column
+export type PendingActionType =
+  | 'report'
+  | 'complaint'
+  | 'flagged_content'
+  | 'organizer_approval'
+  | 'tour_approval';
+
+export type PendingActionPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type PendingActionStatus = 'pending' | 'in_progress' | 'resolved';
+
 export interface PendingAction {
   id: string;
-  type: 'report' | 'complaint' | 'flagged_content' | 'organizer_approval' | 'tour_approval';
+  type: PendingActionType;
   title: string;
   description: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  priority: PendingActionPriority;
   createdAt: string;
   assignedTo?: string;
-  status: 'pending' | 'in_progress' | 'resolved';
+  status: PendingActionStatus;
+  metadata?: Record<string, unknown>;
 }
 
-// Recent bookings list
 export interface Booking {
   id: string;
   user: { id: string; name: string; email: string };
@@ -49,15 +63,14 @@ export interface Booking {
   amount: number;
 }
 
-// Distribution of user roles for chart
 export interface RoleDistribution {
   travelers: number;
   organizers: number;
   support: number;
   banned: number;
+  lastUpdated?: string;
 }
 
-// Internal announcements
 export interface Announcement {
   id: string;
   title: string;
@@ -68,7 +81,6 @@ export interface Announcement {
   isActive: boolean;
 }
 
-// Admin/support notifications
 export interface AdminNotification {
   id: string;
   type: 'report' | 'ticket' | 'flagged_user' | 'system_alert' | 'revenue_issue' | 'approval_pending';
@@ -78,44 +90,63 @@ export interface AdminNotification {
   createdAt: string;
   isRead: boolean;
   actionRequired: boolean;
+  meta?: Record<string, unknown>;
 }
 
-// Time-series analytics for charts
+export interface AnalyticsPoint<T = number> {
+  date: string;
+  value: T;
+  meta?: Record<string, unknown>;
+}
+
 export interface AnalyticsData {
   bookingsOverTime: Array<{ date: string; count: number; revenue?: number }>;
   travelersOverTime: Array<{ date: string; count: number }>;
   guidesOverTime: Array<{ date: string; count: number }>;
   revenueOverTime: Array<{ date: string; amount: number }>;
   reportsOverTime: Array<{ date: string; count: number }>;
+  generatedAt?: string;
 }
 
-// System health snapshot
+export type ServerHealthLevel = 'healthy' | 'warning' | 'critical';
+export type LogLevel = 'error' | 'warning' | 'info';
+
 export interface SystemHealth {
-  serverStatus: 'healthy' | 'warning' | 'critical';
+  serverStatus: ServerHealthLevel;
   databaseConnections: number;
   activeCronJobs: number;
   lastBackup: string;
-  errorLogs: Array<{ id: string; level: 'error' | 'warning' | 'info'; message: string; timestamp: string }>;
+  errorLogs: Array<{ id: string; level: LogLevel; message: string; timestamp: string }>;
+  checkedAt?: string;
 }
 
-// Trends and insights for admins
+export type TrendingType = 'destination' | 'category' | 'tour_type';
+export type TrendDirection = 'up' | 'down' | 'stable';
+
 export interface TrendingInsight {
   id: string;
-  type: 'destination' | 'category' | 'tour_type';
+  type: TrendingType;
   title: string;
   description: string;
-  trend: 'up' | 'down' | 'stable';
+  trend: TrendDirection;
   percentage: number;
   confidence: number; // 0..1
+  generatedAt?: string;
 }
 
-// Query filters for analytics and lists
 export interface DashboardFilters {
   dateRange: { start: string; end: string };
   userRole?: string;
   bookingStatus?: string;
   reportStatus?: string;
   searchQuery?: string;
+  page?: number;
+  limit?: number;
 }
 
-
+// Generic API envelope for consistent responses
+export interface ApiEnvelope<T> {
+  data: T | null;
+  error?: string | null;
+  meta?: Record<string, unknown>;
+}

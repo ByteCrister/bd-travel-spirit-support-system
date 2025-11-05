@@ -9,7 +9,7 @@ import { GetTourReviewsResponse, ReviewListItemDTO, ReviewSummaryDTO } from "@/t
 import { GetTourReportsResponse, TourReportListItemDTO } from "@/types/report.tour.response.types";
 import { GetTourFaqsResponse, TourFAQDTO } from "@/types/faqs.types";
 
-const ROOT_DIR = "/users-management/companies";
+const URL_AFTER_API = "/mock/users/companies";
 
 // --------------------
 // Types
@@ -172,7 +172,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
 
                     set((state) => ({ loading: { ...state.loading, company: true } }));
                     try {
-                        const res = await api.get<CompanyOverviewResponse>(`${ROOT_DIR}/${companyId}`);
+                        const res = await api.get<CompanyOverviewResponse>(`${URL_AFTER_API}/${companyId}`);
                         set((state) => ({
                             companies: { ...state.companies, [companyId]: res.data.data },
                             loading: { ...state.loading, company: false },
@@ -211,7 +211,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
 
                     set((state) => ({ loading: { ...state.loading, tours: true } }));
                     try {
-                        const res = await api.get<ApiResponse>(`${ROOT_DIR}/${companyId}/tours`, { params });
+                        const res = await api.get<ApiResponse>(`${URL_AFTER_API}/${companyId}/tours`, { params });
                         const list: ListCache<TourListItemDTO> = {
                             items: res.data.data.docs as TourListItemDTO[],
                             total: res.data.data.total,
@@ -265,7 +265,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
 
                     set((state) => ({ loading: { ...state.loading, employees: true } }));
                     try {
-                        const res = await api.get<ApiResponse>(`${ROOT_DIR}/${companyId}/employees`, { params });
+                        const res = await api.get<ApiResponse>(`${URL_AFTER_API}/${companyId}/employees`, { params });
                         const list: ListCache<EmployeeListItemDTO> = {
                             items: res.data.data.docs as EmployeeListItemDTO[],
                             page: res.data.data.page,
@@ -314,7 +314,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                     }));
 
                     try {
-                        const res = await api.get<{ data: TourDetailDTO }>(`${ROOT_DIR}/${companyId}/tours/${tourId}`);
+                        const res = await api.get<{ data: TourDetailDTO }>(`${URL_AFTER_API}/${companyId}/tours/${tourId}`);
                         set((state) => ({
                             tourDetails: { ...state.tourDetails, [tourId]: res.data.data },
                             loading: { ...state.loading, [loadingKey]: false },
@@ -342,7 +342,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                     }));
 
                     try {
-                        const res = await api.get<{ data: EmployeeDetailDTO }>(`${ROOT_DIR}/${companyId}/employees/${employeeId}`);
+                        const res = await api.get<{ data: EmployeeDetailDTO }>(`${URL_AFTER_API}/${companyId}/employees/${employeeId}`);
                         set((state) => ({
                             employeeDetails: { ...state.employeeDetails, [employeeId]: res.data.data },
                             loading: { ...state.loading, [loadingKey]: false },
@@ -395,7 +395,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
                     }));
 
                     try {
-                        const res = await api.get<GetTourReviewsResponse>(`${ROOT_DIR}/${companyId}/tours/${tourId}/reviews`, { params });
+                        const res = await api.get<GetTourReviewsResponse>(`${URL_AFTER_API}/${companyId}/tours/${tourId}/reviews`, { params });
 
                         const list: ListCache<ReviewListItemDTO> = {
                             items: res.data.data.docs,
@@ -474,7 +474,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
 
                     try {
                         const res = await api.get<GetTourReportsResponse>(
-                            `${ROOT_DIR}/${companyId}/tours/${tourId}/reports`,
+                            `${URL_AFTER_API}/${companyId}/tours/${tourId}/reports`,
                             { params }
                         );
 
@@ -551,7 +551,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
 
                     try {
                         const res = await api.get<GetTourFaqsResponse>(
-                            `${ROOT_DIR}/${companyId}/tours/${tourId}/faqs`,
+                            `${URL_AFTER_API}/${companyId}/tours/${tourId}/faqs`,
                             { params }
                         );
 

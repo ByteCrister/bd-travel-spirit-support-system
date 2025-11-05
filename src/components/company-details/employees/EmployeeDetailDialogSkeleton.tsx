@@ -1,4 +1,3 @@
-// components/company/EmployeeDetailDialogSkeleton.tsx
 "use client";
 
 import { motion } from "framer-motion";

@@ -1,4 +1,3 @@
-// components/article-comments/CommentItem.tsx
 'use client';
 
 import { memo, useState } from 'react';

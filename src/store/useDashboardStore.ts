@@ -1,5 +1,8 @@
+'use client';
+
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+
 import {
   UserRole,
   DashboardStats,
@@ -13,52 +16,46 @@ import {
   SystemHealth,
   TrendingInsight,
   DashboardFilters,
+  ApiEnvelope,
 } from '@/types/dashboard.types';
 
-// ===== TYPES & INTERFACES =====
+import api from '@/utils/api/axios';
+import { extractErrorMessage } from '@/utils/api/extractErrorMessage';
 
-// moved type definitions to '@/types/dashboard.types'
+const URL_AFTER_API = '/mock/dashboard';
 
-// ===== STORE STATE =====
+// TTL for client cache in ms
+const DEFAULT_TTL = Number(process.env.NEXT_PUBLIC_GUIDE_CACHE_TTL) || 30 * 1000; // 30s fallback
+
+type LoadingKey =
+  | 'stats'
+  | 'recentActivity'
+  | 'pendingActions'
+  | 'recentBookings'
+  | 'roleDistribution'
+  | 'announcements'
+  | 'adminNotifications'
+  | 'analytics'
+  | 'systemHealth'
+  | 'trendingInsights';
+
+type ErrorKey = LoadingKey;
+
+interface CacheEntry<T> {
+  data: T | null;
+  lastFetched: number | null;
+  ttl: number;
+}
 
 interface DashboardState {
-  // User context
-  currentUser: {
-    id: string;
-    name: string;
-    email: string;
-    role: UserRole;
-  } | null;
+  // context
+  currentUser: { id: string; name: string; email: string; role: UserRole } | null;
 
-  // Loading states
-  loading: {
-    stats: boolean;
-    recentActivity: boolean;
-    pendingActions: boolean;
-    recentBookings: boolean;
-    roleDistribution: boolean;
-    announcements: boolean;
-    adminNotifications: boolean;
-    analytics: boolean;
-    systemHealth: boolean;
-    trendingInsights: boolean;
-  };
+  // per-slice loading / errors
+  loading: Record<LoadingKey, boolean>;
+  errors: Record<ErrorKey, string | null>;
 
-  // Error states
-  errors: {
-    stats: string | null;
-    recentActivity: string | null;
-    pendingActions: string | null;
-    recentBookings: string | null;
-    roleDistribution: string | null;
-    announcements: string | null;
-    adminNotifications: string | null;
-    analytics: string | null;
-    systemHealth: string | null;
-    trendingInsights: string | null;
-  };
-
-  // Data slices
+  // data slices
   stats: DashboardStats | null;
   recentActivity: RecentActivity[];
   pendingActions: PendingAction[];
@@ -69,521 +66,582 @@ interface DashboardState {
   analytics: AnalyticsData | null;
   systemHealth: SystemHealth | null;
   trendingInsights: TrendingInsight[];
+
   filters: DashboardFilters;
 
-  // Actions
+  // internal caches and in-flight maps (not persisted)
+  _cache: {
+    stats: CacheEntry<DashboardStats>;
+    recentActivity: CacheEntry<RecentActivity[]>;
+    pendingActions: CacheEntry<PendingAction[]>;
+    recentBookings: CacheEntry<Booking[]>;
+    roleDistribution: CacheEntry<RoleDistribution>;
+    announcements: CacheEntry<Announcement[]>;
+    adminNotifications: CacheEntry<AdminNotification[]>;
+    analytics: CacheEntry<AnalyticsData>;
+    systemHealth: CacheEntry<SystemHealth>;
+    trendingInsights: CacheEntry<TrendingInsight[]>;
+  };
+
+  _inFlight: Partial<Record<string, Promise<unknown>>>;
+
+  // sync actions
   setCurrentUser: (user: DashboardState['currentUser']) => void;
-  setLoading: (key: keyof DashboardState['loading'], value: boolean) => void;
-  setError: (key: keyof DashboardState['errors'], error: string | null) => void;
-  setStats: (stats: DashboardStats) => void;
-  setRecentActivity: (activity: RecentActivity[]) => void;
-  setPendingActions: (actions: PendingAction[]) => void;
-  setRecentBookings: (bookings: Booking[]) => void;
-  setRoleDistribution: (distribution: RoleDistribution) => void;
-  setAnnouncements: (announcements: Announcement[]) => void;
-  setAdminNotifications: (notifications: AdminNotification[]) => void;
-  setAnalytics: (analytics: AnalyticsData) => void;
-  setSystemHealth: (health: SystemHealth) => void;
-  setTrendingInsights: (insights: TrendingInsight[]) => void;
-  updateFilters: (filters: Partial<DashboardFilters>) => void;
+  setLoading: (key: LoadingKey, value: boolean) => void;
+  setError: (key: ErrorKey, error: string | null) => void;
+  updateFilters: (patch: Partial<DashboardFilters>) => void;
   markNotificationAsRead: (notificationId: string) => void;
   markActionAsResolved: (actionId: string) => void;
 
-  // Async actions (with commented API calls)
-  fetchStats: () => Promise<void>;
-  fetchRecentActivity: () => Promise<void>;
-  fetchPendingActions: () => Promise<void>;
-  fetchRecentBookings: () => Promise<void>;
-  fetchRoleDistribution: () => Promise<void>;
-  fetchAnnouncements: () => Promise<void>;
-  fetchAdminNotifications: () => Promise<void>;
-  fetchAnalytics: (filters?: Partial<DashboardFilters>) => Promise<void>;
-  fetchSystemHealth: () => Promise<void>;
-  fetchTrendingInsights: () => Promise<void>;
+  // cache helpers
+  invalidateCache: (key?: keyof DashboardState['_cache']) => void;
+
+  // async fetchers (they handle caching/dedupe)
+  fetchStats: (opts?: { force?: boolean }) => Promise<void>;
+  fetchRecentActivity: (opts?: { force?: boolean; page?: number; limit?: number }) => Promise<void>;
+  fetchPendingActions: (opts?: { force?: boolean }) => Promise<void>;
+  fetchRecentBookings: (opts?: { force?: boolean; page?: number; limit?: number }) => Promise<void>;
+  fetchRoleDistribution: (opts?: { force?: boolean }) => Promise<void>;
+  fetchAnnouncements: (opts?: { force?: boolean }) => Promise<void>;
+  fetchAdminNotifications: (opts?: { force?: boolean }) => Promise<void>;
+  fetchAnalytics: (opts?: { force?: boolean; filters?: Partial<DashboardFilters> }) => Promise<void>;
+  fetchSystemHealth: (opts?: { force?: boolean }) => Promise<void>;
+  fetchTrendingInsights: (opts?: { force?: boolean }) => Promise<void>;
+
+  // orchestrator
   refreshAll: () => Promise<void>;
 }
 
-// ===== INITIAL STATE =====
+const now = () => Date.now();
 
-const initialState = {
-  currentUser: null,
-  loading: {
-    stats: false,
-    recentActivity: false,
-    pendingActions: false,
-    recentBookings: false,
-    roleDistribution: false,
-    announcements: false,
-    adminNotifications: false,
-    analytics: false,
-    systemHealth: false,
-    trendingInsights: false,
-  },
-  errors: {
-    stats: null,
-    recentActivity: null,
-    pendingActions: null,
-    recentBookings: null,
-    roleDistribution: null,
-    announcements: null,
-    adminNotifications: null,
-    analytics: null,
-    systemHealth: null,
-    trendingInsights: null,
-  },
-  stats: null,
-  recentActivity: [],
-  pendingActions: [],
-  recentBookings: [],
-  roleDistribution: null,
-  announcements: [],
-  adminNotifications: [],
-  analytics: null,
-  systemHealth: null,
-  trendingInsights: [],
-  filters: {
-    dateRange: {
-      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      end: new Date().toISOString().split('T')[0],
-    },
-  },
-};
-
-// ===== STORE IMPLEMENTATION =====
+const makeCacheEntry = <T>(data: T | null, ttl = DEFAULT_TTL): CacheEntry<T> => ({
+  data,
+  lastFetched: data ? now() : null,
+  ttl,
+});
 
 export const useDashboardStore = create<DashboardState>()(
-  devtools(
-    (set, get) => ({
-      ...initialState,
+  devtools((set, get) => ({
+    // initial state
+    currentUser: null,
+    loading: {
+      stats: false,
+      recentActivity: false,
+      pendingActions: false,
+      recentBookings: false,
+      roleDistribution: false,
+      announcements: false,
+      adminNotifications: false,
+      analytics: false,
+      systemHealth: false,
+      trendingInsights: false,
+    },
+    errors: {
+      stats: null,
+      recentActivity: null,
+      pendingActions: null,
+      recentBookings: null,
+      roleDistribution: null,
+      announcements: null,
+      adminNotifications: null,
+      analytics: null,
+      systemHealth: null,
+      trendingInsights: null,
+    },
+    stats: null,
+    recentActivity: [],
+    pendingActions: [],
+    recentBookings: [],
+    roleDistribution: null,
+    announcements: [],
+    adminNotifications: [],
+    analytics: null,
+    systemHealth: null,
+    trendingInsights: [],
+    filters: {
+      dateRange: {
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        end: new Date().toISOString().split('T')[0],
+      },
+      page: 1,
+      limit: 10,
+    },
+    _cache: {
+      stats: makeCacheEntry<DashboardStats>(null),
+      recentActivity: makeCacheEntry<RecentActivity[] | null>(null),
+      pendingActions: makeCacheEntry<PendingAction[] | null>(null),
+      recentBookings: makeCacheEntry<Booking[] | null>(null),
+      roleDistribution: makeCacheEntry<RoleDistribution | null>(null),
+      announcements: makeCacheEntry<Announcement[] | null>(null),
+      adminNotifications: makeCacheEntry<AdminNotification[] | null>(null),
+      analytics: makeCacheEntry<AnalyticsData | null>(null),
+      systemHealth: makeCacheEntry<SystemHealth | null>(null),
+      trendingInsights: makeCacheEntry<TrendingInsight[] | null>(null),
+    },
+    _inFlight: {},
 
-      // ===== SYNC ACTIONS =====
-      setCurrentUser: (user) => set({ currentUser: user }),
-      
-      setLoading: (key, value) =>
-        set((state) => ({
-          loading: { ...state.loading, [key]: value },
-        })),
-      
-      setError: (key, error) =>
-        set((state) => ({
-          errors: { ...state.errors, [key]: error },
-        })),
-      
-      setStats: (stats) => set({ stats }),
-      setRecentActivity: (recentActivity) => set({ recentActivity }),
-      setPendingActions: (pendingActions) => set({ pendingActions }),
-      setRecentBookings: (recentBookings) => set({ recentBookings }),
-      setRoleDistribution: (roleDistribution) => set({ roleDistribution }),
-      setAnnouncements: (announcements) => set({ announcements }),
-      setAdminNotifications: (adminNotifications) => set({ adminNotifications }),
-      setAnalytics: (analytics) => set({ analytics }),
-      setSystemHealth: (systemHealth) => set({ systemHealth }),
-      setTrendingInsights: (trendingInsights) => set({ trendingInsights }),
-      
-      updateFilters: (newFilters) =>
-        set((state) => ({
-          filters: { ...state.filters, ...newFilters },
-        })),
-      
-      markNotificationAsRead: (notificationId) =>
-        set((state) => ({
-          adminNotifications: state.adminNotifications.map((notification) =>
-            notification.id === notificationId
-              ? { ...notification, isRead: true }
-              : notification
-          ),
-        })),
-      
-      markActionAsResolved: (actionId) =>
-        set((state) => ({
-          pendingActions: state.pendingActions.map((action) =>
-            action.id === actionId
-              ? { ...action, status: 'resolved' as const }
-              : action
-          ),
-        })),
+    // sync actions
+    setCurrentUser: (user) => set({ currentUser: user }),
+    setLoading: (key, value) =>
+      set((s) => ({ loading: { ...s.loading, [key]: value } })),
+    setError: (key, error) =>
+      set((s) => ({ errors: { ...s.errors, [key]: error } })),
+    updateFilters: (patch) =>
+      set((s) => ({ filters: { ...s.filters, ...patch } })),
+    markNotificationAsRead: (notificationId) =>
+      set((s) => ({
+        adminNotifications: s.adminNotifications.map((n) =>
+          n.id === notificationId ? { ...n, isRead: true } : n
+        ),
+      })),
+    markActionAsResolved: (actionId) =>
+      set((s) => ({
+        pendingActions: s.pendingActions.map((a) =>
+          a.id === actionId ? { ...a, status: 'resolved' } : a
+        ),
+      })),
 
-      // ===== ASYNC ACTIONS =====
-      fetchStats: async () => {
-        set({ loading: { ...get().loading, stats: true }, errors: { ...get().errors, stats: null } });
-        try {
-          // const res = await fetch('/api/dashboard/stats');
-          // const data = await res.json();
-          // set({ stats: data });
-          
-          // Mock data for development
-          const mockStats: DashboardStats = {
-            totalUsers: 1247,
-            totalOrganizers: 89,
-            totalSupportAgents: 12,
-            activeTours: 156,
-            upcomingTours: 23,
-            totalBookings: 3421,
-            pendingReports: 7,
-            suspendedUsers: 3,
-            totalRevenue: 125430,
-            topDestinationTrends: ['Bali', 'Thailand', 'Japan', 'Italy', 'Spain'],
+    invalidateCache: (key) =>
+      set((s) => {
+        if (!key) {
+          const newCache: DashboardState['_cache'] = {
+            stats: makeCacheEntry<DashboardStats>(null),
+            recentActivity: makeCacheEntry<RecentActivity[]>(null),
+            pendingActions: makeCacheEntry<PendingAction[]>(null),
+            recentBookings: makeCacheEntry<Booking[]>(null),
+            roleDistribution: makeCacheEntry<RoleDistribution>(null),
+            announcements: makeCacheEntry<Announcement[]>(null),
+            adminNotifications: makeCacheEntry<AdminNotification[]>(null),
+            analytics: makeCacheEntry<AnalyticsData>(null),
+            systemHealth: makeCacheEntry<SystemHealth>(null),
+            trendingInsights: makeCacheEntry<TrendingInsight[]>(null),
           };
-          set({ stats: mockStats });
-        } catch {
-          set({ errors: { ...get().errors, stats: 'Failed to fetch stats' } });
-        } finally {
-          set({ loading: { ...get().loading, stats: false } });
+          return { _cache: newCache };
         }
-      },
+        return { _cache: { ...s._cache, [key]: makeCacheEntry(null) } };
+      }),
 
-      fetchRecentActivity: async () => {
-        set({ loading: { ...get().loading, recentActivity: true }, errors: { ...get().errors, recentActivity: null } });
+    // fetch helpers rewritten to use async/await + try/catch and set inFlight properly
+    fetchStats: async (opts = { force: false }) => {
+      const key = 'stats';
+      const cache = get()._cache.stats;
+
+      if (!opts.force && cache.data && cache.lastFetched && now() - cache.lastFetched < cache.ttl) {
+        set({ stats: cache.data });
+        return;
+      }
+
+      if (get()._inFlight[key]) {
+        await get()._inFlight[key];
+        return;
+      }
+
+      set((s) => ({ loading: { ...s.loading, stats: true }, errors: { ...s.errors, stats: null } }));
+
+      const promise = (async () => {
         try {
-          // const res = await fetch('/api/dashboard/recent-activity');
-          // const data = await res.json();
-          // set({ recentActivity: data });
-          
-          // Mock data
-          const mockActivity: RecentActivity[] = [
-            {
-              id: '1',
-              type: 'booking',
-              title: 'New Booking',
-              description: 'John Doe booked "Bali Adventure Tour"',
-              timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-              user: 'John Doe',
-              severity: 'low',
-            },
-            {
-              id: '2',
-              type: 'report',
-              title: 'Report Filed',
-              description: 'User reported inappropriate content in tour description',
-              timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-              severity: 'medium',
-            },
-            {
-              id: '3',
-              type: 'signup',
-              title: 'New User Registration',
-              description: 'Sarah Wilson joined as a tour organizer',
-              timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-              user: 'Sarah Wilson',
-              severity: 'low',
-            },
-          ];
-          set({ recentActivity: mockActivity });
-        } catch {
-          set({ errors: { ...get().errors, recentActivity: 'Failed to fetch recent activity' } });
+          const res = await api.get<ApiEnvelope<DashboardStats>>(`${URL_AFTER_API}/stats`);
+          if (res.data.error) throw new Error(res.data.error);
+          const data = res.data.data;
+          console.log(res.data);
+          set((s) => ({ stats: data, _cache: { ...s._cache, stats: makeCacheEntry(data) } }));
+        } catch (err) {
+          const msg = extractErrorMessage(err);
+          set((s) => ({ errors: { ...s.errors, stats: msg } }));
         } finally {
-          set({ loading: { ...get().loading, recentActivity: false } });
+          set((s) => ({ loading: { ...s.loading, stats: false } }));
+          set((s) => {
+            const m = { ...s._inFlight };
+            delete m[key];
+            return { _inFlight: m };
+          });
         }
-      },
+      })();
 
-      fetchPendingActions: async () => {
-        set({ loading: { ...get().loading, pendingActions: true }, errors: { ...get().errors, pendingActions: null } });
+      set((s) => ({ _inFlight: { ...s._inFlight, [key]: promise } }));
+      await promise;
+    },
+
+    fetchRecentActivity: async (opts = { force: false, page: 1, limit: 10 }) => {
+      const key = `recentActivity:${opts.page}:${opts.limit}`;
+      const globalCache = get()._cache.recentActivity;
+
+      if (!opts.force && globalCache.data && globalCache.lastFetched && now() - globalCache.lastFetched < globalCache.ttl) {
+        set({ recentActivity: globalCache.data });
+        return;
+      }
+
+      if (get()._inFlight[key]) {
+        await get()._inFlight[key];
+        return;
+      }
+
+      set((s) => ({ loading: { ...s.loading, recentActivity: true }, errors: { ...s.errors, recentActivity: null } }));
+
+      const promise = (async () => {
         try {
-          // const res = await fetch('/api/dashboard/pending-actions');
-          // const data = await res.json();
-          // set({ pendingActions: data });
-          
-          // Mock data
-          const mockActions: PendingAction[] = [
-            {
-              id: '1',
-              type: 'report',
-              title: 'Inappropriate Content Report',
-              description: 'User reported offensive language in tour description',
-              priority: 'high',
-              createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-              status: 'pending',
-            },
-            {
-              id: '2',
-              type: 'organizer_approval',
-              title: 'New Organizer Application',
-              description: 'Mike Johnson applied to become a tour organizer',
-              priority: 'medium',
-              createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-              status: 'pending',
-            },
-          ];
-          set({ pendingActions: mockActions });
-        } catch {
-          set({ errors: { ...get().errors, pendingActions: 'Failed to fetch pending actions' } });
+          const res = await api.get<ApiEnvelope<RecentActivity[]>>(`${URL_AFTER_API}/recent-activity`, {
+            params: { page: opts.page, limit: opts.limit },
+          });
+          if (res.data.error) throw new Error(res.data.error);
+          const data = res.data.data || [];
+          set((s) => ({ recentActivity: data, _cache: { ...s._cache, recentActivity: makeCacheEntry(data) } }));
+        } catch (err) {
+          const msg = extractErrorMessage(err);
+          set((s) => ({ errors: { ...s.errors, recentActivity: msg } }));
         } finally {
-          set({ loading: { ...get().loading, pendingActions: false } });
+          set((s) => ({ loading: { ...s.loading, recentActivity: false } }));
+          set((s) => {
+            const m = { ...s._inFlight };
+            delete m[key];
+            return { _inFlight: m };
+          });
         }
-      },
+      })();
 
-      fetchRecentBookings: async () => {
-        set({ loading: { ...get().loading, recentBookings: true }, errors: { ...get().errors, recentBookings: null } });
+      set((s) => ({ _inFlight: { ...s._inFlight, [key]: promise } }));
+      await promise;
+    },
+
+    fetchPendingActions: async (opts = { force: false }) => {
+      const key = 'pendingActions';
+      const cache = get()._cache.pendingActions;
+
+      if (!opts.force && cache.data && cache.lastFetched && now() - cache.lastFetched < cache.ttl) {
+        set({ pendingActions: cache.data });
+        return;
+      }
+
+      if (get()._inFlight[key]) {
+        await get()._inFlight[key];
+        return;
+      }
+
+      set((s) => ({ loading: { ...s.loading, pendingActions: true }, errors: { ...s.errors, pendingActions: null } }));
+
+      const promise = (async () => {
         try {
-          // const res = await fetch('/api/dashboard/recent-bookings');
-          // const data = await res.json();
-          // set({ recentBookings: data });
-          
-          // Mock data
-          const mockBookings: Booking[] = [
-            {
-              id: '1',
-              user: { id: '1', name: 'John Doe', email: 'john@example.com' },
-              tour: { id: '1', title: 'Bali Adventure Tour', destination: 'Bali, Indonesia' },
-              bookingDate: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-              status: 'confirmed',
-              amount: 1200,
-            },
-            {
-              id: '2',
-              user: { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
-              tour: { id: '2', title: 'Thailand Cultural Experience', destination: 'Bangkok, Thailand' },
-              bookingDate: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-              status: 'pending',
-              amount: 950,
-            },
-          ];
-          set({ recentBookings: mockBookings });
-        } catch {
-          set({ errors: { ...get().errors, recentBookings: 'Failed to fetch recent bookings' } });
+          const res = await api.get<ApiEnvelope<PendingAction[]>>(`${URL_AFTER_API}/pending-actions`);
+          if (res.data.error) throw new Error(res.data.error);
+          const data = res.data.data || [];
+          set((s) => ({ pendingActions: data, _cache: { ...s._cache, pendingActions: makeCacheEntry(data) } }));
+        } catch (err) {
+          const msg = extractErrorMessage(err);
+          set((s) => ({ errors: { ...s.errors, pendingActions: msg } }));
         } finally {
-          set({ loading: { ...get().loading, recentBookings: false } });
+          set((s) => ({ loading: { ...s.loading, pendingActions: false } }));
+          set((s) => {
+            const m = { ...s._inFlight };
+            delete m[key];
+            return { _inFlight: m };
+          });
         }
-      },
+      })();
 
-      fetchRoleDistribution: async () => {
-        set({ loading: { ...get().loading, roleDistribution: true }, errors: { ...get().errors, roleDistribution: null } });
+      set((s) => ({ _inFlight: { ...s._inFlight, [key]: promise } }));
+      await promise;
+    },
+
+    fetchRecentBookings: async (opts = { force: false, page: 1, limit: 10 }) => {
+      const key = `recentBookings:${opts.page}:${opts.limit}`;
+      const cache = get()._cache.recentBookings;
+
+      if (!opts.force && cache.data && cache.lastFetched && now() - cache.lastFetched < cache.ttl) {
+        set({ recentBookings: cache.data });
+        return;
+      }
+
+      if (get()._inFlight[key]) {
+        await get()._inFlight[key];
+        return;
+      }
+
+      set((s) => ({ loading: { ...s.loading, recentBookings: true }, errors: { ...s.errors, recentBookings: null } }));
+
+      const promise = (async () => {
         try {
-          // const res = await fetch('/api/dashboard/role-distribution');
-          // const data = await res.json();
-          // set({ roleDistribution: data });
-          
-          // Mock data
-          const mockDistribution: RoleDistribution = {
-            travelers: 1150,
-            organizers: 89,
-            support: 12,
-            banned: 3,
-          };
-          set({ roleDistribution: mockDistribution });
-        } catch {
-          set({ errors: { ...get().errors, roleDistribution: 'Failed to fetch role distribution' } });
+          const res = await api.get<ApiEnvelope<Booking[]>>(`${URL_AFTER_API}/recent-bookings`, {
+            params: { page: opts.page, limit: opts.limit },
+          });
+          if (res.data.error) throw new Error(res.data.error);
+          const data = res.data.data || [];
+          set((s) => ({ recentBookings: data, _cache: { ...s._cache, recentBookings: makeCacheEntry(data) } }));
+        } catch (err) {
+          const msg = extractErrorMessage(err);
+          set((s) => ({ errors: { ...s.errors, recentBookings: msg } }));
         } finally {
-          set({ loading: { ...get().loading, roleDistribution: false } });
+          set((s) => ({ loading: { ...s.loading, recentBookings: false } }));
+          set((s) => {
+            const m = { ...s._inFlight };
+            delete m[key];
+            return { _inFlight: m };
+          });
         }
-      },
+      })();
 
-      fetchAnnouncements: async () => {
-        set({ loading: { ...get().loading, announcements: true }, errors: { ...get().errors, announcements: null } });
+      set((s) => ({ _inFlight: { ...s._inFlight, [key]: promise } }));
+      await promise;
+    },
+
+    fetchRoleDistribution: async (opts = { force: false }) => {
+      const key = 'roleDistribution';
+      const cache = get()._cache.roleDistribution;
+
+      if (!opts.force && cache.data && cache.lastFetched && now() - cache.lastFetched < cache.ttl) {
+        set({ roleDistribution: cache.data });
+        return;
+      }
+
+      if (get()._inFlight[key]) {
+        await get()._inFlight[key];
+        return;
+      }
+
+      set((s) => ({ loading: { ...s.loading, roleDistribution: true }, errors: { ...s.errors, roleDistribution: null } }));
+
+      const promise = (async () => {
         try {
-          // const res = await fetch('/api/dashboard/announcements');
-          // const data = await res.json();
-          // set({ announcements: data });
-          
-          // Mock data
-          const mockAnnouncements: Announcement[] = [
-            {
-              id: '1',
-              title: 'System Maintenance Scheduled',
-              content: 'We will be performing system maintenance on Sunday from 2-4 AM EST.',
-              type: 'info',
-              createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-              createdBy: 'System Admin',
-              isActive: true,
-            },
-            {
-              id: '2',
-              title: 'New Feature Release',
-              content: 'Enhanced booking system with real-time availability updates is now live!',
-              type: 'info',
-              createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-              createdBy: 'Product Team',
-              isActive: true,
-            },
-          ];
-          set({ announcements: mockAnnouncements });
-        } catch {
-          set({ errors: { ...get().errors, announcements: 'Failed to fetch announcements' } });
+          const res = await api.get<ApiEnvelope<RoleDistribution>>(`${URL_AFTER_API}/role-distribution`);
+          if (res.data.error) throw new Error(res.data.error);
+          const data = res.data.data || null;
+          set((s) => ({ roleDistribution: data, _cache: { ...s._cache, roleDistribution: makeCacheEntry(data) } }));
+        } catch (err) {
+          set((s) => ({ errors: { ...s.errors, roleDistribution: extractErrorMessage(err) } }));
         } finally {
-          set({ loading: { ...get().loading, announcements: false } });
+          set((s) => ({ loading: { ...s.loading, roleDistribution: false } }));
+          set((s) => {
+            const m = { ...s._inFlight };
+            delete m[key];
+            return { _inFlight: m };
+          });
         }
-      },
+      })();
 
-      fetchAdminNotifications: async () => {
-        set({ loading: { ...get().loading, adminNotifications: true }, errors: { ...get().errors, adminNotifications: null } });
+      set((s) => ({ _inFlight: { ...s._inFlight, [key]: promise } }));
+      await promise;
+    },
+
+    fetchAnnouncements: async (opts = { force: false }) => {
+      const key = 'announcements';
+      const cache = get()._cache.announcements;
+
+      if (!opts.force && cache.data && cache.lastFetched && now() - cache.lastFetched < cache.ttl) {
+        set({ announcements: cache.data });
+        return;
+      }
+
+      if (get()._inFlight[key]) {
+        await get()._inFlight[key];
+        return;
+      }
+
+      set((s) => ({ loading: { ...s.loading, announcements: true }, errors: { ...s.errors, announcements: null } }));
+
+      const promise = (async () => {
         try {
-          // const res = await fetch('/api/dashboard/admin-notifications');
-          // const data = await res.json();
-          // set({ adminNotifications: data });
-          
-          // Mock data
-          const mockNotifications: AdminNotification[] = [
-            {
-              id: '1',
-              type: 'report',
-              title: 'Content Report',
-              message: 'New inappropriate content report requires review',
-              severity: 'high',
-              createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-              isRead: false,
-              actionRequired: true,
-            },
-            {
-              id: '2',
-              type: 'system_alert',
-              title: 'High Server Load',
-              message: 'Server CPU usage is above 80%',
-              severity: 'medium',
-              createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-              isRead: true,
-              actionRequired: false,
-            },
-          ];
-          set({ adminNotifications: mockNotifications });
-        } catch {
-          set({ errors: { ...get().errors, adminNotifications: 'Failed to fetch admin notifications' } });
+          const res = await api.get<ApiEnvelope<Announcement[]>>(`${URL_AFTER_API}/announcements`);
+          if (res.data.error) throw new Error(res.data.error);
+          const data = res.data.data || [];
+          set((s) => ({ announcements: data, _cache: { ...s._cache, announcements: makeCacheEntry(data) } }));
+        } catch (err) {
+          set((s) => ({ errors: { ...s.errors, announcements: extractErrorMessage(err) } }));
         } finally {
-          set({ loading: { ...get().loading, adminNotifications: false } });
+          set((s) => ({ loading: { ...s.loading, announcements: false } }));
+          set((s) => {
+            const m = { ...s._inFlight };
+            delete m[key];
+            return { _inFlight: m };
+          });
         }
-      },
+      })();
 
-      fetchAnalytics: async () => {
-        set({ loading: { ...get().loading, analytics: true }, errors: { ...get().errors, analytics: null } });
+      set((s) => ({ _inFlight: { ...s._inFlight, [key]: promise } }));
+      await promise;
+    },
+
+    fetchAdminNotifications: async (opts = { force: false }) => {
+      const key = 'adminNotifications';
+      const cache = get()._cache.adminNotifications;
+
+      if (!opts.force && cache.data && cache.lastFetched && now() - cache.lastFetched < cache.ttl) {
+        set({ adminNotifications: cache.data });
+        return;
+      }
+
+      if (get()._inFlight[key]) {
+        await get()._inFlight[key];
+        return;
+      }
+
+      set((s) => ({ loading: { ...s.loading, adminNotifications: true }, errors: { ...s.errors, adminNotifications: null } }));
+
+      const promise = (async () => {
         try {
-          // const res = await fetch('/api/dashboard/analytics', {
-          //   method: 'POST',
-          //   headers: { 'Content-Type': 'application/json' },
-          //   body: JSON.stringify(filters || get().filters),
-          // });
-          // const data = await res.json();
-          // set({ analytics: data });
-          
-          // Mock data
-          const mockAnalytics: AnalyticsData = {
-            bookingsOverTime: Array.from({ length: 30 }, (_, i) => ({
-              date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              count: Math.floor(Math.random() * 50) + 10,
-              revenue: Math.floor(Math.random() * 10000) + 5000,
-            })),
-            travelersOverTime: Array.from({ length: 30 }, (_, i) => ({
-              date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              count: Math.floor(Math.random() * 30) + 10,
-            })),
-            guidesOverTime: Array.from({ length: 30 }, (_, i) => ({
-              date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              count: Math.floor(Math.random() * 12) + 2,
-            })),
-            revenueOverTime: Array.from({ length: 30 }, (_, i) => ({
-              date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              amount: Math.floor(Math.random() * 15000) + 8000,
-            })),
-            reportsOverTime: Array.from({ length: 30 }, (_, i) => ({
-              date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              count: Math.floor(Math.random() * 10) + 1,
-            })),
-          };
-          set({ analytics: mockAnalytics });
-        } catch {
-          set({ errors: { ...get().errors, analytics: 'Failed to fetch analytics' } });
+          const res = await api.get<ApiEnvelope<AdminNotification[]>>(`${URL_AFTER_API}/admin-notifications`);
+          if (res.data.error) throw new Error(res.data.error);
+          const data = res.data.data || [];
+          set((s) => ({ adminNotifications: data, _cache: { ...s._cache, adminNotifications: makeCacheEntry(data) } }));
+        } catch (err) {
+          set((s) => ({ errors: { ...s.errors, adminNotifications: extractErrorMessage(err) } }));
         } finally {
-          set({ loading: { ...get().loading, analytics: false } });
+          set((s) => ({ loading: { ...s.loading, adminNotifications: false } }));
+          set((s) => {
+            const m = { ...s._inFlight };
+            delete m[key];
+            return { _inFlight: m };
+          });
         }
-      },
+      })();
 
-      fetchSystemHealth: async () => {
-        set({ loading: { ...get().loading, systemHealth: true }, errors: { ...get().errors, systemHealth: null } });
+      set((s) => ({ _inFlight: { ...s._inFlight, [key]: promise } }));
+      await promise;
+    },
+
+    fetchAnalytics: async (opts = { force: false, filters: undefined }) => {
+      const key = 'analytics';
+      const cache = get()._cache.analytics;
+
+      const filters = opts.filters ?? get().filters;
+      const shouldUseCache =
+        !opts.force &&
+        cache.data &&
+        cache.lastFetched &&
+        now() - cache.lastFetched < cache.ttl &&
+        (!opts.filters || JSON.stringify(filters) === JSON.stringify(get().filters));
+
+      if (shouldUseCache) {
+        set({ analytics: cache.data });
+        return;
+      }
+
+      if (get()._inFlight[key]) {
+        await get()._inFlight[key];
+        return;
+      }
+
+      set((s) => ({ loading: { ...s.loading, analytics: true }, errors: { ...s.errors, analytics: null } }));
+
+      const promise = (async () => {
         try {
-          // const res = await fetch('/api/dashboard/system-health');
-          // const data = await res.json();
-          // set({ systemHealth: data });
-          
-          // Mock data
-          const mockSystemHealth: SystemHealth = {
-            serverStatus: 'healthy',
-            databaseConnections: 45,
-            activeCronJobs: 8,
-            lastBackup: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-            errorLogs: [
-              {
-                id: '1',
-                level: 'warning',
-                message: 'High memory usage detected',
-                timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-              },
-              {
-                id: '2',
-                level: 'info',
-                message: 'Scheduled backup completed successfully',
-                timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-              },
-            ],
-          };
-          set({ systemHealth: mockSystemHealth });
-        } catch {
-          set({ errors: { ...get().errors, systemHealth: 'Failed to fetch system health' } });
+          const res = await api.post<ApiEnvelope<AnalyticsData>>(`${URL_AFTER_API}/analytics`, filters);
+          if (res.data.error) throw new Error(res.data.error);
+          const data = res.data.data || null;
+          set((s) => ({ analytics: data, _cache: { ...s._cache, analytics: makeCacheEntry(data) } }));
+        } catch (err) {
+          set((s) => ({ errors: { ...s.errors, analytics: extractErrorMessage(err) } }));
         } finally {
-          set({ loading: { ...get().loading, systemHealth: false } });
+          set((s) => ({ loading: { ...s.loading, analytics: false } }));
+          set((s) => {
+            const m = { ...s._inFlight };
+            delete m[key];
+            return { _inFlight: m };
+          });
         }
-      },
+      })();
 
-      fetchTrendingInsights: async () => {
-        set({ loading: { ...get().loading, trendingInsights: true }, errors: { ...get().errors, trendingInsights: null } });
+      set((s) => ({ _inFlight: { ...s._inFlight, [key]: promise } }));
+      await promise;
+    },
+
+    fetchSystemHealth: async (opts = { force: false }) => {
+      const key = 'systemHealth';
+      const cache = get()._cache.systemHealth;
+
+      if (!opts.force && cache.data && cache.lastFetched && now() - cache.lastFetched < cache.ttl) {
+        set({ systemHealth: cache.data });
+        return;
+      }
+
+      if (get()._inFlight[key]) {
+        await get()._inFlight[key];
+        return;
+      }
+
+      set((s) => ({ loading: { ...s.loading, systemHealth: true }, errors: { ...s.errors, systemHealth: null } }));
+
+      const promise = (async () => {
         try {
-          // const res = await fetch('/api/dashboard/trending-insights');
-          // const data = await res.json();
-          // set({ trendingInsights: data });
-          
-          // Mock data
-          const mockInsights: TrendingInsight[] = [
-            {
-              id: '1',
-              type: 'destination',
-              title: 'Bali Tourism Surge',
-              description: 'Bali bookings increased by 45% this month',
-              trend: 'up',
-              percentage: 45,
-              confidence: 0.92,
-            },
-            {
-              id: '2',
-              type: 'category',
-              title: 'Adventure Tours Decline',
-              description: 'Adventure tour bookings decreased by 12%',
-              trend: 'down',
-              percentage: 12,
-              confidence: 0.78,
-            },
-          ];
-          set({ trendingInsights: mockInsights });
-        } catch {
-          set({ errors: { ...get().errors, trendingInsights: 'Failed to fetch trending insights' } });
+          const res = await api.get<ApiEnvelope<SystemHealth>>(`${URL_AFTER_API}/system-health`);
+          if (res.data.error) throw new Error(res.data.error);
+          const data = res.data.data || null;
+          set((s) => ({ systemHealth: data, _cache: { ...s._cache, systemHealth: makeCacheEntry(data) } }));
+        } catch (err) {
+          set((s) => ({ errors: { ...s.errors, systemHealth: extractErrorMessage(err) } }));
         } finally {
-          set({ loading: { ...get().loading, trendingInsights: false } });
+          set((s) => ({ loading: { ...s.loading, systemHealth: false } }));
+          set((s) => {
+            const m = { ...s._inFlight };
+            delete m[key];
+            return { _inFlight: m };
+          });
         }
-      },
+      })();
 
-      refreshAll: async () => {
-        const { fetchStats, fetchRecentActivity, fetchPendingActions, fetchRecentBookings, fetchAnnouncements, fetchAdminNotifications } = get();
-        const { currentUser } = get();
-        
+      set((s) => ({ _inFlight: { ...s._inFlight, [key]: promise } }));
+      await promise;
+    },
+
+    fetchTrendingInsights: async (opts = { force: false }) => {
+      const key = 'trendingInsights';
+      const cache = get()._cache.trendingInsights;
+
+      if (!opts.force && cache.data && cache.lastFetched && now() - cache.lastFetched < cache.ttl) {
+        set({ trendingInsights: cache.data });
+        return;
+      }
+
+      if (get()._inFlight[key]) {
+        await get()._inFlight[key];
+        return;
+      }
+
+      set((s) => ({ loading: { ...s.loading, trendingInsights: true }, errors: { ...s.errors, trendingInsights: null } }));
+
+      const promise = (async () => {
+        try {
+          const res = await api.get<ApiEnvelope<TrendingInsight[]>>(`${URL_AFTER_API}/trending-insights`);
+          if (res.data.error) throw new Error(res.data.error);
+          const data = res.data.data || [];
+          set((s) => ({ trendingInsights: data, _cache: { ...s._cache, trendingInsights: makeCacheEntry(data) } }));
+        } catch (err) {
+          set((s) => ({ errors: { ...s.errors, trendingInsights: extractErrorMessage(err) } }));
+        } finally {
+          set((s) => ({ loading: { ...s.loading, trendingInsights: false } }));
+          set((s) => {
+            const m = { ...s._inFlight };
+            delete m[key];
+            return { _inFlight: m };
+          });
+        }
+      })();
+
+      set((s) => ({ _inFlight: { ...s._inFlight, [key]: promise } }));
+      await promise;
+    },
+
+    // orchestrator
+    refreshAll: async () => {
+      const { currentUser } = get();
+
+      // Always fetch non-admin slices first in parallel
+      await Promise.all([
+        get().fetchStats({ force: true }),
+        get().fetchRecentActivity({ force: true, page: get().filters.page ?? 1, limit: get().filters.limit ?? 10 }),
+        get().fetchPendingActions({ force: true }),
+        get().fetchRecentBookings({ force: true, page: get().filters.page ?? 1, limit: get().filters.limit ?? 10 }),
+        get().fetchAnnouncements({ force: true }),
+        get().fetchAdminNotifications({ force: true }),
+      ]);
+
+      // Admin-only additional fetches
+      if (currentUser?.role === 'admin') {
         await Promise.all([
-          fetchStats(),
-          fetchRecentActivity(),
-          fetchPendingActions(),
-          fetchRecentBookings(),
-          fetchAnnouncements(),
-          fetchAdminNotifications(),
+          get().fetchRoleDistribution({ force: true }),
+          get().fetchAnalytics({ force: true, filters: get().filters }),
+          get().fetchSystemHealth({ force: true }),
+          get().fetchTrendingInsights({ force: true }),
         ]);
-
-        // Admin-only data
-        if (currentUser?.role === 'admin') {
-          const { fetchRoleDistribution, fetchAnalytics, fetchSystemHealth, fetchTrendingInsights } = get();
-          await Promise.all([
-            fetchRoleDistribution(),
-            fetchAnalytics(),
-            fetchSystemHealth(),
-            fetchTrendingInsights(),
-          ]);
-        }
-      },
-    }),
-    {
-      name: 'dashboard-store',
-    }
-  )
+      }
+    },
+  }))
 );

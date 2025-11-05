@@ -37,7 +37,7 @@ export function UsersAreaChart({ travelers, guides, className }: { travelers: Po
               <div className="absolute inset-0 border-l border-b border-slate-200 dark:border-slate-800" />
               <div className="grid grid-cols-14 gap-2 items-end h-48 px-1">
                 {series.map((s, i) => (
-                  <div key={s.date} className="relative h-full flex flex-col justify-end">
+                  <div key={`${s.date}-${i}`} className="relative h-full flex flex-col justify-end">
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: `${(s.travelers / max) * 100}%`, opacity: 1 }}

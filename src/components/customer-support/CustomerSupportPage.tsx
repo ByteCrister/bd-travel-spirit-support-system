@@ -1,4 +1,3 @@
-// components/customer-support/CustomerSupportPage.tsx
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';

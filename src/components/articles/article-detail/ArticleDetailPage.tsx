@@ -1,4 +1,3 @@
-// app/articles/[articleId]/page.tsx
 'use client';
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react';

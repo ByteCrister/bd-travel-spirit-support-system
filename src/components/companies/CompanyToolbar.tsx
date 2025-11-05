@@ -15,10 +15,6 @@ import { Button } from '@/components/ui/button';
 import type { CompanySortBy, SortDir } from '@/types/company.types';
 import { useCompanyStore } from '@/store/useCompanyStore';
 
-/**
- * CompanyToolbar: Search, sort, direction toggle, and page size controls.
- * Debounces search to reduce unnecessary fetches. Animates in with framer-motion.
- */
 export function CompanyToolbar() {
     const {
         params,
@@ -29,7 +25,6 @@ export function CompanyToolbar() {
 
     const [searchLocal, setSearchLocal] = useState<string>(params.search ?? '');
 
-    // Debounce search input updates to store
     useEffect(() => {
         const handle = setTimeout(() => {
             if (searchLocal !== params.search) {

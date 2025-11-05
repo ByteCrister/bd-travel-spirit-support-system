@@ -1,4 +1,3 @@
-// components/ui/RichTextEditor.tsx
 'use client';
 
 import { useState } from 'react';

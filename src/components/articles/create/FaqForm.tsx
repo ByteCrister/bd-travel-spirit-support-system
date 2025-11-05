@@ -1,4 +1,3 @@
-// components/forms/FaqForm.tsx
 'use client';
 
 import { FieldArray, FormikErrors, FormikTouched, FormikHelpers } from 'formik';

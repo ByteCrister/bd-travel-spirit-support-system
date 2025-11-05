@@ -1,4 +1,3 @@
-// components/article-comments/Row.tsx
 'use client';
 
 import { AdminArticleRowVM } from '@/types/article-comment.types';

@@ -1,4 +1,3 @@
-// components/articles/ContentSection.tsx
 'use client';
 
 import React, { useState } from 'react';

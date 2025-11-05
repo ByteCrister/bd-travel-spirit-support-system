@@ -1,9 +1,13 @@
+// src/types/statistics.types.ts
+
 export type DateRange = {
     from: Date | null;
     to: Date | null;
 };
 
 export type Preset = "LAST_7" | "LAST_30" | "YTD" | "CUSTOM";
+
+/* Basic reusable shapes */
 
 export interface TimeSeriesPoint {
     date: string;
@@ -24,6 +28,7 @@ export interface RankingItem {
     change?: number;
 }
 
+/* KPI metrics that the UI expects */
 export interface KpiMetrics {
     totalUsers: number;
     totalTours: number;
@@ -35,6 +40,7 @@ export interface KpiMetrics {
     activeEmployees: number;
 }
 
+/* Section-specific response shapes */
 export interface UsersStats {
     signupsOverTime: TimeSeriesPoint[];
     statusDistribution: CategoryCount[];
@@ -107,6 +113,8 @@ export interface EmployeesStats {
     };
 }
 
+/* Store shapes */
+
 export interface StatisticsFilters {
     dateRange: DateRange;
     preset: Preset;
@@ -149,4 +157,5 @@ export interface StatisticsState {
     };
 }
 
-export type SectionKey = keyof StatisticsState['data'];
+/* Keys used to address sections in the store */
+export type SectionKey = keyof StatisticsState["data"];

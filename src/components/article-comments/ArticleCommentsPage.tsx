@@ -1,7 +1,5 @@
 'use client';
 
-'use client';
-
 import { useEffect } from 'react';
 import { Stats } from '@/components/article-comments/Stats';
 import { Toolbar } from '@/components/article-comments/Toolbar';

@@ -1,4 +1,3 @@
-// app/companies/[companyId]/CompanyOverviewPage.tsx
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";

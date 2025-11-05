@@ -1,4 +1,3 @@
-// components/ui/TagInput.tsx
 'use client';
 
 import { useState } from 'react';

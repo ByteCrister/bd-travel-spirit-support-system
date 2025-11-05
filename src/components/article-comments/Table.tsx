@@ -1,4 +1,3 @@
-// components/article-comments/Table.tsx
 'use client';
 
 import { memo, useMemo, useRef, useState } from 'react';

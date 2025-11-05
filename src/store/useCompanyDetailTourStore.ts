@@ -6,7 +6,7 @@ import { ReviewDetailDTO } from "@/types/review.types";
 import { ReportDetailDTO } from "@/types/report.types";
 import { TourDetailDTO } from "@/types/tour.types";
 
-const ROOT_DIR = "/users-management/companies";
+const ROOT_DIR = "/mock/users/companies";
 
 type SortOrder = "asc" | "desc";
 interface PaginationParams {

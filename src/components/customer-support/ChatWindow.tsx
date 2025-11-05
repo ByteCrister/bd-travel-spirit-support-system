@@ -1,4 +1,3 @@
-// components/customer-support/ChatWindow.tsx
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';

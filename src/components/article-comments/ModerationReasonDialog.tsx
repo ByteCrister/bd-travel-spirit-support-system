@@ -1,4 +1,3 @@
-// components/article-comments/ModerationReasonDialog.tsx
 'use client';
 
 import { useState } from 'react';

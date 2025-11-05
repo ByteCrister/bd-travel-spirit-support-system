@@ -21,10 +21,6 @@ export interface CompanyTableProps {
     rows: CompanyRowDTO[];
 }
 
-/**
- * CompanyTable: Renders the companies list with rich, accessible columns.
- * Adds subtle hover scale animation using framer-motion.
- */
 export const CompanyTable = memo(function CompanyTable({
     rows,
 }: CompanyTableProps) {

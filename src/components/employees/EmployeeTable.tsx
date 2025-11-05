@@ -1,4 +1,3 @@
-// components/employees/EmployeeTable.tsx
 "use client";
 
 import React from "react";

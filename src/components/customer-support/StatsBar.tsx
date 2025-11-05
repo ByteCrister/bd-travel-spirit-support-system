@@ -1,5 +1,3 @@
-
-// components/customer-support/StatsBar.tsx
 'use client';
 
 import { Card } from '@/components/ui/card';

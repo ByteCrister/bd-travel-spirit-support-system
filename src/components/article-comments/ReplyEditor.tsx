@@ -1,4 +1,3 @@
-// components/article-comments/ReplyEditor.tsx
 'use client';
 
 import { useState, useRef, useEffect } from 'react';

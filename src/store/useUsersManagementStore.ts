@@ -8,9 +8,7 @@ import axios from "axios";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 
-// -----------------------------
-// Types
-// -----------------------------
+const URL_AFTER_API = "/mock/users";
 
 // API response for /users endpoint
 export interface UsersApiResponse {
@@ -184,7 +182,7 @@ export const useUserManagementStore = create<useUserManagementStoreState>()(
                     }
 
                     try {
-                        const resp = await api.get<UsersApiResponse>("/users-management", {
+                        const resp = await api.get<UsersApiResponse>(`${URL_AFTER_API}`, {
                             params: query,
                             signal: abortController.signal,
                         });
@@ -249,7 +247,7 @@ export const useUserManagementStore = create<useUserManagementStoreState>()(
                     }
 
                     try {
-                        await api.patch(`/users-management/${id}`, patch);
+                        await api.patch(`${URL_AFTER_API}/${id}`, patch);
                         return get().selectedUser ?? null;
                     } catch (err) {
                         get().invalidateCache((k) => modifiedKeys.includes(k));
@@ -268,7 +266,7 @@ export const useUserManagementStore = create<useUserManagementStoreState>()(
                         userActionLoading: { ...s.userActionLoading, [id]: true },
                     }));
                     try {
-                        await api.post(`/users-management/${id}/verify`);
+                        await api.post(`${URL_AFTER_API}/${id}/verify`);
                         await get().patchUserOptimistic(id, { isVerified: true });
                         return true;
                     } catch (err) {
@@ -289,7 +287,7 @@ export const useUserManagementStore = create<useUserManagementStoreState>()(
                         userActionLoading: { ...s.userActionLoading, [id]: true },
                     }));
                     try {
-                        await api.post(`/users-management/${id}/upgrade`);
+                        await api.post(`${URL_AFTER_API}/${id}/upgrade`);
                         await get().patchUserOptimistic(id, { role: USER_ROLE.GUIDE });
                         return true;
                     } catch (err) {
@@ -310,7 +308,7 @@ export const useUserManagementStore = create<useUserManagementStoreState>()(
                         userActionLoading: { ...s.userActionLoading, [id]: true },
                     }));
                     try {
-                        await api.post(`/users-management/${id}/reset-password`);
+                        await api.post(`${URL_AFTER_API}/${id}/reset-password`);
                         return true;
                     } catch (err) {
                         set({ actionError: err instanceof Error ? err.message : "Reset password failed" });
@@ -330,7 +328,7 @@ export const useUserManagementStore = create<useUserManagementStoreState>()(
                         userActionLoading: { ...s.userActionLoading, [id]: true },
                     }));
                     try {
-                        await api.delete(`/users-management/${id}`);
+                        await api.delete(`${URL_AFTER_API}/${id}`);
                         get().invalidateCache((k) => {
                             const v = get()._cache.get(k);
                             return !!v?.payload.data.some((r) => r._id === id);
@@ -382,7 +380,7 @@ export const useUserManagementStore = create<useUserManagementStoreState>()(
             }),
 
             {
-                name: "users-management-store",
+                name: "users-store",
                 partialize: (state) => {
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     const { _cache, _abortController, ...rest } = state;

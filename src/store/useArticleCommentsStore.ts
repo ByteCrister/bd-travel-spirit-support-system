@@ -33,7 +33,7 @@ import {
 import api from '@/utils/api/axios';
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
 
-const ROOT_DIRECTORY = '/articles/comments';
+const URL_AFTER_API = '/mock/articles/comments';
 
 /**
  * Map Axios errors into a normalized ApiErrorDTO for consistent UI handling.
@@ -330,7 +330,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                         inFlight: new Set([...s.inFlight, inflightKey]),
                     }));
                     try {
-                        const { data } = await api.get<CommentAdminStatsDTO>(`${ROOT_DIRECTORY}/stats`);
+                        const { data } = await api.get<CommentAdminStatsDTO>(`${URL_AFTER_API}/stats`);
                         set((s) => {
                             const nextInFlight = new Set(s.inFlight);
                             nextInFlight.delete(inflightKey);
@@ -512,7 +512,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                             const pageSize = rangeSize;
 
                             const { data } = await api.get<ArticleCommentSummaryListResponseDTO>(
-                                `${ROOT_DIRECTORY}/articles`,
+                                `${URL_AFTER_API}/articles`,
                                 {
                                     params: {
                                         page,
@@ -619,7 +619,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                     try {
                         const { data } = await api.get<CommentThreadSegmentDTO>(
-                            `${ROOT_DIRECTORY}/${articleId}/root`,
+                            `${URL_AFTER_API}/${articleId}/root`,
                             {
                                 params: {
                                     pageSize,
@@ -694,7 +694,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                     try {
                         const { data } = await api.get<CommentThreadSegmentDTO>(
-                            `${ROOT_DIRECTORY}/${articleId}/children/${parentId}`,
+                            `${URL_AFTER_API}/${articleId}/children/${parentId}`,
                             {
                                 params: {
                                     pageSize,
@@ -763,7 +763,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                     try {
                         const { data } = await api.get<LoadMoreCommentsResponseDTO>(
-                            `${ROOT_DIRECTORY}/${req.articleId}/segment`,
+                            `${URL_AFTER_API}/${req.articleId}/segment`,
                             { params: req }
                         );
 
@@ -824,7 +824,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                  * Inserts the created node at the beginning of the relevant thread.
                  */
                 createReply: async (payload) => {
-                    const { data } = await api.post<CreateCommentResponseDTO>(`${ROOT_DIRECTORY}/reply`, payload);
+                    const { data } = await api.post<CreateCommentResponseDTO>(`${URL_AFTER_API}/reply`, payload);
                     const threadKey = get().threadKeyOf(payload.articleId, payload.parentId ?? null);
 
                     set((s) => {
@@ -888,7 +888,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     });
 
                     try {
-                        const { data } = await api.post<ToggleLikeResponseDTO>(`${ROOT_DIRECTORY}/like`, payload);
+                        const { data } = await api.post<ToggleLikeResponseDTO>(`${URL_AFTER_API}/like`, payload);
                         // Reconcile server likes count
                         set((s) => {
                             const nextCache = { ...s.threadCache };
@@ -946,7 +946,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                     try {
                         const { data } = await api.post<UpdateCommentStatusResponseDTO>(
-                            `${ROOT_DIRECTORY}/status`,
+                            `${URL_AFTER_API}/status`,
                             payload
                         );
                         // Reconcile replaced node from server

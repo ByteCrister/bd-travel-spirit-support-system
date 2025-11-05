@@ -1,10 +1,4 @@
 // stores/useEmployeeStore.ts
-// Purpose: Production-grade, type-safe zustand store for /employees admin.
-// Design:
-// - In-memory TTL cache for list/detail and meta endpoints.
-// - Per-item loading states for responsive UX.
-// - Strict ApiResult handling and consistent error propagation.
-// - Persist only minimal UI state; keep cache in memory for correctness.
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
