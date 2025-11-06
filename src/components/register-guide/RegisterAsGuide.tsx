@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useRegisterGuideStore } from '@/store/useRegisterGuideStore'
+import { useRegisterGuideStore } from '@/store/guide-registration.store'
 import { Stepper } from '@/components/register-guide/Stepper'
 import { StepPersonalInfo } from '@/components/register-guide/StepPersonalInfo'
 import { StepCompanyDetails } from '@/components/register-guide/StepCompanyDetails'

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import imageCompression from 'browser-image-compression'
-import { DocumentFile, SegmentedDocuments, useRegisterGuideStore } from '@/store/useRegisterGuideStore'
+import { DocumentFile, SegmentedDocuments, useRegisterGuideStore } from '@/store/guide-registration.store'
 import { validateFile } from '@/utils/validators/registerAsGuide.validator'
 import { FileText, Image } from 'lucide-react'
 

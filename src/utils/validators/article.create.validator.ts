@@ -30,7 +30,7 @@ const attractionSchema = Yup.object({
     insiderTip: Yup.string().nullable(),
     address: Yup.string().nullable(),
     openingHours: Yup.string().nullable(),
-    images: Yup.array().of(Yup.string().url()).default([]),
+    images: Yup.array().of(Yup.string().url().nullable()).default([]),
     coordinates: Yup.object({
         lat: Yup.number().required(),
         lng: Yup.number().required(),

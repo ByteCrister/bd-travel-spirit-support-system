@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
 import {
     EmployeeListItemDTO,
-    EmployeeTableColumns,
+    EmployeeTableColumn,
     sortableEmployeeFields,
 } from "@/types/employee.types";
 import {
@@ -56,7 +56,7 @@ function generateFakeEmployee(): EmployeeListItemDTO {
 
 // --- Helper to get sort value ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sortFieldResolvers: Record<EmployeeTableColumns, (e: EmployeeListItemDTO) => any> = {
+const sortFieldResolvers: Record<EmployeeTableColumn, (e: EmployeeListItemDTO) => any> = {
     "user.name": (e) => e.user.name,
     "user.email": (e) => e.user.email,
     subRole: (e) => e.subRole,
@@ -73,7 +73,7 @@ const sortFieldResolvers: Record<EmployeeTableColumns, (e: EmployeeListItemDTO) 
 
 function getSortValue(
     employee: EmployeeListItemDTO,
-    field: EmployeeTableColumns
+    field: EmployeeTableColumn
 ): string | number {
     const value = sortFieldResolvers[field](employee);
     if (["dateOfJoining", "dateOfLeaving", "createdAt", "updatedAt"].includes(field))
@@ -90,7 +90,7 @@ export async function GET(
     const page = Number(searchParams.get("page") || 1);
     const limit = Number(searchParams.get("limit") || 10);
     let sort = (searchParams.get("sort") ||
-        "createdAt") as EmployeeTableColumns | "createdAt" | "updatedAt";
+        "createdAt") as EmployeeTableColumn | "createdAt" | "updatedAt";
     const order = (searchParams.get("order") as "asc" | "desc") || "desc";
     const search = searchParams.get("search")?.toLowerCase() || "";
 
@@ -129,7 +129,7 @@ export async function GET(
     const pagedEmployees = employees.slice(start, end);
 
     return NextResponse.json({
-        companyId: params.companyId,
+        companyId: (await params).companyId,
         data: {
             docs: pagedEmployees,
             total,

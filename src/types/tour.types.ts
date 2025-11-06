@@ -1,3 +1,4 @@
+// tour.types.ts
 import {
     DIFFICULTY_LEVEL,
     TOUR_STATUS,

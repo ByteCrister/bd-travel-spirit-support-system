@@ -5,10 +5,30 @@ export type DateRange = {
     to: Date | null;
 };
 
-export type Preset = "LAST_7" | "LAST_30" | "YTD" | "CUSTOM";
+/* Preset enum and exported type alias for backwards compatibility */
+export enum PresetEnum {
+    LAST_7 = 'LAST_7',
+    LAST_30 = 'LAST_30',
+    YTD = 'YTD',
+    CUSTOM = 'CUSTOM',
+}
+export type Preset = PresetEnum;
+
+/* Section enum (string values match data keys) */
+export enum SectionKeyEnum {
+    KPIS = 'kpis',
+    USERS = 'users',
+    TOURS = 'tours',
+    REVIEWS = 'reviews',
+    REPORTS = 'reports',
+    IMAGES = 'images',
+    NOTIFICATIONS = 'notifications',
+    CHAT = 'chat',
+    EMPLOYEES = 'employees',
+}
+export type SectionKey = SectionKeyEnum;
 
 /* Basic reusable shapes */
-
 export interface TimeSeriesPoint {
     date: string;
     value: number;
@@ -114,7 +134,6 @@ export interface EmployeesStats {
 }
 
 /* Store shapes */
-
 export interface StatisticsFilters {
     dateRange: DateRange;
     preset: Preset;
@@ -122,40 +141,29 @@ export interface StatisticsFilters {
 
 export interface StatisticsState {
     filters: StatisticsFilters;
-    loading: {
-        kpis: boolean;
-        users: boolean;
-        tours: boolean;
-        reviews: boolean;
-        reports: boolean;
-        images: boolean;
-        notifications: boolean;
-        chat: boolean;
-        employees: boolean;
-    };
-    error: {
-        kpis: string | null;
-        users: string | null;
-        tours: string | null;
-        reviews: string | null;
-        reports: string | null;
-        images: string | null;
-        notifications: string | null;
-        chat: string | null;
-        employees: string | null;
-    };
+    loading: Record<SectionKey, boolean>;
+    error: Record<SectionKey, string | null>;
     data: {
-        kpis: KpiMetrics | null;
-        users: UsersStats | null;
-        tours: ToursStats | null;
-        reviews: ReviewsStats | null;
-        reports: ReportsStats | null;
-        images: ImagesStats | null;
-        notifications: NotificationsStats | null;
-        chat: ChatStats | null;
-        employees: EmployeesStats | null;
+        [SectionKeyEnum.KPIS]: KpiMetrics | null;
+        [SectionKeyEnum.USERS]: UsersStats | null;
+        [SectionKeyEnum.TOURS]: ToursStats | null;
+        [SectionKeyEnum.REVIEWS]: ReviewsStats | null;
+        [SectionKeyEnum.REPORTS]: ReportsStats | null;
+        [SectionKeyEnum.IMAGES]: ImagesStats | null;
+        [SectionKeyEnum.NOTIFICATIONS]: NotificationsStats | null;
+        [SectionKeyEnum.CHAT]: ChatStats | null;
+        [SectionKeyEnum.EMPLOYEES]: EmployeesStats | null;
     };
 }
 
-/* Keys used to address sections in the store */
-export type SectionKey = keyof StatisticsState["data"];
+/* Union of section response shapes (convenience) */
+export type SectionResponse =
+    | KpiMetrics
+    | UsersStats
+    | ToursStats
+    | ReviewsStats
+    | ReportsStats
+    | ImagesStats
+    | NotificationsStats
+    | ChatStats
+    | EmployeesStats;

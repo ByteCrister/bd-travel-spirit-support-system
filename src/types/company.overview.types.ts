@@ -1,5 +1,4 @@
 // company.overview.types.ts
-// DTOs for the overview page: /companies/[companyId]
 // Tables: Tours, Employees, Reports, Reviews + KPI cards.
 
 /**

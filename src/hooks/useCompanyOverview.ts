@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { TourListItemDTO, SortableTourKeys } from "@/types/tour.types";
 import { EmployeeListItemDTO } from "@/types/employee.types";
-import { useCompanyDetailStore } from "@/store/useCompanyDetailStore";
+import { useCompanyDetailStore } from "@/store/company-detail.store";
 
 export type TabKey = "tours" | "employees";
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
-import { DashboardProvider } from "@/components/provider/DashboardProvider";
+import { DashboardProvider } from "@/components/wrappers/DashboardProvider";
 
 import { Inter, Poppins } from "next/font/google";
 

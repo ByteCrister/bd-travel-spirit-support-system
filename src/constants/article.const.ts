@@ -1,3 +1,5 @@
+// article.store.ts
+
 // Utility type to extract enum values
 type EnumValues<T> = T[keyof T];
 

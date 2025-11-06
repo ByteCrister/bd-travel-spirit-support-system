@@ -78,7 +78,7 @@ function generateFAQ(id: string) {
     };
 }
 
-// 🧑‍💼 Realistic face generator
+// Realistic face generator
 function generateHost() {
     const gender = faker.helpers.arrayElement(["men", "women"]);
     const id = faker.number.int({ min: 1, max: 99 }); // avatar index for pravatar
@@ -112,7 +112,7 @@ export async function GET(
     );
 
     const tour: TourDetailDTO = {
-        id: params.tourId,
+        id: (await params).tourId,
         title: faker.lorem.words(4),
         slug: faker.lorem.slug(),
         status: randomEnum(Object.values(TOUR_STATUS)),

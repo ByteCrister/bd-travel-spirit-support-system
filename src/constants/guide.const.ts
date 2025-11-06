@@ -1,11 +1,4 @@
-/** ============================================================
- * GUIDE CONSTANTS
- * ------------------------------------------------------------
- * These enums define the fixed values used throughout the
- * guide (tour organizer) application and verification process.
- * Keeping them centralized ensures consistency across both
- * backend (Mongoose models) and frontend (Next.js DTOs).
- * ============================================================ */
+// /constants/guide.const.ts
 // Utility type to extract enum values
 type EnumValues<T> = T[keyof T];
 /**

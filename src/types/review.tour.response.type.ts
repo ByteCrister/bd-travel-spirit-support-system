@@ -1,4 +1,4 @@
-// src/types/review/tour.response.type.ts
+// review.tour.response.type.ts
 
 import { TRAVEL_TYPE } from "@/constants/tour.const";
 

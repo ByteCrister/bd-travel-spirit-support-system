@@ -1,4 +1,4 @@
-import { FormData } from '../store/useRegisterGuideStore'
+import { FormData } from '../store/guide-registration.store'
 
 export interface GuideApplicationPayload {
   role: 'guide'

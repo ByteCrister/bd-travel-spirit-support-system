@@ -5,7 +5,7 @@ import { ZodError } from "zod";
 import {
     CompanyDetails,
     useRegisterGuideStore,
-} from "@/store/useRegisterGuideStore";
+} from "@/store/guide-registration.store";
 import {
     companyDetailsSchema,
     isValidUrl,
