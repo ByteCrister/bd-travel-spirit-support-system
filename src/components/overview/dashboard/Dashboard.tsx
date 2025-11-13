@@ -30,6 +30,7 @@ import { BookingsLineChart } from "@/components/overview/dashboard/Charts/Bookin
 import { UsersAreaChart } from "@/components/overview/dashboard/Charts/UsersAreaChart";
 import { RevenueMiniChart } from "@/components/overview/dashboard/Charts/RevenueMiniChart";
 import { Breadcrumbs } from "../../global/Breadcrumbs";
+import { USER_ROLE } from "@/constants/user.const";
 
 const breadcrumbItems = [
     { label: "Home", href: '/' },
@@ -252,82 +253,82 @@ export default function Dashboard() {
                 </motion.div>
             )}
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Recent Activity */}
+            {/* Main Content Grid - revised layout (Role distribution + Quick Actions same row) */}
+            <div className="space-y-6">
+                {/* Recent Activity - full width on lg and up */}
+                <div>
                     {loading.recentActivity ? (
                         <ListCardSkeleton title="Recent Activity" rows={6} />
                     ) : (
-                        <RecentActivity
-                            activities={recentActivity}
-                            loading={loading.recentActivity}
-                        />
-                    )}
-
-                    {/* Recent Bookings */}
-                    {loading.recentBookings ? (
-                        <ListCardSkeleton title="Recent Bookings" rows={6} />
-                    ) : (
-                        <RecentBookings
-                            bookings={recentBookings}
-                            loading={loading.recentBookings}
-                        />
-                    )}
-
-                    {/* Admin-only: Role Distribution */}
-                    {isAdmin && (
-                        loading.roleDistribution ? (
-                            <ChartsSkeleton title="Role Distribution" />
-                        ) : (
-                            <RolePieChart
-                                data={roleDistribution}
-                                loading={loading.roleDistribution}
-                            />
-                        )
+                        <RecentActivity activities={recentActivity} loading={loading.recentActivity} />
                     )}
                 </div>
 
-                {/* Right Column */}
-                <div className="space-y-6">
-                    {/* Pending Actions */}
-                    {loading.pendingActions ? (
-                        <ListCardSkeleton title="Pending Actions" rows={5} />
-                    ) : (
-                        <PendingActions
-                            actions={pendingActions}
-                            loading={loading.pendingActions}
-                            onResolve={handleActionResolve}
-                        />
-                    )}
+                {/* Pending Actions + Admin Notifications side-by-side on lg, stacked on mobile */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="w-full box-border overflow-hidden">
+                        {loading.pendingActions ? (
+                            <ListCardSkeleton title="Pending Actions" rows={5} />
+                        ) : (
+                            <PendingActions
+                                className="w-full"
+                                actions={pendingActions}
+                                loading={loading.pendingActions}
+                                onResolve={handleActionResolve}
+                            />
+                        )}
+                    </div>
 
-                    {/* Admin Notifications */}
-                    {loading.adminNotifications ? (
-                        <ListCardSkeleton title="Notifications" rows={5} />
-                    ) : (
-                        <AdminNotifications
-                            notifications={adminNotifications}
-                            loading={loading.adminNotifications}
-                            onMarkAsRead={handleNotificationRead}
-                        />
-                    )}
+                    <div className="w-full box-border overflow-hidden">
+                        {loading.adminNotifications ? (
+                            <ListCardSkeleton title="Notifications" rows={5} />
+                        ) : (
+                            <AdminNotifications
+                                className="w-full"
+                                notifications={adminNotifications}
+                                loading={loading.adminNotifications}
+                                onMarkAsRead={handleNotificationRead}
+                            />
+                        )}
+                    </div>
+                </div>
 
-                    {/* Announcements */}
+                {/* Announcements - full width row */}
+                <div>
                     {loading.announcements ? (
                         <ListCardSkeleton title="Announcements" rows={4} />
                     ) : (
-                        <AnnouncementBoard
-                            announcements={announcements}
-                            loading={loading.announcements}
-                        />
+                        <AnnouncementBoard announcements={announcements} loading={loading.announcements} />
                     )}
+                </div>
 
-                    {/* Quick Actions */}
-                    <QuickActions
-                        userRole={currentUser?.role || 'support'}
-                        onAction={handleQuickAction}
-                    />
+                {/* Recent Bookings (left) + RolePieChart and QuickActions (right) */}
+                <div className="grid grid-cols-1 gap-6">
+                    {/* Left: Recent Bookings spans two columns on lg */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {loading.recentBookings ? (
+                            <ListCardSkeleton title="Recent Bookings" rows={6} />
+                        ) : (
+                            <RecentBookings bookings={recentBookings} loading={loading.recentBookings} />
+                        )}
+                    </div>
+
+                    {/* Right: Role distribution and Quick Actions — stacked on small, split on lg */}
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
+                            <div>
+                                {isAdmin && loading.roleDistribution ? (
+                                    <ChartsSkeleton title="Role Distribution" />
+                                ) : isAdmin ? (
+                                    <RolePieChart data={roleDistribution} loading={loading.roleDistribution} />
+                                ) : null}
+                            </div>
+
+                            <div className="w-full">
+                                <QuickActions userRole={currentUser?.role || USER_ROLE.SUPPORT} onAction={handleQuickAction} />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

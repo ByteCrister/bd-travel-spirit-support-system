@@ -6,7 +6,7 @@ import { GUIDE_STATUS } from "@/constants/guide.const";
 import { PendingGuideDTO } from "@/types/pendingGuide.types";
 
 const URL_AFTER_API = "/mock/users/guides";
-const CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_GUIDE_CACHE_TTL ?? 60_000);
+const CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_CACHE_TTL ?? 60_000);
 
 /* ----------------------------- Types ----------------------------- */
 

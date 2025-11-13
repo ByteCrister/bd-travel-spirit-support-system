@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  FiBell, 
-  FiFlag, 
-  FiAlertTriangle, 
+import {
+  FiBell,
+  FiFlag,
+  FiAlertTriangle,
   FiAlertCircle,
   FiDollarSign,
   FiUser,
@@ -74,13 +74,13 @@ const formatTimeAgo = (timestamp: string) => {
   return `${Math.floor(diffInSeconds / 86400)}d ago`;
 };
 
-export function AdminNotifications({ 
-  notifications, 
-  loading = false, 
-  onMarkAsRead, 
-  onView, 
+export function AdminNotifications({
+  notifications,
+  loading = false,
+  onMarkAsRead,
+  onView,
   onDismiss,
-  className 
+  className
 }: AdminNotificationsProps) {
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const actionRequiredCount = notifications.filter(n => n.actionRequired).length;
@@ -138,7 +138,7 @@ export function AdminNotifications({
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0 lg:pt-0">
-        <ScrollArea className="max-h-[60vh] lg:h-[52vh] xl:h-[54vh] pr-1 w-full">
+        <ScrollArea className="w-full pr-1 max-h-[60vh] lg:max-h-[52vh] xl:max-h-[54vh] overflow-auto">
           <div className="space-y-2 lg:space-y-3">
             {notifications.length === 0 ? (
               <div className="text-center py-8">
@@ -166,7 +166,7 @@ export function AdminNotifications({
                     )}>
                       {getNotificationIcon(notification.type)}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center flex-wrap gap-2 mb-1 lg:mb-1.5">
                         <h4 className="text-sm lg:text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">
@@ -186,11 +186,11 @@ export function AdminNotifications({
                           )}
                         </div>
                       </div>
-                      
+
                       <p className="text-[13px] lg:text-xs text-slate-600 dark:text-slate-400 mb-2">
                         {notification.message}
                       </p>
-                      
+
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 flex-wrap">
                           <FiClock className="h-3 w-3 text-slate-400" />
@@ -198,7 +198,7 @@ export function AdminNotifications({
                             {formatTimeAgo(notification.createdAt)}
                           </span>
                         </div>
-                        
+
                         <div className="flex gap-2 lg:self-start">
                           {onView && (
                             <Button

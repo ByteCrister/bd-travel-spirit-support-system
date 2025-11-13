@@ -88,7 +88,7 @@ interface useTravelerStoreTypes {
 }
 
 /* Helpers */
-const defaultCacheTTL = Number(process.env.NEXT_PUBLIC_GUIDE_CACHE_TTL) || 1000 * 60 * 2; // 2 minutes
+const defaultCacheTTL = Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 1000 * 60 * 2; // 2 minutes
 
 function shallowCloneQuery(q: UsersQuery) {
     const clone = { ...q };

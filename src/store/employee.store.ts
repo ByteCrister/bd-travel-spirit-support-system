@@ -20,7 +20,7 @@ import {
 const URL_AFTER_API = `/mock/users/employees`;
 
 const DEFAULT_TTL_SECONDS =
-    Number.parseInt(process.env.NEXT_PUBLIC_GUIDE_CACHE_TTL || "300", 10) || 300;
+    Number.parseInt(process.env.NEXT_PUBLIC_CACHE_TTL || "300", 10) || 300;
 
 // New knobs
 const DEFAULT_LIST_CACHE_MAX_ITEMS = 500; // max items to keep per canonical query buffer

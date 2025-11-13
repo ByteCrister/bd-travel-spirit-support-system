@@ -25,7 +25,7 @@ import { extractErrorMessage } from '@/utils/api/extractErrorMessage';
 const URL_AFTER_API = '/mock/dashboard';
 
 // TTL for client cache in ms
-const DEFAULT_TTL = Number(process.env.NEXT_PUBLIC_GUIDE_CACHE_TTL) || 30 * 1000; // 30s fallback
+const DEFAULT_TTL = Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 30 * 1000; // 30s fallback
 
 type LoadingKey =
   | 'stats'

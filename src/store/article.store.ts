@@ -35,8 +35,8 @@ const URL_AFTER_API = '/mock/articles';
 
 // TTL: ms
 const DEFAULT_TTL =
-    typeof process !== 'undefined' && process.env.NEXT_PUBLIC_GUIDE_CACHE_TTL
-        ? Number(process.env.NEXT_PUBLIC_GUIDE_CACHE_TTL)
+    typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CACHE_TTL
+        ? Number(process.env.NEXT_PUBLIC_CACHE_TTL)
         : 60_000;
 
 type CacheEntry<T> = { data: T; ts: number };

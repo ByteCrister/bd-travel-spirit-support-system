@@ -16,19 +16,11 @@ import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
 
 const URL_AFTER_API = "/mock/users/companies";
 
-/**
- * Build a stable cache key string from query params.
- * Ensures identical queries always map to the same cache entry.
- */
 export function makeKey(params: Required<CompanyQueryParams>): string {
     const { search, sortBy, sortDir, page, limit } = params;
     return `search=${encodeURIComponent(search)}|sortBy=${sortBy}|sortDir=${sortDir}|page=${page}|limit=${limit}`;
 }
 
-/**
- * Returns a "shallow" key identifying a query ignoring page/limit.
- * Useful to find superset/contiguous pages that share search/sort.
- */
 function makeQueryGroupKey(params: Required<CompanyQueryParams>): string {
     const { search, sortBy, sortDir } = params;
     return `search=${encodeURIComponent(search)}|sortBy=${sortBy}|sortDir=${sortDir}`;
@@ -54,9 +46,7 @@ interface CompanyCacheEntry {
     paramsUsed: Required<CompanyQueryParams>; // original params used to produce this entry
 }
 
-/** Zustand store shape */
 interface CompanyState {
-    // --- State
     params: Required<CompanyQueryParams>; // current query params (persisted)
     cache: Record<string, CompanyCacheEntry>; // cached pages by exact query key
     entities: Record<string, CompanyRowDTO>; // normalized entities by id
@@ -157,7 +147,7 @@ export const useCompanyStore = create<CompanyState>()(
                 const cached = state.cache[key];
 
                 // TTL
-                const TTL_MS = Number(process.env.NEXT_PUBLIC_GUIDE_CACHE_TTL) || 60_000;
+                const TTL_MS = Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 60_000;
 
                 const isFresh = (entry?: CompanyCacheEntry) =>
                     !!entry && Date.now() - entry.fetchedAt < TTL_MS;

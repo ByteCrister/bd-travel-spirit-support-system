@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fi';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/types/dashboard.types';
+import { USER_ROLE } from '@/constants/user.const';
 
 interface QuickActionsProps {
   userRole: UserRole;
@@ -121,7 +122,7 @@ const adminActions = [
 ];
 
 export function QuickActions({ userRole, onAction, className }: QuickActionsProps) {
-  const actions = userRole === 'admin' ? adminActions : supportActions;
+  const actions = userRole === USER_ROLE.ADMIN ? adminActions : supportActions;
 
   return (
     <Card className={cn('w-full', className)}>
@@ -133,18 +134,13 @@ export function QuickActions({ userRole, onAction, className }: QuickActionsProp
       </CardHeader>
 
       <CardContent>
-        {/* Responsive grid:
-            - xs: 1 col
-            - sm: 2 cols
-            - md: 3 cols
-            - lg: 4 cols (if screen allows)
-            Gap and min child width ensures better wrapping on narrow screens */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {actions.map((action, index) => {
             const Icon = action.icon;
             return (
               <motion.div
                 key={action.id}
+                className="w-full"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.04, duration: 0.18 }}
@@ -156,15 +152,17 @@ export function QuickActions({ userRole, onAction, className }: QuickActionsProp
                   onClick={() => onAction?.(action.id)}
                   aria-label={action.title}
                   className={cn(
-                    'w-full p-3 rounded-lg flex items-start gap-3 transition-shadow duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                    // full width wrapper so the grid cell and inner contents match
+                    'w-full p-3 rounded-lg flex items-center gap-3 text-left transition-shadow duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                    // enforce a consistent min height so rows align even with 2-line descriptions
+                    'min-h-[64px]',
                     // keep the button neutral so colored badge stands out
                     'bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60'
                   )}
                 >
-                  {/* Icon badge: fixed size so icons align */}
                   <div
                     className={cn(
-                      'flex-shrink-0 h-11 w-11 rounded-xl flex items-center justify-center',
+                      'flex-shrink-0 h-12 w-12 rounded-xl flex items-center justify-center',
                       action.bgColor,
                       'shadow-sm'
                     )}
@@ -180,7 +178,7 @@ export function QuickActions({ userRole, onAction, className }: QuickActionsProp
                       </h4>
                     </div>
 
-                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-300/90 line-clamp-2">
+                    <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-300/90 line-clamp-2">
                       {action.description}
                     </p>
                   </div>

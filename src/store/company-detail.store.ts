@@ -113,7 +113,7 @@ const tourListLoadingKey = (tourId: string, type: "reviews" | "reports" | "faqs"
 const tourListErrorKey = (tourId: string, type: "reviews" | "reports" | "faqs") => `${type}ListError:${tourId}`;
 
 // TTL behavior: entries older than CACHE_TTL_MS are considered stale
-const CACHE_TTL_MS = 1000 * 60 * 2; // 2 minutes; tuneable
+const CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 1000 * 60 * 2; // 2 minutes; tuneable
 
 // In-flight dedupe maps (typed)
 const inFlightRequests: Map<string, Promise<unknown>> = new Map();
