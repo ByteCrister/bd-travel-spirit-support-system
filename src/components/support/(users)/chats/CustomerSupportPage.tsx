@@ -43,22 +43,24 @@ export default function CustomerSupportPage() {
     }, []);
 
     // Selectors / actions pulled individually to limit re-renders
-    const fetchStats = useChatMessageStore((s) => s.fetchStats);
-    const stats = useChatMessageStore((s) => s.stats);
-    const statsLoading = useChatMessageStore((s) => s.statsLoading);
-    const statsError = useChatMessageStore((s) => s.statsError);
+    const { fetchStats, openConversation, stats, statsLoading, statsError } = useChatMessageStore();
 
     // Fetch stats once on mount (idempotent)
     useEffect(() => {
         fetchStats().catch(() => { });
-    }, [fetchStats]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleSelectUser = useCallback((id: string) => {
         setSelectedUserId(id);
+
+        // open conversation, fetch messages and clear unread counts
+        openConversation(adminId, id).catch(() => { });
+
         if (isMobile) {
             setSidebarOpen(false); // close mobile drawer on selection
         }
-    }, [isMobile]);
+    }, [adminId, isMobile, openConversation]);
 
     const toggleSidebar = useCallback(() => setSidebarOpen((s) => !s), []);
 

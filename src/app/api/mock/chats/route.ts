@@ -9,7 +9,7 @@ import type {
     ChatMessageMutationResponse,
 } from "@/types/chatMessage.types";
 import { USER_ROLE } from "@/constants/user.const";
-import { MODERATION_STATUS } from "@/models/chatMessage.model";
+import { MODERATION_STATUS } from "@/constants/chatmessage.const";
 
 /**
  * =========================

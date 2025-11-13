@@ -153,6 +153,10 @@ export interface ChatMessageStoreState {
     // Selectors
     getUserList: (query: UserListQuery) => UserConversationSummary[];
     getUserListMeta: (query: UserListQuery) => { total: number; page: number; limit: number; totalPages: number };
+    openConversation(adminId: string, userId: string, options?: {
+        page?: number | undefined;
+        limit?: number | undefined;
+    } | undefined): Promise<string>;
 
     sendMessage: (payload: CreateChatMessageDTO) => Promise<ChatMessage>;
     updateMessage: (id: string, payload: UpdateChatMessageDTO) => Promise<ChatMessage>;
@@ -345,6 +349,70 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
             if (!list) return [];
             return list.ids.map(id => messagesById[id]).filter(Boolean);
         },
+
+        /**
+        * Open a conversation for a given admin/user.
+        *
+        * - Ensures conversation messages are loaded (force).
+        * - Optimistically marks unread messages (to admin) as read in cache by calling get().markRead(...)
+        * - Clears the unreadCount in any cached user lists that reference this user.
+        *
+        * Note: we rely on existing markRead(id) which performs optimistic update + API call + rollback.
+        */
+        async openConversation(adminId: string, userId: string, options?: { page?: number; limit?: number }) {
+            // 1) fetch conversation (force)
+            const convQuery = {
+                sender: adminId,
+                receiver: userId,
+                page: options?.page ?? 1,
+                limit: options?.limit ?? 50, // default page size for conversation open
+                sortBy: "createdAt",
+                sortOrder: "asc" as const,
+            } as ConversationQuery;
+
+            // ensure conversation is loaded
+            await get().fetchConversation(convQuery, { force: true });
+
+            // 2) Clear unreadCount for this user in all cached user-lists
+            set(
+                produce((draft: ChatMessageStoreState) => {
+                    for (const [key, list] of Object.entries(draft.userListsByKey)) {
+                        const idx = list.users.findIndex((r) => r.user._id === userId);
+                        if (idx !== -1) {
+                            list.users[idx] = { ...list.users[idx], unreadCount: 0 };
+                            // also ensure lastMessage.isRead reflects the change if applicable
+                            if (list.users[idx].lastMessage) {
+                                list.users[idx].lastMessage = { ...list.users[idx].lastMessage, isRead: true };
+                            }
+                        }
+                    }
+                })
+            );
+
+            // 3) Mark unread messages for admin as read.
+            // We want to call the existing markRead which handles optimistic update + API.
+            // Collect messages in the conversation (local store)
+            const convKey = buildConversationKey(adminId, userId);
+            const convList = get().listsByQueryKey[convKey];
+            if (!convList) return convKey;
+
+            const msgsToMark = convList.ids
+                .map((id) => get().messagesById[id])
+                .filter(Boolean)
+                .filter((m) => {
+                    // m.receiver may be populated object or string id. Normalize:
+                    const receiverId = typeof m.receiver === "string" ? m.receiver : m.receiver._id;
+                    // Only mark messages that were sent by the user (not admin) to admin,
+                    // and that are not already read.
+                    return receiverId === adminId && !m.isRead;
+                });
+
+            // Mark each message as read using store action markRead to keep consistent optimistic + remote behavior
+            await Promise.all(msgsToMark.map((m) => get().markRead(m._id).catch(() => { })));
+
+            return convKey;
+        },
+
         /**
          * Get pagination metadata for a specific conversation.
          */

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
 import type { UserListResponse, UserConversationSummary } from "@/types/chatMessage.types";
 import { USER_ROLE } from "@/constants/user.const";
-import { MODERATION_STATUS } from "@/models/chatMessage.model";
+import { MODERATION_STATUS } from "@/constants/chatmessage.const";
 
 // Generate a fixed list of mock users
 const users: UserConversationSummary[] = Array.from({ length: 50 }).map(() => {

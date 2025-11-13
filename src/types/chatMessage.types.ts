@@ -1,7 +1,7 @@
 // /types/chatMessage.types.ts
 
+import { ModerationStatusType } from "@/constants/chatmessage.const";
 import { USER_ROLE } from "@/constants/user.const";
-import { ModerationStatusType } from "@/models/chatMessage.model";
 
 /**
  * =========================

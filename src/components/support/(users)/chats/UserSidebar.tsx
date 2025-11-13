@@ -58,10 +58,12 @@ export function UserSidebar({ adminId, selectedUserId, onSelectUser }: Props) {
         [adminId, search, page, limit, sortBy, sortOrder]
     );
     // ---- IMPORTANT: select whole maps from the store, not keyed entries ----
-    const fetchUserList = useChatMessageStore((s) => s.fetchUserList);
-    const userListLoadingByKeyMap = useChatMessageStore((s) => s.userListLoadingByKey);
-    const userListErrorByKeyMap = useChatMessageStore((s) => s.userListErrorByKey);
-    const userListsByKeyMap = useChatMessageStore((s) => s.userListsByKey);
+    const {
+        fetchUserList,
+        userListLoadingByKey: userListLoadingByKeyMap,
+        userListErrorByKey: userListErrorByKeyMap,
+        userListsByKey: userListsByKeyMap
+    } = useChatMessageStore();
 
     // derive keyed values locally (stable)
     const loading = userListLoadingByKeyMap[key] ?? false;
@@ -396,7 +398,7 @@ export function UserSidebar({ adminId, selectedUserId, onSelectUser }: Props) {
                                             <div className={`text-xs truncate flex-1 ${isSelected ? 'text-slate-600 dark:text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>
                                                 {preview}
                                             </div>
-                                            
+
                                             {/* Status Indicators */}
                                             <div className="flex items-center gap-1 flex-shrink-0">
                                                 {moderationStatus === 'flagged' && (

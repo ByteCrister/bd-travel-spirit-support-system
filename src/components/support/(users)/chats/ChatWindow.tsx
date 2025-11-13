@@ -35,15 +35,17 @@ export function ChatWindow({ adminId, userId }: Props) {
     const limit = 50;
 
     // Selectors / actions individually to avoid full-store re-renders
-    const fetchConversation = useChatMessageStore((s) => s.fetchConversation);
-    const getConversation = useChatMessageStore((s) => s.getConversation);
-    const getConversationMeta = useChatMessageStore((s) => s.getConversationMeta);
-    const sendMessage = useChatMessageStore((s) => s.sendMessage);
-    const updateMessage = useChatMessageStore((s) => s.updateMessage);
-    const deleteMessage = useChatMessageStore((s) => s.deleteMessage);
-    const markRead = useChatMessageStore((s) => s.markRead);
-    const markDelivered = useChatMessageStore((s) => s.markDelivered);
-    const moderateMessage = useChatMessageStore((s) => s.moderateMessage);
+    const {
+        fetchConversation,
+        getConversation,
+        getConversationMeta,
+        sendMessage,
+        updateMessage,
+        deleteMessage,
+        markRead,
+        markDelivered,
+        moderateMessage
+    } = useChatMessageStore();
 
     const [input, setInput] = useState('');
     const listEndRef = useRef<HTMLDivElement | null>(null);
@@ -310,7 +312,7 @@ function MessageItem({
 
     const content =
         message.moderationStatus === 'removed' ? (
-            <span className="italic opacity-70 flex items-center gap-2">
+            <span className="italic opacity-80 flex items-center gap-2 text-sm">
                 <FiShield className="w-4 h-4" />
                 Message removed by moderation
             </span>
@@ -318,119 +320,115 @@ function MessageItem({
             message.message
         );
 
-    const getModerationColor = () => {
+    const moderationClass = (() => {
         switch (message.moderationStatus) {
-            case 'flagged': return 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-300 dark:border-red-800';
-            case 'removed': return 'bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-400 border-gray-300 dark:border-gray-700';
-            default: return '';
+            case 'flagged':
+                return 'ring-1 ring-red-300 dark:ring-red-800 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300';
+            case 'removed':
+                return 'ring-1 ring-slate-200 dark:ring-slate-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-400';
+            default:
+                return '';
         }
-    };
+    })();
 
     return (
-        <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} group`}>
-            <div className={`flex flex-col gap-1.5 ${isMine ? 'items-end' : 'items-start'} max-w-[75%]`}>
-                {/* Message Bubble */}
+        <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} group py-1`}>
+            <div className="relative max-w-[78%]">
+                {/* Action button: anchored to bubble right edge, vertically centered */}
                 <div
-                    className={`px-4 py-3 rounded-2xl shadow-sm ${isMine
-                        ? `bg-gradient-to-r from-blue-500 to-blue-600 text-white ${message.moderationStatus !== 'clean' ? getModerationColor() : ''} rounded-tr-sm`
-                        : `bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 ${message.moderationStatus !== 'clean' ? getModerationColor() : ''} rounded-tl-sm`
-                        } ${message.isDraft ? 'opacity-70 italic border-2 border-dashed' : ''} transition-all`}
+                    className={`absolute top-1/2 -translate-y-1/2 ${isMine ? 'right-[-10px]' : 'right-[-10px]'} z-10`}
+                    style={{ pointerEvents: 'auto' }}
                 >
-                    <div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">
-                        {content}
-                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 rounded-md flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    aria-label="Message actions"
+                                >
+                                    <FiMoreVertical className="w-4 h-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
 
-                    {/* Message Footer */}
-                    <div className={`flex items-center gap-2 mt-2 text-[11px] ${isMine ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'}`}>
-                        <span>{new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-
-                        {message.isEdited && (
-                            <span className="opacity-70">(edited)</span>
-                        )}
-
-                        {message.moderationStatus !== 'clean' && (
-                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-current">
-                                {message.moderationStatus}
-                            </Badge>
-                        )}
-
-                        <div className="ml-auto flex items-center gap-0.5">
-                            {message.isDelivered && (
-                                <FiCheck className={`w-3.5 h-3.5 ${message.isRead ? 'text-blue-300' : ''}`} aria-label="delivered" />
-                            )}
-                            {message.isRead && (
-                                <FiCheck className="w-3.5 h-3.5 -ml-1.5 text-blue-300" aria-label="read" />
-                            )}
-                        </div>
+                            <DropdownMenuContent align="end" className="w-48">
+                                <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    Message Actions
+                                </div>
+                                <DropdownMenuItem onClick={() => onMarkRead()}>
+                                    <FiCheckCircle className="mr-2 w-4 h-4" />
+                                    Mark as Read
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onMarkDelivered()}>
+                                    <FiCheck className="mr-2 w-4 h-4" />
+                                    Mark as Delivered
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    Moderation
+                                </div>
+                                <DropdownMenuItem onClick={() => onModerate('clean')}>
+                                    <FiShield className="mr-2 w-4 h-4 text-green-600" />
+                                    Mark Clean
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onModerate('flagged')}>
+                                    <FiFlag className="mr-2 w-4 h-4 text-amber-600" />
+                                    Flag Message
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onModerate('removed')}>
+                                    <FiShield className="mr-2 w-4 h-4 text-red-600" />
+                                    Remove Message
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        const text = prompt('Edit message:', message.message);
+                                        if (typeof text === 'string') onEdit(text);
+                                    }}
+                                >
+                                    <FiEdit2 className="mr-2 w-4 h-4" />
+                                    Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        if (confirm('Delete this message?')) onDelete();
+                                    }}
+                                    className="text-red-600 dark:text-red-400"
+                                >
+                                    <FiTrash2 className="mr-2 w-4 h-4" />
+                                    Delete
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
 
-                {/* Action Menu */}
-                <div className={`opacity-0 group-hover:opacity-100 transition-opacity ${isMine ? 'self-end' : 'self-start'}`}>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 px-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                            >
-                                <FiMoreVertical className="w-3.5 h-3.5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align={isMine ? 'end' : 'start'} className="w-48">
-                            <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Message Actions
-                            </div>
+                {/* Message bubble */}
+                <div
+                    className={`px-3 py-2 rounded-xl shadow-sm text-sm leading-snug ${isMine
+                        ? `bg-gradient-to-r from-blue-500 to-blue-600 text-white ${message.moderationStatus !== 'clean' ? moderationClass : ''}`
+                        : `bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 ${message.moderationStatus !== 'clean' ? moderationClass : ''}`
+                        } ${message.isDraft ? 'opacity-80 italic border-2 border-dashed' : ''}`}
+                >
+                    <div className="whitespace-pre-wrap break-words">{content}</div>
 
-                            <DropdownMenuItem onClick={() => onMarkRead()}>
-                                <FiCheckCircle className="mr-2 w-4 h-4" />
-                                Mark as Read
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onMarkDelivered()}>
-                                <FiCheck className="mr-2 w-4 h-4" />
-                                Mark as Delivered
-                            </DropdownMenuItem>
+                    <div className={`flex items-center gap-2 mt-1 text-[11px] ${isMine ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'}`}>
+                        <span className="text-[11px]">
+                            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {message.isEdited && <span className="opacity-70">(edited)</span>}
 
-                            <DropdownMenuSeparator />
-                            <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Moderation
-                            </div>
-
-                            <DropdownMenuItem onClick={() => onModerate('clean')}>
-                                <FiShield className="mr-2 w-4 h-4 text-green-600" />
-                                Mark Clean
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onModerate('flagged')}>
-                                <FiFlag className="mr-2 w-4 h-4 text-amber-600" />
-                                Flag Message
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onModerate('removed')}>
-                                <FiShield className="mr-2 w-4 h-4 text-red-600" />
-                                Remove Message
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem
-                                onClick={() => {
-                                    const text = prompt('Edit message:', message.message);
-                                    if (typeof text === 'string') onEdit(text);
-                                }}
-                            >
-                                <FiEdit2 className="mr-2 w-4 h-4" />
-                                Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => {
-                                    if (confirm('Delete this message?')) onDelete();
-                                }}
-                                className="text-red-600 dark:text-red-400"
-                            >
-                                <FiTrash2 className="mr-2 w-4 h-4" />
-                                Delete
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                        <div className="ml-auto flex items-center gap-1">
+                            {message.isDelivered && <FiCheck className={`w-3.5 h-3.5 ${message.isRead ? 'text-blue-300' : ''}`} aria-label="delivered" />}
+                            {message.isRead && <FiCheck className="w-3.5 h-3.5 -ml-1.5 text-blue-300" aria-label="read" />}
+                            {message.moderationStatus !== 'clean' && (
+                                <Badge variant="outline" className="text-[9px] h-5 px-1.5 ml-1 border-current">
+                                    {message.moderationStatus}
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
