@@ -500,7 +500,7 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
                 _abortController: null,
             }),
             {
-                name: "users-store",
+                name: "travelers.store",
                 partialize: (state) => {
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     const { _cache, _abortController, ...rest } = state;

@@ -14,7 +14,7 @@ const ADMIN_ROUTES = [
   "/support/users",
   "/support/articles",
   "/support/article-comments",
-  "/social/banner",
+  "/social/ads",
   "/social/promotions",
   "/setting/guide-banner",
   "/setting/guide-footer",

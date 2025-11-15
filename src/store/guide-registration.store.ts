@@ -181,7 +181,7 @@ export const useRegisterGuideStore = create<RegisterGuideState>()(
       },
     }),
     {
-      name: "register-guide-storage",
+      name: "guide-registration.store",
       partialize: (state) => ({
         formData: state.formData,
         currentStep: state.currentStep,

@@ -315,7 +315,7 @@ export const useCompanyStore = create<CompanyState>()(
             },
         }),
         {
-            name: "company-store",
+            name: "company.store",
             partialize: (state) => ({ params: state.params }), // only persist query params
         }
     )

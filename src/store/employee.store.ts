@@ -581,6 +581,6 @@ export const useEmployeeStore = create<EmployeeStore>()(
                 partialize: (state) => ({ ui: state.ui }),
             }
         ),
-        { name: "employees-store" }
+        { name: "employee.store" }
     )
 );

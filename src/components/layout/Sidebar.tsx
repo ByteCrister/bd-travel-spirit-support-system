@@ -75,7 +75,7 @@ const navigationGroups: NavGroup[] = [
     title: "Social",
     icon: FiShare2,
     items: [
-      { href: "/social/banner", label: "Banner", icon: FiImage },
+      { href: "/social/ads", label: "Ads", icon: FiImage },
       { href: "/social/promotions", label: "Promotions", icon: FiGift },
     ],
   },

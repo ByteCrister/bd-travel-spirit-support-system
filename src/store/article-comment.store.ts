@@ -1002,7 +1002,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                 },
             }),
             {
-                name: 'articles-comments-store',
+                name: 'article-comment.store',
                 version: 2, // bump version due to structural changes (added tableGroupCache)
                 storage: createJSONStorage(() =>
                     typeof window !== 'undefined'

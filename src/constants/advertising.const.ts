@@ -2,22 +2,22 @@
 import { Types } from "mongoose";
 
 export enum PLACEMENT {
-    LandingBanner = "landing_banner",
-    PopupModal = "popup_modal",
-    Email = "email",
-    Sidebar = "sidebar",
-    SponsoredList = "sponsored_list"
+    LANDING_BANNER = "landing_banner",
+    POPUP_MODAL = "popup_modal",
+    EMAIL = "email",
+    SIDEBAR = "sidebar",
+    SPONSORED_LIST = "sponsored_list"
 }
 export type PlacementType = `${PLACEMENT}`;
 
 export enum AD_STATUS {
-    Draft = "draft",
-    Pending = "pending",       // pending admin approval / payment
-    Active = "active",
-    Paused = "paused",
-    Expired = "expired",
-    Cancelled = "cancelled",
-    Rejected = "rejected"
+    DRAFT = "draft",
+    PENDING = "pending",       // pending admin approval / payment
+    ACTIVE = "active",
+    PAUSED = "paused",
+    EXPIRED = "expired",
+    CANCELLED = "cancelled",
+    REJECTED = "rejected"
 }
 export type AdStatusType = `${AD_STATUS}`;
 

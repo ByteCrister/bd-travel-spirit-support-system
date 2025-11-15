@@ -114,7 +114,7 @@ const AdSchema = new Schema<
         status: {
             type: String,
             enum: Object.values(AD_STATUS),
-            default: AD_STATUS.Draft,
+            default: AD_STATUS.DRAFT,
             index: true,
         },
 
@@ -160,7 +160,7 @@ AdSchema.method("getExpiryDate", function getExpiryDate() {
 });
 
 AdSchema.method("isActive", function isActive() {
-    if (this.status !== AD_STATUS.Active) return false;
+    if (this.status !== AD_STATUS.ACTIVE) return false;
     const now = new Date();
     return (
         (!this.startAt || this.startAt <= now) && (!this.endAt || this.endAt > now)

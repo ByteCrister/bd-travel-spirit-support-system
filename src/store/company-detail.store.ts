@@ -679,7 +679,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
         },
       }),
       {
-        name: "company-detail-store",
+        name: "company-detail.store",
         partialize: (state) => ({
           params: state.params,
           activeCacheKey: state.activeCacheKey,

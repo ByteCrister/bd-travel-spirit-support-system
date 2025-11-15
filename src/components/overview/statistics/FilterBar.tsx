@@ -9,7 +9,7 @@ import { Calendar as CalendarIcon, RefreshCw, X } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Preset, PresetEnum } from '@/types/statistics.types';
 import { formatDateRange } from '@/utils/helpers/format';
-import { useStatisticsStore } from '@/store/statictics.store';
+import { useStatisticsStore } from '@/store/statistics.store';
 
 const presetOptions: { value: Preset; label: string }[] = [
     { value: PresetEnum.LAST_7, label: 'Last 7 days' },

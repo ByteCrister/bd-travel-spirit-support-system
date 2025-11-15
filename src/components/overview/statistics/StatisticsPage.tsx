@@ -10,7 +10,7 @@ import { BarChart } from './charts/BarChart';
 import { DataTable } from './tables/DataTable';
 import { formatDuration, formatNumber, formatPercentage } from '@/utils/helpers/format';
 import { FilterBar } from './FilterBar';
-import { useStatisticsStore } from '@/store/statictics.store';
+import { useStatisticsStore } from '@/store/statistics.store';
 import { RankingItem, SectionKeyEnum } from '@/types/statistics.types';
 import { MainContent } from './MainContent';
 import { Breadcrumbs } from '../../global/Breadcrumbs';

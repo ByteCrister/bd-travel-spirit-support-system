@@ -326,7 +326,7 @@ export const useStatisticsStore = create<StatisticsStore>()(
             },
         }),
         {
-            name: "statistics-store",
+            name: "statistics.store",
             partialize: (state) => ({
                 filters: {
                     preset: state.filters.preset,
