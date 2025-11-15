@@ -1,9 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
-// ENUMS: Domain-specific constants
-////////////////////////////////////////////////////////////////////////////////
 
-// Utility type to extract enum values
-type EnumValues<T> = T[keyof T];
 
 /**
  * Types of travelers this tour is suited for
@@ -20,7 +15,7 @@ export enum TRAVEL_TYPE {
   FOOD_DRINK = "food_drink",
   CULTURE_HISTORY = "culture_history",
 }
-export type TravelType = EnumValues<typeof TRAVEL_TYPE>;
+export type TravelType = `${TRAVEL_TYPE}`;
 
 /**
  * Publishing status of the tour
@@ -30,7 +25,7 @@ export enum TOUR_STATUS {
   PUBLISHED = "published",
   ARCHIVED = "archived",
 }
-export type TourStatus = (typeof TOUR_STATUS)[keyof typeof TOUR_STATUS];
+export type TourStatus = `${TOUR_STATUS}`;
 
 // constants/tour.const.ts
 export enum AUDIENCE_TYPE {
@@ -42,7 +37,7 @@ export enum AUDIENCE_TYPE {
   BUSINESS = "business",
   ADVENTURE = "adventure",
 }
-export type AudienceType = (typeof AUDIENCE_TYPE)[keyof typeof AUDIENCE_TYPE];
+export type AudienceType = `${AUDIENCE_TYPE}`;
 
 export enum CONTENT_CATEGORY {
   BEACHES = "beaches",
@@ -55,21 +50,21 @@ export enum CONTENT_CATEGORY {
   HERITAGE = "heritage",
   CRUISE = "cruise",
 }
-export type ContentCategory = (typeof CONTENT_CATEGORY)[keyof typeof CONTENT_CATEGORY];
+export type ContentCategory = `${CONTENT_CATEGORY}`;
 
 export enum MODERATION_STATUS {
   PENDING = "pending",
   APPROVED = "approved",
   REJECTED = "rejected",
 }
-export type ModerationStatus = EnumValues<typeof MODERATION_STATUS>;
+export type ModerationStatus = `${MODERATION_STATUS}`;
 
 export enum DIFFICULTY_LEVEL {
   EASY = "easy",
   MODERATE = "moderate",
   CHALLENGING = "challenging",
 }
-export type DifficultyLevel = EnumValues<typeof DIFFICULTY_LEVEL>;
+export type DifficultyLevel = `${DIFFICULTY_LEVEL}`;
 
 export enum SEASON {
   SUMMER = "summer",
@@ -77,7 +72,7 @@ export enum SEASON {
   MONSOON = "monsoon",
   YEAR_ROUND = "year_round",
 }
-export type Season = EnumValues<typeof SEASON>;
+export type Season = `${SEASON}`;
 
 export enum TRANSPORT_MODE {
   BUS = "bus",
@@ -87,7 +82,7 @@ export enum TRANSPORT_MODE {
   PRIVATE_CAR = "private_car",
   RIDE_SHARE = "ride_share",
 }
-export type TransportMode = EnumValues<typeof TRANSPORT_MODE>;
+export type TransportMode = `${TRANSPORT_MODE}`;
 
 export enum PAYMENT_METHOD {
   BKASH = "bkash",
@@ -97,14 +92,14 @@ export enum PAYMENT_METHOD {
   CASH = "cash",
   BANK_TRANSFER = "bank_transfer",
 }
-export type PaymentMethod = EnumValues<typeof PAYMENT_METHOD>;
+export type PaymentMethod = `${PAYMENT_METHOD}`;
 
 export enum CURRENCY {
   BDT = "BDT",
   USD = "USD",
   INR = "INR",
 }
-export type Currency = EnumValues<typeof CURRENCY>;
+export type Currency = `${CURRENCY}`;
 
 export type Price = {
   amount: number; // base price per person/unit

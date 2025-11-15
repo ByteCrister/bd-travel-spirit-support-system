@@ -14,18 +14,6 @@ import mongoose, {
   Query,
 } from "mongoose";
 
-/**
- * =========================
- * SUB‑DOCUMENT INTERFACES
- * =========================
- */
-
-/**
- * =========================
- * SUB‑SCHEMA DEFINITIONS
- * =========================
- */
-
 /** Shared address schema for billing, profile, etc. */
 const AddressSchema = new Schema(
   {
@@ -70,8 +58,6 @@ export interface IUser extends Document {
   dateOfBirth?: Date;
   isVerified: boolean;
   accountStatus: AccountStatus;
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
   bookingHistory: Types.ObjectId[];
   cart: Types.ObjectId[];
   wishlist: Types.ObjectId[];
@@ -147,10 +133,6 @@ const UserSchema = new Schema<IUser>(
       default: ACCOUNT_STATUS.PENDING,
     },
 
-    // Password reset flow
-    resetPasswordToken: String,
-    resetPasswordExpires: Date,
-
     // Tour interactions
     bookingHistory: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
     cart: [{ type: Schema.Types.ObjectId, ref: "Tour" }],
@@ -201,8 +183,6 @@ const UserSchema = new Schema<IUser>(
       transform: (_doc, ret) => {
         // Strip sensitive fields
         delete ret.password;
-        delete ret.resetPasswordToken;
-        delete ret.resetPasswordExpires;
         return ret;
       },
     },

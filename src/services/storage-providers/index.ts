@@ -1,8 +1,8 @@
 // src/lib/storage-providers/index.ts
 
-import { CloudinaryAssetProvider } from "./cloudinary-doc.provider";
-import { STORAGE_PROVIDER } from "@/models/asset.model";
+import { CloudinaryAssetProvider } from "./cloudinary-asset.provider";
 import { AssetStorageProvider } from "./asset-storage.interface";
+import { STORAGE_PROVIDER, StorageProvider } from "@/constants/asset.const";
 // import { S3DocProvider } from "./s3-doc.provider";
 // import { LocalDocProvider } from "./local-doc.provider";
 // import { GCSDocProvider } from "./gcs-doc.provider";
@@ -47,7 +47,7 @@ const providers: Partial<Record<STORAGE_PROVIDER, AssetStorageProvider>> = {
  * preventing silent failures or misconfigurations.
  */
 export function getDocumentStorageProvider(
-    provider: STORAGE_PROVIDER
+    provider: StorageProvider
 ): AssetStorageProvider {
     const instance = providers[provider];
     if (!instance) {

@@ -1,20 +1,6 @@
 // constants/subscriber.const.ts
 
 /**
- * Subscriber domain constants and types.
- *
- * These enums define the valid states and sources for a subscriber.
- * They are declared with `as const` so that TypeScript infers literal types,
- * ensuring type‑safety and autocompletion across your codebase.
- *
- * Usage:
- *  - Enforce consistent values in Mongoose schemas (via enum).
- *  - Provide strong typing in DTOs, API contracts, and frontend logic.
- *  - Support analytics, segmentation, and compliance by tracking
- *    subscriber lifecycle and origin.
- */
-
-/**
  * Lifecycle status of a subscriber.
  * - SUBSCRIBED:   Actively opted‑in to receive updates.
  * - UNSUBSCRIBED: Explicitly opted‑out or removed from the mailing list.

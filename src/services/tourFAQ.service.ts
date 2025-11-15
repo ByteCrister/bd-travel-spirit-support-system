@@ -1,11 +1,11 @@
 // services/tourFAQ.service.ts
 import { Types } from "mongoose";
-import { TourFAQModel, ITourFAQ } from "@/models/tourFAQ.model";
+import { TourFAQModel, ITourFAQ } from "@/models/tours/tourFAQ.model";
 import {
   TourFAQVoteModel,
   ITourFAQVote,
   FAQ_VOTE_TYPE,
-} from "@/models/tourFAQVote.model";
+} from "@/models/tours/tourFAQVote.model";
 import { FAQ_REPORT_REASON } from "@/constants/faqReport.const";
 import { MODERATION_STATUS } from "@/constants/tour.const";
 

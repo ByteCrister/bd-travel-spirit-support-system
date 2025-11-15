@@ -1,8 +1,6 @@
 /**
  * Stages in the report review lifecycle
  */
-// Utility type to extract enum values
-type EnumValues<T> = T[keyof T];
 
 export enum REPORT_STATUS {
   OPEN = "open",
@@ -10,7 +8,7 @@ export enum REPORT_STATUS {
   RESOLVED = "resolved",
   REJECTED = "rejected",
 }
-export type ReportStatus = EnumValues<typeof REPORT_STATUS>;
+export type ReportStatus = `${REPORT_STATUS}`;
 
 /**
  * Standardized reasons for reporting
@@ -23,7 +21,7 @@ export enum REPORT_REASON {
   BILLING_PROBLEM = "billing_problem",
   OTHER = "other",
 }
-export type ReportReason = EnumValues<typeof REPORT_REASON>;
+export type ReportReason = `${REPORT_REASON}`;
 
 /**
  * Triage priority levels
@@ -34,4 +32,4 @@ export enum REPORT_PRIORITY {
   HIGH = "high",
   URGENT = "urgent",
 }
-export type ReportPriority = EnumValues<typeof REPORT_PRIORITY>;
+export type ReportPriority = `${REPORT_PRIORITY}`;

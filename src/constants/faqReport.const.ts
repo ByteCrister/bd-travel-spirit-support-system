@@ -1,6 +1,4 @@
 // constants/faqReport.const.ts
-// Utility type to extract enum values
-type EnumValues<T> = T[keyof T];
 
 export enum FAQ_REPORT_REASON {
   SPAM = "spam",
@@ -8,7 +6,7 @@ export enum FAQ_REPORT_REASON {
   OFF_TOPIC = "off_topic",
   HARASSMENT = "harassment",
 }
-export type FaqReportReason = EnumValues<typeof FAQ_REPORT_REASON>;
+export type FaqReportReason = `${FAQ_REPORT_REASON}`;
 
 export const FAQ_REPORT_REASON_EXPLANATIONS: Record<FAQ_REPORT_REASON, string> = {
   [FAQ_REPORT_REASON.SPAM]: "This question/answer appears to be spam or advertising.",

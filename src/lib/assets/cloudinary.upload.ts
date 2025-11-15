@@ -6,7 +6,7 @@ import {
     MODERATION_STATUS,
     STORAGE_PROVIDER,
 } from "@/models/asset.model";
-import { UploadedAsset } from "@/lib/storage-providers/asset-storage.interface";
+import { UploadedAsset } from "@/services/storage-providers/asset-storage.interface";
 import { Types } from "mongoose";
 
 /**

@@ -1,5 +1,3 @@
-// Utility type to extract enum values
-type EnumValues<T> = T[keyof T];
 
 /**
  * Types of notifications supported
@@ -12,8 +10,7 @@ export enum USER_NOTIFICATION_TYPE {
   MESSAGE = "message",
   SYSTEM_ALERT = "system_alert",
 }
-export type UserNotificationType = EnumValues<typeof USER_NOTIFICATION_TYPE>;
-// "booking_confirmation" | "booking_reminder" | "new_tour" | "discount_offer" | "message" | "system_alert"
+export type UserNotificationType = `${USER_NOTIFICATION_TYPE}`;
 
 /**
  * Optional urgency levels
@@ -24,8 +21,7 @@ export enum NOTIFICATION_PRIORITY {
   HIGH = "high",
   URGENT = "urgent",
 }
-export type NotificationPriority = EnumValues<typeof NOTIFICATION_PRIORITY>;
-// "low" | "normal" | "high" | "urgent"
+export type NotificationPriority = `${NOTIFICATION_PRIORITY}`;
 
 /** Entities that can be referenced in notifications */
 export enum NOTIFICATION_RELATED_MODAL {
@@ -35,5 +31,4 @@ export enum NOTIFICATION_RELATED_MODAL {
   PAYMENT = "Payment",
   SUPPORT_TICKET = "SupportTicket",
 }
-export type NotificationRelatedModal = EnumValues<typeof NOTIFICATION_RELATED_MODAL>;
-// "Tour" | "Booking" | "User" | "Payment" | "SupportTicket"
+export type NotificationRelatedModal = `${NOTIFICATION_RELATED_MODAL}`;

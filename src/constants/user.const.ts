@@ -1,12 +1,4 @@
 // user.const.ts
-/**
- * ======================================
- * ENUMS
- * ======================================
- */
-
-// Utility type to extract enum values
-type EnumValues<T> = T[keyof T];
 
 /** Roles supported by the platform */
 export enum USER_ROLE {
@@ -25,8 +17,7 @@ export enum USER_ROLE {
   /** Platform administrator */
   ADMIN = "admin",
 }
-export type UserRole = EnumValues<typeof USER_ROLE>;
-// "traveler" | "guide" | "assistant" | "support" | "admin"
+export type UserRole = `${USER_ROLE}`;
 
 /** Account lifecycle states */
 export enum ACCOUNT_STATUS {
@@ -42,5 +33,4 @@ export enum ACCOUNT_STATUS {
   /** Permanently banned from the platform */
   BANNED = "banned",
 }
-export type AccountStatus = EnumValues<typeof ACCOUNT_STATUS>;
-// "pending" | "active" | "suspended" | "banned"
+export type AccountStatus = `${ACCOUNT_STATUS}`;
