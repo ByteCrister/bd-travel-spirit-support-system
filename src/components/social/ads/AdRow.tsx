@@ -9,11 +9,11 @@ import { showToast } from '@/components/global/showToast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { formatDateShort, formatNumber } from '@/utils/helpers/ads-ui';
-import { AdsSkeletons } from './AdsSkeletons';
 import { AdDetails } from './AdDetails';
 import { TableCell, TableRow } from '@/components/ui/table';
-import useAdsStore from '@/store/ad.store';
+import useAdsStore from '@/store/ads.store';
 import { ConfirmDialog } from './ConfirmDialog';
+import AdDetailsSkeleton from './skeletons/AdDetailsSkeleton';
 
 export interface AdRowProps {
     ad: AdvertisementResponse;
@@ -237,7 +237,7 @@ export function AdRow({ ad }: AdRowProps): JSX.Element {
                             <motion.div variants={detailsVariants} initial="hidden" animate="visible" exit="exit" className="bg-slate-50 dark:bg-slate-900/30">
                                 <div className="px-6 py-4">
                                     {localLoading || activeAdMeta?.loading ? (
-                                        <AdsSkeletons.RowDetailsSkeleton />
+                                        <AdDetailsSkeleton />
                                     ) : activeAdMeta?.error ? (
                                         <div role="alert" className="flex items-start gap-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4">
                                             <MdError className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />

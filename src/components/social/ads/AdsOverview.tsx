@@ -13,11 +13,11 @@ import {
 } from 'react-icons/md';
 import { HiSparkles } from 'react-icons/hi';
 import { TbClick } from 'react-icons/tb';
-import useAdsStore from '@/store/ad.store';
+import useAdsStore from '@/store/ads.store';
 import { showToast } from '@/components/global/showToast';
-import { AdsSkeletons } from './AdsSkeletons';
 import { Card } from '@/components/ui/card';
 import { formatNumber } from '@/utils/helpers/ads-ui';
+import AdsOverviewSkeleton from './skeletons/AdsOverviewSkeleton';
 
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20, scale: 0.95 },
@@ -146,7 +146,7 @@ export function AdsOverview(): JSX.Element {
   }, [overviewMeta.error]);
 
   if (overviewMeta.loading) {
-    return <AdsSkeletons.OverviewSkeleton />;
+    return <AdsOverviewSkeleton />;
   }
 
   if (overviewMeta.error && !overview) {

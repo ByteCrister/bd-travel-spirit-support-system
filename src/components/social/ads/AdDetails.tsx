@@ -3,9 +3,8 @@
 
 import React, { JSX, useEffect } from 'react';
 import type { AdvertisementResponse } from '@/types/advertising.types';
-import useAdsStore from '@/store/ad.store';
+import useAdsStore from '@/store/ads.store';
 import { showToast } from '@/components/global/showToast';
-import { AdsSkeletons } from './AdsSkeletons';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -32,6 +31,7 @@ import {
     Timer,
     Sparkles
 } from 'lucide-react';
+import AdDetailsSkeleton from './skeletons/AdDetailsSkeleton';
 
 export interface AdDetailsProps {
     id: string;
@@ -205,7 +205,7 @@ export function AdDetails({ id }: AdDetailsProps): JSX.Element {
     }, [id, entry, fetchById]);
 
     if (!entry || activeAdMeta?.loading) {
-        return <AdsSkeletons.RowDetailsSkeleton />;
+        return <AdDetailsSkeleton />;
     }
 
     if (activeAdMeta?.error) {

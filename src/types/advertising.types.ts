@@ -215,24 +215,32 @@ export const AdCacheKeys = {
 };
 
 export function normalizeQueryKey(q?: AdListQuery) {
-    const normalized = {
-        page: q?.page ?? 1,
-        limit: q?.limit ?? 20,
-        q: q?.q ?? "",
-        guideId: q?.guideId ?? null,
-        tourId: q?.tourId ?? null,
-        status: Array.isArray(q?.status) ? q.status : q?.status ? [q.status] : null,
-        placements: Array.isArray(q?.placements) ? q.placements : q?.placements ? [q.placements] : null,
-        startDateFrom: q?.startDateFrom ?? null,
-        startDateTo: q?.startDateTo ?? null,
-        endDateFrom: q?.endDateFrom ?? null,
-        endDateTo: q?.endDateTo ?? null,
-        sortBy: q?.sortBy ?? "createdAt",
-        sortDir: q?.sortDir ?? "desc",
-        withDeleted: !!q?.withDeleted,
-    };
-    return JSON.stringify(normalized);
+  const normalizeArr = (v?: string[] | string | null) => {
+    if (!v) return null;
+    const arr = Array.isArray(v) ? v.slice() : [v];
+    return arr.map(String).map(s => s.trim()).filter(Boolean).sort();
+  };
+
+  const normalized = {
+    page: q?.page ?? 1,
+    limit: q?.limit ?? 20,
+    q: (q?.q ?? "").trim(),
+    guideId: q?.guideId ?? null,
+    tourId: q?.tourId ?? null,
+    status: normalizeArr(q?.status ?? null),
+    placements: normalizeArr(q?.placements ?? null),
+    startDateFrom: q?.startDateFrom ?? null,
+    startDateTo: q?.startDateTo ?? null,
+    endDateFrom: q?.endDateFrom ?? null,
+    endDateTo: q?.endDateTo ?? null,
+    sortBy: q?.sortBy ?? "createdAt",
+    sortDir: q?.sortDir ?? "desc",
+    withDeleted: !!q?.withDeleted,
+  };
+
+  return JSON.stringify(normalized);
 }
+
 
 /* --------------------------------------------------------------------------
  * Fine-grained loading / error states

@@ -778,7 +778,7 @@ const useAdsStore = create<Store>()(
                   state.list = internal.items.slice(
                     0,
                     state.listMeta.pagination.page *
-                      state.listMeta.pagination.limit
+                    state.listMeta.pagination.limit
                   );
                 }
               }
@@ -844,7 +844,7 @@ const useAdsStore = create<Store>()(
                     state.list = internal.items.slice(
                       0,
                       state.listMeta.pagination.page *
-                        state.listMeta.pagination.limit
+                      state.listMeta.pagination.limit
                     );
                   }
                 }
@@ -928,7 +928,7 @@ const useAdsStore = create<Store>()(
                     state.list = internal.items.slice(
                       0,
                       state.listMeta.pagination.page *
-                        state.listMeta.pagination.limit
+                      state.listMeta.pagination.limit
                     );
                   }
                 }
@@ -954,9 +954,18 @@ const useAdsStore = create<Store>()(
     }),
     {
       name: "ads-store",
-      partialize: (state: Store) => {
-        return { listQuery: state.listQuery } as Partial<Store>;
-      },
+      partialize: (state) => ({
+        listQuery: {
+          page: 1,
+          limit: state.listQuery.limit,
+          q: state.listQuery.q,
+          status: state.listQuery.status,
+          placements: state.listQuery.placements,
+          sortBy: state.listQuery.sortBy,
+          sortDir: state.listQuery.sortDir,
+          withDeleted: !!state.listQuery.withDeleted,
+        },
+      }),
       version: 1,
     }
   )

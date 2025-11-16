@@ -3,15 +3,6 @@
 import React, { JSX } from 'react';
 
 export const AdsSkeletons = {
-    OverviewSkeleton: function OverviewSkeleton(): JSX.Element {
-        return (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="h-20 animate-pulse rounded-md bg-gray-100" />
-                ))}
-            </div>
-        );
-    },
 
     TableSkeleton: function TableSkeleton({ rows = 5 }: { rows?: number }): JSX.Element {
         return (
@@ -45,15 +36,6 @@ export const AdsSkeletons = {
 
     RowSummarySkeleton: function RowSummarySkeleton(): JSX.Element {
         return <div className="h-12 w-full animate-pulse rounded bg-gray-100" />;
-    },
-
-    RowDetailsSkeleton: function RowDetailsSkeleton(): JSX.Element {
-        return (
-            <div className="space-y-3">
-                <div className="h-24 w-full animate-pulse rounded bg-gray-100" />
-                <div className="h-16 w-full animate-pulse rounded bg-gray-100" />
-            </div>
-        );
     },
 
     ActionButtonSkeleton: function ActionButtonSkeleton(): JSX.Element {

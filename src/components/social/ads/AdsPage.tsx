@@ -4,11 +4,11 @@ import React, { useEffect, useCallback, JSX } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { MdRefresh, MdError } from 'react-icons/md';
 import { HiSparkles } from 'react-icons/hi';
-import useAdsStore from '@/store/ad.store';
+import useAdsStore from '@/store/ads.store';
 import { showToast } from '@/components/global/showToast';
 import { AdsOverview } from './AdsOverview';
 import { AdsToolbar } from './AdsToolbar';
-import { AdsSkeletons } from './AdsSkeletons';
+import { AdsSkeletons } from './skeletons/AdsSkeletons';
 import { AdsTable } from './AdsTable';
 
 const containerVariants: Variants = {

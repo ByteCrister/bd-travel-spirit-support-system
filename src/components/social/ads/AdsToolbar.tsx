@@ -14,7 +14,7 @@ import {
 } from 'react-icons/md';
 import { HiAdjustments } from 'react-icons/hi';
 import { BiCheckCircle } from 'react-icons/bi';
-import useAdsStore from '@/store/ad.store';
+import useAdsStore from '@/store/ads.store';
 import { AdStatusType, PLACEMENT, PlacementType } from '@/constants/advertising.const';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,7 +82,7 @@ export function AdsToolbar({ onRefresh }: AdsToolbarProps): JSX.Element {
         e.preventDefault();
         setFilters({ q: localSearch });
         setQuery({ q: localSearch, page: 1 });
-        fetchList();
+        fetchList({ q: localSearch, page: 1 });
     }, [localSearch, setFilters, setQuery, fetchList]);
 
     const handleSearchClear = useCallback(() => {
@@ -280,8 +280,8 @@ export function AdsToolbar({ onRefresh }: AdsToolbarProps): JSX.Element {
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => toggleStatus(option.value)}
                                             className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${filters.status.includes(option.value)
-                                                    ? `${option.color} ring-2 ring-offset-2 ring-slate-400 dark:ring-slate-600`
-                                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                                                ? `${option.color} ring-2 ring-offset-2 ring-slate-400 dark:ring-slate-600`
+                                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                                                 }`}
                                         >
                                             {option.label}
@@ -304,8 +304,8 @@ export function AdsToolbar({ onRefresh }: AdsToolbarProps): JSX.Element {
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => togglePlacement(option.value)}
                                             className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${filters.placements.includes(option.value)
-                                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 ring-2 ring-offset-2 ring-blue-400 dark:ring-blue-600'
-                                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 ring-2 ring-offset-2 ring-blue-400 dark:ring-blue-600'
+                                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                                                 }`}
                                         >
                                             {option.label}
