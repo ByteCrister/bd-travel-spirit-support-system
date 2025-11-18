@@ -13,7 +13,10 @@ import {
   FiSettings,
   FiMenu,
   FiX,
-  FiChevronRight
+  FiChevronRight,
+  FiCreditCard,
+  FiTag,
+  FiGlobe
 } from "react-icons/fi";
 import { FaComments, FaUsers } from "react-icons/fa";
 import { HiOutlineChartSquareBar } from 'react-icons/hi';
@@ -83,8 +86,11 @@ const navigationGroups: NavGroup[] = [
     title: "Settings",
     icon: FiSettings,
     items: [
-      { href: "/setting/guide-banner", label: "Guide Banner", icon: FiImage },
-      { href: "/setting/guide-footer", label: "Guide Footer", icon: FiSettings },
+      { href: "/setting/advertising", label: "Advertising", icon: FiImage },
+      { href: "/setting/guide-subscriptions", label: "Guide Subscriptions", icon: FiCreditCard  },
+      { href: "/setting/guide-banners", label: "Guide Banners", icon: FiFileText },
+      { href: "/setting/enums", label: "Enums", icon: FiTag },
+      { href: "/setting/footer", label: "Footer", icon: FiGlobe },
     ],
   },
 ];

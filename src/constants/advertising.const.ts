@@ -1,6 +1,4 @@
-// types/advertising.const.ts
-import { Types } from "mongoose";
-
+// constants/advertising.const.ts
 export enum PLACEMENT {
     LANDING_BANNER = "landing_banner",
     POPUP_MODAL = "popup_modal",
@@ -20,5 +18,3 @@ export enum AD_STATUS {
     REJECTED = "rejected"
 }
 export type AdStatusType = `${AD_STATUS}`;
-
-export type ObjectId = Types.ObjectId;

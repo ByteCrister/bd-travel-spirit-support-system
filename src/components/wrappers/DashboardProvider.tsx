@@ -16,8 +16,11 @@ const ADMIN_ROUTES = [
   "/support/article-comments",
   "/social/ads",
   "/social/promotions",
-  "/setting/guide-banner",
-  "/setting/guide-footer",
+  "/setting/advertising",
+  "/setting/guide-subscriptions",
+  "/setting/guide-banners",
+  "/setting/enums",
+  "/setting/footer",
 ];
 
 interface DashboardProviderProps {
