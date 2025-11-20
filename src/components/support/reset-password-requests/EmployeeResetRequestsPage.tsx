@@ -49,12 +49,12 @@ export default function EmployeeResetRequestsPage() {
 
   return (
     <motion.div
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-1.5"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto max-w-7xl">
         <motion.header
           className="mb-8"
           variants={itemVariants}
