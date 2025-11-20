@@ -26,6 +26,7 @@ import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
 import { MdBusiness, MdTravelExplore } from 'react-icons/md';
 import { usePathname } from "next/navigation";
+import { TbPasswordFingerprint } from "react-icons/tb";
 interface SidebarProps {
   isMobile?: boolean;
   onClose?: () => void;
@@ -72,6 +73,7 @@ const navigationGroups: NavGroup[] = [
       { href: "/support/users", label: "Users", icon: FiHeadphones },
       { href: "/support/articles", label: "Articles", icon: FiFileText },
       { href: "/support/article-comments", label: "Article Comments", icon: FaComments },
+      { href: "/support/reset-password-requests", label: "Employees Pass", icon: TbPasswordFingerprint },
     ],
   },
   {

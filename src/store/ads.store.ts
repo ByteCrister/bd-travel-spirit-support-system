@@ -1,7 +1,7 @@
 // stores/ad.store.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { produce } from "immer";
+import { produce, enableMapSet } from "immer";
 import {
   AdvertisementResponse,
   AdvertisementOverview,
@@ -17,7 +17,6 @@ import {
 } from "@/types/advertising.types";
 import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
 import api from "@/utils/api/axios";
-import { enableMapSet } from "immer";
 enableMapSet();
 
 const URL_AFTER_API = "/mock/ads";

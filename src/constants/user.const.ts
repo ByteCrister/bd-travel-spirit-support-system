@@ -1,4 +1,4 @@
-// user.const.ts
+// constants/user.const.ts
 
 /** Roles supported by the platform */
 export enum USER_ROLE {
