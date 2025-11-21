@@ -4,6 +4,7 @@ import Link from 'next/link'
 import React, { useState, useEffect } from 'react'
 import { FiArrowRight, FiUser, FiZap } from 'react-icons/fi'
 import { motion } from 'framer-motion'
+import useJoinAsGuideStore from '@/store/join-as-guide.store';
 
 const jakarta = Plus_Jakarta_Sans({
     subsets: ["latin"],
@@ -15,7 +16,8 @@ const inter = Inter({
     weight: ["400", "500", "600", "700", "800"],
 });
 
-const JoinAsGuideHeader = ({ handleApplyClick, handleLoginClick }: { handleApplyClick: () => void; handleLoginClick: () => void; }) => {
+const JoinAsGuideHeader = () => {
+    const { openLogin } = useJoinAsGuideStore();
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
     const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
@@ -133,7 +135,7 @@ const JoinAsGuideHeader = ({ handleApplyClick, handleLoginClick }: { handleApply
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-                        onClick={handleLoginClick}
+                        onClick={openLogin}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="group relative inline-flex items-center gap-1.5 sm:gap-2.5 rounded-xl sm:rounded-2xl 
@@ -184,7 +186,7 @@ const JoinAsGuideHeader = ({ handleApplyClick, handleLoginClick }: { handleApply
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.6, ease: "easeOut", delay: 0.15 }}
-                        onClick={handleApplyClick}
+                        onClick={() => { }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="group relative inline-flex items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl 

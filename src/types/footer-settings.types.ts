@@ -11,6 +11,7 @@ export interface SocialLinkDTO {
     id: ObjectId;
     key: string;
     label?: string | null;
+    icon?: string | null;
     url: string;
     active: boolean;
     order?: number | null;
@@ -54,6 +55,7 @@ export interface SocialLinkInput {
     id?: ObjectId;
     key: string;
     label?: string | null;
+    icon?: string | null;
     url: string;
     active?: boolean;
     order?: number | null;

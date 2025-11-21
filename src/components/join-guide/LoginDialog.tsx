@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LoginFormValues, loginValidator } from "@/utils/validators/login.validator";
 import ForgotPasswordDialog from "./ForgotPasswordDialog";
-
+import useJoinAsGuideStore from "@/store/join-as-guide.store";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -47,15 +47,15 @@ const inter = Inter({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-interface LoginPopoverProps {
-  isOpen: boolean;
-  showForgotPassword: boolean;
-  onClose: () => void;
-  setShowForgotPassword: (value: boolean) => void;
-  handleBackToLogin: () => void;
-}
+export default function LoginDialog() {
+  const {
+    isLoginOpen: isOpen,
+    closeLogin: onClose,
+    showForgotPassword,
+    openForgotPassword,
+    backToLogin
+  } = useJoinAsGuideStore();
 
-export default function LoginPopover({ isOpen, onClose, showForgotPassword, setShowForgotPassword, handleBackToLogin }: LoginPopoverProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -88,7 +88,7 @@ export default function LoginPopover({ isOpen, onClose, showForgotPassword, setS
   };
 
   const handleForgotPassword = () => {
-    setShowForgotPassword(true);
+    openForgotPassword();
     onClose();
   };
 
@@ -294,8 +294,8 @@ export default function LoginPopover({ isOpen, onClose, showForgotPassword, setS
       {/* Forgot Password Dialog */}
       <ForgotPasswordDialog
         isOpen={showForgotPassword}
-        onClose={() => setShowForgotPassword(false)}
-        onBackToLogin={handleBackToLogin}
+        onClose={() => openForgotPassword()}
+        onBackToLogin={backToLogin}
       />
     </Dialog>
   );

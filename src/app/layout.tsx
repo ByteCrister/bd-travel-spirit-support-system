@@ -9,8 +9,24 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"], variable: "--font-display" });
 
 export const metadata: Metadata = {
-  title: "BD Travel Spirit Support System",
+  metadataBase: new URL(process.env.DOMAIN || "http://localhost:3000"),
+
+  title: {
+    default: "BD Travel Spirit Support System",
+    template: "%s | BD Travel Spirit Support",
+  },
+
   description: "Customer support system of bd-travel-spirit.vercel.app",
+
+  openGraph: {
+    type: "website",
+    siteName: "BD Travel Spirit Support",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    creator: "@bdtravelspirit",
+  },
 };
 
 export default async function RootLayout({

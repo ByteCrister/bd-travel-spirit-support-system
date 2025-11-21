@@ -4,11 +4,6 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   FiGlobe,
-  FiFacebook,
-  FiTwitter,
-  FiInstagram,
-  FiLinkedin,
-  FiYoutube,
   FiArrowRight,
   FiShield,
   FiAward,
@@ -16,6 +11,8 @@ import {
   FiHeart
 } from "react-icons/fi";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { FooterTypes } from "@/types/join-as-guide.types";
+import IconFromName from "../global/IconFromName";
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
 
@@ -50,23 +47,29 @@ const footerLinks = {
   ],
 };
 
-const socialLinks = [
-  { name: "Facebook", icon: FiFacebook, href: "https://facebook.com/bdtravelspirit", color: "hover:text-blue-600" },
-  { name: "Twitter", icon: FiTwitter, href: "https://twitter.com/bdtravelspirit", color: "hover:text-sky-500" },
-  { name: "Instagram", icon: FiInstagram, href: "https://instagram.com/bdtravelspirit", color: "hover:text-pink-500" },
-  { name: "LinkedIn", icon: FiLinkedin, href: "https://linkedin.com/company/bdtravelspirit", color: "hover:text-blue-700" },
-  { name: "YouTube", icon: FiYoutube, href: "https://youtube.com/bdtravelspirit", color: "hover:text-red-600" },
+// const defaultSocialLinks = [
+//   { name: "Facebook", icon: FiFacebook, href: "https://facebook.com/bdtravelspirit", color: "hover:text-blue-600" },
+//   { name: "Twitter", icon: FiTwitter, href: "https://twitter.com/bdtravelspirit", color: "hover:text-sky-500" },
+//   { name: "Instagram", icon: FiInstagram, href: "https://instagram.com/bdtravelspirit", color: "hover:text-pink-500" },
+//   { name: "LinkedIn", icon: FiLinkedin, href: "https://linkedin.com/company/bdtravelspirit", color: "hover:text-blue-700" },
+//   { name: "YouTube", icon: FiYoutube, href: "https://youtube.com/bdtravelspirit", color: "hover:text-red-600" },
+// ];
+
+const defaultStats = [
+  { icon: FiUsers, label: "Active Guides", end: "+" },
+  { icon: FiGlobe, label: "Countries", end: "+" },
+  { icon: FiAward, label: "Average Rating", end: "/5" },
+  { icon: FiShield, label: "Secure Payments", end: "%" },
 ];
 
-const stats = [
-  { icon: FiUsers, value: "1000+", label: "Active Guides" },
-  { icon: FiGlobe, value: "50+", label: "Countries" },
-  { icon: FiAward, value: "4.9/5", label: "Rating" },
-  { icon: FiShield, value: "100%", label: "Secure" },
-];
-
-export default function Footer() {
+export default function Footer({ data }: { data: FooterTypes }) {
   const currentYear = new Date().getFullYear();
+  const stats = [
+    data.stats.active_guides,
+    data.stats.destinations,
+    data.stats.average_rating,
+    data.stats.secure_payment,
+  ];
 
   return (
     <footer
@@ -119,9 +122,12 @@ export default function Footer() {
                   Our Impact
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
-                  {stats.map((stat, i) => (
-                    <motion.div
-                      key={stat.label}
+                  {stats.map((value, i) => {
+                    const end = defaultStats[i].end;
+                    const Icon = defaultStats[i].icon;
+                    const label = defaultStats[i].label;
+                    return (<motion.div
+                      key={label}
                       initial={{ opacity: 0, scale: 0.8, y: 20 }}
                       whileInView={{ opacity: 1, scale: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.3 }}
@@ -131,29 +137,29 @@ export default function Footer() {
                     >
                       {/* Background Glow Effect */}
                       <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      
+
                       {/* Icon Container */}
                       <div className="relative mb-3">
                         <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/20 group-hover:border-emerald-500/40 transition-all duration-300">
-                          <stat.icon className="h-5 w-5 text-emerald-400 group-hover:text-emerald-300 transition-colors duration-300" />
+                          <Icon className="h-5 w-5 text-emerald-400 group-hover:text-emerald-300 transition-colors duration-300" />
                         </div>
                       </div>
-                      
+
                       {/* Value */}
                       <div className="relative mb-1">
                         <div className="text-lg lg:text-xl font-bold text-white group-hover:text-emerald-100 transition-colors duration-300">
-                          {stat.value}
+                          {value}{end}
                         </div>
                       </div>
-                      
+
                       {/* Label */}
                       <div className="relative">
                         <div className="text-xs font-medium text-gray-400 group-hover:text-gray-300 transition-colors duration-300">
-                          {stat.label}
+                          {label}
                         </div>
                       </div>
-                    </motion.div>
-                  ))}
+                    </motion.div>)
+                  })}
                 </div>
               </div>
             </motion.div>
@@ -171,12 +177,11 @@ export default function Footer() {
                 <div className="relative">
                   {/* Section Header with Icon */}
                   <div className="flex items-center gap-3 mb-4">
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${
-                      section === "company" ? "bg-blue-500/20 border border-blue-500/30" :
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${section === "company" ? "bg-blue-500/20 border border-blue-500/30" :
                       section === "guides" ? "bg-emerald-500/20 border border-emerald-500/30" :
-                      section === "travelers" ? "bg-purple-500/20 border border-purple-500/30" :
-                      "bg-orange-500/20 border border-orange-500/30"
-                    }`}>
+                        section === "travelers" ? "bg-purple-500/20 border border-purple-500/30" :
+                          "bg-orange-500/20 border border-orange-500/30"
+                      }`}>
                       {section === "company" && <FiGlobe className="h-4 w-4 text-blue-400" />}
                       {section === "guides" && <FiUsers className="h-4 w-4 text-emerald-400" />}
                       {section === "travelers" && <FiAward className="h-4 w-4 text-purple-400" />}
@@ -189,7 +194,7 @@ export default function Footer() {
                       {section === "support" && "Support Us"}
                     </h4>
                   </div>
-                  
+
                   {/* Links List */}
                   <ul className="space-y-2">
                     {links.map((link, i) => (
@@ -205,12 +210,11 @@ export default function Footer() {
                           className="group flex items-center text-gray-300 hover:text-white transition-all duration-300 text-sm py-2 px-3 rounded-lg hover:bg-white/5"
                         >
                           <div className="flex items-center gap-3 w-full">
-                            <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                              section === "company" ? "bg-blue-400 group-hover:bg-blue-300" :
+                            <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${section === "company" ? "bg-blue-400 group-hover:bg-blue-300" :
                               section === "guides" ? "bg-emerald-400 group-hover:bg-emerald-300" :
-                              section === "travelers" ? "bg-purple-400 group-hover:bg-purple-300" :
-                              "bg-orange-400 group-hover:bg-orange-300"
-                            }`}></div>
+                                section === "travelers" ? "bg-purple-400 group-hover:bg-purple-300" :
+                                  "bg-orange-400 group-hover:bg-orange-300"
+                              }`}></div>
                             <span className="flex-1 group-hover:translate-x-1 transition-transform duration-300">
                               {link.name}
                             </span>
@@ -241,7 +245,7 @@ export default function Footer() {
                   Stay connected with us on social media for the latest updates, travel tips, and exclusive offers.
                 </p>
                 <div className="grid grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
-                  {socialLinks.map((social, i) => (
+                  {data.socialLinks.map((social, i) => (
                     <motion.a
                       key={social.name}
                       href={social.href}
@@ -256,7 +260,7 @@ export default function Footer() {
                       whileTap={{ scale: 0.98 }}
                     >
                       <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-emerald-500/20 to-cyan-500/20">
-                        <social.icon className="h-3.5 w-3.5 text-emerald-400 group-hover:text-white transition-colors" />
+                        <IconFromName name={social.icon} className="h-3.5 w-3.5 text-emerald-400 group-hover:text-white transition-colors" />
                       </div>
                       <span className="text-xs font-medium text-gray-300 group-hover:text-white transition-colors">
                         {social.name}
@@ -307,7 +311,7 @@ export default function Footer() {
                       <div className="text-xs text-gray-400">Join our network</div>
                     </div>
                   </motion.div>
-                  
+
                   <motion.div
                     initial={{ opacity: 0, x: 10 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -323,7 +327,7 @@ export default function Footer() {
                       <div className="text-xs text-gray-400">Secure platform</div>
                     </div>
                   </motion.div>
-                  
+
                   <motion.div
                     initial={{ opacity: 0, x: 10 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -336,7 +340,7 @@ export default function Footer() {
                     </div>
                     <div>
                       <div className="text-sm font-medium text-white">Global Reach</div>
-                      <div className="text-xs text-gray-400">50+ countries</div>
+                      <div className="text-xs text-gray-400">{data.stats.global_research_countries}+ countries</div>
                     </div>
                   </motion.div>
                 </div>

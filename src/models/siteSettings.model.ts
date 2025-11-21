@@ -39,6 +39,7 @@ export interface SubscriptionTier {
 export interface SocialLink {
     key: string;
     label?: string;
+    icon: string;
     url: string;
     active: boolean;
     order?: number;
@@ -190,6 +191,7 @@ const SocialLinkSchema = new Schema<SocialLink>(
     {
         key: { type: String, required: true },
         label: { type: String },
+        icon: { type: String },
         url: { type: String, required: true },
         active: { type: Boolean, default: true },
         order: { type: Number, default: 0 },

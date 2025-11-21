@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SocialLinkForm, socialLinkSchema } from "@/utils/validators/footer-settings.validator";
 import { useFooterStore } from "@/store/footerSettings.store";
+import { IconComboBox } from "./IconComboBox";
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
 
@@ -37,13 +38,20 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
             id: initial?.id,
             key: initial?.key ?? "",
             label: initial?.label ?? "",
+            icon: initial?.icon ?? null,
             url: initial?.url ?? "",
             active: initial?.active ?? true,
             order: initial?.order ?? null,
         },
         mode: "onBlur",
     });
-    
+
+    const iconValue = useWatch({
+        control: form.control,
+        name: "icon",
+        defaultValue: initial?.icon ?? null,
+    });
+
     useEffect(() => {
         if (!open) {
             setEditingSocialLinkId(null);
@@ -53,6 +61,7 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                 id: initial.id,
                 key: initial.key,
                 label: initial.label ?? "",
+                icon: initial.icon ?? null,
                 url: initial.url,
                 active: initial.active,
                 order: initial.order ?? null,
@@ -66,10 +75,11 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
             id: values.id,
             key: values.key!,
             label: values.label ?? null,
+            icon: values.icon ?? null,
             url: values.url!,
             active: values.active ?? true,
             order: values.order ?? null,
-        }; 
+        };
         const saved = await addOrUpdateSocialLink(payload);
         if (saved) onOpenChange(false);
     }
@@ -100,7 +110,7 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                 {/* Form Content */}
                 <form className="space-y-6 px-8 py-6" onSubmit={form.handleSubmit(onSubmit)}>
                     {/* Key Field */}
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -110,14 +120,14 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                             <Tag className="h-4 w-4 text-blue-500" />
                             Key
                         </Label>
-                        <Input 
-                            id="key" 
+                        <Input
+                            id="key"
                             {...form.register("key")}
                             className="h-11 rounded-lg border-slate-300 bg-white shadow-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800"
                             placeholder="e.g., facebook, twitter"
                         />
                         {form.formState.errors.key && (
-                            <motion.p 
+                            <motion.p
                                 initial={{ opacity: 0, y: -5 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className="text-xs font-medium text-red-600 dark:text-red-400"
@@ -128,7 +138,7 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                     </motion.div>
 
                     {/* Label Field */}
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
@@ -138,8 +148,8 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                             <Tag className="h-4 w-4 text-indigo-500" />
                             Label
                         </Label>
-                        <Input 
-                            id="label" 
+                        <Input
+                            id="label"
                             {...form.register("label")}
                             className="h-11 rounded-lg border-slate-300 bg-white shadow-sm transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-800"
                             placeholder="Display name"
@@ -147,7 +157,7 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                     </motion.div>
 
                     {/* URL Field */}
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
@@ -157,14 +167,14 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                             <ExternalLink className="h-4 w-4 text-purple-500" />
                             URL
                         </Label>
-                        <Input 
-                            id="url" 
+                        <Input
+                            id="url"
                             {...form.register("url")}
                             className="h-11 rounded-lg border-slate-300 bg-white shadow-sm transition-all focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-slate-700 dark:bg-slate-800"
                             placeholder="https://example.com/profile"
                         />
                         {form.formState.errors.url && (
-                            <motion.p 
+                            <motion.p
                                 initial={{ opacity: 0, y: -5 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className="text-xs font-medium text-red-600 dark:text-red-400"
@@ -174,8 +184,24 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                         )}
                     </motion.div>
 
+                    {/* Icon field */}
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="space-y-2">
+                        <Label htmlFor="icon" className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <Tag className="h-4 w-4 text-rose-500" />
+                            Icon
+                        </Label>
+
+                        <IconComboBox
+                            value={iconValue}
+                            onChange={(v) => form.setValue("icon", v)}
+                            placeholder="Select icon (react-icons name)"
+                        />
+
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Choose a react-icons component name to use as the icon for this link</p>
+                    </motion.div>
+
                     {/* Order Field */}
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
@@ -185,9 +211,9 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                             <Hash className="h-4 w-4 text-teal-500" />
                             Order
                         </Label>
-                        <Input 
-                            id="order" 
-                            type="number" 
+                        <Input
+                            id="order"
+                            type="number"
                             {...form.register("order", { valueAsNumber: true })}
                             className="h-11 rounded-lg border-slate-300 bg-white shadow-sm transition-all focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:border-slate-700 dark:bg-slate-800"
                             placeholder="Display order"
@@ -195,7 +221,7 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                     </motion.div>
 
                     {/* Active Toggle */}
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
@@ -212,33 +238,33 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                                 </p>
                             </div>
                         </div>
-                        <Switch 
-                            id="active" 
-                            checked={!!form.watch("active")} 
+                        <Switch
+                            id="active"
+                            checked={!!form.watch("active")}
                             onCheckedChange={(v) => form.setValue("active", v)}
                             className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-green-500 data-[state=checked]:to-emerald-600"
                         />
                     </motion.div>
 
                     {/* Action Buttons */}
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6 }}
                         className="flex justify-end gap-3 pt-4"
                     >
-                        <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => onOpenChange(false)} 
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
                             disabled={saving}
                             className="gap-2 rounded-lg border-2 border-slate-300 px-6 font-semibold hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:hover:border-slate-600 dark:hover:bg-slate-800"
                         >
                             <X className="h-4 w-4" />
                             Cancel
                         </Button>
-                        <Button 
-                            type="submit" 
+                        <Button
+                            type="submit"
                             disabled={saving}
                             className="gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-6 font-semibold shadow-lg shadow-blue-500/30 hover:from-blue-600 hover:to-indigo-700 hover:shadow-xl hover:shadow-blue-500/40"
                         >

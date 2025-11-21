@@ -5,6 +5,7 @@ export const socialLinkSchema = z.object({
     id: z.string().optional(),
     key: z.string().min(1, "Key is required"),
     label: z.string().nullish(),
+    icon: z.string().optional().nullable(),
     url: z.string().url("Must be a valid URL"),
     active: z.boolean().optional(),
     order: z.number().int().nullish(),

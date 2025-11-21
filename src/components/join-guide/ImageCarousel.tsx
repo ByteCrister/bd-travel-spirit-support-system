@@ -8,34 +8,20 @@ import type { PanInfo } from "framer-motion";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 type ImageCarouselProps = {
+  Images: string[]
   autoPlayIntervalMs?: number;
   className?: string;
   showControls?: boolean;
 };
 
-const imageFilenames = [
-  "amphitheater-fortaleza-san-felipe-puerta-plata-dominican-republic.jpg",
-  "beautiful-nature-landscape-with-black-sandy-beach-ocean.jpg",
-  "dreamy-rainbow-countryside.jpg",
-  "fishing-boat.jpg",
-  "green-trunk-mountains-foggy-mist-scenic.jpg",
-  "indian-city-buildings-scene.jpg",
-  "life-mexico-landscape-with-lake.jpg",
-  "person-traveling-enjoying-their-vacation.jpg",
-  "pexels-khanshaheb-9711952.jpg",
-  "pexels-rasel69-948437.jpg",
-  "pexels-sayeedxchowdhury-33447786.jpg",
-  "vertical-aerial-shot-different-boats-parked-edge-shore-near-water.jpg",
-];
-
-export default function ImageCarousel({ autoPlayIntervalMs = 5000, className, showControls = true }: ImageCarouselProps) {
+export default function ImageCarousel({ Images, autoPlayIntervalMs = 5000, className, showControls = true }: ImageCarouselProps) {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [isDragging, setIsDragging] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const images = useMemo(
-    () => imageFilenames.map((f) => ({ src: `/images/join_as_guide/${f}`, alt: f.replace(/[-_]/g, " ") })),
-    []
+    () => Images.map((f) => ({ src: `/images/join_as_guide/${f}`, alt: f.replace(/[-_]/g, " ") })),
+    [Images]
   );
 
   const next = useCallback(() => {
@@ -74,7 +60,7 @@ export default function ImageCarousel({ autoPlayIntervalMs = 5000, className, sh
   };
 
   return (
-    <div className={`relative w-full overflow-hidden ${className ?? ""}`}> 
+    <div className={`relative w-full overflow-hidden ${className ?? ""}`}>
       {/* Main carousel container with responsive aspect ratio */}
       <div className="relative w-full aspect-video sm:aspect-video md:aspect-[4/3] lg:aspect-[16/9] overflow-hidden rounded-lg sm:rounded-xl border bg-black/10 shadow-lg sm:shadow-xl ring-1 ring-black/5 dark:ring-white/5">
         <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -84,8 +70,8 @@ export default function ImageCarousel({ autoPlayIntervalMs = 5000, className, sh
             initial={{ opacity: 0, x: direction > 0 ? 100 : -100 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: direction > 0 ? -100 : 100 }}
-            transition={{ 
-              duration: 0.4, 
+            transition={{
+              duration: 0.4,
               ease: [0.4, 0, 0.2, 1], // Custom easing for smoother mobile animations
               opacity: { duration: 0.3 }
             }}
@@ -152,11 +138,10 @@ export default function ImageCarousel({ autoPlayIntervalMs = 5000, className, sh
                 setDirection(i > index ? 1 : -1);
                 setIndex(i);
               }}
-              className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full transition-all duration-200 touch-manipulation active:scale-125 ${
-                i === index 
-                  ? "bg-white shadow-sm" 
+              className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full transition-all duration-200 touch-manipulation active:scale-125 ${i === index
+                  ? "bg-white shadow-sm"
                   : "bg-white/40 hover:bg-white/70"
-              }`}
+                }`}
             />
           ))}
         </div>
