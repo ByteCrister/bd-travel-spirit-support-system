@@ -8,6 +8,7 @@ import { ViewProfile } from "./ViewProfile";
 import { Settings } from "./Settings";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 import { cn } from "@/lib/utils";
+import { signOut } from "next-auth/react";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -54,13 +55,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const toggleMenuClick = useCallback(() => setIsMobileMenuOpen((prev) => !prev), []);
 
   const handleLogoutClick = useCallback(() => setShowLogoutConfirm(true), []);
-  const handleLogoutConfirm = useCallback(async () => {
-    setIsLoggingOut(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log("Logging out...");
-    setIsLoggingOut(false);
-    setShowLogoutConfirm(false);
-  }, []);
+
   const handleLogoutCancel = useCallback(() => setShowLogoutConfirm(false), []);
 
   useEffect(() => {
@@ -89,6 +84,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     );
   }
 
+  const handleConfirmLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      // NextAuth sign out
+      await signOut({ callbackUrl: "/signin" });
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 300);
+    } catch (err) {
+      console.error("Logout error:", err);
+      setIsLoggingOut(false);
+    }
+  };
   // Dynamic left offset for desktop
   const desktopLeft = isCollapsed ? "lg:left-20" : "lg:left-72"; // 80px vs 288px
 
@@ -169,7 +177,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <LogoutConfirmation
         isOpen={showLogoutConfirm}
         onClose={handleLogoutCancel}
-        onConfirm={handleLogoutConfirm}
+        onConfirm={handleConfirmLogout}
         isLoggingOut={isLoggingOut}
       />
     </div>

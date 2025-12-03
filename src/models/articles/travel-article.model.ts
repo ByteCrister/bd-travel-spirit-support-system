@@ -110,7 +110,7 @@ const TravelArticleSchema = new Schema<ITravelArticle>(
       required: true,
       index: true,
     },
-    author: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    author: { type: Schema.Types.ObjectId, ref: "Traveler", required: true },
     authorBio: { type: String, trim: true },
     summary: { type: String, required: true, trim: true },
     heroImage: { type: String, required: true },
@@ -175,9 +175,9 @@ const TravelArticleSchema = new Schema<ITravelArticle>(
     faqs: [
       {
         question: { type: String, required: true },
-        askedBy: { type: String, default: "User" },
+        askedBy: { type: String, default: "Traveler" },
         answer: { type: String, required: true },
-        answeredBy: { type: String, default: "User" },
+        answeredBy: { type: String, default: "Traveler" },
       },
     ],
     contentEmbeddingId: {

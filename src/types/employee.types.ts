@@ -73,7 +73,7 @@ export interface PerformanceDTO {
 export interface DocumentDTO {
   type: string;
   // API may return either Asset id or resolved signed URL
-  url: ObjectIdString | string;
+  url: ObjectIdString;
   uploadedAt: ISODateString;
 }
 
@@ -167,7 +167,6 @@ export interface EmployeeListItemDTO {
 
   // documents / avatar
   avatar?: ObjectIdString; // may be Asset id
-  avatarUrl?: string; // resolved URL for quick img src (optional)
   initials?: string; // UI fallback
 
   // computed/derived UI helpers (usually optional, sometimes server-provided)
@@ -193,7 +192,6 @@ export interface EmployeeDetailDTO {
   userId?: ObjectIdString;
   companyId?: ObjectIdString;
   avatar?: ObjectIdString; // Asset id reference
-  avatarUrl?: string; // optional resolved URL
   user: UserSummaryDTO;
 
   role: EmployeeRole;

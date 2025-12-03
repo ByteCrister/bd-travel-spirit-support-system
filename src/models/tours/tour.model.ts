@@ -382,7 +382,7 @@ const TourSchema = new Schema<ITour>(
 
     authorId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Traveler",
       required: true,
       index: true,
     },

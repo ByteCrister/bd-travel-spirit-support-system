@@ -38,7 +38,7 @@ const AdminNotificationSchema = new Schema<IAdminNotification>(
     recipients: [
       {
         type: Schema.Types.ObjectId,
-        ref: "User", // Reference to the admin user model
+        ref: "Traveler", // Reference to the admin user model
         required: true,
         index: true, // Speeds up queries filtering by recipient
       },
@@ -75,7 +75,7 @@ const AdminNotificationSchema = new Schema<IAdminNotification>(
     readBy: [
       {
         type: Schema.Types.ObjectId,
-        ref: "User",
+        ref: "Traveler",
         default: [],
         index: true,
       },

@@ -17,7 +17,7 @@ const RecoFeedbackSchema = new Schema<IRecoFeedback>(
   {
     user: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Traveler",
       index: true,
       required: true,
     },

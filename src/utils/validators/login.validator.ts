@@ -11,7 +11,7 @@ export const loginValidator = z.object({
   password: z
     .string()
     .min(1, { message: "Password is required" })
-    .min(8, { message: "Password must be at least 8 characters" })
+    .min(6, { message: "Password must be at least 6 characters" })
     .max(128, { message: "Password must be less than 128 characters" })
     .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
     .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })

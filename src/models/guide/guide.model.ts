@@ -2,7 +2,7 @@
 // guide.model.ts
 // ------------------------------------------------------------
 // Production-grade Guide schema for service providers.
-// This model is completely separate from User, with its own
+// This model is completely separate from Traveler, with its own
 // lifecycle, authentication, and verification process.
 // ============================================================
 
@@ -12,7 +12,6 @@ import {
     GUIDE_DOCUMENT_TYPE,
     GUIDE_SOCIAL_PLATFORM,
     GUIDE_STATUS,
-    
     GuideDocumentCategory,
     GuideDocumentType,
     GuideSocialPlatform,
@@ -44,9 +43,8 @@ export interface IGuide extends Document {
 
     // Owner credentials (separate login for guide owner)
     owner: {
+        user: Types.ObjectId;
         name: string;
-        email: string;
-        password?: string; // hashed, optional for OAuth
         phone?: string;
         oauthProvider?: string; // e.g. "google", "facebook"
     };
@@ -110,20 +108,7 @@ const GuideSchema = new Schema<IGuide>(
         // Owner credentials
         owner: {
             name: { type: String, required: true, trim: true },
-            email: {
-                type: String,
-                required: true,
-                unique: true,
-                trim: true,
-                lowercase: true, // normalize for uniqueness
-            },
-            password: {
-                type: String,
-                required: function (this: IGuide) {
-                    // allow optional password for OAuth
-                    return !this.owner?.["oauthProvider"];
-                },
-            },
+            user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true, },
             phone: {
                 type: String,
                 trim: true,
@@ -184,9 +169,6 @@ const GuideSchema = new Schema<IGuide>(
         toJSON: {
             virtuals: true,
             transform: (_doc, ret) => {
-                if (ret.owner) {
-                    delete ret.owner.password; // hide password in API responses
-                }
                 return ret;
             },
         },

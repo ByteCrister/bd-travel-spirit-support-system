@@ -9,7 +9,7 @@ import { Schema, model, models, Types, Document } from "mongoose";
 export interface ITravelComment extends Document {
   articleId: Types.ObjectId; // The travel article this comment belongs to
   parentId?: Types.ObjectId | null; // Parent comment ID (for threaded/nested replies)
-  author: Types.ObjectId; // User who created the comment
+  author: Types.ObjectId; // Traveler who created the comment
   content: string; // The actual text content of the comment
   likes: number; // Number of likes/upvotes this comment has received
   replies: Types.ObjectId[]; // Array of child comment IDs (nested replies)
@@ -40,10 +40,10 @@ const TravelCommentSchema = new Schema<ITravelComment>(
       default: null,
     },
 
-    // Author of the comment (User reference)
+    // Author of the comment (Traveler reference)
     author: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Traveler",
       required: true,
       index: true,
     },

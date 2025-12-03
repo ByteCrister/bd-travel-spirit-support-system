@@ -27,6 +27,8 @@ import { ShieldCheck } from "lucide-react";
 import { MdBusiness, MdTravelExplore } from 'react-icons/md';
 import { usePathname } from "next/navigation";
 import { TbPasswordFingerprint } from "react-icons/tb";
+import { useCurrentUserStore } from "@/store/current-user.store";
+import { USER_ROLE } from "@/constants/user.const";
 interface SidebarProps {
   isMobile?: boolean;
   onClose?: () => void;
@@ -45,6 +47,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  adminOnly?: boolean;
 }
 
 const navigationGroups: NavGroup[] = [
@@ -52,47 +55,47 @@ const navigationGroups: NavGroup[] = [
     title: "Overview",
     icon: FiHome,
     items: [
-      { href: "/overview/dashboard", label: "Dashboard", icon: FiHome },
-      { href: "/overview/statistics", label: "Statistics", icon: HiOutlineChartSquareBar },
+      { href: "/overview/dashboard", label: "Dashboard", icon: FiHome, adminOnly: false },
+      { href: "/overview/statistics", label: "Statistics", icon: HiOutlineChartSquareBar, adminOnly: true },
     ],
   },
   {
     title: "Users",
     icon: FiUsers,
     items: [
-      { href: "/users/travelers", label: "Travelers", icon: ShieldCheck },
-      { href: "/users/guides", label: "Guides", icon: MdTravelExplore },
-      { href: "/users/companies", label: "Companies", icon: MdBusiness },
-      { href: "/users/employees", label: "Employees", icon: FaUsers },
+      { href: "/users/travelers", label: "Travelers", icon: ShieldCheck, adminOnly: false },
+      { href: "/users/guides", label: "Guides", icon: MdTravelExplore, adminOnly: false },
+      { href: "/users/companies", label: "Companies", icon: MdBusiness, adminOnly: false },
+      { href: "/users/employees", label: "Employees", icon: FaUsers, adminOnly: false },
     ],
   },
   {
     title: "Support",
     icon: FiFileText,
     items: [
-      { href: "/support/users", label: "Users", icon: FiHeadphones },
-      { href: "/support/articles", label: "Articles", icon: FiFileText },
-      { href: "/support/article-comments", label: "Article Comments", icon: FaComments },
-      { href: "/support/reset-password-requests", label: "Employees Pass", icon: TbPasswordFingerprint },
+      { href: "/support/users", label: "Users", icon: FiHeadphones, adminOnly: false },
+      { href: "/support/articles", label: "Articles", icon: FiFileText, adminOnly: false },
+      { href: "/support/article-comments", label: "Article Comments", icon: FaComments, adminOnly: false },
+      { href: "/support/reset-password-requests", label: "Employees Pass", icon: TbPasswordFingerprint, adminOnly: true },
     ],
   },
   {
     title: "Social",
     icon: FiShare2,
     items: [
-      { href: "/social/ads", label: "Ads", icon: FiImage },
-      { href: "/social/promotions", label: "Promotions", icon: FiGift },
+      { href: "/social/ads", label: "Ads", icon: FiImage, adminOnly: true },
+      { href: "/social/promotions", label: "Promotions", icon: FiGift, adminOnly: true },
     ],
   },
   {
     title: "Settings",
     icon: FiSettings,
     items: [
-      { href: "/setting/advertising", label: "Advertising", icon: FiImage },
-      { href: "/setting/guide-subscriptions", label: "Guide Subscriptions", icon: FiCreditCard  },
-      { href: "/setting/guide-banners", label: "Guide Banners", icon: FiFileText },
-      { href: "/setting/enums", label: "Enums", icon: FiTag },
-      { href: "/setting/footer", label: "Footer", icon: FiGlobe },
+      { href: "/setting/advertising", label: "Advertising", icon: FiImage, adminOnly: true },
+      { href: "/setting/guide-subscriptions", label: "Guide Subscriptions", icon: FiCreditCard, adminOnly: true },
+      { href: "/setting/guide-banners", label: "Guide Banners", icon: FiFileText, adminOnly: true },
+      { href: "/setting/enums", label: "Enums", icon: FiTag, adminOnly: true },
+      { href: "/setting/footer", label: "Footer", icon: FiGlobe, adminOnly: true },
     ],
   },
 ];
@@ -106,6 +109,12 @@ export function Sidebar({
   const pathname = usePathname();
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [hasAutoCollapsed, setHasAutoCollapsed] = useState(false);
+
+  // ? matching is the current user is admin or not
+  const {baseUser} = useCurrentUserStore();
+  const isAdmin = baseUser?.role === USER_ROLE.ADMIN
+  console.log(baseUser);
+  console.log(isAdmin);
 
   useEffect(() => {
     // find the group that matches the current route
@@ -254,80 +263,90 @@ export function Sidebar({
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-4">
           <div className={cn("space-y-2", isCollapsed && "space-y-3")}>
-            {navigationGroups.map((group) => (
-              <div key={group.title}>
-                {/* Group Header */}
-                <motion.button
-                  onClick={() => toggleGroup(group.title)}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                    "font-display tracking-wide text-slate-500 dark:text-slate-400", // group titles modern font
-                    "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-950 dark:hover:to-indigo-900",
-                    "hover:text-blue-600 dark:hover:text-blue-400",
-                    expandedGroups.includes(group.title) &&
-                    "bg-blue-50/60 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 shadow-sm",
-                    isCollapsed && "justify-center px-2 py-3"
-                  )}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  aria-expanded={expandedGroups.includes(group.title)}
-                  aria-controls={`nav-group-${group.title.toLowerCase()}`}
-                >
-                  <group.icon
+            {navigationGroups.map((group) => {
+              // filter items based on adminOnly flag
+              const visibleItems = group.items.filter(item => {
+                if (item.adminOnly) return isAdmin;
+                return true;
+              });
+
+              // hide entire group if no visible items
+              if (visibleItems.length === 0) return null;
+              return (
+                <div key={group.title}>
+                  {/* Group Header */}
+                  <motion.button
+                    onClick={() => toggleGroup(group.title)}
                     className={cn(
-                      "h-5 w-5 flex-shrink-0 text-slate-400 transition-colors duration-200",
-                      "group-hover:text-blue-500",
-                      isCollapsed && "h-6 w-6"
+                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      "font-display tracking-wide text-slate-500 dark:text-slate-400", // group titles modern font
+                      "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-950 dark:hover:to-indigo-900",
+                      "hover:text-blue-600 dark:hover:text-blue-400",
+                      expandedGroups.includes(group.title) &&
+                      "bg-blue-50/60 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 shadow-sm",
+                      isCollapsed && "justify-center px-2 py-3"
                     )}
-                  />
-                  <AnimatePresence>
-                    {!isCollapsed && (
-                      <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        transition={{ duration: 0.2 }}
-                        className="flex flex-1 items-center justify-between"
-                      >
-                        <span>{group.title}</span>
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    aria-expanded={expandedGroups.includes(group.title)}
+                    aria-controls={`nav-group-${group.title.toLowerCase()}`}
+                  >
+                    <group.icon
+                      className={cn(
+                        "h-5 w-5 flex-shrink-0 text-slate-400 transition-colors duration-200",
+                        "group-hover:text-blue-500",
+                        isCollapsed && "h-6 w-6"
+                      )}
+                    />
+                    <AnimatePresence>
+                      {!isCollapsed && (
                         <motion.div
-                          animate={{ rotate: expandedGroups.includes(group.title) ? 90 : 0 }}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
                           transition={{ duration: 0.2 }}
+                          className="flex flex-1 items-center justify-between"
                         >
-                          <FiChevronRight className="h-4 w-4" />
+                          <span>{group.title}</span>
+                          <motion.div
+                            animate={{ rotate: expandedGroups.includes(group.title) ? 90 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <FiChevronRight className="h-4 w-4" />
+                          </motion.div>
                         </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+
+                  {/* Group Items */}
+                  <AnimatePresence>
+                    {(!isCollapsed && expandedGroups.includes(group.title)) && (
+                      <motion.div
+                        id={`nav-group-${group.title.toLowerCase()}`}
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="ml-6 mt-1 space-y-1"
+                        role="group"
+                        aria-label={`${group.title} navigation items`}
+                      >
+                        {visibleItems.map((item) => (
+                          <NavLink
+                            key={item.href}
+                            href={item.href}
+                            icon={item.icon}
+                            label={item.label}
+                            onClick={isMobile ? onClose : undefined}
+                          />
+                        ))}
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </motion.button>
-
-                {/* Group Items */}
-                <AnimatePresence>
-                  {(!isCollapsed && expandedGroups.includes(group.title)) && (
-                    <motion.div
-                      id={`nav-group-${group.title.toLowerCase()}`}
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className="ml-6 mt-1 space-y-1"
-                      role="group"
-                      aria-label={`${group.title} navigation items`}
-                    >
-                      {group.items.map((item) => (
-                        <NavLink
-                          key={item.href}
-                          href={item.href}
-                          icon={item.icon}
-                          label={item.label}
-                          onClick={isMobile ? onClose : undefined}
-                        />
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
+                </div>
+              )
+            })}
           </div>
         </nav>
 

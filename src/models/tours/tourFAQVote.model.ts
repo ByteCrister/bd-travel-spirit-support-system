@@ -21,7 +21,7 @@ const TourFAQVoteSchema = new Schema<ITourFAQVote>(
     },
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Traveler",
       required: true,
       index: true,
     },

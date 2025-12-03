@@ -1,7 +1,7 @@
 import mongoose, { Schema, model, models } from "mongoose";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import { UserModel } from "@/models/travellers/user.model";
+import { TravelerModel } from "./traveler.model";
 
 export enum OTP_PURPOSE {
   SIGNUP = "signup",
@@ -134,7 +134,7 @@ EmailOtpSchema.statics.consumeToken = async function (
 
   // Mark user verified for signup OTP
   if (purpose === OTP_PURPOSE.SIGNUP) {
-    const user = await UserModel.findOne({ email: email.toLowerCase() });
+    const user = await TravelerModel.findOne({ email: email.toLowerCase() });
     if (user && !user.isVerified) {
       user.isVerified = true;
       if (user.accountStatus === "pending") user.accountStatus = "active";

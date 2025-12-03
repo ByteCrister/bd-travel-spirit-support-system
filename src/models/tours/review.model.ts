@@ -116,7 +116,7 @@ const ReviewSchema = new Schema<IReview>(
         // Reference to the authoring user
         user: {
             type: Schema.Types.ObjectId,
-            ref: "User",
+            ref: "Traveler",
             required: true,
             index: true,
         },

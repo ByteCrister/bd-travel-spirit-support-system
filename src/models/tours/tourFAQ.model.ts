@@ -40,7 +40,7 @@ export interface ITourFAQ extends Document {
 
 const ReportSchema = new Schema<ITourFAQReport>(
     {
-        reportedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        reportedBy: { type: Schema.Types.ObjectId, ref: "Traveler", required: true },
         reason: { type: String, enum: Object.values(FAQ_REPORT_REASON) },
         customReason: { type: String, trim: true, maxlength: 200 },
         explanation: { type: String, trim: true, maxlength: 1000 },
@@ -57,8 +57,8 @@ const TourFAQSchema = new Schema<ITourFAQ>(
             required: true,
             index: true,
         },
-        askedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-        answeredBy: { type: Schema.Types.ObjectId, ref: "User" },
+        askedBy: { type: Schema.Types.ObjectId, ref: "Traveler", required: true },
+        answeredBy: { type: Schema.Types.ObjectId, ref: "Traveler" },
         question: { type: String, required: true, trim: true, maxlength: 1000 },
         answer: { type: String, trim: true, maxlength: 5000 },
         status: {
@@ -72,7 +72,7 @@ const TourFAQSchema = new Schema<ITourFAQ>(
         deletedAt: { type: Date, default: null },
         answeredAt: { type: Date },
         editedAt: { type: Date },
-        editedBy: { type: Schema.Types.ObjectId, ref: "User" },
+        editedBy: { type: Schema.Types.ObjectId, ref: "Traveler" },
         likes: { type: Number, default: 0, min: 0 },
         dislikes: { type: Number, default: 0, min: 0 },
         reports: [ReportSchema],

@@ -24,7 +24,7 @@ export interface IReport extends Document {
     evidenceImages?: Types.ObjectId[]; // Image references to Assets model
     evidenceLinks?: string[];          // External proof URLs
     status: ReportStatus;             // Current workflow state
-    assignedTo?: Types.ObjectId;       // Admin/User handling it
+    assignedTo?: Types.ObjectId;       // Admin/Traveler handling it
     priority: ReportPriority;         // Triage urgency
     resolutionNotes?: string;          // Internal post-resolution notes
     resolvedAt?: Date;                 // When it was resolved
@@ -73,7 +73,7 @@ const ReportSchema = new Schema<IReport>(
     {
         reporter: {
             type: Schema.Types.ObjectId,
-            ref: "User",
+            ref: "Traveler",
             required: true,
             index: true,
         },
@@ -115,7 +115,7 @@ const ReportSchema = new Schema<IReport>(
 
         assignedTo: {
             type: Schema.Types.ObjectId,
-            ref: "User",
+            ref: "Traveler",
             index: true,
         },
 

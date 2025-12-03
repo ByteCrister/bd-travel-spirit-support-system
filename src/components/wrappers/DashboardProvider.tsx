@@ -7,16 +7,20 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 const ADMIN_ROUTES = [
   "/overview/dashboard",
   "/overview/statistics",
+
   "/users/travelers",
   "/users/guides",
   "/users/companies",
   "/users/employees",
+
   "/support/users",
   "/support/articles",
   "/support/article-comments",
   "/support/reset-password-requests",
+
   "/social/ads",
   "/social/promotions",
+  
   "/setting/advertising",
   "/setting/guide-subscriptions",
   "/setting/guide-banners",

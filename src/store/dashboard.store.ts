@@ -243,7 +243,7 @@ export const useDashboardStore = create<DashboardState>()(
           const res = await api.get<ApiEnvelope<DashboardStats>>(`${URL_AFTER_API}/stats`);
           if (res.data.error) throw new Error(res.data.error);
           const data = res.data.data;
-          console.log(res.data);
+          // console.log(res.data);
           set((s) => ({ stats: data, _cache: { ...s._cache, stats: makeCacheEntry(data) } }));
         } catch (err) {
           const msg = extractErrorMessage(err);

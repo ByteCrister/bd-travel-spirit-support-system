@@ -32,6 +32,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ForgotPasswordFormValues, forgotPasswordValidator } from "@/utils/validators/forgotPassword.validator";
+import api from "@/utils/api/axios";
+import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import { showToast } from "../global/showToast";
 
 const jakarta = Plus_Jakarta_Sans({
     subsets: ["latin"],
@@ -67,13 +70,28 @@ export default function ForgotPasswordDialog({
     const handleSubmit = async (values: ForgotPasswordFormValues) => {
         setIsLoading(true);
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            // Make API call using your axios instance
+            const response = await api.post("/auth/user/employee/request-password", {
+                email: values.email,
+                description: values.description,
+            });
+
+            if (response.data?.success) {
+                console.log("Password reset request submitted successfully");
+                onClose();
+                form.reset();
+            } else {
+                console.error("Failed:", response.data?.message);
+                alert(response.data?.message || "Something went wrong");
+            }
+        } catch (err: unknown) {
+            console.error("Unexpected error:", err);
+            const message = extractErrorMessage(err)
+            showToast.error(message);
+        } finally {
             setIsLoading(false);
-            console.log("Password reset request submitted", values);
-            onClose();
-            form.reset();
-        }, 2000);
+        }
     };
 
     const handleOpenChange = (open: boolean) => {

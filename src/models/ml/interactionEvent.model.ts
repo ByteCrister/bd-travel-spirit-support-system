@@ -39,7 +39,7 @@ const InteractionEventSchema = new Schema<IInteractionEvent>(
   {
     user: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Traveler",
       index: true,
       required: true,
     },

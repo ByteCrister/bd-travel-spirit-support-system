@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiLogOut, FiAlertTriangle, FiX } from "react-icons/fi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "../ui/spinner";
 
 interface LogoutConfirmationProps {
   isOpen: boolean;
@@ -120,11 +121,9 @@ export function LogoutConfirmation({
                 >
                   {isLoggingOut ? (
                     <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       className="flex items-center gap-2"
                     >
-                      <FiLogOut className="h-4 w-4" />
+                      <Spinner />
                       Signing Out...
                     </motion.div>
                   ) : (

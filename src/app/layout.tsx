@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
-import { DashboardProvider } from "@/components/wrappers/DashboardProvider";
-
 import { Inter, Poppins } from "next/font/google";
+import GlobalProvider from "@/components/wrappers/GlobalProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"], variable: "--font-display" });
@@ -38,9 +37,9 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <body>
-        <DashboardProvider>
+        <GlobalProvider>
           {children}
-        </DashboardProvider>
+        </GlobalProvider>
         <Toaster
           position="top-right"
           richColors

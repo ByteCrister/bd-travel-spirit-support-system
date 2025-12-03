@@ -16,6 +16,7 @@ import {
 } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import { signIn } from "next-auth/react";
 
 import {
   Dialog,
@@ -36,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { LoginFormValues, loginValidator } from "@/utils/validators/login.validator";
 import ForgotPasswordDialog from "./ForgotPasswordDialog";
 import useJoinAsGuideStore from "@/store/join-as-guide.store";
+import { showToast } from "../global/showToast";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -70,13 +72,50 @@ export default function LoginDialog() {
   const handleSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const res = await signIn("credentials", {
+        redirect: false,
+        email: values.email,
+        password: values.password,
+      });
+
+      if (res?.error) {
+        console.error("Login failed:", res.error);
+        showToast.error("Login failed", String(res.error));
+      } else {
+        showToast.success("Login successful", "Redirecting to dashboard...");
+        // give the toast a moment to show (optional)
+        setTimeout(() => {
+          window.location.href = "/overview/dashboard";
+        }, 300);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast.error("An unexpected error occurred", String(err));
+    } finally {
       setIsLoading(false);
-      console.log("Login successful", values);
-      onClose();
-      form.reset();
-    }, 2000);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const res = await signIn("google", { redirect: false }); // disable auto redirect
+      if (res?.error) {
+        console.error("Google login failed:", res.error);
+        showToast.error("Google login failed", String(res.error));
+      } else {
+        showToast.success("Login successful", "Redirecting to dashboard...");
+        setTimeout(() => {
+          window.location.href = "/overview/dashboard";
+        }, 300);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast.error("An unexpected error occurred", String(err));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -256,10 +295,7 @@ export default function LoginDialog() {
                       type="button"
                       variant="outline"
                       className="w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300 py-3 transition-all duration-200"
-                      onClick={() => {
-                        // Handle Google login here
-                        console.log("Google login clicked");
-                      }}
+                      onClick={handleGoogleLogin}
                     >
                       <FcGoogle className="h-4 w-4 mr-2" />
                       Sign in with Google

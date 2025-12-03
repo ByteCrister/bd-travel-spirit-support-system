@@ -132,7 +132,7 @@ const PendingGuideSchema = new Schema<IPendingGuide>(
         },
         appliedAt: { type: Date, default: Date.now },
         reviewComment: { type: String, trim: true },
-        reviewer: { type: Schema.Types.ObjectId, ref: "User" },
+        reviewer: { type: Schema.Types.ObjectId, ref: "Traveler" },
         reviewedAt: Date,
     },
     { timestamps: true }
@@ -149,6 +149,8 @@ PendingGuideSchema.index({ companyName: 1 });
 /** ===============================
  * MODEL EXPORT
  * =============================== */
-export const PendingGuideModel =
+const PendingGuideModel =
     models.PendingGuide ||
     model<IPendingGuide>("PendingGuide", PendingGuideSchema);
+
+export default PendingGuideModel

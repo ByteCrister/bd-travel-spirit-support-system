@@ -14,7 +14,7 @@ export interface ISearchLog extends Document {
 }
 const SearchLogSchema = new Schema<ISearchLog>(
   {
-    user: { type: Schema.Types.ObjectId, ref: "User", index: true },
+    user: { type: Schema.Types.ObjectId, ref: "Traveler", index: true },
     query: { type: String, required: true, trim: true },
     tokens: [{ type: String, trim: true }],
     intents: [{ type: String, trim: true }],

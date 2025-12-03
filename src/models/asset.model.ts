@@ -1,5 +1,5 @@
-import { ASSET_TYPE, AssetType, MODERATION_STATUS, ModerationStatus, STORAGE_PROVIDER, StorageProvider, VISIBILITY, Visibility } from "@/constants/asset.const";
-import { Schema, model, models, Document, Types } from "mongoose";
+import { ASSET_TYPE, AssetType, STORAGE_PROVIDER, StorageProvider, VISIBILITY, Visibility } from "@/constants/asset.const";
+import { Schema, model, models, Document } from "mongoose";
 
 
 export interface IAsset extends Document {
@@ -18,14 +18,7 @@ export interface IAsset extends Document {
     description?: string;
     tags?: string[];
 
-    // Ownership & access
-    uploadedBy: Types.ObjectId;
     visibility: Visibility;
-
-    // Moderation
-    moderationStatus: ModerationStatus;
-    reviewedAt?: Date;
-    reviewedBy?: Types.ObjectId;
 
     // Lifecycle
     deletedAt?: Date;
@@ -66,17 +59,7 @@ const AssetSchema = new Schema<IAsset>(
         description: { type: String, trim: true, maxlength: 500 },
         tags: [{ type: String, lowercase: true, trim: true }],
 
-        uploadedBy: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
         visibility: { type: String, enum: Object.values(VISIBILITY), default: VISIBILITY.PRIVATE, index: true },
-
-        moderationStatus: {
-            type: String,
-            enum: Object.values(MODERATION_STATUS),
-            default: MODERATION_STATUS.PENDING,
-            index: true,
-        },
-        reviewedAt: Date,
-        reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
 
         deletedAt: Date,
     },

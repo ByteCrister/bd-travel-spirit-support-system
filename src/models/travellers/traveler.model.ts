@@ -1,10 +1,10 @@
 // ============================================
-// user.model.ts
+// traveler.model.ts
 // Production-grade User schema with lifecycle,
 // security, and extensibility considerations.
 // ============================================
 
-import { ACCOUNT_STATUS, AccountStatus, USER_ROLE, UserRole } from "@/constants/user.const";
+import { ACCOUNT_STATUS, AccountStatus } from "@/constants/user.const";
 import mongoose, {
   Schema,
   Document,
@@ -47,11 +47,9 @@ const PaymentMethodSchema = new Schema(
  * MAIN USER INTERFACE
  * =========================
  */
-export interface IUser extends Document {
+export interface ITraveler extends Document {
+  user: Types.ObjectId;
   name: string;
-  email: string;
-  password?: string; // optional for OAuth users
-  role: UserRole;
   avatar?: string;
   phone?: string;
   address?: mongoose.InferSchemaType<typeof AddressSchema>;
@@ -90,34 +88,11 @@ export interface IUser extends Document {
  * MAIN USER SCHEMA
  * =========================
  */
-const UserSchema = new Schema<IUser>(
+const TravelerSchema = new Schema<ITraveler>(
   {
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true, },
     // Core identity
     name: { type: String, required: true, trim: true },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      index: true,
-      trim: true,
-      lowercase: true, // NEW: normalize emails
-    },
-    password: {
-      type: String,
-      // Allow null for OAuth users
-      required: function (this: IUser) {
-        return this.role === USER_ROLE.TRAVELER;
-      },
-    },
-
-    // Role-based permissions
-    role: {
-      type: String,
-      enum: Object.values(USER_ROLE),
-      default: USER_ROLE.TRAVELER,
-      required: true,
-      index: true,
-    },
 
     // Profile
     avatar: { type: Schema.Types.ObjectId, ref: "Asset" },
@@ -178,14 +153,6 @@ const UserSchema = new Schema<IUser>(
   {
     timestamps: true,
     versionKey: false,
-    toJSON: {
-      virtuals: true,
-      transform: (_doc, ret) => {
-        // Strip sensitive fields
-        delete ret.password;
-        return ret;
-      },
-    },
     toObject: { virtuals: true },
   }
 );
@@ -195,15 +162,15 @@ const UserSchema = new Schema<IUser>(
  * VIRTUALS
  * =========================
  */
-UserSchema.virtual("isLocked").get(function (this: IUser) {
+TravelerSchema.virtual("isLocked").get(function (this: ITraveler) {
   return !!(this.lockUntil && this.lockUntil.getTime() > Date.now());
 });
 
-UserSchema.virtual("isSuspended").get(function (this: IUser) {
+TravelerSchema.virtual("isSuspended").get(function (this: ITraveler) {
   return !!(this.suspension?.until && this.suspension.until > new Date());
 });
 
-UserSchema.virtual("isActive").get(function (this: IUser) {
+TravelerSchema.virtual("isActive").get(function (this: ITraveler) {
   return !this.deletedAt && this.accountStatus === ACCOUNT_STATUS.ACTIVE;
 });
 
@@ -214,7 +181,7 @@ UserSchema.virtual("isActive").get(function (this: IUser) {
  */
 
 // Exclude soft-deleted users by default
-UserSchema.pre<Query<IUserDoc, IUser>>(/^find/, function (next) {
+TravelerSchema.pre<Query<ITravellerDoc, ITraveler>>(/^find/, function (next) {
   this.where({ deletedAt: null });
   next();
 });
@@ -225,7 +192,7 @@ UserSchema.pre<Query<IUserDoc, IUser>>(/^find/, function (next) {
  * =========================
  */
 // Text search (only one text index allowed per collection)
-UserSchema.index({
+TravelerSchema.index({
   name: "text",
   email: "text",
   phone: "text",
@@ -233,15 +200,15 @@ UserSchema.index({
 });
 
 // Filtering + sorting
-UserSchema.index({ role: 1, accountStatus: 1, isVerified: 1 });
-UserSchema.index({ createdAt: -1 });
-UserSchema.index({ lastLogin: -1 });
-UserSchema.index({ dateOfBirth: 1 });
+TravelerSchema.index({ role: 1, accountStatus: 1, isVerified: 1 });
+TravelerSchema.index({ createdAt: -1 });
+TravelerSchema.index({ lastLogin: -1 });
+TravelerSchema.index({ dateOfBirth: 1 });
 
 /**
  * =========================
  * MODEL FACTORY
  * =========================
  */
-export type IUserDoc = IUser & mongoose.Document;
-export const UserModel = models.User || model<IUserDoc>("User", UserSchema);
+export type ITravellerDoc = ITraveler & mongoose.Document;
+export const TravelerModel = models.Traveler || model<ITravellerDoc>("Traveler", TravelerSchema);
