@@ -4,6 +4,7 @@ import UserModel from "@/models/user.model";
 import { IBaseUser } from "@/types/current-user.types";
 import { getUserIdFromSession } from "@/lib/helpers/get-user";
 import { Types } from "mongoose";
+import ConnectDB from "@/config/db";
 
 /**
  * GET /api/auth/user
@@ -11,6 +12,7 @@ import { Types } from "mongoose";
  */
 export async function GET() {
     try {
+        await ConnectDB()
         // Get user ID from session
         const userId = await getUserIdFromSession();
 

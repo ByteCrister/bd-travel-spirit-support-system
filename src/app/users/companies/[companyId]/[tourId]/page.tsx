@@ -2,7 +2,7 @@
 import TourDetailPage from "@/components/users/companies/company-details/tours/details/TourDetailPage";
 
 interface PageProps {
-    params: { companyId: string; tourId: string };
+    params: Promise<{ companyId: string; tourId: string }>;
 }
 
 export default async function Page({ params }: PageProps) {

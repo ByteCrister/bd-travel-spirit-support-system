@@ -4,6 +4,7 @@ import AuditModel, { IAuditDoc } from "@/models/audit.model";
 import { AuditListApiResponse, AuditLog } from "@/types/current-user.types";
 import { Types } from "mongoose";
 import { getUserIdFromSession } from "@/lib/helpers/get-user";
+import ConnectDB from "@/config/db";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
@@ -11,6 +12,8 @@ const MAX_PAGE_SIZE = 100;
 
 export async function GET(req: NextRequest) {
     try {
+        await ConnectDB()
+
         const url = new URL(req.url);
         let page = Number.parseInt(url.searchParams.get("page") ?? `${DEFAULT_PAGE}`, 10);
         let pageSize = Number.parseInt(url.searchParams.get("pageSize") ?? `${DEFAULT_PAGE_SIZE}`, 10);

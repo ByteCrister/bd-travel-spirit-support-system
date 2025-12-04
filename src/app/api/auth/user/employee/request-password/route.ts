@@ -6,6 +6,7 @@ import { authRateLimit } from "@/lib/redis/auth-rate-limit";
 import ResetPasswordRequestModel from "@/models/employees/reset-password-request.model";
 import { Types } from "mongoose";
 import UserModel from "@/models/user.model";
+import ConnectDB from "@/config/db";
 
 interface ForgotPasswordRequestBody {
     email: string;
@@ -14,6 +15,8 @@ interface ForgotPasswordRequestBody {
 
 export async function POST(req: NextRequest) {
     try {
+        await ConnectDB()
+
         const body: ForgotPasswordRequestBody = await req.json();
         const email = body.email?.trim().toLowerCase();
         const description = body.description?.trim();

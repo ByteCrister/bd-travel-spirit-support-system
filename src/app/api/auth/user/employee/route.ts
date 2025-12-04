@@ -6,6 +6,7 @@ import { IEmployeeInfo } from "@/types/current-user.types";
 import { Lean } from "@/types/mongoose-lean.types";
 import { Types } from "mongoose";
 import { EmployeeRole } from "@/constants/employee.const";
+import ConnectDB from "@/config/db";
 
 type AssetPopulated = { publicUrl: string };
 
@@ -28,6 +29,8 @@ function isAssetPopulated(x: unknown): x is AssetPopulated {
 
 export async function GET() {
     try {
+        await ConnectDB()
+
         const userId = await getUserIdFromSession();
         if (!userId) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });

@@ -70,7 +70,6 @@ interface EmployeeStore {
     restoreEmployee: (payload: RestoreEmployeePayload) => Promise<void>;
 
     // Meta endpoints
-    fetchPositions: (force?: boolean) => Promise<unknown>;
     fetchEnums: (force?: boolean) => Promise<unknown>;
 
     // Cache helpers
@@ -518,25 +517,6 @@ export const useEmployeeStore = create<EmployeeStore>()(
                                 false,
                                 "employees/restore:error"
                             );
-                            throw new Error(message);
-                        }
-                    },
-
-                    // Meta endpoints: store as simple cache entries (same as before)
-                    async fetchPositions(force = false) {
-                        const key = EMPLOYEES_CACHE_KEYS.positions;
-                        const cached = get().cache.get(key);
-                        if (!force && cached && !isExpired(cached)) return cached.data;
-                        try {
-                            const res = await api.get<ApiResult<unknown>>(EMP_API.POSITIONS);
-                            const body = res.data;
-                            if (!body.ok) throw new Error(body.error?.message || "Failed to fetch positions");
-                            get().cache.set(key, { ts: nowMs(), ttl: DEFAULT_TTL_SECONDS, data: body.data });
-                            pruneGlobalCache(get().cache, DEFAULT_GLOBAL_CACHE_ENTRIES);
-                            return body.data;
-                        } catch (err) {
-                            const message = extractErrorMessage(err);
-                            set({ lastError: message }, false, "employees/fetchPositions:error");
                             throw new Error(message);
                         }
                     },

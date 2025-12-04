@@ -1,31 +1,89 @@
 import {
-    EMPLOYEE_POSITIONS,
     EMPLOYEE_ROLE,
     EMPLOYEE_STATUS,
-    EMPLOYEE_SUB_ROLE,
-    EmployeePosition,
+    EMPLOYMENT_TYPE,
     EmployeeRole,
     EmployeeStatus,
-    EmployeeSubRole,
-    EMPLOYMENT_TYPE,
     EmploymentType,
 } from "@/constants/employee.const";
+
 import { DayOfWeek } from "@/types/employee.types";
 import { Schema, Document, Types, models, model } from "mongoose";
 
-/* ------------------------------------------------------------------
-   SUB-SCHEMAS
-------------------------------------------------------------------- */
+/* =========================================================
+   PAYROLL SYSTEM (AUTO + MANUAL + FAILURE TRACKING)
+========================================================= */
+
+export enum PAYROLL_STATUS {
+    PENDING = "pending",
+    PAID = "paid",
+    FAILED = "failed",
+}
+
+export interface IPayrollRecord {
+    year: number;              // 2025
+    month: number;             // 1–12
+    amount: number;
+    currency: string;
+
+    status: PAYROLL_STATUS;
+
+    attemptedAt?: Date;        // Cron or manual attempt time
+    paidAt?: Date;             // When payment actually succeeded
+
+    failureReason?: string;   // If failed
+    transactionRef?: string;  // Bank / Stripe / Mobile Wallet reference
+    paidBy?: Types.ObjectId;  // Owner/Admin user ID (manual payment)
+}
+
+const PayrollSchema = new Schema<IPayrollRecord>(
+    {
+        year: { type: Number, required: true },
+        month: { type: Number, required: true, min: 1, max: 12 },
+
+        amount: { type: Number, required: true, min: 0 },
+        currency: { type: String, required: true, maxlength: 3, uppercase: true },
+
+        status: {
+            type: String,
+            enum: Object.values(PAYROLL_STATUS),
+            default: PAYROLL_STATUS.PENDING,
+            index: true,
+        },
+
+        attemptedAt: Date,
+        paidAt: Date,
+
+        failureReason: { type: String, trim: true },
+        transactionRef: { type: String, trim: true },
+
+        paidBy: { type: Schema.Types.ObjectId, ref: "User" },
+    },
+    { _id: false }
+);
+
+/* =========================================================
+    EMERGENCY & CONTACT SUB-SCHEMAS
+========================================================= */
 
 export interface IEmergencyContact {
     name: string;
     phone: string;
     relation: string;
 }
+
 const EmergencyContactSchema = new Schema<IEmergencyContact>(
     {
         name: { type: String, trim: true, required: true },
-        phone: { type: String, trim: true, maxlength: 20, required: true },
+
+        phone: {
+            type: String,
+            trim: true,
+            maxlength: 20,
+            required: true,
+            match: [/^(?:\+?88)?01[3-9]\d{8}$/, "Invalid Bangladesh phone"],
+        },
+
         relation: { type: String, trim: true, required: true },
     },
     { _id: false }
@@ -38,22 +96,36 @@ export interface IContactInfo {
     firstName?: string;
     lastName?: string;
 }
+
 const ContactInfoSchema = new Schema<IContactInfo>(
     {
-        phone: { type: String, trim: true, maxlength: 20 },
-        email: { type: String, trim: true, lowercase: true, match: /.+\@.+\..+/ },
-        emergencyContact: { type: EmergencyContactSchema },
+        phone: {
+            type: String,
+            trim: true,
+            required: true,
+            match: [/^(?:\+?88)?01[3-9]\d{8}$/, "Invalid Bangladesh phone"],
+        },
+
+        email: { type: String, trim: true, lowercase: true },
+
+        emergencyContact: EmergencyContactSchema,
+
         firstName: { type: String, trim: true },
         lastName: { type: String, trim: true },
     },
     { _id: false }
 );
 
+/* =========================================================
+   SHIFT SCHEDULING
+========================================================= */
+
 export interface IShift {
-    startTime: string;
+    startTime: string; // HH:mm
     endTime: string;
     days: DayOfWeek[];
 }
+
 const ShiftSchema = new Schema<IShift>(
     {
         startTime: {
@@ -77,35 +149,29 @@ const ShiftSchema = new Schema<IShift>(
     { _id: false }
 );
 
-export interface IPerformance {
-    rating?: number;
-    lastReview?: Date;
-    feedback?: string;
-}
-const PerformanceSchema = new Schema<IPerformance>(
-    {
-        rating: { type: Number, min: 1, max: 5 },
-        lastReview: Date,
-        feedback: { type: String, trim: true, maxlength: 2000 },
-    },
-    { _id: false }
-);
+/* =========================================================
+   DOCUMENT STORAGE (NID, CONTRACT, ETC.)
+========================================================= */
 
 export interface IDocument {
     type: string;
     url: Types.ObjectId;
     uploadedAt: Date;
 }
+
 const DocumentSchema = new Schema<IDocument>(
     {
-        type: { type: String, trim: true, required: true },
+        type: { type: String, required: true },
         url: { type: Schema.Types.ObjectId, ref: "Asset", required: true },
         uploadedAt: { type: Date, default: Date.now },
     },
     { _id: false }
 );
 
-/** Salary history */
+/* =========================================================
+   SALARY
+========================================================= */
+
 export interface ISalaryHistory {
     amount: number;
     currency: string;
@@ -113,120 +179,64 @@ export interface ISalaryHistory {
     effectiveTo?: Date;
     reason?: string;
 }
+
 const SalaryHistorySchema = new Schema<ISalaryHistory>(
     {
         amount: { type: Number, required: true, min: 0 },
-        currency: { type: String, required: true, maxlength: 3, uppercase: true },
+        currency: { type: String, required: true, uppercase: true },
         effectiveFrom: { type: Date, required: true },
         effectiveTo: Date,
-        reason: { type: String, trim: true },
+        reason: String,
     },
     { _id: false }
 );
 
-/** Position history */
-export interface IPositionHistory {
-    position: string;
-    effectiveFrom: Date;
-    effectiveTo?: Date;
-}
-const PositionHistorySchema = new Schema<IPositionHistory>(
-    {
-        position: {
-            type: String,
-            enum: Object.values(EMPLOYEE_POSITIONS).flat(),
-            required: true,
-        },
-        effectiveFrom: { type: Date, required: true },
-        effectiveTo: Date,
-    },
-    { _id: false }
-);
-
-/* ------------------------------------------------------------------
-   MAIN INTERFACE
-------------------------------------------------------------------- */
+/* =========================================================
+   MAIN EMPLOYEE INTERFACE
+========================================================= */
 
 export interface IEmployee extends Document {
     user: Types.ObjectId;
     companyId?: Types.ObjectId;
+
     role: EmployeeRole;
-    subRole: EmployeeSubRole;
-    position?: EmployeePosition;
+
     status: EmployeeStatus;
     employmentType?: EmploymentType;
-    avatar?: Types.ObjectId;
 
-    // Denormalized read fields
+    avatar?: Types.ObjectId;
     fullName?: string;
 
-    failedLoginAttempts: number;
-    lastFailedAt: Date;
-    lockedUntil: Date;
-    lastLogin: Date;
-
-    // Current salary
     salary: number;
     currency: string;
     salaryHistory: ISalaryHistory[];
 
-    positionHistory: IPositionHistory[];
+    payroll: IPayrollRecord[];
 
     dateOfJoining: Date;
     dateOfLeaving?: Date;
 
     contactInfo: IContactInfo;
-    permissions: string[];
+
     shifts?: IShift[];
-    performance: IPerformance;
     documents?: IDocument[];
+
     notes?: string;
     isDeleted: boolean;
+    lastLogin: Date;
+
     createdAt: Date;
     updatedAt: Date;
 }
 
-/* ------------------------------------------------------------------
-   SCHEMA
-------------------------------------------------------------------- */
 
 const EmployeeSchema = new Schema<IEmployee>(
     {
-        user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true, },
+        user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
 
-        companyId: {
-            type: Schema.Types.ObjectId,
-            ref: "Guide", // ? Guide model is the company model
-            validate: {
-                validator: function (this: IEmployee, v: Types.ObjectId | undefined) {
-                    if (this.role === EMPLOYEE_ROLE.ASSISTANT && !v) return false;
-                    if (this.role === EMPLOYEE_ROLE.SUPPORT && v) return false;
-                    return true;
-                },
-                message:
-                    "companyId is required for assistants and must be empty for support staff",
-            },
-            index: true,
-        },
+        companyId: { type: Schema.Types.ObjectId, ref: "Guide", index: true },
 
-        role: {
-            type: String,
-            enum: Object.values(EMPLOYEE_ROLE),
-            required: true,
-            index: true,
-        },
-        subRole: {
-            type: String,
-            enum: Object.values(EMPLOYEE_SUB_ROLE),
-            required: true,
-            index: true,
-        },
-        position: {
-            type: String,
-            enum: Object.values(EMPLOYEE_POSITIONS).flat(),
-            required: true,
-            index: true,
-        },
+        role: { type: String, enum: Object.values(EMPLOYEE_ROLE), required: true },
 
         status: {
             type: String,
@@ -234,37 +244,35 @@ const EmployeeSchema = new Schema<IEmployee>(
             default: EMPLOYEE_STATUS.ACTIVE,
             index: true,
         },
+
         employmentType: { type: String, enum: Object.values(EMPLOYMENT_TYPE) },
 
         avatar: { type: Schema.Types.ObjectId, ref: "Asset" },
 
-        /* Denormalized for fast reads */
         fullName: { type: String, trim: true, index: true },
 
-        /* Account controls */
-        failedLoginAttempts: { type: Number, default: 0 },
-        lastFailedAt: Date,
-        lockedUntil: Date,
-        lastLogin: Date,
-
+        /* FINANCIAL CORE */
         salary: { type: Number, required: true, min: 0 },
-        currency: { type: String, required: true, maxlength: 3, uppercase: true },
+        currency: { type: String, required: true, uppercase: true },
+
         salaryHistory: { type: [SalaryHistorySchema], default: [] },
-        positionHistory: { type: [PositionHistorySchema], default: [] },
+
+        payroll: { type: [PayrollSchema], default: [] },
 
         dateOfJoining: { type: Date, default: Date.now },
         dateOfLeaving: Date,
 
         contactInfo: { type: ContactInfoSchema, required: true },
-        permissions: { type: [String], default: [] },
 
         shifts: { type: [ShiftSchema], default: [] },
-        performance: { type: PerformanceSchema, default: {} },
+
         documents: { type: [DocumentSchema], default: [] },
 
         notes: { type: String, trim: true, maxlength: 2000 },
 
         isDeleted: { type: Boolean, default: false, index: true },
+
+        lastLogin: Date,
     },
     {
         timestamps: true,
@@ -275,80 +283,44 @@ const EmployeeSchema = new Schema<IEmployee>(
     }
 );
 
-/* ------------------------------------------------------------------
-   HOOKS & METHODS
-------------------------------------------------------------------- */
 
-// Ensure leaving date is after joining and maintain fullName
-EmployeeSchema.pre("save", async function (next) {
-    // dateOfLeaving validation
-    if (this.dateOfLeaving && this.dateOfLeaving < this.dateOfJoining) {
-        return next(new Error("dateOfLeaving must be after dateOfJoining"));
+// Maintain fullName automatically
+EmployeeSchema.pre("save", function (next) {
+    const first = this.contactInfo?.firstName?.trim();
+    const last = this.contactInfo?.lastName?.trim();
+
+    if (first || last) {
+        this.fullName = [first, last].filter(Boolean).join(" ");
     }
 
-    // Maintain denormalized fullName if contactInfo first/last present
-    try {
-        const first = this.contactInfo?.firstName?.trim();
-        const last = this.contactInfo?.lastName?.trim();
-        if (first || last) {
-            this.fullName = [first, last].filter(Boolean).join(" ");
-        } else if (!this.fullName && this.contactInfo?.email) {
-            // fallback partial name from email before migration completes
-            const local = this.contactInfo.email.split("@")[0];
-            this.fullName = local;
-        }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {
-        // don't block save for name normalization issues
+    if (this.dateOfLeaving && this.dateOfLeaving < this.dateOfJoining) {
+        return next(new Error("dateOfLeaving must be after joining date"));
     }
 
     next();
 });
 
-// Return sanitized JSON (strip sensitive fields)
-EmployeeSchema.methods.safeToJSON = function () {
-    const obj = this.toObject({ getters: true, virtuals: false });
-    delete obj.password;
-    delete obj.__v;
-    delete obj.version;
-    return obj;
-};
+/* =========================================================
+   INDEXES FOR SPEED
+========================================================= */
 
-
-/* ------------------------------------------------------------------
-   INDEXES — tuned for common queries and fast lookups
-------------------------------------------------------------------- */
-
-// Basic compound index for admin queries (partial to exclude deleted)
-EmployeeSchema.index(
-    { isDeleted: 1 },
-    { partialFilterExpression: { isDeleted: false } }
-);
-
-// Recent-first index for lists sorted by recency
+EmployeeSchema.index({ isDeleted: 1 });
 EmployeeSchema.index({ createdAt: -1 });
 
-// Text index for lightweight search across name/position/email
 EmployeeSchema.index(
-    { fullName: "text", position: "text", "contactInfo.email": "text" },
-    { weights: { fullName: 5, "contactInfo.email": 3, position: 2 } }
+    { fullName: "text", "contactInfo.email": "text" },
+    { weights: { fullName: 5, "contactInfo.email": 3, } }
 );
 
-// Index for company-scoped queries (sparse; only created when companyId exists)
-EmployeeSchema.index(
-    { companyId: 1, role: 1 },
-    { partialFilterExpression: { companyId: { $exists: true } } }
-);
+// Payroll query optimization
+EmployeeSchema.index({
+    "payroll.year": 1,
+    "payroll.month": 1,
+    "payroll.status": 1,
+});
 
-// Index for isDeleted + status filters
-EmployeeSchema.index({ isDeleted: 1, status: 1 });
-
-/* ------------------------------------------------------------------
-   EXPORT
-------------------------------------------------------------------- */
 
 const EmployeeModel =
-    models.employees ||
-    model<IEmployee>("employees", EmployeeSchema);
+    models.employees || model<IEmployee>("employees", EmployeeSchema);
 
 export default EmployeeModel;

@@ -1,42 +1,28 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-
 import { useEmployeeStore } from "@/store/employee.store";
-
 import {
     EmployeeDetailDTO,
     UpdateEmployeePayload,
-    SalaryHistoryDTO,
-    PositionHistoryDTO,
     ContactInfoDTO,
-    PerformanceDTO,
     ShiftDTO,
-    EmployeePosition,
-    PositionCategory,
-    EmployeeSubRole,
     EmploymentType,
     EmployeeStatus,
+    SalaryHistoryDTO,
+    DocumentDTO,
 } from "@/types/employee.types";
-
-import {
-    EMPLOYEE_STATUS,
-    EMPLOYMENT_TYPE,
-    EMPLOYEE_SUB_ROLE,
-    EMPLOYEE_POSITIONS,
-} from "@/constants/employee.const";
-
+import { AuditLog } from "@/types/current-user.types";
+import { EMPLOYEE_STATUS, EMPLOYMENT_TYPE, EMPLOYEE_ROLE } from "@/constants/employee.const";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
 import { Breadcrumbs } from "../../../global/Breadcrumbs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 import {
     Flame,
-    Trash2,
     RotateCcw,
     User,
     Briefcase,
@@ -47,96 +33,96 @@ import {
     FileText,
     StickyNote,
     Shield,
-    Plus,
     Save,
     ArrowLeft,
     Mail,
     Calendar,
     Clock,
-    Star,
     Award,
-    Building
+    Trash2,
+    Lock,
+    X,
+    Sparkles,
+    Check,
+    Copy,
 } from "lucide-react";
-
-import {
-    clamp,
-    formatDate,
-    fromLocalInput,
-    latestEffectiveFrom,
-    toLocalInput,
-} from "@/utils/helpers/employees.details";
+import { formatDate, latestEffectiveFrom } from "@/utils/helpers/employees.details";
 import { showToast } from "@/components/global/showToast";
 import InfoCard from "./InfoCard";
 import InfoField from "./InfoField";
 import FormRow from "./FormRow";
 import ModernSelect from "./ModernSelect";
 import ShiftEditor from "./ShiftEditor";
+import {
+    fileToAvatarBase64,
+    filesToDocumentDTOs,
+    getFileExtension,
+} from "@/utils/helpers/fileBase64";
+import generateStrongPassword from "@/utils/helpers/generate-strong-password";
+import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
 
 /* --------------------------------------------
-   Enum/meta bundle with strict union typings
+  Form type: lightweight and focused on fields edited in UI
 --------------------------------------------- */
+
+type UpdateEmployeeForm = Partial<
+    Pick<
+        UpdateEmployeePayload,
+        | "id"
+        | "status"
+        | "employmentType"
+        | "contactInfo"
+        | "shifts"
+        | "notes"
+        | "avatar"
+        | "dateOfJoining"
+        | "dateOfLeaving"
+        | "role"
+        | "documents"
+        | "salary"
+        | "currency"
+    >
+>;
+
+/* --------------------------------------------
+  Enum bundle
+--------------------------------------------- */
+
 type EnumBundle = {
-    subRoles: EmployeeSubRole[];
     statuses: EmployeeStatus[];
     employmentTypes: EmploymentType[];
-    positionsMap: Record<PositionCategory, EmployeePosition[]>;
+    roles: (typeof EMPLOYEE_ROLE)[keyof typeof EMPLOYEE_ROLE][];
 };
 
-/* --------------------------------------------
-   Helpers for position/category mapping
---------------------------------------------- */
-const positionCategoriesStrict = Object.keys(EMPLOYEE_POSITIONS) as PositionCategory[];
-
-export function categoryByPosition(
-    pos: EmployeePosition | undefined
-): PositionCategory | undefined {
-    if (!pos) return undefined;
-
-    for (const cat of positionCategoriesStrict) {
-        const positions = EMPLOYEE_POSITIONS[cat] as readonly EmployeePosition[];
-        if (positions.includes(pos)) return cat;
-    }
-
-    return undefined;
-}
-
-function firstCategory(): PositionCategory {
-    return positionCategoriesStrict[0];
-}
-
-// function firstPosition(): EmployeePosition {
-//     const cat = firstCategory();
-//     return EMPLOYEE_POSITIONS[cat][0];
-// }
-
 const DEFAULT_ENUMS: EnumBundle = {
-    subRoles: Object.values(EMPLOYEE_SUB_ROLE),
     statuses: Object.values(EMPLOYEE_STATUS),
     employmentTypes: Object.values(EMPLOYMENT_TYPE),
-    positionsMap: Object.fromEntries(
-        Object.entries(EMPLOYEE_POSITIONS).map(([k, arr]) => [k, [...arr]])
-    ) as Record<PositionCategory, EmployeePosition[]>,
+    roles: Object.values(EMPLOYEE_ROLE),
 };
 
 const enums = DEFAULT_ENUMS;
 
 /* --------------------------------------------
-   Page component
+  Component
 --------------------------------------------- */
+
 export default function EmployeeDetailPage({ employeeId }: { employeeId: string }) {
     const router = useRouter();
-    const {
-        fetchEmployeeDetail,
-        updateEmployee,
-        softDeleteEmployee,
-        restoreEmployee,
-    } = useEmployeeStore();
+    const { fetchEmployeeDetail, updateEmployee, softDeleteEmployee, restoreEmployee } =
+        useEmployeeStore();
 
     const [detail, setDetail] = useState<EmployeeDetailDTO | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [tab, setTab] = useState<string>("overview");
-    const [form, setForm] = useState<UpdateEmployeePayload | null>(null);
+    const [form, setForm] = useState<UpdateEmployeeForm | null>(null);
+
+    // avatar preview base64
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+    // password management
+    const [generatedPassword, setGeneratedPassword] = useState<string>("");
+    const [newPassword, setNewPassword] = useState<string>("");
 
     const breadcrumbItems = useMemo(
         () => [
@@ -159,177 +145,301 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                     id: d.id,
                     status: d.status,
                     employmentType: d.employmentType,
-                    subRole: d.subRole,
-                    position: d.position,
                     contactInfo: d.contactInfo,
-                    performance: d.performance,
                     shifts: d.shifts,
                     notes: d.notes,
-                    salaryHistory: d.salaryHistory,
-                    positionHistory: d.positionHistory,
+                    avatar: d.avatar,
+                    dateOfJoining: d.dateOfJoining,
+                    dateOfLeaving: d.dateOfLeaving,
+                    role: d.role,
+                    documents: d.documents,
                 });
+                // set avatar preview if avatar is a data URL
+                if (d.avatar && typeof d.avatar === "string" && d.avatar.startsWith("data:")) {
+                    setAvatarPreview(d.avatar);
+                } else {
+                    setAvatarPreview(null);
+                }
             } catch (e) {
-                showToast.error(`Failed to load employee details: ${e}`);
+                showToast.error(`Failed to load employee details: ${String(e)}`);
             } finally {
                 if (mounted) setLoading(false);
             }
         };
         hydrate();
-        return () => { mounted = false; };
+        return () => {
+            mounted = false;
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [employeeId]);
 
-    const setField = <K extends keyof UpdateEmployeePayload>(
-        key: K,
-        value: UpdateEmployeePayload[K]
-    ) => {
+    const setField = <K extends keyof UpdateEmployeeForm>(key: K, value: UpdateEmployeeForm[K]) => {
         setForm((prev) => {
             if (prev) return { ...prev, [key]: value };
             if (!detail) return prev;
-            return { id: detail.id, [key]: value } as UpdateEmployeePayload;
+            return { id: detail.id, [key]: value } as UpdateEmployeeForm;
         });
     };
 
     const setContact = (patch: Partial<ContactInfoDTO>) => {
+        // prefer patch.phone -> existing form.contactInfo.phone -> detail.contactInfo.phone -> empty string
+        const phoneFallback =
+            patch.phone ?? form?.contactInfo?.phone ?? detail?.contactInfo?.phone ?? "";
+
         const next: ContactInfoDTO = {
-            ...(form?.contactInfo ?? {}),
+            ...(form?.contactInfo ?? (detail?.contactInfo ?? {} as ContactInfoDTO)),
             ...patch,
+            phone: phoneFallback, // guaranteed string
         };
+
         setField("contactInfo", next);
     };
-
-    const setPerformance = (patch: Partial<PerformanceDTO>) => {
-        const next: PerformanceDTO = {
-            ...(form?.performance ?? {}),
-            ...patch,
-        };
-        setField("performance", next);
-    };
-
     const setShifts = (value: ShiftDTO[] | undefined) => setField("shifts", value);
 
-    const positionCategories = useMemo(() => positionCategoriesStrict, []);
-    const allPositions = useMemo(
-        () => positionCategories.flatMap((c) => enums.positionsMap[c]),
-        [positionCategories]
-    );
+    /* -------------------------
+       File handling helpers
+       ------------------------- */
 
-    const addSalaryEntry = useCallback(() => {
-        if (!form && !detail) return;
-        const baseSalary = detail?.salary ?? form?.salaryHistory?.[0]?.amount ?? 0;
-        const newEntry: SalaryHistoryDTO = { amount: baseSalary, currency: detail?.salaryCurrency ?? "BDT", effectiveFrom: new Date().toISOString() };
-        setForm(prev => {
-            const next = [{ ...newEntry }, ...(prev?.salaryHistory ?? detail?.salaryHistory ?? [])];
-            return { ...(prev ?? { id: detail!.id }), salaryHistory: next } as UpdateEmployeePayload;
+    const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB
+    const IMAGE_EXTS = ["jpg", "jpeg", "png", "gif"];
+
+    async function handleAvatarFile(file?: File) {
+        if (!file) return;
+        try {
+            const ext = getFileExtension(file.name);
+            if (!IMAGE_EXTS.includes(ext)) {
+                showToast.error("Avatar must be an image (jpg, jpeg, png, gif)");
+                return;
+            }
+            if (file.size > MAX_AVATAR_BYTES) {
+                showToast.error("Avatar file too large. Max 5 MB allowed.");
+                return;
+            }
+            const base64 = await fileToAvatarBase64(file, { maxFileBytes: MAX_AVATAR_BYTES });
+            setAvatarPreview(base64);
+            // set in form as base64 string (cast to avatar field)
+            setField("avatar", base64 as unknown as UpdateEmployeeForm["avatar"]);
+        } catch (err: unknown) {
+            console.error(err);
+            showToast.error(String(extractErrorMessage(err) ?? "Failed to process avatar"));
+        }
+    }
+
+    async function handleDocumentsFiles(files?: FileList | File[]) {
+        if (!files || (files as FileList).length === 0) return;
+        try {
+            const docs = await filesToDocumentDTOs(files as FileList);
+            if (!docs || docs.length === 0) {
+                showToast.warning("No valid documents were processed");
+                return;
+            }
+            // append to existing documents in form
+            const existing = (form?.documents ?? []) as DocumentDTO[];
+            const merged = [...existing, ...docs];
+            setField("documents", merged as unknown as UpdateEmployeeForm["documents"]);
+            showToast.success(`${docs.length} document(s) added`);
+        } catch (err: unknown) {
+            console.error(err);
+            showToast.error(String(extractErrorMessage(err) ?? "Failed to process documents"));
+        }
+    }
+
+    const removeDocumentAt = (index: number) => {
+        setForm((s) => {
+            if (!s) return s;
+            const docs = [...(s.documents ?? [])]; // use s, not outer form
+            if (index < 0 || index >= docs.length) return s;
+            docs.splice(index, 1);
+            return { ...s, documents: docs };
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [detail]);
+    };
 
-    const updateSalaryEntry = useCallback((idx: number, patch: Partial<SalaryHistoryDTO>) => {
-        if (!detail) return;
-        const next = detail.salaryHistory.map((e, i) => (i === idx ? { ...e, ...patch } : e));
-        setDetail({ ...detail, salaryHistory: next });
-        setField("salaryHistory", next);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [detail]);
+    /* -------------------------
+       API helpers for separate endpoints
+       ------------------------- */
 
-    const removeSalaryEntry = useCallback((idx: number) => {
-        if (!detail) return;
-        const next = detail.salaryHistory.filter((_, i) => i !== idx);
-        setDetail({ ...detail, salaryHistory: next });
-        setField("salaryHistory", next);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [detail]);
+    async function uploadAvatarApi(employeeId: string, base64DataUrl: string) {
+        try {
+            const res = await fetch(`/api/employees/${encodeURIComponent(employeeId)}/avatar`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ avatarBase64: base64DataUrl }),
+            });
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err || "Avatar upload failed");
+            }
+            const json = await res.json();
+            showToast.success("Avatar uploaded");
+            return json.data;
+        } catch (err: unknown) {
+            console.error("uploadAvatarApi", err);
+            showToast.error(String(extractErrorMessage(err) ?? "Failed to upload avatar"));
+            throw err;
+        }
+    }
 
-    const addPositionEntry = useCallback(() => {
-        if (!detail) return;
-        const fallbackCat = categoryByPosition(detail.position) ?? firstCategory();
-        const newEntry: PositionHistoryDTO = {
-            position: fallbackCat,
-            effectiveFrom: new Date().toISOString(),
-        };
-        const next = [newEntry, ...(detail.positionHistory ?? [])];
-        setDetail({ ...detail, positionHistory: next });
-        setField("positionHistory", next);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [detail]);
+    async function uploadDocumentsApi(employeeId: string, docs: DocumentDTO[]) {
+        try {
+            const res = await fetch(`/api/employees/${encodeURIComponent(employeeId)}/documents`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ documents: docs }),
+            });
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err || "Documents upload failed");
+            }
+            const json = await res.json();
+            showToast.success("Documents uploaded");
+            return json.data;
+        } catch (err: unknown) {
+            console.error("uploadDocumentsApi", err);
+            showToast.error(String(extractErrorMessage(err) ?? "Failed to upload documents"));
+            throw err;
+        }
+    }
 
-    const updatePositionEntry = useCallback((idx: number, patch: Partial<PositionHistoryDTO>) => {
-        if (!detail) return;
-        const next = detail.positionHistory.map((e, i) => (i === idx ? { ...e, ...patch } : e));
-        setDetail({ ...detail, positionHistory: next });
-        setField("positionHistory", next);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [detail]);
+    async function changePasswordApi(employeeId: string, password: string) {
+        try {
+            const res = await fetch(`/api/employees/${encodeURIComponent(employeeId)}/password`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password }),
+            });
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err || "Password update failed");
+            }
+            showToast.success("Password updated");
+            return true;
+        } catch (err: unknown) {
+            console.error("changePasswordApi", err);
+            showToast.error(String(extractErrorMessage(err) ?? "Failed to update password"));
+            throw err;
+        }
+    }
 
-    const removePositionEntry = useCallback((idx: number) => {
-        if (!detail) return;
-        const next = detail.positionHistory.filter((_, i) => i !== idx);
-        setDetail({ ...detail, positionHistory: next });
-        setField("positionHistory", next);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [detail]);
+    /* -------------------------
+       Save main employee payload
+       ------------------------- */
 
     const handleSave = async () => {
         if (!detail || !form?.id) return;
+        // enforce dateOfLeaving vs status rule
+        if (form.dateOfLeaving && (form.status === EMPLOYEE_STATUS.ACTIVE || detail.status === EMPLOYEE_STATUS.ACTIVE)) {
+            showToast.warning("Employee has a leaving date; status cannot be active. Adjusting status to terminated.");
+            setField("status", EMPLOYEE_STATUS.TERMINATED);
+        }
+
         setSaving(true);
         try {
-            const updated = await updateEmployee({
-                id: form.id,
-                status: form.status,
-                employmentType: form.employmentType,
-                subRole: form.subRole,
-                position: form.position,
-                contactInfo: form.contactInfo,
-                performance: form.performance,
-                shifts: form.shifts,
-                notes: form.notes,
-                salaryHistory: form.salaryHistory,
-                positionHistory: form.positionHistory,
-            });
+            // Build a payload by merging detail (source of truth for required fields)
+            const partialPayload: Partial<UpdateEmployeePayload> = {
+                id: form.id!,
+                role: (form.role ?? detail.role) as UpdateEmployeePayload["role"],
+                salary: (form.salary ?? detail.salary) as UpdateEmployeePayload["salary"],
+                currency: (form.currency ?? detail.currency) as UpdateEmployeePayload["currency"],
+                status: (form.status ?? detail.status) as UpdateEmployeePayload["status"],
+                employmentType: (form.employmentType ?? detail.employmentType) as UpdateEmployeePayload["employmentType"],
+                contactInfo: form.contactInfo ?? detail.contactInfo,
+                shifts: form.shifts ?? detail.shifts,
+                notes: form.notes ?? detail.notes ?? "",
+                avatar: form.avatar as unknown as UpdateEmployeePayload["avatar"],
+                dateOfJoining: form.dateOfJoining ?? detail.dateOfJoining,
+                dateOfLeaving: form.dateOfLeaving ?? detail.dateOfLeaving,
+                documents: form.documents ?? detail.documents,
+            };
 
+            // Cast to UpdateEmployeePayload for store call; if your store accepts Partial, update accordingly
+            const payload = partialPayload as UpdateEmployeePayload;
+
+            // If avatar is a base64 string and different from existing, upload via separate endpoint first
+            if (form.avatar && typeof form.avatar === "string" && form.avatar.startsWith("data:")) {
+                try {
+                    await uploadAvatarApi(detail.id, form.avatar as string);
+                } catch {
+                    // uploadAvatarApi already shows toast
+                }
+            }
+
+            // If there are new documents (base64 urls), upload them separately
+            const newDocs = (form.documents ?? []).filter((d) => typeof d.url === "string" && String(d.url).startsWith("data:"));
+            if (newDocs.length > 0) {
+                try {
+                    await uploadDocumentsApi(detail.id, newDocs);
+                } catch {
+                    // uploadDocumentsApi already shows toast
+                }
+            }
+
+            const updated = await updateEmployee(payload);
             setDetail(updated);
             setForm({
                 id: updated.id,
                 status: updated.status,
                 employmentType: updated.employmentType,
-                subRole: updated.subRole,
-                position: updated.position,
                 contactInfo: updated.contactInfo,
-                performance: updated.performance,
                 shifts: updated.shifts,
-                notes: updated.notes ?? "",
-                salaryHistory: updated.salaryHistory,
-                positionHistory: updated.positionHistory,
+                notes: updated.notes,
+                avatar: updated.avatar,
+                dateOfJoining: updated.dateOfJoining,
+                dateOfLeaving: updated.dateOfLeaving,
+                role: updated.role,
+                documents: updated.documents,
             });
-        } catch (e) {
+            showToast.success("Employee updated");
+        } catch (e: unknown) {
             console.error(e);
+            showToast.error(String(extractErrorMessage(e) ?? "Failed to update employee"));
         } finally {
             setSaving(false);
         }
     };
 
-    const handleSoftDelete = async () => {
-        if (!detail) return;
+    /* -------------------------
+       Password generation & update
+       ------------------------- */
+
+    const handleGeneratePassword = () => {
         try {
-            await softDeleteEmployee({ id: detail.id });
-            const refreshed = await fetchEmployeeDetail(detail.id, true);
-            setDetail(refreshed);
-        } catch (e) {
-            console.error(e);
+            const pw = generateStrongPassword(10); // assume returns a string
+            setGeneratedPassword(pw);
+            setNewPassword(pw);
+        } catch (err) {
+            console.error(err);
+            showToast.error("Failed to generate password");
         }
     };
 
-    const handleRestore = async () => {
+    const handleUpdatePassword = async () => {
         if (!detail) return;
+        if (!newPassword || newPassword.length < 8) {
+            showToast.warning("Password is too short (min 8 characters)");
+            return;
+        }
         try {
-            await restoreEmployee({ id: detail.id });
-            const refreshed = await fetchEmployeeDetail(detail.id, true);
-            setDetail(refreshed);
-        } catch (e) {
-            console.error(e);
+            await changePasswordApi(detail.id, newPassword);
+            setGeneratedPassword("");
+            setNewPassword("");
+        } catch {
+            // changePasswordApi shows toast
         }
     };
+
+    /* -------------------------
+       Helpers: latest 10 items
+       ------------------------- */
+
+    const latestSalaryHistory: SalaryHistoryDTO[] = (detail?.salaryHistory ?? [])
+        .slice()
+        .sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))
+        .slice(0, 10);
+
+    const latestAudits: AuditLog[] = (detail?.audit ?? [])
+        .slice()
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+        .slice(0, 10);
 
     if (loading) {
         return (
@@ -363,25 +473,31 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                     <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6">
                         <div className="flex items-start justify-between">
                             <div className="flex items-center gap-6">
-                                <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center border-2 border-white/20">
-                                    <User className="h-10 w-10 text-white" />
+                                <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center border-2 border-white/20 overflow-hidden">
+                                    {avatarPreview ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={avatarPreview} alt="avatar" className="object-cover w-full h-full" />
+                                    ) : (
+                                        <User className="h-10 w-10 text-white" />
+                                    )}
                                 </div>
                                 <div className="text-white">
                                     <h1 className="text-3xl font-bold tracking-tight">{detail.user.name}</h1>
-                                    <p className="text-blue-100 mt-1 text-lg">{detail.position || "No position assigned"}</p>
                                     <div className="flex items-center gap-4 mt-3">
-                                        <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium">
-                                            {detail.subRole}
-                                        </span>
-                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${detail.status === EMPLOYEE_STATUS.ACTIVE ? 'bg-green-500/20 text-green-100' :
-                                            detail.status === EMPLOYEE_STATUS.ON_LEAVE ? 'bg-yellow-500/20 text-yellow-100' :
-                                                'bg-red-500/20 text-red-100'
-                                            }`}>
+                                        <span
+                                            className={`px-3 py-1 rounded-full text-sm font-medium ${detail.status === EMPLOYEE_STATUS.ACTIVE
+                                                ? "bg-green-500/20 text-green-100"
+                                                : detail.status === EMPLOYEE_STATUS.ON_LEAVE
+                                                    ? "bg-yellow-500/20 text-yellow-100"
+                                                    : "bg-red-500/20 text-red-100"
+                                                }`}
+                                        >
                                             {detail.status}
                                         </span>
                                     </div>
                                 </div>
                             </div>
+
                             <div className="flex gap-3">
                                 <Button
                                     onClick={handleSave}
@@ -391,6 +507,7 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                                     <Save className="mr-2 h-4 w-4" />
                                     {saving ? "Saving…" : "Save changes"}
                                 </Button>
+
                                 <Button
                                     variant="secondary"
                                     onClick={() => router.push("/users/employees")}
@@ -407,39 +524,42 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                 {/* Tabs */}
                 <Tabs value={tab} onValueChange={setTab} className="w-full">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-2">
-                        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-9 gap-2 bg-transparent">
+                        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-10 gap-2 bg-transparent">
                             <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
                                 <User className="h-4 w-4" />
                                 <span className="hidden sm:inline">Overview</span>
                             </TabsTrigger>
+
                             <TabsTrigger value="role" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
                                 <Briefcase className="h-4 w-4" />
                                 <span className="hidden sm:inline">Role</span>
                             </TabsTrigger>
+
                             <TabsTrigger value="contact" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
                                 <Phone className="h-4 w-4" />
                                 <span className="hidden sm:inline">Contact</span>
                             </TabsTrigger>
+
                             <TabsTrigger value="compensation" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
                                 <DollarSign className="h-4 w-4" />
                                 <span className="hidden sm:inline">Compensation</span>
                             </TabsTrigger>
+
                             <TabsTrigger value="positionHistory" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
                                 <History className="h-4 w-4" />
                                 <span className="hidden sm:inline">History</span>
                             </TabsTrigger>
-                            <TabsTrigger value="performance" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-                                <TrendingUp className="h-4 w-4" />
-                                <span className="hidden sm:inline">Performance</span>
-                            </TabsTrigger>
+
                             <TabsTrigger value="documents" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
                                 <FileText className="h-4 w-4" />
                                 <span className="hidden sm:inline">Documents</span>
                             </TabsTrigger>
+
                             <TabsTrigger value="notes" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
                                 <StickyNote className="h-4 w-4" />
                                 <span className="hidden sm:inline">Notes</span>
                             </TabsTrigger>
+
                             <TabsTrigger value="admin" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
                                 <Shield className="h-4 w-4" />
                                 <span className="hidden sm:inline">Admin</span>
@@ -457,13 +577,97 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                                     <InfoField icon={Phone} label="Phone" value={detail.user.phone ?? "—"} />
                                     <InfoField icon={Award} label="Account Status" value={detail.user.accountStatus} />
                                 </div>
+
+                                <div className="mt-6 p-4 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900/20 rounded-lg border border-slate-200 dark:border-slate-700">
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3 items-center gap-2">
+                                        <User className="h-4 w-4" />
+                                        Profile Avatar
+                                    </label>
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleAvatarFile(e.target.files?.[0] ?? undefined)}
+                                            className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer cursor-pointer"
+                                        />
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => { setAvatarPreview(null); setField("avatar", undefined); }}
+                                            className="hover:bg-red-50 hover:text-red-600 hover:border-red-300 dark:hover:bg-red-950"
+                                        >
+                                            Remove
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                        <span className="inline-block w-1 h-1 rounded-full bg-blue-500"></span>
+                                        Only images allowed. Max 5 MB.
+                                    </p>
+                                </div>
                             </InfoCard>
 
                             <InfoCard icon={Briefcase} title="Employment">
                                 <div className="space-y-4">
-                                    <InfoField icon={Building} label="Position" value={detail.position ?? "—"} />
-                                    <InfoField icon={Briefcase} label="Sub Role" value={detail.subRole} />
-                                    <InfoField icon={Calendar} label="Employment Type" value={detail.employmentType ?? "—"} />
+                                    <FormRow label="Role" icon={Briefcase}>
+                                        <ModernSelect<typeof enums.roles[number]>
+                                            value={form?.role ?? detail.role}
+                                            onChange={(v) => setField("role", v)}
+                                            options={enums.roles}
+                                        />
+                                    </FormRow>
+
+                                    <FormRow label="Employment Type" icon={Briefcase}>
+                                        <ModernSelect<EmploymentType>
+                                            value={(form?.employmentType ?? detail.employmentType) ?? ""}
+                                            onChange={(v) => setField("employmentType", v)}
+                                            options={enums.employmentTypes}
+                                        />
+                                    </FormRow>
+
+                                    <FormRow label="Date of Joining" icon={Calendar}>
+                                        <Input
+                                            type="date"
+                                            value={form?.dateOfJoining ? form.dateOfJoining.split("T")[0] : detail.dateOfJoining?.split("T")[0] ?? ""}
+                                            onChange={(e) => setField("dateOfJoining", e.target.value ? new Date(e.target.value).toISOString() : undefined)}
+                                            className="font-mono"
+                                        />
+                                    </FormRow>
+
+                                    <FormRow label="Date of Leaving" icon={Calendar}>
+                                        <Input
+                                            type="date"
+                                            value={form?.dateOfLeaving ? form.dateOfLeaving.split("T")[0] : detail.dateOfLeaving?.split("T")[0] ?? ""}
+                                            onChange={(e) => {
+                                                const val = e.target.value ? new Date(e.target.value).toISOString() : undefined;
+                                                setField("dateOfLeaving", val);
+                                                if (val) {
+                                                    // if leaving date set and status is active, change status
+                                                    if ((form?.status ?? detail.status) === EMPLOYEE_STATUS.ACTIVE) {
+                                                        showToast.warning("Date of leaving set — status cannot remain active. Setting status to terminated.");
+                                                        setField("status", EMPLOYEE_STATUS.TERMINATED);
+                                                    }
+                                                }
+                                            }}
+                                            className="font-mono"
+                                        />
+                                    </FormRow>
+
+                                    <FormRow label="Status" icon={TrendingUp}>
+                                        <ModernSelect<EmployeeStatus>
+                                            value={form?.status ?? detail.status}
+                                            onChange={(v) => {
+                                                // prevent setting active if dateOfLeaving exists
+                                                if (form?.dateOfLeaving || detail.dateOfLeaving) {
+                                                    if (v === EMPLOYEE_STATUS.ACTIVE) {
+                                                        showToast.warning("Cannot set status to active when a leaving date exists");
+                                                        return;
+                                                    }
+                                                }
+                                                setField("status", v);
+                                            }}
+                                            options={enums.statuses}
+                                        />
+                                    </FormRow>
                                 </div>
                             </InfoCard>
                         </div>
@@ -471,18 +675,55 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <InfoCard icon={DollarSign} title="Compensation">
                                 <div className="space-y-4">
-                                    <div className="text-4xl font-bold text-blue-600">
-                                        {detail.salary} <span className="text-2xl text-muted-foreground">{detail.salaryCurrency}</span>
+                                    <div className="relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-blue-500/10 rounded-lg"></div>
+                                        <div className="relative p-6 text-center">
+                                            <p className="text-sm text-muted-foreground mb-2">Current Salary</p>
+                                            <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                                                {detail.salary}
+                                            </div>
+                                            <span className="text-xl font-semibold text-muted-foreground mt-2 inline-block">{detail.currency}</span>
+                                        </div>
                                     </div>
-                                    <InfoField icon={Calendar} label="Effective From" value={latestEffectiveFrom(detail.salaryHistory) ?? "—"} />
+                                    <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                                        <InfoField icon={Calendar} label="Effective From" value={latestEffectiveFrom(detail.salaryHistory) ?? "—"} />
+                                    </div>
                                 </div>
                             </InfoCard>
 
                             <InfoCard icon={Calendar} title="Important Dates">
-                                <div className="space-y-4">
-                                    <InfoField icon={Calendar} label="Date Joined" value={formatDate(detail.dateOfJoining)} />
-                                    <InfoField icon={Calendar} label="Date Left" value={detail.dateOfLeaving ? formatDate(detail.dateOfLeaving) : "—"} />
-                                    <InfoField icon={Clock} label="Last Updated" value={formatDate(detail.updatedAt)} />
+                                <div className="space-y-5">
+                                    <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                        <div className="mt-1 p-2 rounded-full bg-blue-100 dark:bg-blue-900/50">
+                                            <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Date Joined</p>
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-1">{formatDate(detail.dateOfJoining)}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                        <div className="mt-1 p-2 rounded-full bg-orange-100 dark:bg-orange-900/50">
+                                            <Calendar className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Date Left</p>
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-1">
+                                                {detail.dateOfLeaving ? formatDate(detail.dateOfLeaving) : "—"}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                        <div className="mt-1 p-2 rounded-full bg-purple-100 dark:bg-purple-900/50">
+                                            <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Last Updated</p>
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-1">{formatDate(detail.updatedAt)}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </InfoCard>
                         </div>
@@ -490,41 +731,126 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
 
                     {/* Role & status */}
                     <TabsContent value="role" className="mt-6">
-                        <InfoCard icon={Briefcase} title="Role & Status Configuration">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormRow label="Sub Role" icon={Briefcase}>
-                                    <ModernSelect<EmployeeSubRole>
-                                        value={form?.subRole ?? ""}
-                                        onChange={(v) => setField("subRole", v)}
-                                        options={enums.subRoles}
-                                    />
-                                </FormRow>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-6"
+                        >
+                            {/* Role & Status Card */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: 0.1 }}
+                                className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-card via-card to-primary/5 shadow-sm hover:shadow-md transition-shadow"
+                            >
+                                {/* Decorative background element */}
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-3xl -z-0" />
 
-                                <FormRow label="Position" icon={Award}>
-                                    <ModernSelect<EmployeePosition>
-                                        value={form?.position as EmployeePosition}
-                                        onChange={(v) => setField("position", v)}
-                                        options={allPositions}
-                                    />
-                                </FormRow>
+                                <div className="relative z-10 p-6">
+                                    {/* Header */}
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <motion.div
+                                            initial={{ scale: 0, rotate: -180 }}
+                                            animate={{ scale: 1, rotate: 0 }}
+                                            transition={{ duration: 0.5, delay: 0.2 }}
+                                            className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-inner"
+                                        >
+                                            <Briefcase className="h-6 w-6 text-primary" />
+                                        </motion.div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold">Role & Status Configuration</h3>
+                                            <p className="text-sm text-muted-foreground">Manage employment details and status</p>
+                                        </div>
+                                    </div>
 
-                                <FormRow label="Employment Status" icon={TrendingUp}>
-                                    <ModernSelect<EmployeeStatus>
-                                        value={form?.status as EmployeeStatus}
-                                        onChange={(v) => setField("status", v)}
-                                        options={enums.statuses}
-                                    />
-                                </FormRow>
+                                    {/* Form Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <motion.div
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ duration: 0.3, delay: 0.3 }}
+                                        >
+                                            <FormRow label="Employment Status" icon={TrendingUp}>
+                                                <div className="relative">
+                                                    <ModernSelect<EmployeeStatus>
+                                                        value={form?.status as EmployeeStatus}
+                                                        onChange={(v) => {
+                                                            if ((form?.dateOfLeaving ?? detail.dateOfLeaving) && v === EMPLOYEE_STATUS.ACTIVE) {
+                                                                showToast.warning("Cannot set status to active when a leaving date exists");
+                                                                return;
+                                                            }
+                                                            setField("status", v);
+                                                        }}
+                                                        options={enums.statuses}
+                                                    />
+                                                    {/* Status indicator dot */}
+                                                    <motion.div
+                                                        initial={{ scale: 0 }}
+                                                        animate={{ scale: 1 }}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                                                    >
+                                                        <div className={`h-2 w-2 rounded-full ${form?.status === EMPLOYEE_STATUS.ACTIVE
+                                                            ? 'bg-green-500 shadow-lg shadow-green-500/50'
+                                                            : 'bg-gray-400'
+                                                            }`} />
+                                                    </motion.div>
+                                                </div>
+                                            </FormRow>
+                                        </motion.div>
 
-                                <FormRow label="Employment Type" icon={Briefcase}>
-                                    <ModernSelect<EmploymentType>
-                                        value={form?.employmentType ?? ""}
-                                        onChange={(v) => setField("employmentType", v)}
-                                        options={enums.employmentTypes}
+                                        <motion.div
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ duration: 0.3, delay: 0.35 }}
+                                        >
+                                            <FormRow label="Employment Type" icon={Briefcase}>
+                                                <ModernSelect<EmploymentType>
+                                                    value={(form?.employmentType ?? detail.employmentType) ?? ""}
+                                                    onChange={(v) => setField("employmentType", v)}
+                                                    options={enums.employmentTypes}
+                                                />
+                                            </FormRow>
+                                        </motion.div>
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            {/* Shift Editor Card */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: 0.4 }}
+                                className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-card to-blue-500/5 shadow-sm hover:shadow-md transition-shadow"
+                            >
+                                {/* Decorative background element */}
+                                <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full blur-3xl -z-0" />
+
+                                <div className="relative z-10 p-6">
+                                    {/* Header */}
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <motion.div
+                                            initial={{ scale: 0, rotate: -180 }}
+                                            animate={{ scale: 1, rotate: 0 }}
+                                            transition={{ duration: 0.5, delay: 0.5 }}
+                                            className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 shadow-inner"
+                                        >
+                                            <Clock className="h-6 w-6 text-blue-600" />
+                                        </motion.div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold">Shift Schedule</h3>
+                                            <p className="text-sm text-muted-foreground">Configure working hours and shift patterns</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Shift Editor */}
+                                    <ShiftEditor
+                                        shifts={form?.shifts ?? detail.shifts ?? []}
+                                        onChange={setShifts}
                                     />
-                                </FormRow>
-                            </div>
-                        </InfoCard>
+                                </div>
+                            </motion.div>
+                        </motion.div>
                     </TabsContent>
 
                     {/* Contact */}
@@ -534,7 +860,7 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormRow label="Phone Number" icon={Phone}>
                                         <Input
-                                            value={form?.contactInfo?.phone ?? ""}
+                                            value={form?.contactInfo?.phone ?? detail.contactInfo?.phone ?? ""}
                                             onChange={(e) => setContact({ phone: e.target.value })}
                                             className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
                                         />
@@ -542,7 +868,7 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
 
                                     <FormRow label="Email Address" icon={Mail}>
                                         <Input
-                                            value={form?.contactInfo?.email ?? ""}
+                                            value={form?.contactInfo?.email ?? detail.contactInfo?.email ?? ""}
                                             onChange={(e) => setContact({ email: e.target.value })}
                                             className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
                                         />
@@ -554,11 +880,11 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <FormRow label="Contact Name" icon={User}>
                                         <Input
-                                            value={form?.contactInfo?.emergencyContact?.name ?? ""}
+                                            value={form?.contactInfo?.emergencyContact?.name ?? detail.contactInfo?.emergencyContact?.name ?? ""}
                                             onChange={(e) =>
                                                 setContact({
                                                     emergencyContact: {
-                                                        ...(form?.contactInfo?.emergencyContact ?? { name: "", phone: "", relation: "" }),
+                                                        ...(form?.contactInfo?.emergencyContact ?? detail.contactInfo?.emergencyContact ?? { name: "", phone: "", relation: "" }),
                                                         name: e.target.value,
                                                     },
                                                 })
@@ -569,11 +895,11 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
 
                                     <FormRow label="Contact Phone" icon={Phone}>
                                         <Input
-                                            value={form?.contactInfo?.emergencyContact?.phone ?? ""}
+                                            value={form?.contactInfo?.emergencyContact?.phone ?? detail.contactInfo?.emergencyContact?.phone ?? ""}
                                             onChange={(e) =>
                                                 setContact({
                                                     emergencyContact: {
-                                                        ...(form?.contactInfo?.emergencyContact ?? { name: "", phone: "", relation: "" }),
+                                                        ...(form?.contactInfo?.emergencyContact ?? detail.contactInfo?.emergencyContact ?? { name: "", phone: "", relation: "" }),
                                                         phone: e.target.value,
                                                     },
                                                 })
@@ -584,11 +910,11 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
 
                                     <FormRow label="Relationship" icon={User}>
                                         <Input
-                                            value={form?.contactInfo?.emergencyContact?.relation ?? ""}
+                                            value={form?.contactInfo?.emergencyContact?.relation ?? detail.contactInfo?.emergencyContact?.relation ?? ""}
                                             onChange={(e) =>
                                                 setContact({
                                                     emergencyContact: {
-                                                        ...(form?.contactInfo?.emergencyContact ?? { name: "", phone: "", relation: "" }),
+                                                        ...(form?.contactInfo?.emergencyContact ?? detail.contactInfo?.emergencyContact ?? { name: "", phone: "", relation: "" }),
                                                         relation: e.target.value,
                                                     },
                                                 })
@@ -605,12 +931,24 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                     <TabsContent value="compensation" className="space-y-6 mt-6">
                         <InfoCard icon={DollarSign} title="Current Compensation">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <FormRow label="Current Salary">
-                                    <Input type="number" value={detail.salary} disabled className="bg-slate-50" />
+                                <FormRow label="Current Salary" icon={DollarSign}>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={String(form?.salary ?? detail.salary ?? "")}
+                                        onChange={(e) => {
+                                            const v = e.target.value;
+                                            setField("salary", v === "" ? undefined : Number(v));
+                                        }}
+                                    />
                                 </FormRow>
 
-                                <FormRow label="Currency">
-                                    <Input value={detail.salaryCurrency} disabled className="bg-slate-50" />
+                                <FormRow label="Currency" icon={DollarSign}>
+                                    <Input
+                                        type="text"
+                                        value={(form?.currency ?? detail.currency) ?? ""}
+                                        onChange={(e) => setField("currency", e.target.value ?? undefined)}
+                                    />
                                 </FormRow>
 
                                 <FormRow label="Effective From">
@@ -618,180 +956,84 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                                 </FormRow>
                             </div>
                         </InfoCard>
-
-                        <InfoCard icon={History} title="Salary History">
-                            <div className="flex items-center justify-between mb-6">
-                                <p className="text-sm text-muted-foreground">Track all salary changes over time</p>
-                                <Button onClick={addSalaryEntry} className="bg-blue-600 hover:bg-blue-700">
-                                    <Plus className="mr-2 h-4 w-4" /> Add Entry
-                                </Button>
-                            </div>
-
-                            <div className="space-y-4">
-                                {(detail.salaryHistory ?? []).map((entry, idx) => (
-                                    <div key={idx} className="bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                                            <FormRow label="Amount">
-                                                <Input
-                                                    type="number"
-                                                    value={entry.amount}
-                                                    onChange={(e) => updateSalaryEntry(idx, { amount: parseFloat(e.target.value) || 0 })}
-                                                    className="font-semibold"
-                                                />
-                                            </FormRow>
-
-                                            <FormRow label="Currency">
-                                                <Input
-                                                    value={entry.currency}
-                                                    onChange={(e) => updateSalaryEntry(idx, { currency: e.target.value })}
-                                                />
-                                            </FormRow>
-
-                                            <FormRow label="Effective From">
-                                                <Input
-                                                    type="datetime-local"
-                                                    value={toLocalInput(entry.effectiveFrom)}
-                                                    onChange={(e) => updateSalaryEntry(idx, { effectiveFrom: fromLocalInput(e.target.value) })}
-                                                />
-                                            </FormRow>
-
-                                            <FormRow label="Effective To">
-                                                <Input
-                                                    type="datetime-local"
-                                                    value={entry.effectiveTo ? toLocalInput(entry.effectiveTo) : ""}
-                                                    onChange={(e) => updateSalaryEntry(idx, { effectiveTo: fromLocalInput(e.target.value) })}
-                                                />
-                                            </FormRow>
-
-                                            <FormRow label="Reason">
-                                                <Input
-                                                    value={entry.reason ?? ""}
-                                                    onChange={(e) => updateSalaryEntry(idx, { reason: e.target.value })}
-                                                    placeholder="e.g., Annual raise"
-                                                />
-                                            </FormRow>
-                                        </div>
-
-                                        <div className="flex justify-end mt-4">
-                                            <Button variant="destructive" size="sm" onClick={() => removeSalaryEntry(idx)}>
-                                                <Trash2 className="mr-2 h-4 w-4" /> Remove
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {detail.salaryHistory?.length === 0 && (
-                                    <div className="text-center py-12 text-muted-foreground">
-                                        <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                        <p>No salary history recorded yet</p>
-                                    </div>
-                                )}
-                            </div>
-                        </InfoCard>
                     </TabsContent>
 
-                    {/* Position history */}
+                    {/* Position History (salary history + audits) */}
                     <TabsContent value="positionHistory" className="space-y-6 mt-6">
-                        <InfoCard icon={History} title="Position History">
-                            <div className="flex items-center justify-between mb-6">
-                                <p className="text-sm text-muted-foreground">Track all position changes over time</p>
-                                <Button onClick={addPositionEntry} className="bg-blue-600 hover:bg-blue-700">
-                                    <Plus className="mr-2 h-4 w-4" /> Add Entry
-                                </Button>
-                            </div>
-
-                            <div className="space-y-4">
-                                {(detail.positionHistory ?? []).map((entry, idx) => (
-                                    <div key={idx} className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-900 border border-blue-200 dark:border-slate-700 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <FormRow label="Position Category">
-                                                <ModernSelect<PositionCategory>
-                                                    value={entry.position as PositionCategory}
-                                                    onChange={(v) => updatePositionEntry(idx, { position: v })}
-                                                    options={positionCategories}
-                                                />
-                                            </FormRow>
-
-                                            <FormRow label="Effective From">
-                                                <Input
-                                                    type="datetime-local"
-                                                    value={toLocalInput(entry.effectiveFrom)}
-                                                    onChange={(e) => updatePositionEntry(idx, { effectiveFrom: fromLocalInput(e.target.value) })}
-                                                />
-                                            </FormRow>
-
-                                            <FormRow label="Effective To">
-                                                <Input
-                                                    type="datetime-local"
-                                                    value={entry.effectiveTo ? toLocalInput(entry.effectiveTo) : ""}
-                                                    onChange={(e) => updatePositionEntry(idx, { effectiveTo: fromLocalInput(e.target.value) })}
-                                                />
-                                            </FormRow>
-                                        </div>
-
-                                        <div className="flex justify-end mt-4">
-                                            <Button variant="destructive" size="sm" onClick={() => removePositionEntry(idx)}>
-                                                <Trash2 className="mr-2 h-4 w-4" /> Remove
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {detail.positionHistory?.length === 0 && (
-                                    <div className="text-center py-12 text-muted-foreground">
-                                        <History className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                        <p>No position history recorded yet</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <InfoCard icon={TrendingUp} title="Salary History">
+                                {latestSalaryHistory.length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground">No salary history available</div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {latestSalaryHistory.map((s, idx) => (
+                                            <div key={idx} className="p-3 border rounded-lg bg-white dark:bg-slate-800">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <div className="text-sm font-medium">
+                                                            {s.amount} {s.currency}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">{s.reason ?? "—"}</div>
+                                                    </div>
+                                                    <div className="text-right text-xs text-muted-foreground">
+                                                        <div>From: {formatDate(s.effectiveFrom)}</div>
+                                                        <div>To: {s.effectiveTo ? formatDate(s.effectiveTo) : "Present"}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
-                            </div>
-                        </InfoCard>
-                    </TabsContent>
+                            </InfoCard>
 
-                    {/* Performance & shifts */}
-                    <TabsContent value="performance" className="space-y-6 mt-6">
-                        <InfoCard icon={Star} title="Performance Metrics">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <FormRow label="Performance Rating" icon={Star}>
-                                    <div className="flex items-center gap-3">
-                                        <Input
-                                            type="number"
-                                            min={1}
-                                            max={5}
-                                            value={form?.performance?.rating ?? ""}
-                                            onChange={(e) => setPerformance({ rating: clamp(1, 5, Number(e.target.value)) })}
-                                            className="font-semibold text-lg"
-                                        />
-                                        <span className="text-muted-foreground">/ 5</span>
+                            <InfoCard icon={History} title="Audit Log (latest)">
+                                {latestAudits.length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground">No audit entries</div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {latestAudits.map((a) => (
+                                            <div key={a._id} className="p-3 border rounded-lg bg-white dark:bg-slate-800">
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <div className="text-sm font-medium">{a.action}</div>
+                                                        <div className="text-xs text-muted-foreground">{a.note ?? ""}</div>
+                                                        <div className="text-xs text-muted-foreground mt-1">
+                                                            Actor: {a.actor ?? "system"} {a.actorModel ? `(${a.actorModel})` : ""}
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right text-xs text-muted-foreground">
+                                                        <div>{formatDate(a.createdAt)}</div>
+                                                    </div>
+                                                </div>
+
+                                                {a.changes && (
+                                                    <details className="mt-2 text-xs text-muted-foreground">
+                                                        <summary className="cursor-pointer">View changes</summary>
+                                                        <pre className="whitespace-pre-wrap mt-2 text-xs">{JSON.stringify(a.changes, null, 2)}</pre>
+                                                    </details>
+                                                )}
+                                            </div>
+                                        ))}
                                     </div>
-                                </FormRow>
-
-                                <FormRow label="Last Review Date" icon={Calendar}>
-                                    <Input
-                                        type="datetime-local"
-                                        value={form?.performance?.lastReview ? toLocalInput(form.performance.lastReview) : ""}
-                                        onChange={(e) => setPerformance({ lastReview: fromLocalInput(e.target.value) })}
-                                    />
-                                </FormRow>
-
-                                <FormRow label="Feedback Summary" icon={StickyNote}>
-                                    <Input
-                                        value={form?.performance?.feedback ?? ""}
-                                        onChange={(e) => setPerformance({ feedback: e.target.value })}
-                                        placeholder="Brief performance notes"
-                                    />
-                                </FormRow>
-                            </div>
-                        </InfoCard>
-
-                        <InfoCard icon={Clock} title="Work Shifts">
-                            <ShiftEditor shifts={form?.shifts ?? []} onChange={setShifts} />
-                        </InfoCard>
+                                )}
+                            </InfoCard>
+                        </div>
                     </TabsContent>
 
                     {/* Documents */}
                     <TabsContent value="documents" className="mt-6">
                         <InfoCard icon={FileText} title="Employee Documents">
-                            {(detail.documents ?? []).length === 0 ? (
+                            <div className="mb-4">
+                                <input
+                                    type="file"
+                                    multiple
+                                    onChange={(e) => handleDocumentsFiles(e.target.files ?? undefined)}
+                                    className="text-sm"
+                                />
+                                <p className="text-xs text-muted-foreground mt-2">Images, PDFs and other allowed files. Max 5 MB per file.</p>
+                            </div>
+
+                            {(form?.documents ?? detail.documents ?? []).length === 0 ? (
                                 <div className="text-center py-16 text-muted-foreground">
                                     <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
                                     <p className="text-lg">No documents uploaded yet</p>
@@ -799,31 +1041,33 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {detail.documents!.map((doc, i) => (
+                                    {(form?.documents ?? []).map((doc, i) => (
                                         <div key={i} className="group border border-slate-200 dark:border-slate-700 rounded-xl p-5 hover:shadow-lg hover:border-blue-300 transition-all bg-white dark:bg-slate-800">
                                             <div className="flex items-start justify-between mb-3">
                                                 <FileText className="h-8 w-8 text-blue-600" />
-                                                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
-                                                    {doc.type}
-                                                </span>
+                                                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">{doc.type}</span>
                                             </div>
+
                                             <div className="space-y-2">
                                                 <p className="text-sm font-medium line-clamp-1">{doc.type}</p>
                                                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                                                     <Calendar className="h-3 w-3" />
                                                     {formatDate(doc.uploadedAt)}
                                                 </p>
-                                                <a
-                                                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium mt-2"
-                                                    href={doc.url}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                >
+
+                                                <a className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium mt-2" href={doc.url} target="_blank" rel="noreferrer">
                                                     View Document →
                                                 </a>
+
+                                                <div className="mt-3 flex gap-2">
+                                                    <button onClick={() => removeDocumentAt(i)} className="text-destructive text-sm flex items-center gap-1">
+                                                        <Trash2 className="h-4 w-4" /> Remove
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
+
                                 </div>
                             )}
                         </InfoCard>
@@ -832,9 +1076,8 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                     {/* Notes */}
                     <TabsContent value="notes" className="mt-6">
                         <InfoCard icon={StickyNote} title="Internal Notes">
-                            <p className="text-sm text-muted-foreground mb-4">
-                                Add private notes about this employee. Only visible to administrators.
-                            </p>
+                            <p className="text-sm text-muted-foreground mb-4">Add private notes about this employee. Only visible to administrators.</p>
+
                             <Textarea
                                 value={form?.notes ?? ""}
                                 onChange={(e) => setField("notes", e.target.value)}
@@ -846,15 +1089,6 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
 
                     {/* Admin */}
                     <TabsContent value="admin" className="space-y-6 mt-6">
-                        <InfoCard icon={Shield} title="Audit Information">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <InfoField icon={User} label="Created By" value={detail.audit.createdBy} />
-                                <InfoField icon={User} label="Updated By" value={detail.audit.updatedBy} />
-                                <InfoField icon={Calendar} label="Created At" value={formatDate(detail.createdAt)} />
-                                <InfoField icon={Calendar} label="Updated At" value={formatDate(detail.updatedAt)} />
-                            </div>
-                        </InfoCard>
-
                         <InfoCard icon={Flame} title="Danger Zone" className="border-red-200 dark:border-red-900">
                             <div className="space-y-4">
                                 <div className="flex items-start gap-4 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg">
@@ -863,36 +1097,104 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                                         <h4 className="font-semibold text-red-900 dark:text-red-100">
                                             {!detail.isDeleted ? "Delete Employee Record" : "Restore Employee Record"}
                                         </h4>
+
                                         <p className="text-sm text-red-700 dark:text-red-300 mt-1">
                                             {!detail.isDeleted
                                                 ? "This action will soft delete the employee record. It can be restored later."
                                                 : "This action will restore the employee record and make it active again."}
                                         </p>
                                     </div>
+
                                     {!detail.isDeleted ? (
-                                        <Button
-                                            variant="destructive"
-                                            onClick={handleSoftDelete}
-                                            className="shrink-0 text-white hover:text-white"
-                                        >
+                                        <Button variant="destructive" onClick={async () => { await softDeleteEmployee({ id: detail.id }); const refreshed = await fetchEmployeeDetail(detail.id, true); setDetail(refreshed); }} className="shrink-0 text-white hover:text-white">
                                             <Flame className="mr-2 h-4 w-4" /> Delete Record
                                         </Button>
                                     ) : (
-                                        <Button
-                                            onClick={handleRestore}
-                                            className="shrink-0 bg-green-600 hover:bg-green-700 text-white"
-                                        >
+                                        <Button onClick={async () => { await restoreEmployee({ id: detail.id }); const refreshed = await fetchEmployeeDetail(detail.id, true); setDetail(refreshed); }} className="shrink-0 bg-green-600 hover:bg-green-700 text-white">
                                             <RotateCcw className="mr-2 h-4 w-4" /> Restore Record
                                         </Button>
                                     )}
                                 </div>
 
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-5 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50">
+                                                <Lock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                            </div>
+                                            <h4 className="font-semibold text-slate-900 dark:text-slate-100">Password Management</h4>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <div className="relative">
+                                                <Input
+                                                    type="password"
+                                                    value={newPassword}
+                                                    onChange={(e) => setNewPassword(e.target.value)}
+                                                    placeholder="Enter new password"
+                                                    className="pr-10 font-mono text-sm"
+                                                />
+                                                {newPassword && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setNewPassword("")}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    onClick={handleGeneratePassword}
+                                                    variant="outline"
+                                                    className="flex-1 flex items-center justify-center gap-2 hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-950"
+                                                >
+                                                    <Sparkles className="h-4 w-4" />
+                                                    Generate
+                                                </Button>
+                                                <Button
+                                                    onClick={handleUpdatePassword}
+                                                    disabled={!newPassword}
+                                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <Check className="h-4 w-4 mr-2" />
+                                                    Update
+                                                </Button>
+                                            </div>
+
+                                            {generatedPassword && (
+                                                <div className="mt-3 p-3 bg-white dark:bg-slate-900 rounded-lg border border-green-200 dark:border-green-800">
+                                                    <p className="text-xs font-medium text-green-700 dark:text-green-400 mb-2 flex items-center gap-1">
+                                                        <Check className="h-3 w-3" />
+                                                        Generated Password:
+                                                    </p>
+                                                    <div className="flex items-center gap-2">
+                                                        <code className="flex-1 bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded font-mono text-sm text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+                                                            {generatedPassword}
+                                                        </code>
+                                                        <button
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(generatedPassword);
+                                                                // Optional: show a toast notification
+                                                            }}
+                                                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                                                            title="Copy to clipboard"
+                                                        >
+                                                            <Copy className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {detail.isDeleted && (
                                     <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900 rounded-lg">
                                         <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-                                        <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
-                                            This employee record is currently deleted
-                                        </p>
+                                        <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">This employee record is currently deleted</p>
                                     </div>
                                 )}
                             </div>

@@ -2,7 +2,8 @@ import Dashboard from "@/components/overview/dashboard/Dashboard"
 
 const page = () => {
   return (
-    <Dashboard />
+    // <Dashboard />
+    <p>Dashboard</p>
   )
 }
 

@@ -2,19 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
 import {
     EmployeeDetailDTO,
-    EmployeePosition,
-    PositionCategory,
 } from "@/types/employee.types";
-import { EMPLOYEE_POSITIONS } from "@/constants/employee.const";
+import { AuditLog } from "@/types/current-user.types";
 import { ACCOUNT_STATUS } from "@/constants/user.const";
+import {
+    EMPLOYEE_ROLE,
+    EMPLOYEE_STATUS,
+    EMPLOYMENT_TYPE,
+} from "@/constants/employee.const";
 import { decodeId } from "@/utils/helpers/mongodb-id-conversions";
 
-function getPositionCategory(position: EmployeePosition): PositionCategory {
-    const found = Object.entries(EMPLOYEE_POSITIONS).find(([, list]) =>
-        (list as readonly string[]).includes(position)
-    );
-    return (found?.[0] as PositionCategory) ?? "general";
-}
 
 export async function GET(
     _req: NextRequest,
@@ -23,9 +20,26 @@ export async function GET(
     const { employeeId } = await params;
     const encodedId = decodeId(decodeURIComponent(employeeId));
 
-    const position = faker.helpers.arrayElement(
-        Object.values(EMPLOYEE_POSITIONS).flat()
-    ) as EmployeePosition;
+    // generate between 1 and 10 audit entries
+    const auditCount = faker.number.int({ min: 1, max: 10 });
+    const audits: AuditLog[] = Array.from({ length: auditCount }).map(() => ({
+        _id: faker.database.mongodbObjectId(),
+        targetModel: "Employee",
+        target: encodedId!,
+        actor: faker.database.mongodbObjectId(),
+        actorModel: "User",
+        action: faker.helpers.arrayElement(["created", "updated", "deleted", "restored"]),
+        note: faker.lorem.sentence(),
+        ip: faker.internet.ip(),
+        userAgent: faker.internet.userAgent(),
+        changes: {
+            before: undefined,
+            after: {
+                sampleField: faker.lorem.word(),
+            },
+        },
+        createdAt: faker.date.past().toISOString(),
+    }));
 
     const detail: EmployeeDetailDTO = {
         id: encodedId!,
@@ -44,28 +58,18 @@ export async function GET(
                 ACCOUNT_STATUS.BANNED,
             ]),
         },
-        subRole: faker.helpers.arrayElement([
-            "product",
-            "order",
-            "support",
-            "marketing",
-            "finance",
-            "analytics",
-            "hr",
-        ]),
-        position,
-        status: faker.helpers.arrayElement([
-            "active",
-            "onLeave",
-            "suspended",
-            "terminated",
-        ]),
-        employmentType: faker.helpers.arrayElement([
-            "full_time",
-            "part_time",
-            "contract",
-            "intern",
-        ]),
+
+        role: faker.helpers.arrayElement(
+            Object.values(EMPLOYEE_ROLE)
+        ) as EmployeeDetailDTO["role"],
+
+        status: faker.helpers.arrayElement(
+            Object.values(EMPLOYEE_STATUS)
+        ) as EmployeeDetailDTO["status"],
+
+        employmentType: faker.helpers.arrayElement(
+            Object.values(EMPLOYMENT_TYPE)
+        ) as EmployeeDetailDTO["employmentType"],
 
         salaryHistory: [
             {
@@ -75,15 +79,9 @@ export async function GET(
                 reason: "Initial salary",
             },
         ],
-        positionHistory: [
-            {
-                position: getPositionCategory(position),
-                effectiveFrom: faker.date.past().toISOString(),
-            },
-        ],
 
         salary: faker.number.int({ min: 20000, max: 120000 }),
-        salaryCurrency: "USD",
+        currency: "USD",
 
         dateOfJoining: faker.date.past().toISOString(),
         dateOfLeaving: faker.datatype.boolean()
@@ -100,7 +98,6 @@ export async function GET(
             },
         },
 
-        permissions: ["read", "write", "delete"],
         shifts: [
             {
                 startTime: "09:00",
@@ -109,30 +106,24 @@ export async function GET(
             },
         ],
 
-        performance: {
-            rating: faker.number.int({ min: 1, max: 5 }),
-            lastReview: faker.date.past().toISOString(),
-            feedback: faker.lorem.sentence(),
-        },
-
         documents: [
             {
                 type: "contract",
-                url: faker.internet.url(),
+                url: faker.database.mongodbObjectId(),
                 uploadedAt: faker.date.past().toISOString(),
             },
             {
                 type: "id-proof",
-                url: faker.internet.url(),
+                url: faker.database.mongodbObjectId(),
                 uploadedAt: faker.date.past().toISOString(),
             },
         ],
 
         notes: faker.lorem.paragraph(),
-        audit: {
-            createdBy: faker.database.mongodbObjectId(),
-            updatedBy: faker.database.mongodbObjectId(),
-        },
+
+        // limited to at most 10 audits
+        audit: audits,
+
         isDeleted: false,
         createdAt: faker.date.past().toISOString(),
         updatedAt: faker.date.recent().toISOString(),

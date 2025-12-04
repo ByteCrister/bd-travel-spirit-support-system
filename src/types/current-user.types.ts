@@ -1,7 +1,7 @@
 // types/current-user.types.ts
 
 import { USER_ROLE } from "@/constants/user.const";
-import { ContactInfoDTO, DocumentDTO, EmployeePosition, EmployeeRole, EmployeeSubRole, EmploymentType, ISODateString, ObjectIdString, PerformanceDTO, PositionHistoryDTO, SalaryHistoryDTO, ShiftDTO } from "./employee.types";
+import { ContactInfoDTO, DocumentDTO, EmployeeRole, EmploymentType, ISODateString, ObjectIdString, SalaryHistoryDTO, ShiftDTO } from "./employee.types";
 
 /**
  * Roles allowed in the admin dashboard
@@ -36,28 +36,21 @@ export type IEmployeeInfo = {
     avatar?: ObjectIdString;
 
     role: EmployeeRole;
-    subRole: EmployeeSubRole;
-    position?: EmployeePosition;
     employmentType?: EmploymentType;
 
     // Histories
     salaryHistory: SalaryHistoryDTO[];
-    positionHistory: PositionHistoryDTO[];
 
     // Current compensation
     salary: number;
-    salaryCurrency: string;
+    currency: string;
 
     dateOfJoining: ISODateString;
     dateOfLeaving?: ISODateString;
 
     contactInfo: ContactInfoDTO;
 
-    permissions: string[];
-
     shifts?: ShiftDTO[];
-
-    performance: PerformanceDTO;
 
     documents?: DocumentDTO[];
     lastLogin?: ISODateString;

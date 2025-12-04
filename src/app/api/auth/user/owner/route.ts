@@ -4,6 +4,7 @@ import OwnerModel from "@/models/owner.model";
 import { IOwnerInfo } from "@/types/current-user.types";
 import { getUserIdFromSession } from "@/lib/helpers/get-user";
 import { USER_ROLE } from "@/constants/user.const";
+import ConnectDB from "@/config/db";
 
 /**
  * GET /api/auth/user/owner
@@ -11,6 +12,7 @@ import { USER_ROLE } from "@/constants/user.const";
  */
 export async function GET() {
     try {
+        await ConnectDB()
         // Get user ID from session
         const userId = await getUserIdFromSession();
 

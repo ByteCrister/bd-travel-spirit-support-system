@@ -4,20 +4,14 @@ import { faker } from "@faker-js/faker";
 import {
     EmployeeListItemDTO,
     EmployeesListResponse,
-    EmployeeSubRole,
     EmployeeStatus,
     EmploymentType,
-    EmployeePosition,
 } from "@/types/employee.types";
-import { EMPLOYEE_POSITIONS } from "@/constants/employee.const";
 
 /**
  * Generate a single fake employee list item
  */
 function generateEmployee(id: string): EmployeeListItemDTO {
-    const position = faker.helpers.arrayElement(
-        Object.values(EMPLOYEE_POSITIONS).flat()
-    ) as EmployeePosition;
 
     // Salary & position summaries
     const salary = faker.number.int({ min: 20000, max: 120000 });
@@ -31,16 +25,7 @@ function generateEmployee(id: string): EmployeeListItemDTO {
             phone: faker.phone.number(),
             avatar: faker.image.avatar(),
         },
-        subRole: faker.helpers.arrayElement([
-            "product",
-            "order",
-            "support",
-            "marketing",
-            "finance",
-            "analytics",
-            "hr",
-        ]) as EmployeeSubRole,
-        position,
+
         status: faker.helpers.arrayElement([
             "active",
             "onLeave",
@@ -55,7 +40,7 @@ function generateEmployee(id: string): EmployeeListItemDTO {
         ]) as EmploymentType,
 
         salary,
-        salaryCurrency,
+        currency: salaryCurrency,
 
         dateOfJoining: faker.date.past().toISOString(),
         dateOfLeaving: faker.datatype.boolean()
@@ -64,9 +49,6 @@ function generateEmployee(id: string): EmployeeListItemDTO {
 
         contactPhone: faker.phone.number(),
         contactEmail: faker.internet.email(),
-
-        rating: faker.number.int({ min: 1, max: 5 }),
-        lastReview: faker.date.past().toISOString(),
 
         shiftSummary: "09:00–17:00, Mon–Fri",
 

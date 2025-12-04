@@ -1,36 +1,26 @@
-// employees.type.ts
+// employee.types.ts
+// Updated to align with constants and Mongoose model (payroll, contactInfo, documents, etc.)
 
 import {
   EMPLOYEE_ROLE,
-  EMPLOYEE_SUB_ROLE,
   EMPLOYEE_STATUS,
   EMPLOYMENT_TYPE,
-  EMPLOYEE_POSITIONS,
 } from "@/constants/employee.const";
 
-import { ACCOUNT_STATUS } from "@/constants/user.const";
+import { AccountStatus } from "@/constants/user.const";
+import { AuditLog } from "./current-user.types";
 
 /* ---------------------------------------------------------------------
-  Primitive/utility types
+  Primitive / utility types
 --------------------------------------------------------------------- */
 
 export type EmployeeRole = (typeof EMPLOYEE_ROLE)[keyof typeof EMPLOYEE_ROLE];
-
-export type EmployeeSubRole =
-  (typeof EMPLOYEE_SUB_ROLE)[keyof typeof EMPLOYEE_SUB_ROLE];
 
 export type EmployeeStatus =
   (typeof EMPLOYEE_STATUS)[keyof typeof EMPLOYEE_STATUS];
 
 export type EmploymentType =
   (typeof EMPLOYMENT_TYPE)[keyof typeof EMPLOYMENT_TYPE];
-
-// Position value union across all categories
-export type EmployeePosition =
-  (typeof EMPLOYEE_POSITIONS)[keyof typeof EMPLOYEE_POSITIONS][number];
-
-// Position category union (keys of EMPLOYEE_POSITIONS)
-export type PositionCategory = keyof typeof EMPLOYEE_POSITIONS;
 
 export type ValueOf<T> = T[keyof T];
 
@@ -41,17 +31,40 @@ export type ObjectIdString = string; // Mongoose ObjectId as string in API respo
 export type DayOfWeek = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
 /* ---------------------------------------------------------------------
+  Payroll types (mirror IPayrollRecord & PAYROLL_STATUS)
+--------------------------------------------------------------------- */
+
+export enum PAYROLL_STATUS {
+  PENDING = "pending",
+  PAID = "paid",
+  FAILED = "failed",
+}
+
+export interface PayrollRecordDTO {
+  year: number; // 2025
+  month: number; // 1–12
+  amount: number;
+  currency: string; // ISO currency code, uppercase
+  status: PAYROLL_STATUS;
+  attemptedAt?: ISODateString;
+  paidAt?: ISODateString;
+  failureReason?: string;
+  transactionRef?: string;
+  paidBy?: ObjectIdString; // admin/user who paid manually
+}
+
+/* ---------------------------------------------------------------------
   Sub-DTOs (client-safe types)
 --------------------------------------------------------------------- */
 
 export interface EmergencyContactDTO {
   name: string;
-  phone: string;
+  phone: string; // Bangladesh mobile format expected
   relation: string;
 }
 
 export interface ContactInfoDTO {
-  phone?: string;
+  phone: string; // required by schema
   email?: string;
   emergencyContact?: EmergencyContactDTO;
   firstName?: string;
@@ -64,22 +77,12 @@ export interface ShiftDTO {
   days: DayOfWeek[];
 }
 
-export interface PerformanceDTO {
-  rating?: number; // 1..5
-  lastReview?: ISODateString;
-  feedback?: string;
-}
 
 export interface DocumentDTO {
   type: string;
   // API may return either Asset id or resolved signed URL
   url: ObjectIdString;
   uploadedAt: ISODateString;
-}
-
-export interface AuditDTO {
-  createdBy: ObjectIdString;
-  updatedBy: ObjectIdString;
 }
 
 /* ---------------------------------------------------------------------
@@ -94,14 +97,6 @@ export interface SalaryHistoryDTO {
   reason?: string;
 }
 
-export interface PositionHistoryDTO {
-  // keep flexible: backend often returns the position string (value)
-  position: EmployeePosition | string;
-  department?: string;
-  effectiveFrom: ISODateString;
-  effectiveTo?: ISODateString;
-}
-
 /* ---------------------------------------------------------------------
   User summary DTO (employees are users; minimal denormalized fields)
 --------------------------------------------------------------------- */
@@ -112,7 +107,7 @@ export interface UserSummaryDTO {
   phone?: string;
   avatar?: string; // for quick rendering; may be URL or Asset id depending on API
   isVerified: boolean;
-  accountStatus: ACCOUNT_STATUS;
+  accountStatus: AccountStatus;
 }
 
 /* ---------------------------------------------------------------------
@@ -128,19 +123,13 @@ export interface EmployeeListItemDTO {
   // optional IDs that backend may include
   companyId?: ObjectIdString;
 
-  // Role and position fields
-  role?: EmployeeRole;
-  subRole: EmployeeSubRole;
-  position: EmployeePosition;
-  positionCategory?: PositionCategory;
-
   // status & employment
   status: EmployeeStatus;
   employmentType?: EmploymentType;
 
   // compensation summary
   salary: number;
-  salaryCurrency: string;
+  currency: string;
 
   // dates
   dateOfJoining: ISODateString;
@@ -150,32 +139,19 @@ export interface EmployeeListItemDTO {
   contactPhone?: string;
   contactEmail?: string;
 
-  // performance summary
-  rating?: number;
-  lastReview?: ISODateString;
-
   // shift summary (preformatted for table cell)
   shiftSummary?: string;
 
-  // denormalized/misc model fields useful in UI
-  department?: string;
-  failedLoginAttempts?: number;
-  lastFailedAt?: ISODateString;
-  lockedUntil?: ISODateString;
   lastLogin?: ISODateString;
-  permissions?: string[];
 
   // documents / avatar
   avatar?: ObjectIdString; // may be Asset id
-  initials?: string; // UI fallback
 
   // computed/derived UI helpers (usually optional, sometimes server-provided)
-  statusBadge?: { label: string; tone?: "positive" | "warning" | "danger" | "muted" };
-  tenureMonths?: number;
-  isLocked?: boolean;
-  canEdit?: boolean;
-  canDelete?: boolean;
-  salaryDisplay?: string; // formatted salary + currency
+  statusBadge?: {
+    label: string;
+    tone?: "positive" | "warning" | "danger" | "muted";
+  };
 
   // admin flags & timestamps
   isDeleted: boolean;
@@ -186,7 +162,22 @@ export interface EmployeeListItemDTO {
 /* ---------------------------------------------------------------------
   Full detail DTO (dialog/preview) - preserves structure
 --------------------------------------------------------------------- */
-
+// export interface AuditLog {
+//     _id: string;
+//     targetModel: string;
+//     target: string;
+//     actor?: string;
+//     actorModel?: string;
+//     action: string;
+//     note?: string;
+//     ip?: string;
+//     userAgent?: string;
+//     changes?: {
+//         before?: Record<string, unknown>;
+//         after?: Record<string, unknown>;
+//     };
+//     createdAt: string; // ISO
+// }
 export interface EmployeeDetailDTO {
   id: ObjectIdString;
   userId?: ObjectIdString;
@@ -195,41 +186,32 @@ export interface EmployeeDetailDTO {
   user: UserSummaryDTO;
 
   role: EmployeeRole;
-  subRole: EmployeeSubRole;
-  position?: EmployeePosition;
-  positionCategory?: PositionCategory;
   status: EmployeeStatus;
   employmentType?: EmploymentType;
 
   // Histories
   salaryHistory: SalaryHistoryDTO[];
-  positionHistory: PositionHistoryDTO[];
 
   // Current compensation
   salary: number;
-  salaryCurrency: string;
+  currency: string;
 
   dateOfJoining: ISODateString;
   dateOfLeaving?: ISODateString;
 
   contactInfo: ContactInfoDTO;
 
-  permissions: string[];
+  // Payroll records (optional, may be paginated separately)
+  payroll?: PayrollRecordDTO[];
 
   shifts?: ShiftDTO[];
-
-  performance: PerformanceDTO;
 
   documents?: DocumentDTO[];
 
   notes?: string;
 
-  audit: AuditDTO;
+  audit: AuditLog[];
 
-  // account & admin fields
-  failedLoginAttempts?: number;
-  lastFailedAt?: ISODateString;
-  lockedUntil?: ISODateString;
   lastLogin?: ISODateString;
 
   isDeleted: boolean;
@@ -242,46 +224,34 @@ export interface EmployeeDetailDTO {
 --------------------------------------------------------------------- */
 
 export interface CreateEmployeePayload {
-  companyId?: ObjectIdString;
+  password: string;
   role: EmployeeRole;
-  subRole: EmployeeSubRole;
-  position: EmployeePosition;
-  status?: EmployeeStatus;
   employmentType?: EmploymentType;
   avatar?: ObjectIdString; // Asset id
-  salaryHistory?: SalaryHistoryDTO[];
-  positionHistory?: PositionHistoryDTO[];
+  salary: number;
+  currency: string;
   dateOfJoining?: ISODateString;
-  dateOfLeaving?: ISODateString;
-  contactInfo: ContactInfoDTO;
-  permissions?: string[];
+  contactInfo: ContactInfoDTO; // phone is required by schema
   shifts?: ShiftDTO[];
-  performance?: PerformanceDTO;
   documents?: DocumentDTO[];
   notes?: string;
-  audit: AuditDTO;
 }
 
 export interface UpdateEmployeePayload {
   id: ObjectIdString;
-  companyId?: ObjectIdString;
+  password: string;
   role?: EmployeeRole;
-  subRole?: EmployeeSubRole;
-  position?: EmployeePosition;
-  status?: EmployeeStatus;
   employmentType?: EmploymentType;
   avatar?: ObjectIdString;
-  salaryHistory?: SalaryHistoryDTO[];
-  positionHistory?: PositionHistoryDTO[];
+  status?: EmployeeStatus;
+  salary: number;
+  currency: string;
   dateOfJoining?: ISODateString;
   dateOfLeaving?: ISODateString;
   contactInfo?: ContactInfoDTO;
-  permissions?: string[];
   shifts?: ShiftDTO[];
-  performance?: PerformanceDTO;
   documents?: DocumentDTO[];
   notes?: string;
-  audit?: AuditDTO; // updatedBy should be set on write
 }
 
 /* Soft delete/restore payloads */
@@ -302,23 +272,16 @@ export type EmployeeSortKey =
   | "user.name"
   | "user.email"
   | "role"
-  | "subRole"
-  | "position"
   | "status"
   | "employmentType"
   | "salary"
   | "dateOfJoining"
   | "dateOfLeaving"
   | "createdAt"
-  | "updatedAt"
-  | "rating"
-  | "lastReview";
+  | "updatedAt";
 
 export interface EmployeeFilters {
   roles?: EmployeeRole[];
-  subRoles?: EmployeeSubRole[];
-  positions?: EmployeePosition[];
-  positionCategories?: PositionCategory[];
   statuses?: EmployeeStatus[];
   employmentTypes?: EmploymentType[];
 
@@ -391,7 +354,6 @@ export const EMPLOYEES_CACHE_KEYS = {
       filters: q.filters ?? {},
     })}`,
   detail: (id: ObjectIdString) => `employees:detail:${id}`,
-  positions: "employees:positions",
   enums: "employees:enums",
 } as const;
 
@@ -402,14 +364,12 @@ export type EmployeesCacheKey = ValueOf<typeof EMPLOYEES_CACHE_KEYS>;
 --------------------------------------------------------------------- */
 
 export type EmployeeTableColumn =
+  | "avatar"
   | "user.name"
   | "user.email"
-  | "subRole"
-  | "position"
   | "status"
   | "employmentType"
   | "salary"
-  | "rating"
   | "dateOfJoining"
   | "dateOfLeaving"
   | "createdAt"
@@ -420,8 +380,6 @@ export type SortableEmployeeKey = EmployeeTableColumn;
 export const sortableEmployeeFields = [
   "user.name",
   "user.email",
-  "subRole",
-  "position",
   "employmentType",
   "status",
   "salary",
@@ -432,4 +390,4 @@ export const sortableEmployeeFields = [
   "updatedAt",
 ] as const;
 
-export type SortableEmployeeField = typeof sortableEmployeeFields[number];
+export type SortableEmployeeField = (typeof sortableEmployeeFields)[number];

@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { DayOfWeek, ShiftDTO } from "@/types/employee.types";
 import { Calendar, Clock, Plus, Trash2 } from "lucide-react";
@@ -40,7 +42,24 @@ export default function ShiftEditor({
                 <div className="space-y-4">
                     {shifts.map((s, idx) => (
                         <div key={idx} className="bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-semibold text-sm">
+                                        {idx + 1}
+                                    </div>
+                                    <span className="font-medium text-slate-900 dark:text-slate-100">Shift {idx + 1}</span>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => remove(idx)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <FormRow label="Start Time" icon={Clock}>
                                     <Input
                                         type="time"
@@ -59,27 +78,30 @@ export default function ShiftEditor({
                                     />
                                 </FormRow>
 
-                                <FormRow label="Working Days" icon={Calendar}>
-                                    <Input
-                                        value={s.days.join(", ")}
-                                        onChange={(e) =>
-                                            update(idx, {
-                                                days: e.target.value.split(",").map((d) => d.trim() as DayOfWeek),
-                                            })
-                                        }
-                                        placeholder="Mon, Tue, Wed..."
-                                    />
-                                </FormRow>
-
-                                <div className="flex items-end">
-                                    <Button
-                                        variant="destructive"
-                                        onClick={() => remove(idx)}
-                                        className="w-full text-white hover:text-white"
-                                    >
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Remove
-                                    </Button>
+                                <div className="col-span-1 md:col-span-2">
+                                    <FormRow label="Working Days" icon={Calendar}>
+                                        <div className="flex flex-wrap gap-2">
+                                            {(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as DayOfWeek[]).map((day) => (
+                                                <button
+                                                    key={day}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const days = s.days.includes(day)
+                                                            ? s.days.filter((d) => d !== day)
+                                                            : [...s.days, day];
+                                                        update(idx, { days });
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                                        s.days.includes(day)
+                                                            ? "bg-blue-600 text-white hover:bg-blue-700"
+                                                            : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                                                    }`}
+                                                >
+                                                    {day}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </FormRow>
                                 </div>
                             </div>
                         </div>

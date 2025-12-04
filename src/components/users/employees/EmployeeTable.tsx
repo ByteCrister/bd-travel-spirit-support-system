@@ -6,9 +6,7 @@ import { ArrowUpDown } from "lucide-react";
 import {
     FaUser,
     FaEnvelope,
-    FaBriefcase,
     FaUsers,
-    FaStar,
     FaCalendarAlt,
     FaMoneyBill,
 } from "react-icons/fa";
@@ -53,10 +51,7 @@ export function EmployeeTable({
     }[] = [
             { key: "user.name", label: "Name", icon: <FaUser className="h-3 w-3" />, width: "w-48" },
             { key: "user.email", label: "Email", icon: <FaEnvelope className="h-3 w-3" />, width: "w-56" },
-            { key: "role", label: "Role", icon: <FaBriefcase className="h-3 w-3" />, width: "w-36" },
-            { key: "position", label: "Position", icon: <FaBriefcase className="h-3 w-3" />, width: "w-40" },
             { key: "status", label: "Status", icon: <FaUsers className="h-3 w-3" />, width: "w-28" },
-            { key: "rating", label: "Rating", icon: <FaStar className="h-3 w-3" />, width: "w-20" },
             { key: "dateOfJoining", label: "Joined", icon: <FaCalendarAlt className="h-3 w-3" />, width: "w-28" },
             { key: "salary", label: "Salary", icon: <FaMoneyBill className="h-3 w-3" />, hideOnMobile: true, width: "w-32" },
         ];
@@ -233,18 +228,6 @@ function EmployeeTableRow({ row, onClick }: { row: EmployeeListItemDTO; onClick:
                 </span>
             </TableCell>
 
-            <TableCell className="hidden w-32 px-3 py-3 lg:table-cell">
-                <span className="text-xs text-foreground/70 line-clamp-1">
-                    {row.subRole ?? "-"}
-                </span>
-            </TableCell>
-
-            <TableCell className="w-40 px-3 py-3">
-                <span className="text-xs text-foreground/90 line-clamp-1">
-                    {row.position ?? "-"}
-                </span>
-            </TableCell>
-
             <TableCell className="w-28 px-3 py-3">
                 <Badge
                     variant={statusData.variant as "default" | "secondary" | "destructive" | "outline" | null | undefined}
@@ -252,19 +235,6 @@ function EmployeeTableRow({ row, onClick }: { row: EmployeeListItemDTO; onClick:
                 >
                     {statusData.label}
                 </Badge>
-            </TableCell>
-
-            <TableCell className="w-20 px-3 py-3">
-                <span className="text-xs text-foreground/90">
-                    {typeof row.rating === "number" ? (
-                        <span className="inline-flex items-center gap-0.5">
-                            <span className="font-semibold">{row.rating}</span>
-                            <span className="text-[10px] text-muted-foreground">/5</span>
-                        </span>
-                    ) : (
-                        "-"
-                    )}
-                </span>
             </TableCell>
 
             <TableCell className="w-28 px-3 py-3">
@@ -278,7 +248,7 @@ function EmployeeTableRow({ row, onClick }: { row: EmployeeListItemDTO; onClick:
                     {typeof row.salary === "number" ? (
                         <>
                             <span className="text-[10px] text-muted-foreground">
-                                {row.salaryCurrency ?? ""}
+                                {row.currency ?? ""}
                             </span>{" "}
                             {row.salary.toLocaleString()}
                         </>

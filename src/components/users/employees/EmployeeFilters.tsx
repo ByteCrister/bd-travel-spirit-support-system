@@ -8,11 +8,8 @@ import { Skeleton } from "./primitives/Skeleton";
 import {
     EmployeesQuery,
     EmployeeRole,
-    EmployeeSubRole,
     EmployeeStatus,
     EmploymentType,
-    EmployeePosition,
-    PositionCategory,
 } from "@/types/employee.types";
 
 import { Input } from "@/components/ui/input";
@@ -38,9 +35,7 @@ import {
 } from "@/components/ui/card";
 
 import {
-    EMPLOYEE_POSITIONS,
     EMPLOYEE_ROLE,
-    EMPLOYEE_SUB_ROLE,
     EMPLOYEE_STATUS,
     EMPLOYMENT_TYPE,
 } from "@/constants/employee.const";
@@ -52,8 +47,6 @@ import {
     Filter,
     X,
     ChevronDown,
-    Briefcase,
-    Building2,
     Trash2,
     Activity,
     FileText,
@@ -63,24 +56,10 @@ import {
 
 type EnumsShape = {
     roles?: EmployeeRole[];
-    subRoles?: EmployeeSubRole[];
     statuses?: EmployeeStatus[];
     employmentTypes?: EmploymentType[];
-    departments?: string[];
-    positions?: EmployeePosition[];
-    positionCategories?: PositionCategory[];
 };
 
-const SUB_ROLE_LABELS: Record<EmployeeSubRole, string> = {
-    product: "Product",
-    order: "Order",
-    support: "Support",
-    marketing: "Marketing",
-    finance: "Finance",
-    analytics: "Analytics",
-    hr: "HR",
-    it: "IT"
-};
 
 const STATUS_LABELS: Record<EmployeeStatus, string> = {
     active: "Active",
@@ -129,17 +108,11 @@ export function EmployeeFilters({
 
             if (!mounted) return;
 
-            const derivedPositions = Object.values(EMPLOYEE_POSITIONS).flatMap((arr) => arr) as EmployeePosition[];
-            const derivedCategories = Object.keys(EMPLOYEE_POSITIONS) as PositionCategory[];
 
             setEnums({
                 roles: Object.values(EMPLOYEE_ROLE),
-                subRoles: Object.values(EMPLOYEE_SUB_ROLE),
                 statuses: Object.values(EMPLOYEE_STATUS),
                 employmentTypes: Object.values(EMPLOYMENT_TYPE),
-                positions: derivedPositions,
-                positionCategories: derivedCategories,
-                departments: undefined,
             });
         };
 
@@ -184,32 +157,6 @@ export function EmployeeFilters({
             onRemove: () => void;
         }> = [];
 
-        if (filters.subRoles?.[0]) {
-            const sr = filters.subRoles[0];
-            chips.push({
-                key: `subRole:${sr}`,
-                label: SUB_ROLE_LABELS[sr] ?? sr,
-                onRemove: () => setFilters({ subRoles: undefined }),
-            });
-        }
-
-        if (filters.positionCategories?.[0]) {
-            const pc = filters.positionCategories[0];
-            chips.push({
-                key: `posCat:${pc}`,
-                label: pc.charAt(0).toUpperCase() + pc.slice(1),
-                onRemove: () => setFilters({ positionCategories: undefined, positions: undefined }),
-            });
-        }
-
-        if (filters.positions?.[0]) {
-            const p = filters.positions[0];
-            chips.push({
-                key: `position:${p}`,
-                label: p,
-                onRemove: () => setFilters({ positions: undefined }),
-            });
-        }
 
         if (filters.statuses?.[0]) {
             const s = filters.statuses[0];
@@ -403,39 +350,7 @@ export function EmployeeFilters({
 
                                 {/* Filter grid with improved spacing */}
                                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                                    <ShadcnFilterSelect
-                                        label="Employee Role"
-                                        icon={<Briefcase className="h-4 w-4" aria-hidden="true" />}
-                                        value={filters.subRoles?.[0] ?? ""}
-                                        onValueChange={(value) =>
-                                            setFilters({ subRoles: value ? [value as EmployeeSubRole] : undefined })
-                                        }
-                                        options={enums?.subRoles?.map((r) => ({ value: r, label: SUB_ROLE_LABELS[r] })) ?? []}
-                                        loading={!enums || loading}
-                                        placeholder="Select sub-role"
-                                        disabled={loading}
-                                    />
 
-                                    <ShadcnFilterSelect
-                                        label="Employee Position"
-                                        icon={<Building2 className="h-4 w-4" aria-hidden="true" />}
-                                        value={filters.positionCategories?.[0] ?? ""}
-                                        onValueChange={(value) =>
-                                            setFilters({
-                                                positionCategories: value ? [value as PositionCategory] : undefined,
-                                                positions: undefined,
-                                            })
-                                        }
-                                        options={
-                                            enums?.positionCategories?.map((c) => ({
-                                                value: c,
-                                                label: c.charAt(0).toUpperCase() + c.slice(1),
-                                            })) ?? []
-                                        }
-                                        loading={!enums || loading}
-                                        placeholder="Select category"
-                                        disabled={loading}
-                                    />
 
                                     <ShadcnFilterSelect
                                         label="Employment Status"
