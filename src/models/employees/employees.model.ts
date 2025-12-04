@@ -90,7 +90,7 @@ const EmergencyContactSchema = new Schema<IEmergencyContact>(
 );
 
 export interface IContactInfo {
-    phone?: string;
+    phone: string;
     email?: string;
     emergencyContact?: IEmergencyContact;
     firstName?: string;
