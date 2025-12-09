@@ -2,7 +2,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { FiStar } from "react-icons/fi";
 import { MdFormatQuote } from "react-icons/md";
 import type { TestimonialsType } from "@/types/join-as-guide.types";
-import AnimatedSection from "../global/AnimatedSection";
+import MotionDiv from "../global/MotionDiv";
 import CountUpStat from "../global/CountUpStat";
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
@@ -31,7 +31,7 @@ export default function Testimonials({ data }: Props) {
     <section className={"relative py-24 sm:py-32 " + jakarta.className}>
       <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
-        <AnimatedSection variants={headerVariants} initial="hidden" animate="visible" className="text-center mb-16">
+        <MotionDiv variants={headerVariants} initial="hidden" animate="visible" className="text-center mb-16">
           <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 mb-6">
             <span className="h-2 w-2 rounded-full bg-purple-500 animate-pulse" />
             Success Stories
@@ -47,7 +47,7 @@ export default function Testimonials({ data }: Props) {
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
             Real stories from successful guides who have transformed their business with BD Travel Spirit.
           </p>
-        </AnimatedSection>
+        </MotionDiv>
 
         {/* Testimonials Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -55,7 +55,7 @@ export default function Testimonials({ data }: Props) {
             const { gradient, bgGradient } = getGradient(i);
             const rating = Math.max(0, Math.min(5, testimonial.rating || 0));
             return (
-              <AnimatedSection
+              <MotionDiv
                 key={`${testimonial.id ?? i}-${i}`}
                 variants={cardVariants}
                 initial="hidden"
@@ -98,13 +98,13 @@ export default function Testimonials({ data }: Props) {
                   {/* Hover Effect */}
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </div>
-              </AnimatedSection>
+              </MotionDiv>
             );
           })}
         </div>
 
         {/* Stats */}
-        <AnimatedSection variants={statsVariants} initial="hidden" animate="visible" transition={{ delay: 0.4, duration: 0.8 }} className="mt-16 text-center">
+        <MotionDiv variants={statsVariants} initial="hidden" animate="visible" transition={{ delay: 0.4, duration: 0.8 }} className="mt-16 text-center">
           <div className="inline-flex items-center gap-8 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 px-8 py-6 border border-gray-200/50 dark:border-gray-700/50">
             <div className="text-center">
               <div className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
@@ -131,7 +131,7 @@ export default function Testimonials({ data }: Props) {
               <div className="text-sm text-gray-600 dark:text-gray-400">Happy Guides</div>
             </div>
           </div>
-        </AnimatedSection>
+        </MotionDiv>
       </div>
     </section>
   );

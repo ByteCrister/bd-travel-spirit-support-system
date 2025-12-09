@@ -2,7 +2,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import type { LandingPageData } from "@/types/join-as-guide.types";
 import FinalCTAClient from "./client/FinalCTAClient";
 import FinalCTAbtn from "./client/FinalCTAbtn";
-import AnimatedSection from "../global/AnimatedSection";
+import MotionDiv from "../global/MotionDiv";
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
 const benefits = ["Free to join", "No setup fees", "24/7 support", "Global reach"];
@@ -20,8 +20,8 @@ export default function FinalCTA({ data }: { data: LandingPageData }) {
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-teal-500/10" />
           <div className="relative z-10">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Left: server-rendered copy wrapped with AnimatedSection */}
-              <AnimatedSection variants={copyVariants} initial="hidden" animate="visible" className="">
+              {/* Left: server-rendered copy wrapped with MotionDiv */}
+              <MotionDiv variants={copyVariants} initial="hidden" animate="visible" className="">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-emerald-200 mb-6 backdrop-blur-sm">
                     <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -56,7 +56,7 @@ export default function FinalCTA({ data }: { data: LandingPageData }) {
                   {/* Animated CTA button (client-hydrated) */}
                   <FinalCTAbtn />
                 </div>
-              </AnimatedSection>
+              </MotionDiv>
 
               {/* Client widget (keeps hydrating client-only animations inside FinalCTAClient) */}
               <FinalCTAClient data={data} />

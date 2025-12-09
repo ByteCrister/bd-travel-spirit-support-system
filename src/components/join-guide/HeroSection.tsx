@@ -3,7 +3,7 @@ import ImageCarousel from "./ImageCarousel";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { HeroContentType } from "@/types/join-as-guide.types";
 import HeroCTAbtn from "./client/HeroCTAbtn";
-import AnimatedSection from "../global/AnimatedSection";
+import MotionDiv from "../global/MotionDiv";
 import CountUpStat from "../global/CountUpStat";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -55,34 +55,34 @@ export default function HeroSection({ data }: HeroSectionProps) {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20 md:py-24 lg:py-32">
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
-          {/* Left Content - wrapped with AnimatedSection (client) */}
-          <AnimatedSection variants={slideInLeft} initial="hidden" animate="visible" className="space-y-6 sm:space-y-8 text-center lg:text-left">
+          {/* Left Content - wrapped with MotionDiv (client) */}
+          <MotionDiv variants={slideInLeft} initial="hidden" animate="visible" className="space-y-6 sm:space-y-8 text-center lg:text-left">
             {/* Badge */}
-            <AnimatedSection variants={badgeVariants} initial="hidden" animate="visible" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-emerald-100 backdrop-blur-sm border border-emerald-400/30">
+            <MotionDiv variants={badgeVariants} initial="hidden" animate="visible" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-emerald-100 backdrop-blur-sm border border-emerald-400/30">
               <FiStar className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400" />
               <span>
                 Trusted by{" "}
                 <CountUpStat end={totalGuides} duration={2} separator="," />+ Guides
               </span>
-            </AnimatedSection>
+            </MotionDiv>
 
             {/* Main Heading */}
-            <AnimatedSection variants={fadeUp} initial="hidden" animate="visible" className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+            <MotionDiv variants={fadeUp} initial="hidden" animate="visible" className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
               Grow Your Travel Business with{" "}
               <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
                 BD Travel Spirit
               </span>
-            </AnimatedSection>
+            </MotionDiv>
 
             {/* Subtitle */}
-            <AnimatedSection variants={fadeUp} initial="hidden" animate="visible" className="text-base sm:text-lg md:text-xl text-slate-200 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+            <MotionDiv variants={fadeUp} initial="hidden" animate="visible" className="text-base sm:text-lg md:text-xl text-slate-200 leading-relaxed max-w-2xl mx-auto lg:mx-0">
               Join thousands of guides reaching travelers worldwide. Build your
               reputation, manage bookings effortlessly, and grow your income with
               our premium platform.
-            </AnimatedSection>
+            </MotionDiv>
 
             {/* Stats */}
-            <AnimatedSection variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col sm:flex-row justify-center lg:justify-start gap-6 sm:gap-8">
+            <MotionDiv variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col sm:flex-row justify-center lg:justify-start gap-6 sm:gap-8">
               <div className="flex items-center gap-3 justify-center lg:justify-start">
                 <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-teal-500">
                   <FiUsers className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -106,28 +106,28 @@ export default function HeroSection({ data }: HeroSectionProps) {
                   <div className="text-xs sm:text-sm text-slate-300">Destinations</div>
                 </div>
               </div>
-            </AnimatedSection>
+            </MotionDiv>
 
             {/* CTA Buttons (client) */}
             <HeroCTAbtn />
-          </AnimatedSection>
+          </MotionDiv>
 
           {/* Right Content - Small carousel with controls (kept as client if ImageCarousel is client) */}
-          <AnimatedSection variants={slideInLeft} initial="hidden" animate="visible" className="hidden lg:block relative">
+          <MotionDiv variants={slideInLeft} initial="hidden" animate="visible" className="hidden lg:block relative">
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <ImageCarousel Images={images} className="h-[400px] lg:h-[500px] w-full" showControls={true} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
             </div>
-          </AnimatedSection>
+          </MotionDiv>
         </div>
 
         {/* Scroll indicator */}
-        <AnimatedSection variants={scrollIndicatorVariants} initial="hidden" animate="visible" className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 text-white/70">
+        <MotionDiv variants={scrollIndicatorVariants} initial="hidden" animate="visible" className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 text-white/70">
           <span className="text-xs sm:text-sm font-medium">Scroll to explore</span>
           <div className="h-6 w-4 sm:h-8 sm:w-5 rounded-full border-2 border-white/40 p-1">
             <div className="h-1.5 w-1 sm:h-2 sm:w-1.5 rounded-full bg-white mx-auto animate-bounce" />
           </div>
-        </AnimatedSection>
+        </MotionDiv>
       </div>
     </section>
   );

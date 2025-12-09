@@ -12,7 +12,7 @@ type Props = {
     className?: string;
 };
 
-export default function AnimatedSection({
+export default function MotionDiv({
     children,
     variants,
     initial = "hidden",

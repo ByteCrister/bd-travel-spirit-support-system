@@ -5,7 +5,7 @@ import React from "react";
 import CountUp from "react-countup";
 import { FiUsers, FiGlobe, FiTrendingUp } from "react-icons/fi";
 import type { LandingPageData } from "@/types/join-as-guide.types";
-import AnimatedSection from "@/components/global/AnimatedSection";
+import MotionDiv from "@/components/global/MotionDiv";
 
 export default function FinalCTAClient({ data }: { data: LandingPageData }) {
     const cardVariants = {
@@ -15,7 +15,7 @@ export default function FinalCTAClient({ data }: { data: LandingPageData }) {
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <AnimatedSection
+            <MotionDiv
                 variants={cardVariants}
                 initial="hidden"
                 animate="visible"
@@ -29,9 +29,9 @@ export default function FinalCTAClient({ data }: { data: LandingPageData }) {
                     <CountUp end={data.whyPartner.activeGuides ?? 0} duration={2} separator="," suffix="+" enableScrollSpy scrollSpyOnce />
                 </div>
                 <div className="text-sm text-slate-300">Active Guides</div>
-            </AnimatedSection>
+            </MotionDiv>
 
-            <AnimatedSection
+            <MotionDiv
                 variants={cardVariants}
                 initial="hidden"
                 animate="visible"
@@ -45,9 +45,9 @@ export default function FinalCTAClient({ data }: { data: LandingPageData }) {
                     <CountUp end={data.hero.totalDestinations ?? 0} duration={2} separator="," suffix="+" enableScrollSpy scrollSpyOnce />
                 </div>
                 <div className="text-sm text-slate-300">Destinations</div>
-            </AnimatedSection>
+            </MotionDiv>
 
-            <AnimatedSection
+            <MotionDiv
                 variants={cardVariants}
                 initial="hidden"
                 animate="visible"
@@ -61,7 +61,7 @@ export default function FinalCTAClient({ data }: { data: LandingPageData }) {
                     <CountUp end={data.whyPartner.monthlyVisitors ?? 0} duration={2} separator="," suffix="+" enableScrollSpy scrollSpyOnce />
                 </div>
                 <div className="text-sm text-slate-300">Monthly Visitors</div>
-            </AnimatedSection>
+            </MotionDiv>
         </div>
     );
 }

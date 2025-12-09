@@ -1,7 +1,7 @@
 import { FiGlobe, FiCreditCard, FiCalendar, FiTrendingUp } from "react-icons/fi";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import type { WhyPartnerType } from "@/types/join-as-guide.types";
-import AnimatedSection from "../global/AnimatedSection";
+import MotionDiv from "../global/MotionDiv";
 import CountUpStat from "../global/CountUpStat";
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
@@ -61,7 +61,7 @@ export default function WhyPartner({ data }: Props) {
     <section className={"relative py-24 sm:py-32 " + jakarta.className}>
       <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
-        <AnimatedSection variants={headerVariants} initial="hidden" animate="visible" className="text-center mb-16">
+        <MotionDiv variants={headerVariants} initial="hidden" animate="visible" className="text-center mb-16">
           <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 px-4 py-2 text-sm font-medium text-emerald-600 dark:text-emerald-400 mb-6">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             Why Choose Us
@@ -77,10 +77,10 @@ export default function WhyPartner({ data }: Props) {
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
             Join thousands of successful guides who have transformed their business with our comprehensive platform and dedicated support.
           </p>
-        </AnimatedSection>
+        </MotionDiv>
 
         {/* Stats Banner */}
-        <AnimatedSection variants={statsVariants} initial="hidden" animate="visible" className="mb-16">
+        <MotionDiv variants={statsVariants} initial="hidden" animate="visible" className="mb-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 border border-emerald-200/50 dark:border-emerald-800/50">
               <div className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
@@ -103,14 +103,14 @@ export default function WhyPartner({ data }: Props) {
               <div className="text-gray-600 dark:text-gray-300 font-medium">Active Guides</div>
             </div>
           </div>
-        </AnimatedSection>
+        </MotionDiv>
 
         {/* Benefits Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {benefits.map((benefit, i) => {
             const Icon = benefit.icon;
             return (
-              <AnimatedSection
+              <MotionDiv
                 key={benefit.title}
                 variants={benefitVariants}
                 initial="hidden"
@@ -139,7 +139,7 @@ export default function WhyPartner({ data }: Props) {
                   {/* Hover Effect */}
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </div>
-              </AnimatedSection>
+              </MotionDiv>
             );
           })}
         </div>
