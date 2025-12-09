@@ -17,8 +17,8 @@ import {
     EnumValue,
 } from "../types/enum-settings.types";
 
-import api from "@/utils/api/axios";
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import api from "@/utils/axios";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
 
 enableMapSet();

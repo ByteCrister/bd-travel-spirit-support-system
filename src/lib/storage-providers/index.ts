@@ -1,6 +1,6 @@
 // src/lib/storage-providers/index.ts
 
-import { CloudinaryAssetProvider } from "./cloudinary-asset.provider";
+import { CloudinaryAssetProvider } from "../cloudinary/asset-provider.cloudinary";
 import { AssetStorageProvider } from "./asset-storage.interface";
 import { STORAGE_PROVIDER, StorageProvider } from "@/constants/asset.const";
 // import { S3DocProvider } from "./s3-doc.provider";

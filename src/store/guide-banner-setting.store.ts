@@ -21,8 +21,8 @@ import {
     GUIDE_BANNER_CONSTRAINTS,
 } from "../types/guide-banner-settings.types";
 
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
-import api from "@/utils/api/axios";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
+import api from "@/utils/axios";
 import { showToast } from "@/components/global/showToast";
 
 enableMapSet();

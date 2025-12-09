@@ -20,8 +20,8 @@ import type {
     UserListQuery,
     UserListResponse,
 } from "@/types/chatMessage.types";
-import api from "@/utils/api/axios";
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import api from "@/utils/axios";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 
 const URL_AFTER_API = "/mock/chats";
 

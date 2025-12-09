@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import OwnerModel from "@/models/owner.model";
 import { IOwnerInfo } from "@/types/current-user.types";
-import { getUserIdFromSession } from "@/lib/helpers/get-user";
+import { getUserIdFromSession } from "@/lib/auth/user-id.session.auth";
 import { USER_ROLE } from "@/constants/user.const";
 import ConnectDB from "@/config/db";
 

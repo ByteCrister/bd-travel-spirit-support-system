@@ -1,4 +1,4 @@
-// src/lib/helpers/auth-options.ts
+// src/lib/auth/auth-options.ts
 import { NextAuthOptions, Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
@@ -7,7 +7,7 @@ import { Types } from "mongoose";
 import type { JWT as DefaultJWT } from "next-auth/jwt";
 import ConnectDB from "@/config/db";
 import UserModel from "@/models/user.model";
-import { authRateLimit } from "../redis/auth-rate-limit";
+import { authRateLimit } from "../upstash-redis/auth-rate-limit";
 
 interface MyJWT extends DefaultJWT {
     id: string;

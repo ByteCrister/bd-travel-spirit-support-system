@@ -1,10 +1,10 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { CompanyOverviewDTO, CompanyOverviewResponse } from "@/types/company.overview.types";
 import { TourDetailDTO, TourListItemDTO } from "@/types/tour.types";
 import { EmployeeDetailDTO, EmployeeListItemDTO } from "@/types/employee.types";
-import api from "@/utils/api/axios";
+import api from "@/utils/axios";
 import { GetTourReviewsResponse, ReviewListItemDTO, ReviewSummaryDTO } from "@/types/review.tour.response.type";
 import { GetTourReportsResponse, TourReportListItemDTO } from "@/types/report.tour.response.types";
 import { GetTourFaqsResponse, TourFAQDTO } from "@/types/faqs.types";

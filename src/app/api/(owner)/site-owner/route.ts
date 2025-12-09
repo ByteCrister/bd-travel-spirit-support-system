@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import UserModel from "@/models/user.model";
 import OwnerModel from "@/models/owner.model";
 import ConnectDB from "@/config/db";
-import { getUserIdFromSession } from "@/lib/helpers/get-user";
+import { getUserIdFromSession } from "@/lib/auth/user-id.session.auth";
 import mongoose, { Types } from "mongoose";
 
 function getErrorMessage(err: unknown): string {

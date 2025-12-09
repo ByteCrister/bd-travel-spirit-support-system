@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import getRedisClient from "./lib/redis/get-redis-client";
+import getRedisClient from "./config/get-redis-client.upstash";
 
 const LIMIT = 100;
 const WINDOW = 60; // seconds

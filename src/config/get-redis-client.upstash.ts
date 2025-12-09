@@ -1,4 +1,4 @@
-// lib/redis/redis.ts
+// src/config/get-redis-client.upstash.ts
 import { Redis } from "@upstash/redis";
 
 let redisStore: Redis | null = null;

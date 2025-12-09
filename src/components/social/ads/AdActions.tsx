@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import useAdsStore from '@/store/ads.store';
 import { showToast } from '@/components/global/showToast';
-import { extractErrorMessage } from '@/utils/api/extractErrorMessage';
+import { extractErrorMessage } from '@/utils/axios/extract-error-message';
 import { Spinner } from '@/components/ui/spinner';
 import {
     CheckCircle,

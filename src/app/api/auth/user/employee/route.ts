@@ -1,6 +1,6 @@
 // app/api/auth/user/employee/route.ts
 import { NextResponse } from "next/server";
-import { getUserIdFromSession } from "@/lib/helpers/get-user";
+import { getUserIdFromSession } from "@/lib/auth/user-id.session.auth";
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
 import { IEmployeeInfo } from "@/types/current-user.types";
 import { Lean } from "@/types/mongoose-lean.types";

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import api from "@/utils/api/axios";
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import api from "@/utils/axios";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { GUIDE_STATUS } from "@/constants/guide.const";
 import { PendingGuideDTO } from "@/types/pendingGuide.types";
 

@@ -15,8 +15,8 @@ import {
   AdvertisementAdminActionDTO,
   FilterState,
 } from "@/types/advertising.types";
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
-import api from "@/utils/api/axios";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
+import api from "@/utils/axios";
 enableMapSet();
 
 const URL_AFTER_API = "/mock/ads";

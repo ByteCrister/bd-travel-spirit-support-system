@@ -30,7 +30,7 @@ import {
     type ApiErrorDTO,
 } from '@/types/article-comment.types';
 
-import api from '@/utils/api/axios';
+import api from '@/utils/axios';
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
 
 const URL_AFTER_API = '/mock/articles/comments';

@@ -1,12 +1,8 @@
 // src/lib/assets/cloudinary.upload.ts
-import {
-    AssetModel,
-    ASSET_TYPE,
-    VISIBILITY,
-    MODERATION_STATUS,
-    STORAGE_PROVIDER,
-} from "@/models/asset.model";
-import { UploadedAsset } from "@/services/storage-providers/asset-storage.interface";
+
+import { ASSET_TYPE, MODERATION_STATUS, ModerationStatus, STORAGE_PROVIDER, VISIBILITY, Visibility } from "@/constants/asset.const";
+import { AssetModel } from "@/models/asset.model";
+import { UploadedAsset } from "@/lib/storage-providers/asset-storage.interface";
 import { Types } from "mongoose";
 
 /**
@@ -15,8 +11,8 @@ import { Types } from "mongoose";
 export async function saveUploadedAsset(
     uploaded: UploadedAsset,
     userId: Types.ObjectId,
-    visibility: VISIBILITY = VISIBILITY.PRIVATE,
-    moderationStatus: MODERATION_STATUS = MODERATION_STATUS.PENDING,
+    visibility: Visibility = VISIBILITY.PRIVATE,
+    moderationStatus: ModerationStatus = MODERATION_STATUS.PENDING,
 ) {
     // Derive asset type from MIME
     const assetType = uploaded.contentType?.startsWith("image/")
@@ -48,7 +44,7 @@ export async function saveUploadedAsset(
 }
 
 
-// ? ---------------------------------------- How to use ---------------------------------------- 
+//? ---------------------------------------- How to use ---------------------------------------- 
 /** 
  * const provider = getAssetStorageProvider(STORAGE_PROVIDER.CLOUDINARY);
  * const uploaded = await provider.create(base64File, "my-photo.jpg");

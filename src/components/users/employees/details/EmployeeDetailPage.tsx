@@ -59,7 +59,7 @@ import {
     getFileExtension,
 } from "@/utils/helpers/fileBase64";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 
 /* --------------------------------------------
   Form type: lightweight and focused on fields edited in UI

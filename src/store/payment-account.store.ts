@@ -11,8 +11,8 @@ import type {
     CreateStripePaymentMethodDTO,
     PaymentAccountUpdateDTO,
 } from "@/types/payment-account.type";
-import api from "@/utils/api/axios";
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import api from "@/utils/axios";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
 import { PAYMENT_PROVIDER } from "@/constants/payment.const";
 

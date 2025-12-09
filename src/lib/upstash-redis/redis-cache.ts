@@ -1,4 +1,4 @@
-import getRedisClient from "./get-redis-client";
+import getRedisClient from "../../config/get-redis-client.upstash";
 
 export const redisCache = {
   get: async (key: string): Promise<string | null> => {

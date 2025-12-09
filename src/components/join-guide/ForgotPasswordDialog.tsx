@@ -32,8 +32,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ForgotPasswordFormValues, forgotPasswordValidator } from "@/utils/validators/forgotPassword.validator";
-import api from "@/utils/api/axios";
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import api from "@/utils/axios";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "../global/showToast";
 
 const jakarta = Plus_Jakarta_Sans({

@@ -1,7 +1,7 @@
 // src/lib/helpers/get-user.ts
 import { getServerSession } from "next-auth/next"
 import { NextResponse } from "next/server"
-import { authOptions } from "./auth-options"
+import { authOptions } from "./options.auth"
 
 /**
  * Retrieves the user ID from the NextAuth session.

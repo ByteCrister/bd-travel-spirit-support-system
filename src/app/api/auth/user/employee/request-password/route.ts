@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { USER_ROLE } from "@/constants/user.const";
 import { REQUEST_STATUS } from "@/constants/reset-password-request.const";
-import { authRateLimit } from "@/lib/redis/auth-rate-limit";
+import { authRateLimit } from "@/lib/upstash-redis/auth-rate-limit";
 import ResetPasswordRequestModel from "@/models/employees/reset-password-request.model";
 import { Types } from "mongoose";
 import UserModel from "@/models/user.model";

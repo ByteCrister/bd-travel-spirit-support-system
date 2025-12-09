@@ -3,7 +3,7 @@
 import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
 import { UserSortableField, UserTableRow } from "@/types/user.table.types";
 import { Suspension, User } from "@/types/user.types";
-import api from "@/utils/api/axios";
+import api from "@/utils/axios";
 import axios from "axios";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";

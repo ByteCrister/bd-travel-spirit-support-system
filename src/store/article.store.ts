@@ -27,8 +27,8 @@ import {
     ID,
 } from '@/types/article.types';
 
-import api from '@/utils/api/axios';
-import { extractErrorMessage } from '@/utils/api/extractErrorMessage';
+import api from '@/utils/axios';
+import { extractErrorMessage } from '@/utils/axios/extract-error-message';
 import { ARTICLE_STATUS } from '@/constants/article.const';
 
 const URL_AFTER_API = '/mock/articles';

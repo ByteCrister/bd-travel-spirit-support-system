@@ -8,8 +8,8 @@ import {
     AdminRole,
     AuditListApiResponse,
 } from "@/types/current-user.types";
-import api from "@/utils/api/axios";
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import api from "@/utils/axios";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
 import { USER_ROLE } from "@/constants/user.const";
 

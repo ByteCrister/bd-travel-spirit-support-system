@@ -1,7 +1,7 @@
-// src/lib/storage-providers/cloudinary-asset.provider.ts
+// src/lib/cloudinary/asset-provider.cloudinary.ts
 
 import cloudinary from "@/config/cloudinary";
-import { AssetStorageProvider, UploadedAsset } from "./asset-storage.interface";
+import { AssetStorageProvider, UploadedAsset } from "../storage-providers/asset-storage.interface";
 
 export class CloudinaryAssetProvider implements AssetStorageProvider {
     private folder: string;

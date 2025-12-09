@@ -17,9 +17,9 @@ import type {
     ApiResponse,
 } from "@/types/footer-settings.types";
 
-import api from "@/utils/api/axios";
+import api from "@/utils/axios";
 import { showToast } from "@/components/global/showToast";
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 
 enableMapSet();
 

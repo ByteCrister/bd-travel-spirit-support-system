@@ -45,7 +45,7 @@ import {
 } from "@/types/advertising-settings.types";
 import { PLACEMENT } from "@/constants/advertising.const";
 import useAdvertisingSettingsStore from "@/store/advertisingSettings.store";
-import { extractErrorMessage } from "@/utils/api/extractErrorMessage";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
 
 type Mode = "create" | "edit";

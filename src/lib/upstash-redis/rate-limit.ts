@@ -1,4 +1,4 @@
-import getRedisClient from "./get-redis-client";
+import getRedisClient from "../../config/get-redis-client.upstash";
 
 export async function rateLimit(
     key: string,
