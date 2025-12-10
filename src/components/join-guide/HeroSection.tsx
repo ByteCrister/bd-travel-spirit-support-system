@@ -3,8 +3,8 @@ import ImageCarousel from "./ImageCarousel";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { HeroContentType } from "@/types/join-as-guide.types";
 import HeroCTAbtn from "./client/HeroCTAbtn";
-import MotionDiv from "../global/MotionDiv";
 import CountUpStat from "../global/CountUpStat";
+import { MotionDiv } from "@/components/global/motion-elements";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],

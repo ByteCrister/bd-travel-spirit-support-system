@@ -82,30 +82,14 @@ export interface FooterSettingsInput {
     version?: number;
 }
 
-/* -------------------------
- API envelope
-------------------------- */
-
-export interface ApiMeta {
-    ok: boolean;
-    message?: string;
-    statusCode?: number;
-    traceId?: string;
-}
-
-export interface ApiResponse<T = unknown> {
-    meta: ApiMeta;
-    data?: T;
-    errors?: Record<string, string[]>;
-}
 
 /* -------------------------
  Specialized responses
 ------------------------- */
 
-export type FooterSettingsResponse = ApiResponse<FooterSettingsDTO>;
-export type SocialLinkResponse = ApiResponse<SocialLinkDTO>;
-export type LocationEntryResponse = ApiResponse<LocationEntryDTO>;
+export type FooterSettingsResponse = FooterSettingsDTO;
+export type SocialLinkResponse = SocialLinkDTO;
+export type LocationEntryResponse = LocationEntryDTO;
 
 /* -------------------------
  Normalized store types for zustand

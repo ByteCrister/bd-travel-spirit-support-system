@@ -17,7 +17,6 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Sidebar collapse state (shared)
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -36,7 +35,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     checkMobile();
-    setIsLoading(false);
 
     let timeoutId: NodeJS.Timeout;
     const handleResize = () => {
@@ -68,21 +66,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       document.body.style.overflow = "unset";
     };
   }, [isMobile, isMobileMenuOpen]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 animate-pulse" />
-          <p className="text-sm text-slate-600 dark:text-slate-400">Loading dashboard...</p>
-        </motion.div>
-      </div>
-    );
-  }
 
   const handleConfirmLogout = async () => {
     setIsLoggingOut(true);

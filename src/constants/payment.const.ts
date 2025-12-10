@@ -8,9 +8,9 @@ export type PaymentOwnerType = `${PAYMENT_OWNER_TYPE}`;
 // Multi-gateway ready (Bangladesh + Global)
 export enum PAYMENT_PROVIDER {
     STRIPE = "stripe",
-    // SSLCOMMERZ = "sslcommerz",
-    // PAYPAL = "paypal",
-    // BANK = "bank", // manual bank settlement if ever needed
+    SSLCOMMERZ = "sslcommerz",
+    PAYPAL = "paypal",
+    BANK = "bank", // manual bank settlement if ever needed
 }
 export type PaymentProvider = `${PAYMENT_PROVIDER}`;
 

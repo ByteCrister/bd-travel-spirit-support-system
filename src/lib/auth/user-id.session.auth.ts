@@ -1,4 +1,4 @@
-// src/lib/helpers/get-user.ts
+// src/lib/auth/user-id.session.auth.ts
 import { getServerSession } from "next-auth/next"
 import { NextResponse } from "next/server"
 import { authOptions } from "./options.auth"

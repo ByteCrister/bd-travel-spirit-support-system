@@ -1,10 +1,9 @@
-import { Plus_Jakarta_Sans } from "next/font/google";
 import type { LandingPageData } from "@/types/join-as-guide.types";
-import FinalCTAClient from "./client/FinalCTAClient";
+import CTAWidget from "./CTAWidget";
 import FinalCTAbtn from "./client/FinalCTAbtn";
-import MotionDiv from "../global/MotionDiv";
+import { MotionDiv } from "@/components/global/motion-elements";
+import { jakarta } from "@/styles/fonts";
 
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
 const benefits = ["Free to join", "No setup fees", "24/7 support", "Global reach"];
 
 export default function FinalCTA({ data }: { data: LandingPageData }) {
@@ -58,8 +57,8 @@ export default function FinalCTA({ data }: { data: LandingPageData }) {
                 </div>
               </MotionDiv>
 
-              {/* Client widget (keeps hydrating client-only animations inside FinalCTAClient) */}
-              <FinalCTAClient data={data} />
+              {/* Client widget (keeps hydrating client-only animations inside CTAWidget) */}
+              <CTAWidget data={data} />
             </div>
           </div>
         </div>

@@ -14,7 +14,6 @@ import type {
     FooterEntities,
     ObjectId,
     AsyncStatus,
-    ApiResponse,
 } from "@/types/footer-settings.types";
 
 import api from "@/utils/axios";
@@ -24,6 +23,7 @@ import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 enableMapSet();
 
 const URL_AFTER_API = "/mock/site-settings/footer";
+// const URL_AFTER_API = "/site-settings/footer";
 
 /* ---------- Helpers ---------- */
 
@@ -112,14 +112,7 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
 
         try {
             const res = await api.get<FooterSettingsResponse>(URL_AFTER_API);
-            const data = res.data.data ?? null;
-
-            if (!data) {
-                const message = res.data.meta?.message ?? "Empty response from server";
-                set({ fetchStatus: "error", lastError: message });
-                showToast.error("Failed to load footer settings", message);
-                return;
-            }
+            const data = res.data;
 
             const entities = buildEntitiesFromDto(data);
             set(
@@ -142,14 +135,7 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
         set({ saveStatus: "loading", lastError: null });
         try {
             const res = await api.post<FooterSettingsResponse>(URL_AFTER_API, payload);
-            const data = res.data.data ?? null;
-
-            if (!data) {
-                const message = res.data.meta?.message ?? "Empty response from server";
-                set({ saveStatus: "error", lastError: message });
-                showToast.error("Failed to save footer settings", message);
-                return null;
-            }
+            const data = res.data;
 
             const entities = buildEntitiesFromDto(data);
             set(
@@ -206,8 +192,8 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
                 : `${URL_AFTER_API}/social-links`;
             const method = payload.id ? api.put : api.post;
 
-            const res = await method<ApiResponse<SocialLinkDTO>>(endpoint, payload);
-            const saved = res.data.data ?? null;
+            const res = await method<SocialLinkDTO>(endpoint, payload);
+            const saved = res.data;
 
             if (saved) {
                 set(
@@ -264,23 +250,16 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
         set({ saveStatus: "loading", lastError: null });
         const prev = get().canonical;
 
-        // optimistic remove
-        set(
-            produce<FooterStoreState>((s) => {
-                if (!s.entities) s.entities = initialEntities;
-                delete s.entities.socialLinksById[id];
-                s.entities.socialLinkOrder = s.entities.socialLinkOrder.filter((x) => x !== id);
-            })
-        );
-
         try {
-            const res = await api.delete<ApiResponse<void>>(`${URL_AFTER_API}/social-links/${id}`);
-            const ok = res.data.meta?.ok ?? true;
-            if (!ok) {
-                const message = res.data.meta?.message ?? "Failed to delete";
-                throw new Error(message);
-            }
-
+            await api.delete<SocialLinkDTO>(`${URL_AFTER_API}/social-links/${id}`);
+            // optimistic remove
+            set(
+                produce<FooterStoreState>((s) => {
+                    if (!s.entities) s.entities = initialEntities;
+                    delete s.entities.socialLinksById[id];
+                    s.entities.socialLinkOrder = s.entities.socialLinkOrder.filter((x) => x !== id);
+                })
+            );
             set({ saveStatus: "success", lastError: null });
             showToast.success("Social link deleted");
             return true;
@@ -331,8 +310,8 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
         try {
             const endpoint = `${URL_AFTER_API}/locations/${encodeURIComponent(key)}`;
             // Use PUT for idempotent create/update; backend may accept POST as create
-            const res = await api.put<ApiResponse<LocationEntryDTO>>(endpoint, payload);
-            const saved = res.data.data ?? null;
+            const res = await api.put<LocationEntryDTO>(endpoint, payload);
+            const saved = res.data;
 
             if (saved) {
                 set(
@@ -389,22 +368,16 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
         set({ saveStatus: "loading", lastError: null });
         const prev = get().canonical;
 
-        // optimistic remove
-        set(
-            produce<FooterStoreState>((s) => {
-                if (!s.entities) s.entities = initialEntities;
-                delete s.entities.locationsByKey[key];
-                s.entities.locationOrder = s.entities.locationOrder.filter((k) => k !== key);
-            })
-        );
-
         try {
-            const res = await api.delete<ApiResponse<void>>(`${URL_AFTER_API}/locations/${encodeURIComponent(key)}`);
-            const ok = res.data.meta?.ok ?? true;
-            if (!ok) {
-                const message = res.data.meta?.message ?? "Failed to delete";
-                throw new Error(message);
-            }
+            await api.delete<LocationEntryDTO>(`${URL_AFTER_API}/locations/${encodeURIComponent(key)}`);
+            // optimistic remove
+            set(
+                produce<FooterStoreState>((s) => {
+                    if (!s.entities) s.entities = initialEntities;
+                    delete s.entities.locationsByKey[key];
+                    s.entities.locationOrder = s.entities.locationOrder.filter((k) => k !== key);
+                })
+            );
 
             set({ saveStatus: "success", lastError: null });
             showToast.success("Location deleted");

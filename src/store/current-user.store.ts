@@ -13,7 +13,7 @@ import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
 import { USER_ROLE } from "@/constants/user.const";
 
-const URL_AFTER_API = "/auth/user"
+const URL_AFTER_API = "/auth/user/v1";
 
 /**
  * Helper: is data fresh within ttlMs since lastFetchedAt?

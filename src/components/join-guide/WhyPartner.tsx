@@ -1,8 +1,8 @@
 import { FiGlobe, FiCreditCard, FiCalendar, FiTrendingUp } from "react-icons/fi";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import type { WhyPartnerType } from "@/types/join-as-guide.types";
-import MotionDiv from "../global/MotionDiv";
 import CountUpStat from "../global/CountUpStat";
+import { MotionDiv } from "@/components/global/motion-elements";
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
 

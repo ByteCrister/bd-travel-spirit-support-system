@@ -26,7 +26,7 @@ import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
 import { MdBusiness, MdTravelExplore } from 'react-icons/md';
 import { usePathname } from "next/navigation";
-import { TbPasswordFingerprint } from "react-icons/tb";
+import { TbPasswordFingerprint, TbReceipt } from "react-icons/tb";
 import { useCurrentUserStore } from "@/store/current-user.store";
 import { USER_ROLE } from "@/constants/user.const";
 interface SidebarProps {
@@ -95,6 +95,7 @@ const navigationGroups: NavGroup[] = [
       { href: "/setting/guide-subscriptions", label: "Guide Subscriptions", icon: FiCreditCard, adminOnly: true },
       { href: "/setting/guide-banners", label: "Guide Banners", icon: FiFileText, adminOnly: true },
       { href: "/setting/enums", label: "Enums", icon: FiTag, adminOnly: true },
+      { href: "/setting/payments", label: "Payments", icon: TbReceipt, adminOnly: true },
       { href: "/setting/footer", label: "Footer", icon: FiGlobe, adminOnly: true },
     ],
   },

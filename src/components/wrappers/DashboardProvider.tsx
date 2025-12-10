@@ -22,6 +22,7 @@ const ADMIN_ROUTES = [
   "/social/promotions",
   
   "/setting/advertising",
+  "/setting/payments",
   "/setting/guide-subscriptions",
   "/setting/guide-banners",
   "/setting/enums",

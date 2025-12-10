@@ -1,16 +1,16 @@
 // models/siteSettings.ts
 import { PLACEMENT, PlacementType } from "@/constants/advertising.const";
-import mongoose, { Schema, Model, Types, models, model } from "mongoose";
+import { Schema, Model, Types, models, model } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
 /* -------------------------
    Shared ObjectId type
-   ------------------------- */
+------------------------- */
 export type ObjectId = Types.ObjectId;
 
 /* -------------------------
    Sub interfaces
-   ------------------------- */
+------------------------- */
 
 export interface AdvertisingPrice {
     placement: PlacementType;
@@ -37,15 +37,19 @@ export interface SubscriptionTier {
 }
 
 export interface SocialLink {
+    _id?: ObjectId;
     key: string;
     label?: string;
     icon: string;
     url: string;
     active: boolean;
     order?: number;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export interface LocationEntry {
+    _id?: ObjectId;
     key: string;
     country: string;
     region?: string;
@@ -58,6 +62,8 @@ export interface LocationEntry {
         type: "Point";
         coordinates: [number, number];
     };
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export interface EnumValue {
@@ -74,62 +80,46 @@ export interface EnumGroup {
 }
 
 /* -------------------------
-   New: GuideBanner types
-   ------------------------- */
+   GuideBanner
+------------------------- */
 
 export interface GuideBanner {
-    asset: ObjectId; // reference to Asset._id
-    alt?: string | null; // alt text for accessibility
-    caption?: string | null; // optional caption
-    order?: number; // ordering for presentation (lower = earlier)
-    active?: boolean; // toggle visibility
+    asset: ObjectId;
+    alt?: string | null;
+    caption?: string | null;
+    order?: number;
+    active?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }
 
 /* -------------------------
-   ChangeLog entry
-   ------------------------- */
-
-export interface ChangeLogEntry {
-    version: number;
-    note?: string;
-    editedBy?: ObjectId;
-    editedAt: Date;
-}
-
-/* -------------------------
    Main document interface
-   ------------------------- */
+------------------------- */
 
 export interface SiteSettingsDoc {
     _id?: ObjectId;
-    version: number;
     advertising: AdvertisingConfig;
     guideSubscriptions: SubscriptionTier[];
     socialLinks: SocialLink[];
     locations: LocationEntry[];
     enums: EnumGroup[];
-    guideBanners?: GuideBanner[]; // NEW field
-    changeLog?: ChangeLogEntry[];
+    guideBanners?: GuideBanner[];
     createdAt?: Date;
     updatedAt?: Date;
 }
 
-/* Hydrated document & model types */
 export type ISiteSettings = HydratedDocument<SiteSettingsDoc>;
 
 export interface SiteSettingsModel extends Model<ISiteSettings> {
     upsertSingleton(
-        payload: Partial<SiteSettingsDoc>,
-        editorId?: ObjectId,
-        note?: string
+        payload: Partial<SiteSettingsDoc>
     ): Promise<ISiteSettings>;
 }
 
 /* -------------------------
-   Sub-schemas
-   ------------------------- */
+   Schemas
+------------------------- */
 
 const EnumValueSchema = new Schema<EnumValue>(
     {
@@ -157,8 +147,8 @@ const AdvertisingPriceSchema = new Schema<AdvertisingPrice>(
             enum: Object.values(PLACEMENT),
             required: true,
         },
-        price: { type: Number, required: true, min: 0 },
-        currency: { type: String, required: true, default: "USD" },
+        price: { type: Number, required: true },
+        currency: { type: String, default: "USD" },
         defaultDurationDays: { type: Number },
         allowedDurationsDays: { type: [Number], default: [] },
         active: { type: Boolean, default: true },
@@ -196,7 +186,7 @@ const SocialLinkSchema = new Schema<SocialLink>(
         active: { type: Boolean, default: true },
         order: { type: Number, default: 0 },
     },
-    { _id: false }
+    { timestamps: true }
 );
 
 const LocationSchema = new Schema<LocationEntry>(
@@ -210,116 +200,61 @@ const LocationSchema = new Schema<LocationEntry>(
         lng: { type: Number, required: true },
         location: {
             type: { type: String, enum: ["Point"], default: "Point" },
-            coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]
+            coordinates: { type: [Number], default: [0, 0] },
         },
         active: { type: Boolean, default: true },
     },
-    { _id: false }
+    { timestamps: true }
 );
 
 LocationSchema.index({ location: "2dsphere" });
 
-const ChangeLogEntrySchema = new Schema<ChangeLogEntry>(
-    {
-        version: { type: Number, required: true },
-        note: { type: String },
-        editedBy: { type: Schema.Types.ObjectId, ref: "employees" },
-        editedAt: { type: Date, required: true, default: () => new Date() },
-    },
-    { _id: false }
-);
-
-/* -------------------------
-   New: GuideBanner schema
-   ------------------------- */
-
-/*
- - store lightweight embedded entries referencing Asset documents by ObjectId
- - keep fields small; use array for ordering and simple toggles
- - index asset reference for fast lookups when checking references prior to deletion
-*/
 const GuideBannerSchema = new Schema<GuideBanner>(
     {
-        asset: {
-            type: Schema.Types.ObjectId,
-            ref: "Asset",
-            required: true,
-            index: true,
-        },
+        asset: { type: Schema.Types.ObjectId, ref: "Asset", required: true, index: true },
         alt: { type: String, trim: true, maxlength: 250, default: null },
         caption: { type: String, trim: true, maxlength: 500, default: null },
         order: { type: Number, default: 0, index: true },
         active: { type: Boolean, default: true, index: true },
     },
-    { _id: false }
+    { timestamps: true }
 );
 
 /* -------------------------
-   Main schema
-   ------------------------- */
+   Main schema (NO VERSIONING)
+------------------------- */
 
 const SiteSettingsSchema = new Schema<ISiteSettings, SiteSettingsModel>(
     {
-        _id: {
-            type: Schema.Types.ObjectId,
-            default: () => new mongoose.Types.ObjectId(),
-        },
-        version: { type: Number, default: 1, required: true },
         advertising: { type: AdvertisingConfigSchema, default: () => ({}) },
         guideSubscriptions: { type: [SubscriptionTierSchema], default: [] },
-        socialLinks: { type: [SocialLinkSchema], default: [] }, // footer part
-        locations: { type: [LocationSchema], default: [] }, // footer part
+        socialLinks: { type: [SocialLinkSchema], default: [] },
+        locations: { type: [LocationSchema], default: [] },
         enums: { type: [EnumGroupSchema], default: [] },
         guideBanners: { type: [GuideBannerSchema], default: [] },
-        changeLog: { type: [ChangeLogEntrySchema], default: [] },
     },
     { timestamps: true }
 );
 
 /* -------------------------
-   Indexes
-   ------------------------- */
-
-// Keep most recent version fast to query
-SiteSettingsSchema.index({ version: -1 });
-
-// If you query active banners frequently, this compound index helps
-SiteSettingsSchema.index({ "guideBanners.active": 1, "guideBanners.order": 1 });
-
-/* -------------------------
    Statics
-   ------------------------- */
+------------------------- */
 
 SiteSettingsSchema.statics.upsertSingleton = async function (
-    payload: Partial<ISiteSettings>,
-    editorId?: ObjectId,
-    note?: string
+    payload: Partial<SiteSettingsDoc>
 ): Promise<ISiteSettings> {
-    const now = new Date();
-    const current = await this.findOne().sort({ version: -1 });
-    const nextVersion = (current?.version ?? 0) + 1;
-    const changeLogEntry: ChangeLogEntry = {
-        version: nextVersion,
-        note,
-        editedBy: editorId,
-        editedAt: now,
-    };
+    const existing = await this.findOne();
+    if (!existing) {
+        return this.create(payload);
+    }
 
-    const doc = await this.findOneAndUpdate(
-        { _id: current?._id ?? undefined },
-        {
-            $set: { ...payload, version: nextVersion },
-            $push: { changeLog: changeLogEntry },
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-
-    return doc!;
+    Object.assign(existing, payload);
+    return existing.save();
 };
 
 /* -------------------------
    Model
-   ------------------------- */
+------------------------- */
 
 const SiteSettings: SiteSettingsModel =
     (models.SiteSettings as SiteSettingsModel) ||

@@ -3,7 +3,6 @@ import {
     CARD_BRAND,
     CardBrand,
     PAYMENT_OWNER_TYPE,
-    PAYMENT_PROVIDER,
     PAYMENT_PURPOSE,
     PaymentOwnerType,
     PaymentPurpose,
@@ -27,30 +26,14 @@ const CardSchema = new Schema(
     { _id: false }
 );
 
-const ProviderMetaSchema = new Schema(
-    {
-        provider: {
-            type: String,
-            enum: Object.values(PAYMENT_PROVIDER),
-            required: true,
-        },
-        meta: {
-            type: Schema.Types.Mixed, // Stripe / bank specific payload
-            default: {},
-        },
-    },
-    { _id: false }
-);
-
 /* ---------------------------------------------
    Document Interface (DB Shape)
 --------------------------------------------- */
 
-export interface IPaymentAccount extends Document {
+export interface IStripePaymentAccount extends Document {
     ownerType: PaymentOwnerType;
     ownerId?: mongoose.Types.ObjectId | null;
 
-    provider: PAYMENT_PROVIDER.STRIPE;
     purpose: PaymentPurpose;
 
     isActive: boolean;
@@ -58,25 +41,14 @@ export interface IPaymentAccount extends Document {
 
     label?: string;
 
+    stripeCustomerId: string;
+    stripePaymentMethodId: string;
+
     card?: {
         brand?: CardBrand;
         last4?: string;
         expMonth?: number;
         expYear?: number;
-    };
-
-    providerMeta?: {
-        provider: PAYMENT_PROVIDER.STRIPE;
-        meta: {
-            stripeCustomerId?: string;
-            stripePaymentMethodId?: string;
-            card?: {
-                brand?: CardBrand;
-                last4?: string;
-                expMonth?: number;
-                expYear?: number;
-            };
-        };
     };
 
     isDeleted?: boolean;
@@ -90,16 +62,20 @@ export interface IPaymentAccount extends Document {
    Model Interface (Statics)
 --------------------------------------------- */
 
-export interface IPaymentAccountModel extends Model<IPaymentAccount> {
-    softDelete(id: string): Promise<IPaymentAccount | null>;
-    restore(id: string): Promise<IPaymentAccount | null>;
+export interface IStripePaymentAccountModel
+    extends Model<IStripePaymentAccount> {
+    softDelete(id: string): Promise<IStripePaymentAccount | null>;
+    restore(id: string): Promise<IStripePaymentAccount | null>;
 }
 
 /* ---------------------------------------------
    Schema Definition
 --------------------------------------------- */
 
-const PaymentAccountSchema = new Schema<IPaymentAccount, IPaymentAccountModel>(
+const StripePaymentAccountSchema = new Schema<
+    IStripePaymentAccount,
+    IStripePaymentAccountModel
+>(
     {
         ownerType: {
             type: String,
@@ -114,14 +90,6 @@ const PaymentAccountSchema = new Schema<IPaymentAccount, IPaymentAccountModel>(
             default: null,
         },
 
-        provider: {
-            type: String,
-            enum: Object.values(PAYMENT_PROVIDER),
-            required: true,
-            default: PAYMENT_PROVIDER.STRIPE,
-            index: true,
-        },
-
         purpose: {
             type: String,
             enum: Object.values(PAYMENT_PURPOSE),
@@ -129,8 +97,14 @@ const PaymentAccountSchema = new Schema<IPaymentAccount, IPaymentAccountModel>(
             index: true,
         },
 
-        label: {
-            type: String,
+        label: { type: String },
+
+        stripeCustomerId: { type: String, required: true },
+        stripePaymentMethodId: { type: String, required: true },
+
+        card: {
+            type: CardSchema,
+            default: undefined,
         },
 
         isActive: {
@@ -142,16 +116,6 @@ const PaymentAccountSchema = new Schema<IPaymentAccount, IPaymentAccountModel>(
         isBackup: {
             type: Boolean,
             default: false,
-        },
-
-        card: {
-            type: CardSchema,
-            default: undefined,
-        },
-
-        providerMeta: {
-            type: ProviderMetaSchema,
-            default: undefined,
         },
 
         // Soft delete
@@ -171,22 +135,22 @@ const PaymentAccountSchema = new Schema<IPaymentAccount, IPaymentAccountModel>(
 );
 
 /* ---------------------------------------------
-   Stripe-only Validation (Matches Your Route)
+   Stripe-only Validation
 --------------------------------------------- */
 
-PaymentAccountSchema.pre("validate", function (next) {
-    if (this.provider === PAYMENT_PROVIDER.STRIPE) {
-        const meta = this.providerMeta?.meta;
+StripePaymentAccountSchema.pre("validate", function (next) {
+    if (!this.stripeCustomerId) {
+        return next(
+            new Error("stripeCustomerId is required for Stripe payment accounts")
+        );
+    }
 
-        if (!meta?.stripeCustomerId) {
-            return next(new Error("stripeCustomerId is required for Stripe provider"));
-        }
-
-        if (!meta?.stripePaymentMethodId) {
-            return next(
-                new Error("stripePaymentMethodId is required for Stripe provider")
-            );
-        }
+    if (!this.stripePaymentMethodId) {
+        return next(
+            new Error(
+                "stripePaymentMethodId is required for Stripe payment accounts"
+            )
+        );
     }
 
     next();
@@ -196,7 +160,7 @@ PaymentAccountSchema.pre("validate", function (next) {
    Soft Delete Statics
 --------------------------------------------- */
 
-PaymentAccountSchema.statics.softDelete = async function (id: string) {
+StripePaymentAccountSchema.statics.softDelete = async function (id: string) {
     return this.findByIdAndUpdate(
         id,
         { isDeleted: true, deletedAt: new Date() },
@@ -204,7 +168,7 @@ PaymentAccountSchema.statics.softDelete = async function (id: string) {
     );
 };
 
-PaymentAccountSchema.statics.restore = async function (id: string) {
+StripePaymentAccountSchema.statics.restore = async function (id: string) {
     return this.findByIdAndUpdate(
         id,
         { isDeleted: false, deletedAt: null },
@@ -216,8 +180,8 @@ PaymentAccountSchema.statics.restore = async function (id: string) {
    Auto-exclude Soft Deleted
 --------------------------------------------- */
 
-PaymentAccountSchema.pre(/^find/, function (
-    this: Query<unknown, IPaymentAccount>,
+StripePaymentAccountSchema.pre(/^find/, function (
+    this: Query<unknown, IStripePaymentAccount>,
     next
 ) {
     this.where({ isDeleted: { $ne: true } });
@@ -228,15 +192,15 @@ PaymentAccountSchema.pre(/^find/, function (
    Indexes
 --------------------------------------------- */
 
-PaymentAccountSchema.index({
+StripePaymentAccountSchema.index({
     ownerId: 1,
     purpose: 1,
     isActive: 1,
     isDeleted: 1,
 });
 
-PaymentAccountSchema.index({
-    "providerMeta.meta.stripePaymentMethodId": 1,
+StripePaymentAccountSchema.index({
+    "stripeMeta.stripePaymentMethodId": 1,
     isDeleted: 1,
 });
 
@@ -244,8 +208,11 @@ PaymentAccountSchema.index({
    Export Model
 --------------------------------------------- */
 
-export default (mongoose.models.PaymentAccount as IPaymentAccountModel) ||
-    mongoose.model<IPaymentAccount, IPaymentAccountModel>(
-        "PaymentAccount",
-        PaymentAccountSchema
+
+const StripePaymentAccountModel = (mongoose.models.StripePaymentAccount as IStripePaymentAccountModel) ||
+    mongoose.model<IStripePaymentAccount, IStripePaymentAccountModel>(
+        "StripePaymentAccount",
+        StripePaymentAccountSchema
     );
+
+export default StripePaymentAccountModel;

@@ -1,4 +1,4 @@
-// app/admin/footer-settings/_helpers/validators.ts
+// src/utils/validators/footer-settings.validator.ts
 import { z } from "zod";
 
 export const socialLinkSchema = z.object({
@@ -39,3 +39,9 @@ export const locationSchema = z.object({
 });
 
 export type LocationForm = z.infer<typeof locationSchema>;
+
+export const FooterSettingsInputSchema = z.object({
+  socialLinks: z.array(socialLinkSchema).optional(),
+  locations: z.array(locationSchema).optional(),
+  version: z.number().optional(),
+});

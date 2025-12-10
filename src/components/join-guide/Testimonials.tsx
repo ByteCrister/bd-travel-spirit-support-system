@@ -1,11 +1,9 @@
-import { Plus_Jakarta_Sans } from "next/font/google";
 import { FiStar } from "react-icons/fi";
 import { MdFormatQuote } from "react-icons/md";
 import type { TestimonialsType } from "@/types/join-as-guide.types";
-import MotionDiv from "../global/MotionDiv";
 import CountUpStat from "../global/CountUpStat";
-
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
+import { MotionDiv } from "@/components/global/motion-elements";
+import { jakarta } from "@/styles/fonts";
 
 const gradientPalette = [
   { gradient: "from-emerald-500 to-teal-500", bgGradient: "from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20" },

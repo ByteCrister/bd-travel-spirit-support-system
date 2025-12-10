@@ -1,4 +1,4 @@
-// app/join-as-guide/page.tsx
+// app/page.tsx
 import JoinAsGuide from "@/components/join-guide/JoinAsGuide";
 import fetchLandingData from "@/lib/mocks/fetchLandingData.mock";
 
@@ -6,7 +6,7 @@ import fetchLandingData from "@/lib/mocks/fetchLandingData.mock";
 // Generate metadata using the same fetch
 // ----------------------------
 export async function generateMetadata() {
-  const metadataBase = new URL(process.env.DOMAIN || "http://localhost:3000");
+  const metadataBase = new URL(process.env.DOMAIN!);
 
   try {
     const pageData = await fetchLandingData();

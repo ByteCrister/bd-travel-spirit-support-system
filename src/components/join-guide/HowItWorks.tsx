@@ -1,10 +1,7 @@
-"use client";
-
-import { motion } from "framer-motion";
+import { jakarta } from "@/styles/fonts";
+import { MotionDiv } from "@/components/global/motion-elements";
+import Link from "next/link";
 import { FiUserPlus, FiMapPin, FiShoppingBag, FiArrowRight } from "react-icons/fi";
-import { Plus_Jakarta_Sans } from "next/font/google";
-
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
 
 const steps = [
   {
@@ -38,7 +35,7 @@ export default function HowItWorks() {
     <section id="how-it-works" className={"relative py-24 sm:py-32 " + jakarta.className}>
       <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
@@ -58,7 +55,7 @@ export default function HowItWorks() {
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
             From signup to your first booking in just three simple steps. Start your journey as a professional guide today.
           </p>
-        </motion.div>
+        </MotionDiv>
 
         {/* Steps */}
         <div className="relative">
@@ -67,7 +64,7 @@ export default function HowItWorks() {
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
             {steps.map((step, i) => (
-              <motion.div
+              <MotionDiv
                 key={step.title}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -111,13 +108,13 @@ export default function HowItWorks() {
                   {/* Hover Effect */}
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </div>
-              </motion.div>
+              </MotionDiv>
             ))}
           </div>
         </div>
 
         {/* CTA */}
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
@@ -127,11 +124,11 @@ export default function HowItWorks() {
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
             Ready to start your journey as a professional guide?
           </p>
-          <button className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-emerald-500/25 transition-all duration-300 hover:shadow-emerald-500/40 hover:scale-105">
+          <Link href={`/register-as-guide`} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-emerald-500/25 transition-all duration-300 hover:shadow-emerald-500/40 hover:scale-105">
             Get Started Now
             <FiArrowRight className="h-5 w-5" />
-          </button>
-        </motion.div>
+          </Link>
+        </MotionDiv>
       </div>
     </section>
   );

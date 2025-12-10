@@ -1,18 +1,14 @@
-// components/LoadingDashboard.tsx
-"use client";
-
+// components/global/LoadingDashboard.tsx
 import React from "react";
-import { motion, Variants } from "framer-motion";
+import { MotionDiv, MotionSpan } from "./motion-elements";
 
 type Size = "sm" | "md" | "lg";
-type TextAnimation = "wave" | "ellipsis";
 
 export interface LoaderProps {
     ariaLabel?: string;
     size?: Size;
     center?: boolean;
     className?: string;
-    textAnimation?: TextAnimation;
     /** Controls how fast the text animation plays */
     textSpeed?: number;
 }
@@ -23,21 +19,11 @@ const SIZE_MAP: Record<Size, { dim: string }> = {
     lg: { dim: "h-16 w-16 rounded-2xl" },
 };
 
-const letterContainer: Variants = {
-    hidden: {},
-    visible: {
-        transition: {
-            staggerChildren: 0.04,
-        },
-    },
-};
-
 export default function LoadingDashboard({
     ariaLabel = "Loading content",
     size = "md",
     center = true,
     className = "",
-    textAnimation = "ellipsis",
     textSpeed = 1,
 }: LoaderProps) {
     const { dim } = SIZE_MAP[size];
@@ -48,74 +34,84 @@ export default function LoadingDashboard({
             aria-label={ariaLabel}
             className={`${center ? "min-h-screen flex items-center justify-center" : "inline-flex"} ${className}`}
         >
-            <motion.div
-                initial={{ opacity: 0, scale: 0.92 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-                className="flex flex-col items-center gap-3 px-6 py-4"
-            >
-                <motion.div
-                    aria-hidden
-                    animate={{
-                        rotate: [0, 12, -10, 0],
-                        scale: [1, 1.05, 0.98, 1],
-                        boxShadow: [
-                            "0 6px 18px rgba(99,102,241,0.06)",
-                            "0 12px 28px rgba(99,102,241,0.10)",
-                            "0 6px 18px rgba(99,102,241,0.06)",
-                        ],
-                    }}
-                    transition={{ duration: 1.6, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
-                    className={`${dim} flex items-center justify-center bg-gradient-to-r from-blue-500 to-indigo-600 text-white`}
-                >
-                    <span className="sr-only">{ariaLabel}</span>
-                    <motion.span
-                        layout
-                        className="block rounded-md bg-white/18 backdrop-blur-sm"
-                        style={{ width: "38%", height: "28%" }}
-                        animate={{ x: [0, 4, -3, 0], opacity: [0.95, 1, 0.9, 0.95] }}
-                        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                </motion.div>
+            <div className="flex flex-col items-center gap-3 px-6 py-4">
+                <span className="sr-only">{ariaLabel}</span>
 
-                {textAnimation === "wave" ? (
-                    <motion.p
-                        aria-hidden={false}
-                        className="text-sm text-slate-600 dark:text-slate-300 select-none flex gap-1 items-end"
-                        variants={letterContainer}
-                        initial="hidden"
-                        animate="visible"
-                        style={{ willChange: "transform, opacity" }}
-                    >
-                       
-                        <span className="sr-only"> {ariaLabel}</span>
-                    </motion.p>
-                ) : (
-                    <p className="text-sm text-slate-600 dark:text-slate-300 select-none flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1">
-                            <motion.span
-                                aria-hidden
-                                className="block h-1.5 w-1.5 rounded-full bg-slate-500 dark:bg-slate-300"
-                                animate={{ y: [0, -4, 0] }}
-                                transition={{ repeat: Infinity, duration: 0.9 / textSpeed, delay: 0 }}
-                            />
-                            <motion.span
-                                aria-hidden
-                                className="block h-1.5 w-1.5 rounded-full bg-slate-500 dark:bg-slate-300"
-                                animate={{ y: [0, -4, 0] }}
-                                transition={{ repeat: Infinity, duration: 0.9 / textSpeed, delay: 0.18 }}
-                            />
-                            <motion.span
-                                aria-hidden
-                                className="block h-1.5 w-1.5 rounded-full bg-slate-500 dark:bg-slate-300"
-                                animate={{ y: [0, -4, 0] }}
-                                transition={{ repeat: Infinity, duration: 0.9 / textSpeed, delay: 0.36 }}
-                            />
-                        </span>
-                        <span className="sr-only"> {ariaLabel}</span>
-                    </p>
-                )}
-            </motion.div>
+                {/* Liquid Loader */}
+                <MotionDiv
+                    aria-hidden
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{
+                        opacity: 1,
+                        scale: 1,
+                        y: [0, -30, -30, 0],
+                        rotate: [0, 0, 180, 180, 360],
+                    }}
+                    transition={{
+                        opacity: { duration: 0.45, ease: "easeOut" },
+                        scale: { duration: 0.45, ease: "easeOut" },
+                        y: {
+                            duration: 4,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            times: [0, 0.25, 0.75, 1]
+                        },
+                        rotate: {
+                            duration: 4,
+                            repeat: Infinity,
+                            ease: "linear",
+                            times: [0, 0.25, 0.5, 0.75, 1]
+                        }
+                    }}
+                    className={`${dim} relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900`}
+                >
+                    <MotionDiv
+                        animate={{
+                            y: ["100%", "-100%"],
+                            borderRadius: ["60% 40% 30% 70% / 60% 30% 70% 40%",
+                                "30% 60% 70% 40% / 50% 60% 30% 60%",
+                                "60% 40% 30% 70% / 60% 30% 70% 40%"],
+                        }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-0 bg-gradient-to-t from-cyan-400 via-blue-500 to-indigo-600"
+                    />
+                    <MotionDiv
+                        animate={{
+                            y: ["120%", "-120%"],
+                            borderRadius: ["40% 60% 70% 30% / 40% 70% 30% 60%",
+                                "70% 30% 40% 60% / 60% 40% 70% 30%",
+                                "40% 60% 70% 30% / 40% 70% 30% 60%"],
+                        }}
+                        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                        className="absolute inset-0 bg-gradient-to-t from-purple-400 via-pink-500 to-rose-600 opacity-70"
+                    />
+                </MotionDiv>
+
+                {/* Ellipsis Animation */}
+                <p className="text-sm text-slate-600 dark:text-slate-300 select-none flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1">
+                        <MotionSpan
+                            aria-hidden
+                            className="block h-1.5 w-1.5 rounded-full bg-slate-500 dark:bg-slate-300"
+                            animate={{ y: [0, -4, 0] }}
+                            transition={{ repeat: Infinity, duration: 0.9 / textSpeed, delay: 0 }}
+                        />
+                        <MotionSpan
+                            aria-hidden
+                            className="block h-1.5 w-1.5 rounded-full bg-slate-500 dark:bg-slate-300"
+                            animate={{ y: [0, -4, 0] }}
+                            transition={{ repeat: Infinity, duration: 0.9 / textSpeed, delay: 0.18 }}
+                        />
+                        <MotionSpan
+                            aria-hidden
+                            className="block h-1.5 w-1.5 rounded-full bg-slate-500 dark:bg-slate-300"
+                            animate={{ y: [0, -4, 0] }}
+                            transition={{ repeat: Infinity, duration: 0.9 / textSpeed, delay: 0.36 }}
+                        />
+                    </span>
+                    <span className="sr-only">{ariaLabel}</span>
+                </p>
+            </div>
         </div>
     );
 }

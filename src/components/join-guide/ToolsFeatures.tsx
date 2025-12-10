@@ -1,11 +1,6 @@
-"use client";
-
-import { motion } from "framer-motion";
+import { jakarta } from "@/styles/fonts";
+import { MotionDiv } from "@/components/global/motion-elements";
 import { FiBarChart2, FiCreditCard, FiGlobe, FiShield, FiSmartphone, FiHeadphones, FiZap } from "react-icons/fi";
-import { Plus_Jakarta_Sans } from "next/font/google";
-
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
-
 const features = [
   {
     icon: FiBarChart2,
@@ -63,7 +58,7 @@ export default function ToolsFeatures() {
     <section className={"relative py-24 sm:py-32 " + jakarta.className}>
       <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
@@ -83,12 +78,12 @@ export default function ToolsFeatures() {
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
             Everything you need to operate professionally, scale confidently, and grow your travel business to new heights.
           </p>
-        </motion.div>
+        </MotionDiv>
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {features.map((feature, i) => (
-            <motion.div
+            <MotionDiv
               key={feature.title}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -116,12 +111,12 @@ export default function ToolsFeatures() {
                 {/* Hover Effect */}
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </div>
-            </motion.div>
+            </MotionDiv>
           ))}
         </div>
 
         {/* Bottom CTA */}
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
@@ -138,7 +133,7 @@ export default function ToolsFeatures() {
               <FiZap className="h-4 w-4" />
             </button>
           </div>
-        </motion.div>
+        </MotionDiv>
       </div>
     </section>
   );
