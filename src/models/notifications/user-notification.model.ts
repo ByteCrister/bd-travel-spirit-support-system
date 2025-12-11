@@ -6,7 +6,7 @@ import {
   NotificationRelatedModal,
   USER_NOTIFICATION_TYPE,
   UserNotificationType,
-} from "@/constants/customerNotification.const";
+} from "@/constants/customer-notification.const";
 import { Schema, Document, Types, models, model } from "mongoose";
 
 /**

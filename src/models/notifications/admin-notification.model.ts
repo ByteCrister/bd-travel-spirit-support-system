@@ -2,7 +2,7 @@
 import {
   ADMIN_NOTIFICATION_PRIORITY,
   ADMIN_NOTIFICATION_TYPE,
-} from "@/constants/adminNotification.const";
+} from "@/constants/admin-notification.const";
 import { models } from "mongoose";
 import { Schema, model, Document, Types } from "mongoose";
 

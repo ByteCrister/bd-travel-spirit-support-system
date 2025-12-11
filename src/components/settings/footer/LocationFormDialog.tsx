@@ -52,6 +52,7 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
             setEditingLocationKey(null);
             form.reset();
         } else if (initial) {
+            // Edit mode: populate with existing values
             form.reset({
                 key: initial.key,
                 country: initial.country,
@@ -63,8 +64,23 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
                 active: initial.active,
                 location: initial.location ?? null,
             });
+        } else {
+            // Add mode: reset to empty
+            form.reset({
+                key: "",
+                country: "",
+                region: "",
+                city: "",
+                slug: "",
+                lat: 0,
+                lng: 0,
+                active: true,
+                location: null,
+            });
         }
-    }, [open, initial]); // eslint-disable-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, initial]);
+
 
     async function onSubmit(values: LocationForm) {
         const payload = {

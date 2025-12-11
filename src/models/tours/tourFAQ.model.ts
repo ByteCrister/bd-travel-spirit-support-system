@@ -8,7 +8,7 @@ import mongoose, {
     Query,
 } from "mongoose";
 import { MODERATION_STATUS, ModerationStatus } from "@/constants/tour.const";
-import { FAQ_REPORT_REASON, FaqReportReason } from "@/constants/faqReport.const";
+import { FAQ_REPORT_REASON, FaqReportReason } from "@/constants/faq-report.const";
 
 export interface ITourFAQReport {
     reportedBy: Types.ObjectId;

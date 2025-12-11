@@ -6,11 +6,15 @@ import { getUserIdFromSession } from "@/lib/auth/user-id.session.auth";
 import { locationSchema } from "@/utils/validators/footer-settings.validator";
 import SiteSettings from "@/models/site-settings.model";
 
+interface Params {
+    params: Promise<{ key: string }>; // params is now a Promise in Next.js 16
+}
+
 /**
  * PUT: upsert location by key (atomic). Creates if missing, updates if exists.
  */
-export async function PUT(req: NextRequest, context: { params: { key: string } }) {
-    const { key } = context.params;
+export async function PUT(req: NextRequest, { params }: Params) {
+    const key = decodeURIComponent((await params).key);
 
     try {
         const body = await req.json();
@@ -123,8 +127,8 @@ export async function PUT(req: NextRequest, context: { params: { key: string } }
 /**
  * DELETE: remove location by key (atomic)
  */
-export async function DELETE(req: NextRequest, context: { params: { key: string } }) {
-    const { key } = context.params;
+export async function DELETE(req: NextRequest, { params }: Params) {
+    const key = decodeURIComponent((await params).key);
 
     try {
         const userId = await getUserIdFromSession();

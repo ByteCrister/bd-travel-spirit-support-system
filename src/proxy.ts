@@ -4,7 +4,7 @@ import getRedisClient from "./config/get-redis-client.upstash";
 const LIMIT = 100;
 const WINDOW = 60; // seconds
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
     // const ip =
     //     req.headers.get("x-forwarded-for")?.split(",")[0] ||
     //     "127.0.0.1";

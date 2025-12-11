@@ -22,8 +22,8 @@ import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 
 enableMapSet();
 
-const URL_AFTER_API = "/mock/site-settings/footer";
-// const URL_AFTER_API = "/site-settings/footer";
+// const URL_AFTER_API = "/mock/site-settings/footer";
+const URL_AFTER_API = "/site-settings/v1/footer";
 
 /* ---------- Helpers ---------- */
 
@@ -161,75 +161,39 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
 
     addOrUpdateSocialLink: async (payload: SocialLinkInput) => {
         set({ saveStatus: "loading", lastError: null });
-        const optimisticId = payload.id ?? `tmp_${Date.now()}`;
         const prev = get().canonical;
-
-        // optimistic update
-        set(
-            produce<FooterStoreState>((s) => {
-                const entities = s.entities ?? initialEntities;
-                const incoming: SocialLinkDTO = {
-                    id: optimisticId,
-                    key: payload.key,
-                    label: payload.label ?? null,
-                    url: payload.url,
-                    active: typeof payload.active === "boolean" ? payload.active : true,
-                    order: payload.order ?? null,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                };
-                entities.socialLinksById = { ...entities.socialLinksById, [optimisticId]: incoming };
-                if (!entities.socialLinkOrder.includes(optimisticId)) {
-                    entities.socialLinkOrder = [...entities.socialLinkOrder, optimisticId];
-                }
-                s.entities = entities;
-            })
-        );
 
         try {
             const endpoint = payload.id
-                ? `${URL_AFTER_API}/social-links/${payload.id}`
+                ? `${URL_AFTER_API}/social-links/${encodeURIComponent(payload.id)}`
                 : `${URL_AFTER_API}/social-links`;
             const method = payload.id ? api.put : api.post;
 
-            const res = await method<SocialLinkDTO>(endpoint, payload);
-            const saved = res.data;
+            const res = await method<{ socialLinks: SocialLinkDTO[]; link: SocialLinkDTO }>(endpoint, payload);
+            const { socialLinks, link: saved } = res.data;
 
-            if (saved) {
-                set(
-                    produce<FooterStoreState>((s) => {
-                        const entities = s.entities ?? initialEntities;
-                        entities.socialLinksById[saved.id] = saved;
-                        if (!entities.socialLinkOrder.includes(saved.id)) entities.socialLinkOrder.push(saved.id);
+            set(
+                produce<FooterStoreState>((s) => {
+                    if (!s.entities) return;
 
-                        if (s.canonical) {
-                            const idx = s.canonical.socialLinks.findIndex((f) => f.id === saved.id);
-                            if (idx >= 0) s.canonical.socialLinks[idx] = saved;
-                            else s.canonical.socialLinks.push(saved);
-                        }
-                        s.entities = entities;
-                        s.saveStatus = "success";
-                        s.lastError = null;
-                    })
-                );
-                showToast.success("Social link saved");
-                return saved;
-            }
+                    const norm = normalizeSocialLinks(socialLinks);
 
-            // fallback: server returned canonical payload
-            const fullRes = (res as unknown) as { data: { data?: FooterSettingsDTO } };
-            if (fullRes?.data?.data) {
-                const canonical = fullRes.data.data;
-                const entities = buildEntitiesFromDto(canonical);
-                set({ canonical, entities, saveStatus: "success", lastError: null });
-                showToast.success("Social link saved");
-                const found = canonical.socialLinks.find((l) => l.key === payload.key && l.url === payload.url) ?? null;
-                return found ?? null;
-            }
+                    s.entities.socialLinksById = norm.socialLinksById;
+                    s.entities.socialLinkOrder = norm.socialLinkOrder;
 
-            set({ saveStatus: "error", lastError: "No data returned from server" });
-            showToast.error("Save failed", "No data returned from server");
-            return null;
+                    if (s.canonical) {
+                        s.canonical.socialLinks = socialLinks;
+                    }
+
+                    s.editingSocialLinkId = null;
+                    s.saveStatus = "success";
+                    s.lastError = null;
+                })
+            );
+
+            showToast.success("Social link saved");
+            return saved;
+
         } catch (err) {
             const message = extractErrorMessage(err);
             // rollback
@@ -251,8 +215,7 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
         const prev = get().canonical;
 
         try {
-            await api.delete<SocialLinkDTO>(`${URL_AFTER_API}/social-links/${id}`);
-            // optimistic remove
+            await api.delete<SocialLinkDTO>(`${URL_AFTER_API}/social-links/${encodeURIComponent(id)}`);
             set(
                 produce<FooterStoreState>((s) => {
                     if (!s.entities) s.entities = initialEntities;
@@ -285,27 +248,6 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
         set({ saveStatus: "loading", lastError: null });
         const prev = get().canonical;
         const key = payload.key;
-
-        // optimistic update
-        set(
-            produce<FooterStoreState>((s) => {
-                const entities = s.entities ?? initialEntities;
-                const incoming: LocationEntryDTO = {
-                    key: payload.key,
-                    country: payload.country,
-                    region: payload.region ?? null,
-                    city: payload.city ?? null,
-                    slug: payload.slug ?? null,
-                    lat: payload.lat,
-                    lng: payload.lng,
-                    active: typeof payload.active === "boolean" ? payload.active : true,
-                    location: payload.location ?? null,
-                };
-                entities.locationsByKey = { ...entities.locationsByKey, [key]: incoming };
-                if (!entities.locationOrder.includes(key)) entities.locationOrder.push(key);
-                s.entities = entities;
-            })
-        );
 
         try {
             const endpoint = `${URL_AFTER_API}/locations/${encodeURIComponent(key)}`;

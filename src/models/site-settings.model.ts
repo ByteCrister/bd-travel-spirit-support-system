@@ -243,14 +243,29 @@ const SiteSettingsSchema = new Schema<ISiteSettings, SiteSettingsModel>(
 SiteSettingsSchema.statics.upsertSingleton = async function (
     payload: Partial<SiteSettingsDoc>
 ): Promise<ISiteSettings> {
-    const existing = await this.findOne();
+    let existing = await this.findOne();
     if (!existing) {
         return this.create(payload);
     }
 
     Object.assign(existing, payload);
-    return existing.save();
+
+    if (payload.socialLinks) existing.markModified("socialLinks");
+    if (payload.locations) existing.markModified("locations");
+    if (payload.guideBanners) existing.markModified("guideBanners");
+
+    await existing.save();
+    existing = await this.findOne();
+    return existing!;
 };
+
+
+SiteSettingsSchema.pre("save", function (next) {
+    if (this.isModified("socialLinks") && Array.isArray(this.socialLinks)) {
+        this.socialLinks = normalizeSocialLinks(this.socialLinks);
+    }
+    next();
+});
 
 /* -------------------------
    Model
@@ -261,3 +276,25 @@ const SiteSettings: SiteSettingsModel =
     model<ISiteSettings, SiteSettingsModel>("SiteSettings", SiteSettingsSchema);
 
 export default SiteSettings;
+
+function normalizeSocialLinks(socialLinks: SocialLink[]): SocialLink[] {
+    // Deactivate duplicates: same URL only one active
+    const seenUrls = new Map<string, boolean>();
+    socialLinks = socialLinks.map((s) => {
+        if (s.active) {
+            if (seenUrls.has(s.url)) {
+                return { ...s, active: false };
+            } else {
+                seenUrls.set(s.url, true);
+                return s;
+            }
+        }
+        return s;
+    });
+
+    // Sort by order first, then by creation date to stabilize order
+    socialLinks.sort((a, b) => (Number(a.order ?? 0) - Number(b.order ?? 0)) || ((a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0)));
+
+    // Reassign order sequentially starting from 1
+    return socialLinks.map((s, idx) => ({ ...s, order: idx + 1 }));
+}

@@ -8,7 +8,11 @@ export const socialLinkSchema = z.object({
     icon: z.string().optional().nullable(),
     url: z.string().url("Must be a valid URL"),
     active: z.boolean().optional(),
-    order: z.number().int().nullish(),
+    order: z.number()
+        .int("Order must be an integer")
+        .min(0, "Order cannot be negative")  // Add min constraint
+        .nullable()
+        .optional(),
 });
 
 export type SocialLinkForm = z.infer<typeof socialLinkSchema>;
@@ -41,7 +45,7 @@ export const locationSchema = z.object({
 export type LocationForm = z.infer<typeof locationSchema>;
 
 export const FooterSettingsInputSchema = z.object({
-  socialLinks: z.array(socialLinkSchema).optional(),
-  locations: z.array(locationSchema).optional(),
-  version: z.number().optional(),
+    socialLinks: z.array(socialLinkSchema).optional(),
+    locations: z.array(locationSchema).optional(),
+    version: z.number().optional(),
 });

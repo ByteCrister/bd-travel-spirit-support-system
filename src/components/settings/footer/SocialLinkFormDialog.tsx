@@ -20,7 +20,6 @@ type Props = { open: boolean; onOpenChange: (v: boolean) => void };
 export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
     const {
         entities,
-        setEditingSocialLinkId,
         addOrUpdateSocialLink,
         saveStatus,
         editingSocialLinkId: editingId,
@@ -53,22 +52,34 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
     });
 
     useEffect(() => {
-        if (!open) {
-            setEditingSocialLinkId(null);
-            form.reset();
-        } else if (initial) {
-            form.reset({
-                id: initial.id,
-                key: initial.key,
-                label: initial.label ?? "",
-                icon: initial.icon ?? null,
-                url: initial.url,
-                active: initial.active,
-                order: initial.order ?? null,
-            });
+        if (open) {
+            if (initial) {
+                // Editing existing link
+                form.reset({
+                    id: initial.id,
+                    key: initial.key,
+                    label: initial.label ?? "",
+                    icon: initial.icon ?? null,
+                    url: initial.url,
+                    active: initial.active,
+                    order: initial.order ?? null,
+                });
+            } else {
+                // Adding new link
+                form.reset({
+                    id: undefined,
+                    key: "",
+                    label: "",
+                    icon: null,
+                    url: "",
+                    active: true,
+                    order: null,
+                });
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, initial]);
+
 
     async function onSubmit(values: SocialLinkForm) {
         const payload = {
@@ -214,10 +225,25 @@ export function SocialLinkFormDialog({ open, onOpenChange }: Props) {
                         <Input
                             id="order"
                             type="number"
-                            {...form.register("order", { valueAsNumber: true })}
+                            min="0"
+                            {...form.register("order", {
+                                valueAsNumber: true,
+                                validate: {
+                                    nonNegative: (value) => value === null || value === undefined || value >= 0 || "Order cannot be negative"
+                                }
+                            })}
                             className="h-11 rounded-lg border-slate-300 bg-white shadow-sm transition-all focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:border-slate-700 dark:bg-slate-800"
                             placeholder="Display order"
                         />
+                        {form.formState.errors.order && (
+                            <motion.p
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-xs font-medium text-red-600 dark:text-red-400"
+                            >
+                                {form.formState.errors.order.message}
+                            </motion.p>
+                        )}
                     </motion.div>
 
                     {/* Active Toggle */}

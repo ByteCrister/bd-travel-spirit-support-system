@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Bell } from "lucide-react";
 import { selectSegment, useTravelerInfoStore } from "@/store/traveler-info.store";
-import { NOTIFICATION_PRIORITY } from "@/constants/customerNotification.const";
+import { NOTIFICATION_PRIORITY } from "@/constants/customer-notification.const";
 import NotificationsSkeleton from "../user-profile-skeletons/NotificationsSkeleton";
 
 interface UserNotificationsTabProps {
