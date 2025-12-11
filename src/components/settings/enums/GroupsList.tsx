@@ -1,8 +1,18 @@
 "use client";
 
 import React, { JSX, useEffect, useMemo, useState } from "react";
-import { Search, Plus, AlertCircle, RefreshCw, FolderOpen, X, Sparkles } from "lucide-react";
+import { Search, Plus, AlertCircle, RefreshCw, FolderOpen, X, Sparkles, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+    AlertDialog,
+    AlertDialogTrigger,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogAction,
+    AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import GroupsListSkeleton from "./skeletons/GroupsListSkeleton";
 import useEnumSettingsStore from "@/store/enumSettings.store";
 import { useDebouncedValueLodash } from "@/hooks/useDebouncedValueLodash";
@@ -26,12 +36,14 @@ export default function GroupsList({
         status,
         error,
         fetchAll,
-        fetchGroup
+        fetchGroup,
+        deleteGroup
     } = useEnumSettingsStore();
 
     const [query, setQuery] = useState<string>("");
     const debouncedQuery = useDebouncedValueLodash(query, 250);
     const [createOpen, setCreateOpen] = useState(false);
+    const [deleting, setDeleting] = useState<string | null>(null);
 
     useEffect(() => {
         if (status === "idle") void fetchAll();
@@ -72,6 +84,12 @@ export default function GroupsList({
     function handleSelect(name: string) {
         onSelect(name);
         void fetchGroup(name, { force: false });
+    }
+
+    async function handleConfirmDelete(name: string) {
+        setDeleting(name);
+        await deleteGroup(name);
+        setDeleting(null);
     }
 
     return (
@@ -224,6 +242,7 @@ export default function GroupsList({
                             {filtered.map((g, idx) => (
                                 <motion.div
                                     key={g.name}
+                                    className="relative group"
                                     initial={{ opacity: 0, x: -20, scale: 0.95 }}
                                     animate={{ opacity: 1, x: 0, scale: 1 }}
                                     exit={{ opacity: 0, x: 20, scale: 0.95 }}
@@ -239,6 +258,44 @@ export default function GroupsList({
                                         onSelect={() => handleSelect(g.name)}
                                         onOpen={() => handleSelect(g.name)}
                                     />
+                                    {/* Delete button positioned top-right of the card */}
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-9 w-9 p-2 rounded-md bg-white/60 hover:bg-red-50 border border-transparent shadow-sm"
+                                                    aria-label={`Delete group ${g.name}`}
+                                                >
+                                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Delete enum group</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to delete the group <strong>{g.name}</strong>? This action cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <div className="mt-4 flex justify-end gap-2">
+                                                    <AlertDialogCancel asChild>
+                                                        <Button variant="outline" size="sm">Cancel</Button>
+                                                    </AlertDialogCancel>
+                                                    <AlertDialogAction asChild>
+                                                        <Button
+                                                            size="sm"
+                                                            className="bg-red-600 hover:bg-red-700"
+                                                            onClick={() => void handleConfirmDelete(g.name)}
+                                                            disabled={deleting === g.name}
+                                                        >
+                                                            {deleting === g.name ? "Deleting..." : "Delete"}
+                                                        </Button>
+                                                    </AlertDialogAction>
+                                                </div>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
                                 </motion.div>
                             ))}
                         </AnimatePresence>

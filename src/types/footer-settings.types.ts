@@ -76,13 +76,6 @@ export interface LocationEntryInput {
     } | null;
 }
 
-export interface FooterSettingsInput {
-    socialLinks?: SocialLinkInput[];
-    locations?: LocationEntryInput[];
-    version?: number;
-}
-
-
 /* -------------------------
  Specialized responses
 ------------------------- */
@@ -117,7 +110,6 @@ export interface FooterStoreState {
 
     // actions (signatures only; implementations live in the store)
     fetchFooterSettings: (force?: boolean) => Promise<void>;
-    upsertFooterSettings: (payload: FooterSettingsInput) => Promise<FooterSettingsDTO | null>;
 
     addOrUpdateSocialLink: (payload: SocialLinkInput) => Promise<SocialLinkDTO | null>;
     deleteSocialLink: (id: ObjectId) => Promise<boolean>;

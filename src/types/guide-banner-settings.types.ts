@@ -1,14 +1,5 @@
 // types/guide-banner-settings.types.ts
 
-/**
- * Production-grade types for managing guide banners in UI, Zustand store, and API layers.
- * - Strict typing, no `any`
- * - Rich loading / error management (global, per-operation, per-entity)
- * - Clear DTOs and optimistic update helpers
- *
- * Replace ObjectId with string if you prefer client-only ids.
- */
-
 /* -------------------------
    Basic id and date helpers
    ------------------------- */
@@ -122,7 +113,6 @@ export interface GuideBannerListResponse {
         total: number;
         limit: number;
         offset: number;
-        version?: number;
     };
 }
 
@@ -222,7 +212,6 @@ export interface GuideBannersState {
 
     // metadata
     total?: number;
-    version?: number;
     lastFetchedAt?: ISODateString;
     lastQuery?: GuideBannerQueryParams | null;
 
@@ -306,17 +295,3 @@ export type GuideBannerConstraints = typeof GUIDE_BANNER_CONSTRAINTS;
    ------------------------- */
 
 export type GuideBannersSelector<T> = (state: GuideBannersStore) => T;
-
-/* -------------------------
-   Notes
-   ------------------------- */
-
-/*
-- Use operations keys such as "create", "update", "patch", "delete", "reorder", "fetchList", "fetchById".
-- When performing an operation:
-  1. call setOperationPending(op, id?, requestId)
-  2. perform API call
-  3. call setOperationSuccess or setOperationFailed with the same requestId to avoid races
-- optimisticRegistry stores rollback closures for optimistic creations/edits; unregisterOptimistic should be called on success or failure resolution.
-- EntityRequestState allows per-entity loading indicators in UI (e.g., dim only the banner being saved).
-*/

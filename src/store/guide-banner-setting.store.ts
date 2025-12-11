@@ -104,7 +104,6 @@ function normalizeList(list: GuideBannerEntity[]) {
 const initialState: GuideBannersState = {
     normalized: { byId: {}, allIds: [] },
     total: undefined,
-    version: undefined,
     lastFetchedAt: undefined,
     lastQuery: null,
     listRequest: {
@@ -328,7 +327,6 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
                     s.normalized = normalized;
                     // prefer server meta when provided
                     s.total = typeof data.meta?.total === "number" ? data.meta!.total : list.length;
-                    s.version = typeof data.meta?.version === "number" ? data.meta!.version : s.version;
                     s.lastFetchedAt = nowISO();
                     s.lastQuery = reqParams;
                     // persist server offset/limit if present
@@ -718,7 +716,6 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
                     s.normalized.byId = { ...(s.normalized.byId ?? {}), ...(normalized.byId ?? {}) };
                     s.normalized.allIds = normalized.allIds;
                     s.lastFetchedAt = nowISO();
-                    if (body.meta?.version) s.version = body.meta.version;
                     if (typeof body.meta?.total === "number") s.total = body.meta.total;
                 })
             );

@@ -171,16 +171,6 @@ export default function GroupDetail({ selected }: { selected: string | null }): 
             <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
               {data?.name}
             </h2>
-            {data?.version && (
-              <motion.span
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="px-3 py-1 text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full shadow-md"
-              >
-                v{data.version}
-              </motion.span>
-            )}
           </motion.div>
 
           <motion.div

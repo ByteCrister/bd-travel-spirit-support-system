@@ -98,20 +98,6 @@ export default function GroupCard({ group, selected = false, onSelect }: Props):
                     </p>
 
                     <div className="flex items-center gap-1.5 flex-wrap">
-                        {group.version !== undefined && (
-                            <Badge
-                                variant={selected ? "default" : "secondary"}
-                                className={`
-                                    text-xs px-2 py-0.5 font-medium
-                                    ${selected
-                                        ? "bg-blue-500/90 hover:bg-blue-600 text-white border-0"
-                                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
-                                    }
-                                `}
-                            >
-                                v{group.version}
-                            </Badge>
-                        )}
                         {isUpdating && (
                             <Badge
                                 variant="outline"

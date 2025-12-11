@@ -40,13 +40,13 @@ export default function ValueEditorDialog({
   const form = useForm<EnumValueFormSchema>({
     resolver: zodResolver(schema),
     defaultValues:
-      defaultValue ?? { key: "", label: "", value: "", description: "", order: 0, active: true },
+      defaultValue ?? { key: "", label: "", value: "", description: "", active: true },
     mode: "onBlur",
   });
 
   useEffect(() => {
     form.reset(
-      defaultValue ?? { key: "", label: "", value: "", description: "", order: 0, active: true }
+      defaultValue ?? { key: "", label: "", value: "", description: "", active: true }
     );
   }, [defaultValue, form]);
 
@@ -62,7 +62,7 @@ export default function ValueEditorDialog({
       return;
     }
 
-    await upsertValues({ groupName, values: [{ ...values, order: values.order ?? 0 }], clientMutationId: undefined });
+    await upsertValues({ groupName, values: [{ ...values }], clientMutationId: undefined });
 
     onOpenChange(false);
   }
@@ -166,26 +166,8 @@ export default function ValueEditorDialog({
               </div>
             </div>
 
-            {/* Order and Active */}
+            {/* Active */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-              <div>
-                <label htmlFor="order" className="flex items-center text-sm font-medium text-slate-700 dark:text-slate-300 gap-2">
-                  <HiOutlineHashtag className="w-4 h-4 text-slate-400" />
-                  Order
-                </label>
-                <div className="mt-2 relative">
-                  <Input
-                    id="order"
-                    type="number"
-                    {...form.register("order", { valueAsNumber: true })}
-                    placeholder="0"
-                    className="pl-10 w-full transition-all"
-                  />
-                  <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                    <HiOutlineHashtag className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
 
               <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40">
                 <div className="flex items-center gap-3">
@@ -201,7 +183,7 @@ export default function ValueEditorDialog({
               </div>
             </div>
 
-            {/* Description (optional) */}
+            {/* Description */}
             <div>
               <label htmlFor="description" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Description

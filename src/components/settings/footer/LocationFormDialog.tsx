@@ -8,11 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Resolver, useForm } from "react-hook-form";
 import { LocationForm, locationSchema } from "@/utils/validators/footer-settings.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFooterStore } from "@/store/footerSettings.store";
+import { MapPickerDialog } from "./MapPickerDialog";
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
 
@@ -25,6 +26,8 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
         editingLocationKey: editingKey,
     } = useFooterStore();
     const saving = saveStatus === "loading";
+
+    const [mapOpen, setMapOpen] = useState<boolean>(false);
 
     const initial = useMemo(() => {
         if (!editingKey || !entities) return undefined;
@@ -80,6 +83,44 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, initial]);
+
+    useEffect(() => {
+        const subscription = form.watch((value) => {
+            const lat = value.lat;
+            const lng = value.lng;
+
+            const latValid =
+                typeof lat === "number" &&
+                !Number.isNaN(lat) &&
+                lat >= -90 &&
+                lat <= 90;
+
+            const lngValid =
+                typeof lng === "number" &&
+                !Number.isNaN(lng) &&
+                lng >= -180 &&
+                lng <= 180;
+
+            const nextLocation =
+                latValid && lngValid
+                    ? ({
+                        type: "Point",
+                        coordinates: [lng, lat] as [number, number],
+                    } as const)
+                    : null;
+
+            const currentLocation = form.getValues("location");
+
+            if (JSON.stringify(currentLocation) !== JSON.stringify(nextLocation)) {
+                form.setValue("location", nextLocation, {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                });
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [form]);
 
 
     async function onSubmit(values: LocationForm) {
@@ -249,16 +290,23 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
                                 <Navigation className="h-4 w-4 text-orange-500" />
                                 Latitude
                             </Label>
+
                             <Input
                                 id="lat"
                                 type="number"
                                 step="any"
+                                min={-90}
+                                max={90}
                                 {...form.register("lat", { valueAsNumber: true })}
+                                aria-invalid={!!form.formState.errors.lat}
+                                aria-describedby={form.formState.errors.lat ? "lat-error" : undefined}
                                 className="h-11 rounded-lg border-slate-300 bg-white shadow-sm transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-slate-700 dark:bg-slate-800"
                                 placeholder="e.g., 40.7128"
                             />
+
                             {form.formState.errors.lat && (
                                 <motion.p
+                                    id="lat-error"
                                     initial={{ opacity: 0, y: -5 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     className="text-xs font-medium text-red-600 dark:text-red-400"
@@ -272,16 +320,23 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
                                 <Navigation className="h-4 w-4 text-pink-500" />
                                 Longitude
                             </Label>
+
                             <Input
                                 id="lng"
                                 type="number"
                                 step="any"
+                                min={-180}
+                                max={180}
                                 {...form.register("lng", { valueAsNumber: true })}
+                                aria-invalid={!!form.formState.errors.lng}
+                                aria-describedby={form.formState.errors.lng ? "lng-error" : undefined}
                                 className="h-11 rounded-lg border-slate-300 bg-white shadow-sm transition-all focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 dark:border-slate-700 dark:bg-slate-800"
                                 placeholder="e.g., -74.0060"
                             />
+
                             {form.formState.errors.lng && (
                                 <motion.p
+                                    id="lng-error"
                                     initial={{ opacity: 0, y: -5 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     className="text-xs font-medium text-red-600 dark:text-red-400"
@@ -290,6 +345,15 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
                                 </motion.p>
                             )}
                         </div>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full flex items-center gap-2"
+                            onClick={() => setMapOpen(true)}
+                        >
+                            <MapPin className="h-4 w-4" />
+                            Choose From Map
+                        </Button>
                     </motion.div>
 
                     {/* Active Toggle */}
@@ -345,6 +409,14 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
                         </Button>
                     </motion.div>
                 </form>
+                <MapPickerDialog
+                    open={mapOpen}
+                    onClose={() => setMapOpen(false)}
+                    onSelect={(lat: number, lng: number) => {
+                        form.setValue("lat", lat, { shouldDirty: true });
+                        form.setValue("lng", lng, { shouldDirty: true });
+                    }}
+                />
             </DialogContent>
         </Dialog>
     );

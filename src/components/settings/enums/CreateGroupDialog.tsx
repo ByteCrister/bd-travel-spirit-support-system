@@ -37,7 +37,13 @@ export default function CreateGroupDialog({
         const payload = {
             name: values.name.trim(),
             description: values.description?.trim() ?? null,
-            values: values.values ?? [],
+            values: (values.values ?? []).map(v => ({
+                key: v.key.trim(),
+                value: v.value ?? v.key,
+                label: v.label?.trim() ?? `label: ${v.key}`,
+                description: v.description?.trim() ?? null,
+                active: v.active ?? true
+            })),
         };
 
         try {
@@ -92,7 +98,7 @@ export default function CreateGroupDialog({
                         <div>
                             <label htmlFor="name" className="flex items-center text-sm font-medium text-slate-700 dark:text-slate-300 gap-2">
                                 <ClipboardList className="w-4 h-4 text-slate-400" />
-                                Name <span className="text-rose-500">*</span>
+                                Name <span className="text-rose-500">* {`not changeable`}</span>
                             </label>
                             <Input
                                 id="name"

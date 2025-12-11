@@ -8,7 +8,6 @@ import { useFooterStore } from "@/store/footerSettings.store";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FooterSettingsHeader } from "./FooterSettingsHeader";
-import { Toolbar } from "./Toolbar";
 import { SocialLinksPanel } from "./SocialLinksPanel";
 import { LocationsPanel } from "./LocationsPanel";
 import { SocialLinksSkeleton } from "./skeletons/SocialLinksSkeleton";
@@ -40,9 +39,6 @@ export default function FooterSettingsPage() {
             >
                 {/* Header */}
                 <FooterSettingsHeader />
-
-                {/* Toolbar */}
-                <Toolbar saving={useFooterStore.getState().saveStatus === "loading"} />
 
                 {/* Error Alert */}
                 {error && (

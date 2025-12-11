@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils"; // optional utility: join classNames (or remove/replace)
+import { cn } from "@/lib/utils";
 import type {
   GuideBannerEntity,
   GuideBannerFormValues,
@@ -19,9 +19,16 @@ import type {
   GuideBannerFormErrors,
 } from "@/types/guide-banner-settings.types";
 import { GUIDE_BANNER_CONSTRAINTS } from "@/types/guide-banner-settings.types";
-import { buildAssetSrc, imageFileToCompressedBase64, validateForm } from "@/utils/helpers/guide-banner-settings";
+import { buildAssetSrc, validateForm } from "@/utils/helpers/guide-banner-settings";
+// Use the shared file helpers
+import {
+  fileToBase64,
+  isAllowedExtension,
+  getFileExtension,
+} from "@/utils/helpers/fileBase64";
 import { useGuideBannersStore } from "@/store/guide-banner-setting.store";
 import { Image as ImageIcon, Loader2 } from "lucide-react";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 
 interface GuideBannerFormProps {
   initial?: Partial<GuideBannerFormValues>;
@@ -49,6 +56,7 @@ export default function GuideBannerForm({ initial, mode, onClose, onSave, editId
   const [filePreview, setFilePreview] = useState<string>("");
   const [dragOver, setDragOver] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
   const focusRef = useRef<HTMLButtonElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -78,26 +86,56 @@ export default function GuideBannerForm({ initial, mode, onClose, onSave, editId
     return op?.status;
   }, [operations, mode, editId]);
 
-  // File handling (drag + click)
+  // File handling using shared helpers
   const handleFileObject = async (file?: File) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setErrors((e) => ({ ...e, asset: "Only image files are allowed" }));
+
+    // Reset previous asset errors
+    setErrors((e) => ({ ...e, asset: undefined }));
+
+    // Validate extension first
+    if (!isAllowedExtension(file.name)) {
+      setErrors((e) => ({ ...e, asset: "Unsupported file type. Allowed: jpg jpeg png gif pdf" }));
       return;
     }
 
-    try {
-      const { base64, size } = await imageFileToCompressedBase64(file, MAX_UPLOAD_BYTES);
-      if (size > MAX_UPLOAD_BYTES) {
-        setErrors((e) => ({ ...e, asset: "Compressed image still exceeds 5MB. Try a smaller image." }));
+    // Quick size check before processing
+    if (file.size > MAX_UPLOAD_BYTES) {
+      // For images we still attempt compression below, but give immediate feedback for non-images
+      const ext = getFileExtension(file.name);
+      const imageExts = ["jpg", "jpeg", "png", "gif"];
+      if (!imageExts.includes(ext)) {
+        setErrors((e) => ({ ...e, asset: "File exceeds 5MB limit. Choose a smaller file." }));
         return;
       }
+      // If it's an image, continue to attempt compression via fileToBase64
+    }
 
-      setValues((v) => ({ ...v, asset: base64 }));
-      setFilePreview(`data:image/*;base64,${base64}`);
+    try {
+      // Use fileToBase64 which will compress images when appropriate and return a data URL
+      // Pass options if you want to tune compression (maxWidth, quality, maxFileBytes)
+      const dataUrl = await fileToBase64(file, {
+        compressImages: true,
+        maxWidth: 1600,
+        quality: 0.8,
+        maxFileBytes: MAX_UPLOAD_BYTES,
+      });
+
+      // fileToBase64 returns a data URL like "data:image/jpeg;base64,...."
+      // We can check the size by estimating base64 length if needed, but the helper already enforces maxFileBytes
+      setValues((v) => ({ ...v, asset: dataUrl }));
+      setFilePreview(dataUrl);
       setErrors((e) => ({ ...e, asset: undefined }));
-    } catch {
-      setErrors((e) => ({ ...e, asset: "Failed to process image" }));
+    } catch (err: unknown) {
+      // Map helper errors to user-friendly messages
+      const msg = String(extractErrorMessage(err)) || "Failed to process image";
+      if (msg.includes("Unsupported file type")) {
+        setErrors((e) => ({ ...e, asset: "Unsupported file type" }));
+      } else if (msg.includes("File too large")) {
+        setErrors((e) => ({ ...e, asset: "File too large. Try a smaller file or lower quality." }));
+      } else {
+        setErrors((e) => ({ ...e, asset: "Failed to process image" }));
+      }
     }
   };
 
@@ -207,6 +245,7 @@ export default function GuideBannerForm({ initial, mode, onClose, onSave, editId
                   <div className="text-sm font-medium text-foreground">
                     {filePreview ? "Selected image" : "PNG, JPG or GIF up to 5MB"}
                   </div>
+
                   {errors.asset ? (
                     <p className="text-xs text-red-600 mt-1">{errors.asset}</p>
                   ) : (
@@ -224,6 +263,7 @@ export default function GuideBannerForm({ initial, mode, onClose, onSave, editId
                   className="hidden"
                   onChange={(e) => onFileChange(e.currentTarget.files?.[0])}
                 />
+
                 <Button
                   variant="outline"
                   size="sm"

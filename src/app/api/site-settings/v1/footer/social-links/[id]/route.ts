@@ -7,7 +7,7 @@ import SiteSettings from "@/models/site-settings.model";
 import { SocialLinkDTO } from "@/types/footer-settings.types";
 
 interface Params {
-    params: Promise<{ id: string }>; // params is now a Promise in Next.js 16
+    params: Promise<{ id: string }>;
 }
 
 /**

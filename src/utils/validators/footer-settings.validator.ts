@@ -24,13 +24,17 @@ export const locationSchema = z.object({
     city: z.string().nullish(),
     slug: z.string().nullish(),
 
-    lat: z.coerce
+    lat: z
+        .coerce
         .number()
-        .refine((v) => !isNaN(v), "Latitude required"),
+        .refine((v) => !isNaN(v), "Latitude required")
+        .refine((v) => v >= -90 && v <= 90, "Latitude must be between -90 and 90"),
 
-    lng: z.coerce
+    lng: z
+        .coerce
         .number()
-        .refine((v) => !isNaN(v), "Longitude required"),
+        .refine((v) => !isNaN(v), "Longitude required")
+        .refine((v) => v >= -180 && v <= 180, "Longitude must be between -180 and 180"),
 
     active: z.boolean().optional(),
 

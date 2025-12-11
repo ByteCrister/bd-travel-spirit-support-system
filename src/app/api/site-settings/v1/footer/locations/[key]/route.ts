@@ -2,12 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Types } from "mongoose";
 import ConnectDB from "@/config/db";
-import { getUserIdFromSession } from "@/lib/auth/user-id.session.auth";
 import { locationSchema } from "@/utils/validators/footer-settings.validator";
 import SiteSettings from "@/models/site-settings.model";
 
 interface Params {
-    params: Promise<{ key: string }>; // params is now a Promise in Next.js 16
+    params: Promise<{ key: string }>;
 }
 
 /**
@@ -26,10 +25,26 @@ export async function PUT(req: NextRequest, { params }: Params) {
             );
         }
 
-        const userId = await getUserIdFromSession();
-        if (!userId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-
         await ConnectDB();
+
+        const existingKeyOwner = await SiteSettings.findOne({
+            "locations.key": parsed.data.key
+        }, {
+            "locations.$": 1
+        }).lean();
+
+        // If exists AND key in URL is NOT an update (i.e., creating new)
+        if (existingKeyOwner && req.method === "PUT") {
+            // If existing entry is different than the one being updated (based on _id check)
+            if (existingKeyOwner.locations?.[0]?.key === parsed.data.key) {
+                // This is fine — the user is updating existing by key
+            } else {
+                return NextResponse.json(
+                    { message: "Location key must be unique" },
+                    { status: 409 }
+                );
+            }
+        }
 
         const now = new Date();
 
@@ -131,8 +146,6 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const key = decodeURIComponent((await params).key);
 
     try {
-        const userId = await getUserIdFromSession();
-        if (!userId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
         await ConnectDB();
 

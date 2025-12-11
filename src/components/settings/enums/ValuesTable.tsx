@@ -2,7 +2,7 @@
 "use client";
 
 import React, { JSX, useCallback } from "react";
-import { ChevronUp, ChevronDown, Edit, Trash2, Hash, Tag, Database, ArrowUpDown } from "lucide-react";
+import { Edit, Trash2, Hash, Tag, Database } from "lucide-react";
 import { EnumValue } from "@/types/enum-settings.types";
 import useEnumSettingsStore from "@/store/enumSettings.store";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -19,32 +19,12 @@ interface Props {
 
 export default function ValuesTable({ groupName, values, onEdit }: Props): JSX.Element {
   const {
-    upsertValues,
     removeValue,
     setValueActive,
     groups
   } = useEnumSettingsStore();
   const groupState = groups[groupName];
   const optimistic = groupState?.optimistic ?? {};
-
-  function reorder(key: string, direction: "up" | "down") {
-    const idx = values.findIndex((v) => v.key === key);
-    if (idx === -1) return;
-    const copy = [...values];
-    const swap = direction === "up" ? idx - 1 : idx + 1;
-    if (swap < 0 || swap >= copy.length) return;
-    const tempOrder = (copy[idx].order ?? idx) as number;
-    // swap orders
-    const a = { ...copy[idx], order: copy[swap].order ?? swap };
-    const b = { ...copy[swap], order: tempOrder };
-    copy[idx] = b;
-    copy[swap] = a;
-    void upsertValues({
-      groupName,
-      values: copy,
-      clientMutationId: undefined,
-    }).catch(() => { });
-  };
 
   const handleRemove = useCallback(
     async (key: string) => {
@@ -91,14 +71,6 @@ export default function ValuesTable({ groupName, values, onEdit }: Props): JSX.E
                   Value
                 </div>
               </TableHead>
-              <TableHead className="font-semibold text-slate-700">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 bg-amber-100 rounded-md">
-                    <ArrowUpDown size={12} className="text-amber-600" />
-                  </div>
-                  Order
-                </div>
-              </TableHead>
               <TableHead className="font-semibold text-slate-700">Active</TableHead>
               <TableHead className="font-semibold text-slate-700 text-right">Actions</TableHead>
             </TableRow>
@@ -135,39 +107,6 @@ export default function ValuesTable({ groupName, values, onEdit }: Props): JSX.E
                       <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
                         {String(v.value)}
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <div className="flex gap-0.5 bg-slate-100 rounded-lg p-0.5">
-                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => reorder(v.key, "up")}
-                              aria-label={`Move ${v.key} up`}
-                              className="h-7 w-7 p-0 hover:bg-blue-100 hover:text-blue-600 rounded-md transition-colors"
-                              disabled={idx === 0}
-                            >
-                              <ChevronUp size={14} />
-                            </Button>
-                          </motion.div>
-                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => reorder(v.key, "down")}
-                              aria-label={`Move ${v.key} down`}
-                              className="h-7 w-7 p-0 hover:bg-blue-100 hover:text-blue-600 rounded-md transition-colors"
-                              disabled={idx === values.length - 1}
-                            >
-                              <ChevronDown size={14} />
-                            </Button>
-                          </motion.div>
-                        </div>
-                        <span className="text-xs font-medium text-slate-500 min-w-[24px] text-center px-2 py-1 bg-slate-50 rounded-md">
-                          {v.order ?? "-"}
-                        </span>
-                      </div>
                     </TableCell>
                     <TableCell>
                       <motion.div

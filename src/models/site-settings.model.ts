@@ -68,14 +68,15 @@ export interface LocationEntry {
 
 export interface EnumValue {
     key: string;
-    label?: string;
+    label: string;
     value: string | number;
-    description?: string;
+    active: boolean;
+    description?: string | null;
 }
 
 export interface EnumGroup {
     name: string;
-    description?: string;
+    description?: string | null;
     values: EnumValue[];
 }
 
@@ -124,9 +125,10 @@ export interface SiteSettingsModel extends Model<ISiteSettings> {
 const EnumValueSchema = new Schema<EnumValue>(
     {
         key: { type: String, required: true },
-        label: { type: String },
-        value: { type: Schema.Types.Mixed, required: true },
-        description: { type: String },
+        label: { type: String, required: true },
+        value: { type: String, required: true },
+        active: { type: Boolean, default: true, index: true },
+        description: { type: String, default: null },
     },
     { _id: false }
 );
@@ -134,7 +136,7 @@ const EnumValueSchema = new Schema<EnumValue>(
 const EnumGroupSchema = new Schema<EnumGroup>(
     {
         name: { type: String, required: true },
-        description: { type: String },
+        description: { type: String, default: null },
         values: { type: [EnumValueSchema], default: [] },
     },
     { _id: false }
@@ -221,7 +223,7 @@ const GuideBannerSchema = new Schema<GuideBanner>(
 );
 
 /* -------------------------
-   Main schema (NO VERSIONING)
+   Main schema
 ------------------------- */
 
 const SiteSettingsSchema = new Schema<ISiteSettings, SiteSettingsModel>(

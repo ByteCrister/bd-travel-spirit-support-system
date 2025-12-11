@@ -1,10 +1,4 @@
 // src/types/enum-settings.types.ts
-// Production-grade types for managing SiteSettings.enums
-// - Domain types match models/siteSettings.ts EnumGroup / EnumValue
-// - API DTOs (requests/responses) are explicit and version-friendly
-// - Zustand store types are ready for strictly typed store slices
-// - UI types for forms, tables, sorting, filtering, selection
-
 /* -------------------------
   Shared primitives
 ------------------------- */
@@ -23,15 +17,13 @@ export interface EnumValue {
     /** Unique key within the group (used in code & forms) */
     key: string;
     /** Human-visible label shown in UI */
-    label?: string | null;
+    label: string;
     /** Canonical underlying value (string or numeric) */
     value: string | number;
     /** Optional description for tooling / admin */
     description?: string | null;
-    /** Optional order used for presentation */
-    order?: number;
     /** Toggle to hide inactive values without deleting */
-    active?: boolean;
+    active: boolean;
 }
 
 /** Grouping of enum values (stored as SiteSettings.enums item) */
@@ -42,8 +34,6 @@ export interface EnumGroup {
     description?: string | null;
     /** Values contained in this group */
     values: EnumValue[];
-    /** Version number for this group (useful for caching / migrations) */
-    version?: number;
 }
 
 /* -------------------------
@@ -153,6 +143,9 @@ export interface EnumSettingsSlice {
         opts?: { clientMutationId?: string }
     ) => Promise<EnumGroup>;
 
+    /** delete an entire enum group */
+    deleteGroup: (name: EnumKey, opts?: { clientMutationId?: string }) => Promise<void>;
+
     /** local utility to clear errors */
     clearError: () => void;
 
@@ -172,7 +165,6 @@ export interface EnumValueForm {
     label?: string;
     value: string | number;
     description?: string;
-    order?: number;
     active?: boolean;
 }
 
@@ -190,7 +182,6 @@ export interface EnumValueRow {
     value: string | number;
     description?: string | null;
     active: boolean;
-    order?: number | null;
 }
 
 /** Pagination and sorting for UI tables */
@@ -211,25 +202,3 @@ export type Narrow<T> = T extends string | number ? T : T;
 
 /** Strictly typed map for lookup by key */
 export type EnumValueMap<T extends EnumValue = EnumValue> = Record<T["key"], T>;
-
-/* -------------------------
-  Example typed selectors (for reference)
-------------------------- */
-
-/**
- * Example usage in a React component with zustand:
- *
- * const group = useStore((s) => s.enumSettings.getGroupOrNull('ad_placements'));
- * if (group) { const activeValues = group.values.filter(v => v.active); }
- *
- * The store actions return fully typed EnumGroup objects for immediate UI updates.
- */
-
-/* -------------------------
-  Notes and rationale
-  - Keep DB <-> API <-> UI aligned: domain models mirror SiteSettings.enums
-  - API DTOs are explicit and avoid using 'any' or ambiguous arrays
-  - Zustand slice includes optimistic mutation support via clientMutationId
-  - UI types separate form shape from persisted shape to allow client-side helpers
-  - Metadata fields are intentionally permissive (Record<string, unknown>) for forward compatibility
-------------------------- */

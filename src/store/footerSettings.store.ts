@@ -5,7 +5,6 @@ import { produce, enableMapSet } from "immer";
 import type {
     FooterStoreState,
     FooterSettingsDTO,
-    FooterSettingsInput,
     FooterSettingsResponse,
     SocialLinkDTO,
     SocialLinkInput,
@@ -127,33 +126,6 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
             const message = extractErrorMessage(err);
             set({ fetchStatus: "error", lastError: message });
             showToast.error("Failed to load footer settings", message);
-        }
-    },
-
-    /* Upsert full footer settings */
-    upsertFooterSettings: async (payload: FooterSettingsInput) => {
-        set({ saveStatus: "loading", lastError: null });
-        try {
-            const res = await api.post<FooterSettingsResponse>(URL_AFTER_API, payload);
-            const data = res.data;
-
-            const entities = buildEntitiesFromDto(data);
-            set(
-                produce<FooterStoreState>((s) => {
-                    s.canonical = data;
-                    s.entities = entities;
-                    s.saveStatus = "success";
-                    s.lastError = null;
-                })
-            );
-
-            showToast.success("Footer settings saved", undefined);
-            return data;
-        } catch (err) {
-            const message = extractErrorMessage(err);
-            set({ saveStatus: "error", lastError: message });
-            showToast.error("Failed to save footer settings", message);
-            return null;
         }
     },
 

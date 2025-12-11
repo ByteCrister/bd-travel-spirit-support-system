@@ -23,7 +23,8 @@ import { showToast } from "@/components/global/showToast";
 
 enableMapSet();
 
-const URL_AFTER_API = "/mock/site-settings/enums";
+// const URL_AFTER_API = "/mock/site-settings/enums";
+const URL_AFTER_API = "/site-settings/v1/enums";
 
 /* Helpers */
 const nowIso = () => new Date().toISOString();
@@ -54,6 +55,7 @@ const ROUTES = {
     upsertValues: (name: string) => `${URL_AFTER_API}/${encodeURIComponent(name)}/values`,
     removeValue: (name: string, valueKey: string) =>
         `${URL_AFTER_API}/${encodeURIComponent(name)}/values/${encodeURIComponent(valueKey)}`,
+    deleteGroup: (name: string) => `${URL_AFTER_API}/${encodeURIComponent(name)}`,
 };
 
 /** Merge partial EnumValue updates into existing EnumValue[] */
@@ -70,15 +72,14 @@ function mergePartialValues(existing: EnumValue[] = [], partials: Partial<EnumVa
             const created: EnumValue = {
                 key,
                 value: (p as Partial<EnumValue>).value ?? key,
-                label: (p as Partial<EnumValue>).label ?? null,
+                label: (p as Partial<EnumValue>).label ?? `label: ${key}`,
                 description: (p as Partial<EnumValue>).description ?? null,
-                order: (p as Partial<EnumValue>).order ?? 0,
                 active: (p as Partial<EnumValue>).active ?? true,
             };
             map.set(key, created);
         }
     }
-    return Array.from(map.values()).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return Array.from(map.values());
 }
 
 /* Store */
@@ -140,8 +141,9 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
         fetchGroup: async (name: EnumKey, opts = { force: false }) => {
             ensureGroupState(get().groups, name);
             const groupState = get().groups[name];
-            if (groupState.status === "loading" && !opts.force) return;
-
+            if (!opts.force && groupState.data && groupState.status === "success") {
+                return groupState.data;
+            }
             set(
                 produce((s: Draft<EnumSettingsSlice>) => {
                     ensureGroupState(s.groups, name);
@@ -303,9 +305,7 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
                         } else {
                             const map = new Map((s.groups[groupName].data!.values ?? []).map((v) => [v.key, v]));
                             for (const v of incoming) map.set(v.key, v);
-                            s.groups[groupName].data!.values = Array.from(map.values()).sort(
-                                (a, b) => (a.order ?? 0) - (b.order ?? 0)
-                            );
+                            s.groups[groupName].data!.values = Array.from(map.values());
                         }
                     }
                 })
@@ -419,7 +419,7 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
             );
 
             try {
-                const res = await api.patch<{ enumGroup: EnumGroup }>(ROUTES.upsertValues(groupName), {
+                const res = await api.patch<{ enumGroup: EnumGroup }>(`${URL_AFTER_API}/${groupName}`, {
                     values: [{ key: valueKey, active }],
                     replace: false,
                 });
@@ -451,6 +451,73 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
                     })
                 );
                 showToast.error("Failed to update value", message);
+                throw new Error(message);
+            }
+        },
+
+        deleteGroup: async (name: EnumKey, opts: { clientMutationId?: string } = {}) => {
+            const cmid = opts.clientMutationId ?? genClientId("deleteGroup");
+            ensureGroupState(get().groups, name);
+
+            // Save previous snapshot to revert on error
+            const prevGroup = get().groups[name]?.data ?? null;
+            const prevOrder = [...get().order];
+
+            // Optimistic update: remove group data and remove from order
+            set(
+                produce((s: Draft<EnumSettingsSlice>) => {
+                    ensureGroupState(s.groups, name);
+                    s.groups[name].optimistic = s.groups[name].optimistic ?? {};
+                    s.groups[name].optimistic![cmid] = nowIso();
+                    s.groups[name].status = "loading";
+                    s.groups[name].error = null;
+
+                    // remove data locally
+                    s.groups[name].data = null;
+                    // remove from order
+                    s.order = s.order.filter((n) => n !== name);
+                })
+            );
+
+            try {
+                // call API to delete group
+                await api.delete<{ enumGroup?: EnumGroup }>(ROUTES.deleteGroup(name));
+
+                // success: clear optimistic marker and group state
+                set(
+                    produce((s: Draft<EnumSettingsSlice>) => {
+                        // ensureGroupState(s.groups, name); // group state already exists
+                        if (s.groups[name]) {
+                            if (s.groups[name].optimistic) delete s.groups[name].optimistic![cmid];
+                            s.groups[name].status = "success";
+                            s.groups[name].error = null;
+                            // keep data null (deleted)
+                        }
+                        // ensure order does not contain the deleted name
+                        s.order = s.order.filter((n) => n !== name);
+                        // optionally remove the group key entirely to keep store clean
+                        delete s.groups[name];
+                    })
+                );
+
+                showToast.success("Group deleted", `Removed group ${name}`);
+                return;
+            } catch (err) {
+                const message = extractErrorMessage(err);
+
+                // revert to previous snapshot
+                set(
+                    produce((s: Draft<EnumSettingsSlice>) => {
+                        ensureGroupState(s.groups, name);
+                        s.groups[name].data = prevGroup;
+                        s.groups[name].status = "error";
+                        s.groups[name].error = message;
+                        if (s.groups[name].optimistic) delete s.groups[name].optimistic![cmid];
+                        s.order = prevOrder;
+                    })
+                );
+
+                showToast.error("Failed to delete group", message);
                 throw new Error(message);
             }
         },

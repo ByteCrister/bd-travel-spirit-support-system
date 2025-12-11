@@ -22,7 +22,6 @@ import {
     Loader2,
     Sparkles,
     RotateCcw,
-    TrendingUp
 } from "lucide-react";
 import GuideBannerList from "./GuideBannerList";
 import GuideBannerForm from "./GuideBannerForm";
@@ -43,7 +42,6 @@ export default function GuideBannersPage() {
         clearErrors,
         normalized,
         total,
-        version,
         lastFetchedAt,
         listRequest,
         operations,
@@ -196,18 +194,6 @@ export default function GuideBannersPage() {
                         <div>
                             <p className="text-sm text-gray-500 font-medium">Total Banners</p>
                             <p className="text-3xl font-bold text-gray-900">{total ?? 0}</p>
-                        </div>
-                    </div>
-                </Card>
-
-                <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="p-6 flex items-center gap-4">
-                        <div className="p-4 bg-blue-100 rounded-xl">
-                            <TrendingUp className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 font-medium">Version</p>
-                            <p className="text-3xl font-bold text-gray-900">{version ?? "-"}</p>
                         </div>
                     </div>
                 </Card>
