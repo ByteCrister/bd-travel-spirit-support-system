@@ -1,8 +1,6 @@
 // app/api/site-settings/v1/enums/[name]/route.ts
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import type {
-    GetEnumGroupResponse,
     UpdateEnumGroupPayload,
     UpsertEnumValuesPayload,
     EnumGroup,
@@ -10,6 +8,7 @@ import type {
 } from "@/types/enum-settings.types";
 import ConnectDB from "@/config/db";
 import SiteSettings from "@/models/site-settings.model";
+import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 
 /* ---------------------------------------------------
    Strictly typed helper: merge partial EnumValue data
@@ -59,21 +58,14 @@ interface Params {
 /* ---------------------------------------------------
    GET — Fetch single enum group
 ---------------------------------------------------- */
-export async function GET(
-    _req: NextRequest,
-    { params }: Params
-) {
-    await ConnectDB();
-    const { name } = await params;
+export const GET = withErrorHandler(
+    async (_req: NextRequest, { params }: Params) => {
+        await ConnectDB();
+        const { name } = await params;
 
-    if (!name) {
-        return NextResponse.json(
-            { error: "Missing enum group name" },
-            { status: 400 }
-        );
-    }
-
-    try {
+        if (!name) {
+            throw new ApiError("Missing enum group name", 400);
+        }
         const doc = await SiteSettings.findOne().lean();
 
         const raw = doc?.enums?.find((g) => g.name === name) ?? null;
@@ -84,29 +76,26 @@ export async function GET(
             group = {
                 name: raw.name,
                 description: raw.description ?? null,
-                values: raw.values.map((v): EnumValue => ({
-                    key: v.key,
-                    value: v.value ?? v.key,
-                    label: v.label ?? `label: ${v.key}`,
-                    description: v.description ?? null,
-                    active: v.active ?? true,
-                })),
+                values: raw.values.map(
+                    (v): EnumValue => ({
+                        key: v.key,
+                        value: v.value ?? v.key,
+                        label: v.label ?? `label: ${v.key}`,
+                        description: v.description ?? null,
+                        active: v.active ?? true,
+                    })
+                ),
             };
         }
 
-        const res: GetEnumGroupResponse = {
+        const data = {
             enumGroup: group,
             fetchedAt: new Date().toISOString(),
         };
 
-        return NextResponse.json(res, { status: 200 });
-    } catch (err) {
-        return NextResponse.json(
-            { error: (err as Error).message ?? "Failed to fetch enum group" },
-            { status: 500 }
-        );
+        return { data, status: 200 };
     }
-}
+);
 
 /* ---------------------------------------------------
    PUT — Partially update enum group metadata + values
@@ -122,42 +111,29 @@ function toEnumGroupDTO(group: EnumGroup): EnumGroup {
             label: v.label ?? `label: ${v.key}`,
             description: v.description ?? null,
             active: v.active ?? true,
-        }))
+        })),
     };
 }
 
-export async function PUT(
-    req: NextRequest,
-    { params }: Params
-) {
-    await ConnectDB();
-    const { name } = await params;
+export const PUT = withErrorHandler(
+    async (req: NextRequest, { params }: Params) => {
+        await ConnectDB();
+        const { name } = await params;
 
-    if (!name) {
-        return NextResponse.json(
-            { error: "Missing enum group name" },
-            { status: 400 }
-        );
-    }
-
-    try {
+        if (!name) {
+            throw new ApiError("Missing enum group name", 400);
+        }
         const payload = (await req.json()) as UpdateEnumGroupPayload;
 
         const settings = await SiteSettings.findOne();
         if (!settings) {
-            return NextResponse.json(
-                { error: "Site settings not found" },
-                { status: 404 }
-            );
+            throw new ApiError("Site settings not found", 404);
         }
 
         const groupIndex = settings.enums.findIndex((g) => g.name === name);
 
         if (groupIndex === -1) {
-            return NextResponse.json(
-                { error: `Enum group '${name}' not found` },
-                { status: 404 }
-            );
+            throw new ApiError(`Enum group '${name}' not found`, 404);
         }
 
         const existing = settings.enums[groupIndex];
@@ -177,43 +153,27 @@ export async function PUT(
         // Convert to DTO for response
         const mergedGroup: EnumGroup = toEnumGroupDTO(mergedRaw);
 
-        return NextResponse.json({ enumGroup: mergedGroup }, { status: 200 });
-
-    } catch (err) {
-        const message = (err as Error).message ?? "Failed to update enum group";
-        return NextResponse.json({ error: message }, { status: 500 });
+        return { data: { enumGroup: mergedGroup }, status: 200 };
     }
-}
+);
 
 /* ---------------------------------------------------
    PATCH — Insert/update specific values only
 ---------------------------------------------------- */
-export async function PATCH(
-    req: NextRequest,
-    { params }: Params
-) {
-    await ConnectDB();
-    const { name } = await params;
+export const PATCH = withErrorHandler(
+    async (req: NextRequest, { params }: Params) => {
+        await ConnectDB();
+        const { name } = await params;
 
-    if (!name) {
-        return NextResponse.json(
-            { message: "Missing enum group name" },
-            { status: 400 }
-        );
-    }
-
-    try {
+        if (!name) {
+            throw new ApiError("Missing enum group name", 400);
+        }
         const payload = (await req.json()) as Partial<UpsertEnumValuesPayload>;
-        const incoming = Array.isArray(payload.values)
-            ? payload.values
-            : [];
+        const incoming = Array.isArray(payload.values) ? payload.values : [];
 
         const settings = await SiteSettings.findOne();
         if (!settings) {
-            return NextResponse.json(
-                { message: "Site settings not found" },
-                { status: 404 }
-            );
+            throw new ApiError("Site settings not found", 404);
         }
 
         const groupIndex = settings.enums.findIndex(
@@ -221,53 +181,43 @@ export async function PATCH(
         );
 
         if (groupIndex === -1) {
-            return NextResponse.json(
-                { message: `Enum group '${name}' not found` },
-                { status: 404 }
-            );
+            throw new ApiError(`Enum group '${name}' not found`, 404);
         }
 
         const existingValues = settings.enums[groupIndex].values;
 
         const updatedValues = payload.replace
-            ? incoming as EnumValue[]
+            ? (incoming as EnumValue[])
             : mergePartialValues(existingValues, incoming);
 
         settings.enums[groupIndex].values = updatedValues;
         await settings.save();
 
-        return NextResponse.json(
-            { enumGroup: settings.enums[groupIndex] },
-            { status: 200 }
-        );
-    } catch (err) {
-        const message = (err as Error).message ?? "Failed to patch enum group";
-        return NextResponse.json({ message: message }, { status: 500 });
+        return { data: { enumGroup: settings.enums[groupIndex] }, status: 200 };
     }
-}
+);
 
 /* ---------------------------------------------------
    DELETE — delete the entire enum group
 ---------------------------------------------------- */
-export async function DELETE(req: NextRequest, { params }: Params) {
-    const { name } = await params;
-    if (!name) {
-        return NextResponse.json({ message: "Enum group name is required" }, { status: 400 });
-    }
-
-    try {
+export const DELETE = withErrorHandler(
+    async (req: NextRequest, { params }: Params) => {
+        const { name } = await params;
+        if (!name) {
+            throw new ApiError("Enum group name is required", 400);
+        }
         await ConnectDB();
 
         // Load the singleton SiteSettings document
         const siteSettings = await SiteSettings.findOne();
         if (!siteSettings) {
-            return NextResponse.json({ message: "SiteSettings not found" }, { status: 404 });
+            throw new ApiError("Site settings not found", 404);
         }
 
         // Check if the enum group exists
         const groupIndex = siteSettings.enums.findIndex((g) => g.name === name);
         if (groupIndex === -1) {
-            return NextResponse.json({ message: `Enum group "${name}" not found` }, { status: 404 });
+            throw new ApiError(`Enum group '${name}' not found`, 404);
         }
 
         // Remove the group
@@ -276,10 +226,6 @@ export async function DELETE(req: NextRequest, { params }: Params) {
         // Save changes
         await siteSettings.save();
 
-        return NextResponse.json({ message: `Enum group "${name}" deleted successfully` }, { status: 200 });
-    } catch (err) {
-        console.log("Failed to delete enum group:", err);
-        const message = (err as Error).message ?? "Failed to delete enum group";
-        return NextResponse.json({ message: message }, { status: 500 });
+        return { data: null, status: 200 };
     }
-}
+);

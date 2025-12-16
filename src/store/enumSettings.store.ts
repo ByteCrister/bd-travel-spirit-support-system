@@ -15,6 +15,7 @@ import {
     GetEnumGroupsResponse,
     GetEnumGroupResponse,
     EnumValue,
+    EnumGroupResponse,
 } from "../types/enum-settings.types";
 
 import api from "@/utils/axios";
@@ -104,7 +105,10 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
 
             try {
                 const res = await api.get<GetEnumGroupsResponse>(ROUTES.fetchAll);
-                const payload = res.data;
+                const payload = res.data.data;
+                if (!payload) {
+                    throw new Error("Empty response payload");
+                }
                 const enums = payload.enums ?? [];
                 const fetchedAt = payload.fetchedAt ?? nowIso();
 
@@ -154,7 +158,11 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
 
             try {
                 const res = await api.get<GetEnumGroupResponse>(ROUTES.fetchGroup(name));
-                const payload = res.data;
+                const payload = res.data.data;
+
+                if (!payload) {
+                    throw new Error("Empty response payload");
+                }
                 const fetchedAt = payload.fetchedAt ?? nowIso();
                 const enumGroup = payload.enumGroup ?? null;
 
@@ -184,8 +192,12 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
 
         createGroup: async (payload: CreateEnumGroupPayload) => {
             try {
-                const res = await api.post<{ enumGroup: EnumGroup }>(ROUTES.createGroup, payload);
-                const data = res.data;
+                const res = await api.post<EnumGroupResponse>(ROUTES.createGroup, payload);
+                const data = res.data.data;
+
+                if (!data) {
+                    throw new Error("Empty response data");
+                }
                 const enumGroup = data.enumGroup;
                 if (!enumGroup) throw new Error("Invalid response from server");
 
@@ -243,8 +255,11 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
             );
 
             try {
-                const res = await api.put<{ enumGroup: EnumGroup }>(ROUTES.updateGroup(name), payload);
-                const data = res.data;
+                const res = await api.put<EnumGroupResponse>(ROUTES.updateGroup(name), payload);
+                const data = res.data.data;
+                if (!data) {
+                    throw new Error("Empty response data.");
+                }
                 const enumGroup = data.enumGroup;
                 if (!enumGroup) throw new Error("Invalid response from server");
 
@@ -312,8 +327,12 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
             );
 
             try {
-                const res = await api.post<{ enumGroup: EnumGroup }>(ROUTES.upsertValues(groupName), payload);
-                const data = res.data;
+                const res = await api.post<EnumGroupResponse>(ROUTES.upsertValues(groupName), payload);
+
+                const data = res.data.data;
+                if (!data) {
+                    throw new Error("Empty response data.");
+                }
                 const enumGroup = data.enumGroup;
                 if (!enumGroup) throw new Error("Invalid response from server");
 
@@ -365,8 +384,11 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
             );
 
             try {
-                const res = await api.delete<{ enumGroup: EnumGroup }>(ROUTES.removeValue(groupName, valueKey));
-                const data = res.data;
+                const res = await api.delete<EnumGroupResponse>(ROUTES.removeValue(groupName, valueKey));
+                const data = res.data.data;
+                if (!data) {
+                    throw new Error("Empty response data.");
+                }
                 const enumGroup = data.enumGroup;
                 if (!enumGroup) throw new Error("Invalid response from server");
 
@@ -419,11 +441,14 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
             );
 
             try {
-                const res = await api.patch<{ enumGroup: EnumGroup }>(`${URL_AFTER_API}/${groupName}`, {
+                const res = await api.patch<EnumGroupResponse>(`${URL_AFTER_API}/${groupName}`, {
                     values: [{ key: valueKey, active }],
                     replace: false,
                 });
-                const data = res.data;
+                const data = res.data.data;
+                if (!data) {
+                    throw new Error("Empty response data.");
+                }
                 const enumGroup = data.enumGroup;
                 if (!enumGroup) throw new Error("Invalid response from server");
 
@@ -481,7 +506,7 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
 
             try {
                 // call API to delete group
-                await api.delete<{ enumGroup?: EnumGroup }>(ROUTES.deleteGroup(name));
+                await api.delete<EnumGroupResponse>(ROUTES.deleteGroup(name));
 
                 // success: clear optimistic marker and group state
                 set(

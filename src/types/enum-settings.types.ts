@@ -3,6 +3,8 @@
   Shared primitives
 ------------------------- */
 
+import { ApiResponse } from "./api.types";
+
 export type ID = string;
 
 /** A stable string key used to identify enum groups (e.g., "ad_placements") */
@@ -36,16 +38,19 @@ export interface EnumGroup {
     values: EnumValue[];
 }
 
-/* -------------------------
-  API types (requests & responses)
-  - Designed for Next.js app router handlers and clients
-------------------------- */
+/* --------------------API types (requests & responses)------------------------ */
 
 /** Response when fetching all enum groups */
-export interface GetEnumGroupsResponse {
+export type GetEnumGroupsResponse = ApiResponse<{
     enums: EnumGroup[];
     fetchedAt: string; // ISO date-time
-}
+}>
+export type GetEnumGroupResponse = ApiResponse<{
+    enumGroup: EnumGroup | null;
+    fetchedAt: string;
+}>
+export type EnumGroupResponse = ApiResponse<{ enumGroup: EnumGroup }>;
+/* --------------------------------------------------------------------- */
 
 /** Request payload to create a new EnumGroup */
 export interface CreateEnumGroupPayload {
@@ -70,11 +75,6 @@ export interface UpsertEnumValuesPayload {
     replace?: boolean; // true = replace all values, false = merge/upsert
 }
 
-/** Response for single group fetch */
-export interface GetEnumGroupResponse {
-    enumGroup: EnumGroup | null;
-    fetchedAt: string;
-}
 
 /* -------------------------
   Zustand store slice types
