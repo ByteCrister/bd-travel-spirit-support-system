@@ -16,7 +16,7 @@ type Props = {
 
 export function LocationRow({ location, onEdit }: Props) {
     const {
-        setEditingLocationKey,
+        setEditingLocationId,
         deleteLocation,
         saveStatus
     } = useFooterStore();
@@ -89,7 +89,7 @@ export function LocationRow({ location, onEdit }: Props) {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                                setEditingLocationKey(location.key);
+                                setEditingLocationId(location.id);
                                 onEdit();
                             }}
                             className="gap-2 border-slate-300 bg-white hover:border-emerald-400 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/30"
@@ -127,7 +127,7 @@ export function LocationRow({ location, onEdit }: Props) {
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
-                                    onClick={() => deleteLocation(location.key)}
+                                    onClick={() => deleteLocation(location.id)}
                                     className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700"
                                 >
                                     Confirm Delete

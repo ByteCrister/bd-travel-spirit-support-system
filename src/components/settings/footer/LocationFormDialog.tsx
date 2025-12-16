@@ -20,23 +20,24 @@ type Props = { open: boolean; onOpenChange: (v: boolean) => void };
 export function LocationFormDialog({ open, onOpenChange }: Props) {
     const {
         entities,
-        setEditingLocationKey,
+        setEditingLocationId,
         addOrUpdateLocation,
         saveStatus,
-        editingLocationKey: editingKey,
+        editingLocationId: editingId,
     } = useFooterStore();
     const saving = saveStatus === "loading";
 
     const [mapOpen, setMapOpen] = useState<boolean>(false);
 
     const initial = useMemo(() => {
-        if (!editingKey || !entities) return undefined;
-        return entities.locationsByKey[editingKey];
-    }, [editingKey, entities]);
+        if (!editingId || !entities) return undefined;
+        return entities.locationsById[editingId];
+    }, [editingId, entities]);
 
     const form = useForm<LocationForm>({
         resolver: zodResolver(locationSchema) as unknown as Resolver<LocationForm>,
         defaultValues: {
+            id: initial?.id ?? "",
             key: initial?.key ?? "",
             country: initial?.country ?? "",
             region: initial?.region ?? "",
@@ -52,11 +53,12 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
 
     useEffect(() => {
         if (!open) {
-            setEditingLocationKey(null);
+            setEditingLocationId(null);
             form.reset();
         } else if (initial) {
             // Edit mode: populate with existing values
             form.reset({
+                id: initial.id,
                 key: initial.key,
                 country: initial.country,
                 region: initial.region ?? "",
@@ -70,6 +72,7 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
         } else {
             // Add mode: reset to empty
             form.reset({
+                id: "new",
                 key: "",
                 country: "",
                 region: "",
@@ -125,6 +128,7 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
 
     async function onSubmit(values: LocationForm) {
         const payload = {
+            id: values.id,
             key: values.key!,
             country: values.country!,
             region: values.region ?? null,
@@ -139,10 +143,14 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
         if (saved) onOpenChange(false);
     }
 
+    // Get current lat/lng values for the map picker
+    const currentLat = form.watch("lat");
+    const currentLng = form.watch("lng");
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="max-w-2xl max-h-[80vh] overflow-y-auto rounded-2xl border border-slate-200/60 
+                className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200/60 
              bg-white/95 p-0 shadow-2xl backdrop-blur-md 
              dark:border-slate-800/60 dark:bg-slate-900/95"
             >                {/* Header with gradient */}
@@ -162,7 +170,7 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
                                 <MapPin className="h-6 w-6 text-white" />
                             </motion.div>
                             <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                                {editingKey ? "Edit Location" : "Add Location"}
+                                {editingId ? "Edit Location" : "Add Location"}
                             </DialogTitle>
                         </div>
                     </div>
@@ -345,15 +353,27 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
                                 </motion.p>
                             )}
                         </div>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full flex items-center gap-2"
-                            onClick={() => setMapOpen(true)}
-                        >
-                            <MapPin className="h-4 w-4" />
-                            Choose From Map
-                        </Button>
+                        
+                        {/* Map Picker Button */}
+                        <div className="col-span-1 md:col-span-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full flex items-center gap-2"
+                                onClick={() => setMapOpen(true)}
+                            >
+                                <MapPin className="h-4 w-4" />
+                                {currentLat !== 0 && currentLng !== 0 ? 
+                                    "Update Location on Map" : 
+                                    "Choose From Map"}
+                            </Button>
+                            
+                            {currentLat !== 0 && currentLng !== 0 && (
+                                <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                                    Current coordinates: {currentLat?.toFixed(6)}, {currentLng?.toFixed(6)}
+                                </div>
+                            )}
+                        </div>
                     </motion.div>
 
                     {/* Active Toggle */}
@@ -409,6 +429,8 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
                         </Button>
                     </motion.div>
                 </form>
+                
+                {/* Map Picker Dialog with initial position */}
                 <MapPickerDialog
                     open={mapOpen}
                     onClose={() => setMapOpen(false)}
@@ -416,6 +438,11 @@ export function LocationFormDialog({ open, onOpenChange }: Props) {
                         form.setValue("lat", lat, { shouldDirty: true });
                         form.setValue("lng", lng, { shouldDirty: true });
                     }}
+                    initialPosition={
+                        currentLat !== 0 && currentLng !== 0 
+                            ? [currentLat, currentLng] as [number, number]
+                            : undefined
+                    }
                 />
             </DialogContent>
         </Dialog>

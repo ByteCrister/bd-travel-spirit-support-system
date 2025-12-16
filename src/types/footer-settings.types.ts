@@ -1,6 +1,8 @@
 // types/footer-settings.types.ts
 // Minimal types for Footer management — only SocialLink and LocationEntry are included.
 
+import { ApiResponse } from "./api.types";
+
 export type ObjectId = string;
 
 /* -------------------------
@@ -20,6 +22,7 @@ export interface SocialLinkDTO {
 }
 
 export interface LocationEntryDTO {
+    id: string;
     key: string;
     country: string;
     region?: string | null;
@@ -62,6 +65,7 @@ export interface SocialLinkInput {
 }
 
 export interface LocationEntryInput {
+    id?: string;
     key: string;
     country: string;
     region?: string | null;
@@ -80,9 +84,9 @@ export interface LocationEntryInput {
  Specialized responses
 ------------------------- */
 
-export type FooterSettingsResponse = FooterSettingsDTO;
-export type SocialLinkResponse = SocialLinkDTO;
-export type LocationEntryResponse = LocationEntryDTO;
+export type FooterSettingsResponse = ApiResponse<FooterSettingsDTO>;
+export type SocialLinkResponse = ApiResponse<{ socialLinks: SocialLinkDTO[]; link: SocialLinkDTO }>;
+export type LocationEntryResponse = ApiResponse<LocationEntryDTO>;
 
 /* -------------------------
  Normalized store types for zustand
@@ -91,7 +95,7 @@ export type LocationEntryResponse = LocationEntryDTO;
 export interface FooterEntities {
     socialLinksById: Record<ObjectId, SocialLinkDTO>;
     socialLinkOrder: ObjectId[]; // stable presentation order
-    locationsByKey: Record<string, LocationEntryDTO>;
+    locationsById: Record<string, LocationEntryDTO>;
     locationOrder: string[]; // stable order for UI (by key)
 }
 
@@ -106,7 +110,7 @@ export interface FooterStoreState {
 
     // UI ephemeral state
     editingSocialLinkId?: ObjectId | null;
-    editingLocationKey?: string | null;
+    editingLocationId?: string | null;
 
     // actions (signatures only; implementations live in the store)
     fetchFooterSettings: (force?: boolean) => Promise<void>;
@@ -119,6 +123,6 @@ export interface FooterStoreState {
 
     // local helpers
     setEditingSocialLinkId: (id?: ObjectId | null) => void;
-    setEditingLocationKey: (key?: string | null) => void;
+    setEditingLocationId: (key?: string | null) => void;
     resetStore: () => void;
 }

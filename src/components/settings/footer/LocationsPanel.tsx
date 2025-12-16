@@ -15,10 +15,10 @@ type Props = { entities: FooterEntities | null };
 
 export function LocationsPanel({ entities }: Props) {
     const [open, setOpen] = useState(false);
-    const { setEditingLocationKey } = useFooterStore();
+    const { setEditingLocationId } = useFooterStore();
 
     const order = entities?.locationOrder ?? [];
-    const byKey = entities?.locationsByKey ?? {};
+    const byId = entities?.locationsById ?? {};
 
     return (
         <motion.div
@@ -46,7 +46,7 @@ export function LocationsPanel({ entities }: Props) {
                         >
                             <Button
                                 onClick={() => {
-                                    setEditingLocationKey(null);
+                                    setEditingLocationId(null);
                                     setOpen(true);
                                 }}
                                 size="sm"
@@ -97,15 +97,15 @@ export function LocationsPanel({ entities }: Props) {
                                 exit={{ opacity: 0 }}
                                 className="space-y-3"
                             >
-                                {order.map((key, index) => (
+                                {order.map((id, index) => (
                                     <motion.div
-                                        key={key}
+                                        key={id}
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.05 }}
                                     >
                                         <LocationRow
-                                            location={byKey[key]}
+                                            location={byId[id]}
                                             onEdit={() => setOpen(true)}
                                         />
                                     </motion.div>

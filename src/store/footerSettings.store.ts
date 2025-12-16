@@ -13,6 +13,8 @@ import type {
     FooterEntities,
     ObjectId,
     AsyncStatus,
+    SocialLinkResponse,
+    LocationEntryResponse,
 } from "@/types/footer-settings.types";
 
 import api from "@/utils/axios";
@@ -52,21 +54,21 @@ function normalizeSocialLinks(links: SocialLinkDTO[] | undefined): {
     };
 }
 
-function normalizeLocations(locations: LocationEntryDTO[] | undefined): {
-    locationsByKey: Record<string, LocationEntryDTO>;
-    locationOrder: string[];
-} {
-    const byKey: Record<string, LocationEntryDTO> = {};
+function normalizeLocations(locations?: LocationEntryDTO[]) {
+    const byId: Record<string, LocationEntryDTO> = {};
     const order: string[] = [];
 
     (locations ?? []).forEach((loc) => {
-        const key = loc.key;
-        byKey[key] = loc;
-        order.push(key);
+        byId[loc.id] = loc;
+        order.push(loc.id);
     });
 
-    return { locationsByKey: byKey, locationOrder: order };
+    return {
+        locationsById: byId,
+        locationOrder: order,
+    };
 }
+
 
 function buildEntitiesFromDto(dto?: FooterSettingsDTO | null): FooterEntities {
     const social = normalizeSocialLinks(dto?.socialLinks ?? []);
@@ -74,7 +76,7 @@ function buildEntitiesFromDto(dto?: FooterSettingsDTO | null): FooterEntities {
     return {
         socialLinksById: social.socialLinksById,
         socialLinkOrder: social.socialLinkOrder,
-        locationsByKey: locs.locationsByKey,
+        locationsById: locs.locationsById,
         locationOrder: locs.locationOrder,
     };
 }
@@ -84,7 +86,7 @@ function buildEntitiesFromDto(dto?: FooterSettingsDTO | null): FooterEntities {
 const initialEntities: FooterEntities = {
     socialLinksById: {},
     socialLinkOrder: [],
-    locationsByKey: {},
+    locationsById: {},
     locationOrder: [],
 };
 
@@ -95,7 +97,7 @@ const initialState = {
     saveStatus: "idle" as AsyncStatus,
     lastError: null as string | null,
     editingSocialLinkId: null as ObjectId | null,
-    editingLocationKey: null as string | null,
+    editingLocationId: null as string | null,
 };
 
 /* ---------- Store implementation ---------- */
@@ -111,7 +113,10 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
 
         try {
             const res = await api.get<FooterSettingsResponse>(URL_AFTER_API);
-            const data = res.data;
+            if (!res.data.data) {
+                throw new Error("Response data is missing");
+            }
+            const data = res.data.data;
 
             const entities = buildEntitiesFromDto(data);
             set(
@@ -141,8 +146,12 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
                 : `${URL_AFTER_API}/social-links`;
             const method = payload.id ? api.put : api.post;
 
-            const res = await method<{ socialLinks: SocialLinkDTO[]; link: SocialLinkDTO }>(endpoint, payload);
-            const { socialLinks, link: saved } = res.data;
+            const res = await method<SocialLinkResponse>(endpoint, payload);
+            if (!res.data.data) {
+                throw new Error("Response data is missing");
+            }
+
+            const { socialLinks, link: saved } = res.data.data;
 
             set(
                 produce<FooterStoreState>((s) => {
@@ -219,23 +228,25 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
     addOrUpdateLocation: async (payload: LocationEntryInput) => {
         set({ saveStatus: "loading", lastError: null });
         const prev = get().canonical;
-        const key = payload.key;
-
+        const id = payload.id ?? "new"; // create "new" for new locations
         try {
-            const endpoint = `${URL_AFTER_API}/locations/${encodeURIComponent(key)}`;
+            const endpoint = `${URL_AFTER_API}/locations/${encodeURIComponent(id)}`;
             // Use PUT for idempotent create/update; backend may accept POST as create
-            const res = await api.put<LocationEntryDTO>(endpoint, payload);
-            const saved = res.data;
+            const res = await api.put<LocationEntryResponse>(endpoint, payload);
+            if (!res.data.data) {
+                throw new Error("Response data is missing from : addOrUpdateLocation");
+            }
+            const saved = res.data.data;
 
             if (saved) {
                 set(
                     produce<FooterStoreState>((s) => {
                         if (!s.entities) s.entities = initialEntities;
-                        s.entities.locationsByKey[saved.key] = saved;
-                        if (!s.entities.locationOrder.includes(saved.key)) s.entities.locationOrder.push(saved.key);
+                        s.entities.locationsById[saved.id as string] = saved;
+                        if (!s.entities.locationOrder.includes(saved.id)) s.entities.locationOrder.push(saved.id);
 
                         if (s.canonical) {
-                            const idx = s.canonical.locations?.findIndex((l) => l.key === saved.key) ?? -1;
+                            const idx = s.canonical.locations?.findIndex((l) => l.id === saved.id) ?? -1;
                             if (idx >= 0 && s.canonical.locations) s.canonical.locations[idx] = saved;
                             else s.canonical.locations = [...(s.canonical.locations ?? []), saved];
                         }
@@ -247,16 +258,6 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
 
                 showToast.success("Location saved");
                 return saved;
-            }
-
-            const fullRes = (res as unknown) as { data: { data?: FooterSettingsDTO } };
-            if (fullRes?.data?.data) {
-                const canonical = fullRes.data.data;
-                const entities = buildEntitiesFromDto(canonical);
-                set({ canonical, entities, saveStatus: "success", lastError: null });
-                const found = canonical.locations?.find((l) => l.key === key) ?? null;
-                showToast.success("Location saved");
-                return found ?? null;
             }
 
             set({ saveStatus: "error", lastError: "No data returned from server" });
@@ -278,18 +279,18 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
         }
     },
 
-    deleteLocation: async (key) => {
+    deleteLocation: async (id) => {
         set({ saveStatus: "loading", lastError: null });
         const prev = get().canonical;
 
         try {
-            await api.delete<LocationEntryDTO>(`${URL_AFTER_API}/locations/${encodeURIComponent(key)}`);
+            await api.delete<LocationEntryDTO>(`${URL_AFTER_API}/locations/${encodeURIComponent(id)}`);
             // optimistic remove
             set(
                 produce<FooterStoreState>((s) => {
                     if (!s.entities) s.entities = initialEntities;
-                    delete s.entities.locationsByKey[key];
-                    s.entities.locationOrder = s.entities.locationOrder.filter((k) => k !== key);
+                    delete s.entities.locationsById[id];
+                    s.entities!.locationOrder = s.entities!.locationOrder.filter(x => x !== id);
                 })
             );
 
@@ -315,7 +316,7 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
     /* UI helpers */
 
     setEditingSocialLinkId: (id) => set({ editingSocialLinkId: id ?? null }),
-    setEditingLocationKey: (key) => set({ editingLocationKey: key ?? null }),
+    setEditingLocationId: (id) => set({ editingLocationId: id ?? null }),
 
     resetStore: () =>
         set({
@@ -325,6 +326,6 @@ export const useFooterStore = create<FooterStoreState>((set, get) => ({
             saveStatus: "idle",
             lastError: null,
             editingSocialLinkId: null,
-            editingLocationKey: null,
+            editingLocationId: null,
         }),
 }));

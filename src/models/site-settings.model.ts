@@ -49,7 +49,7 @@ export interface SocialLink {
 }
 
 export interface LocationEntry {
-    _id?: ObjectId;
+    _id: ObjectId;
     key: string;
     country: string;
     region?: string;

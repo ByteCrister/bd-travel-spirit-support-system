@@ -18,6 +18,7 @@ export const socialLinkSchema = z.object({
 export type SocialLinkForm = z.infer<typeof socialLinkSchema>;
 
 export const locationSchema = z.object({
+    id: z.string().optional(),
     key: z.string().min(1, "Key is required"),
     country: z.string().min(1, "Country is required"),
     region: z.string().nullish(),
