@@ -1,5 +1,5 @@
 // src/lib/auth/auth-options.ts
-import { NextAuthOptions, Session } from "next-auth";
+import NextAuth, { Session, type NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
@@ -7,7 +7,6 @@ import { Types } from "mongoose";
 import type { JWT as DefaultJWT } from "next-auth/jwt";
 import ConnectDB from "@/config/db";
 import UserModel from "@/models/user.model";
-import { authRateLimit } from "../upstash-redis/auth-rate-limit";
 
 interface MyJWT extends DefaultJWT {
     id: string;
@@ -17,7 +16,7 @@ interface MyJWT extends DefaultJWT {
 const ONE_DAY = 60 * 60 * 24;
 const ONE_MONTH = ONE_DAY * 30;
 
-export const authOptions: NextAuthOptions = {
+export const authConfig: NextAuthConfig = {
     providers: [
         CredentialsProvider({
             name: "Credentials",
@@ -25,51 +24,29 @@ export const authOptions: NextAuthOptions = {
                 email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" },
             },
-            async authorize(credentials, req) {
-                const ip =
-                    req?.headers?.["x-forwarded-for"] ||
-                    req?.headers?.["x-real-ip"] ||
-                    "unknown";
+            async authorize(credentials) {
 
                 if (!credentials?.email || !credentials?.password) {
-                    throw new Error("Email and password required");
+                    return null;
                 }
 
-                // ---- RATE LIMIT BY IP ----
-                const ipAllowed = await authRateLimit({
-                    identifier: `ip:${ip}`,
-                    limit: 10,      // 10 requests / 1 minute
-                    window: 60,
-                });
-
-                if (!ipAllowed) {
-                    throw new Error("Too many attempts. Try again in a minute.");
+                if (
+                    typeof credentials?.email !== "string" ||
+                    typeof credentials?.password !== "string"
+                ) {
+                    return null;
                 }
 
-                // ---- RATE LIMIT BY EMAIL ----
-                const emailAllowed = await authRateLimit({
-                    identifier: `email:${credentials.email}`,
-                    limit: 5,       // 5 attempts / 1 minute
-                    window: 60,
-                });
-
-                if (!emailAllowed) {
-                    throw new Error("Too many attempts on this account. Try again soon.");
-                }
+                const { email, password } = credentials;
 
                 await ConnectDB();
-                const user = await UserModel.findOne({ email: credentials.email }).select("+password");
-                console.log(user);
-                if (!user) throw new Error("Invalid email or password");
+                const user = await UserModel.findOne({ email: email }).select(
+                    "+password"
+                );
+                if (!user) return null;
 
-                if (!user.password) {
-                    throw new Error(
-                        "Your account was created with Google. Please sign in with Google or reset your password."
-                    );
-                }
-
-                const isPasswordCorrect = await compare(credentials.password, user.password);
-                if (!isPasswordCorrect) throw new Error("Invalid email or password");
+                const isPasswordCorrect = await compare(password, user.password);
+                if (!isPasswordCorrect) return null;
 
                 return { id: (user._id as Types.ObjectId).toString() };
             },
@@ -85,10 +62,13 @@ export const authOptions: NextAuthOptions = {
         async signIn({ user, account }) {
             if (account?.provider === "google") {
                 await ConnectDB();
+
                 const existingUser = await UserModel.findOne({ email: user.email });
-                if (!existingUser) return false; // prevent signup via Google
+                if (!existingUser) return false;
+
                 user.id = (existingUser._id as Types.ObjectId).toString();
             }
+
             return true;
         },
 
@@ -121,24 +101,14 @@ export const authOptions: NextAuthOptions = {
         updateAge: 60 * 60, // refresh every hour
     },
 
-    cookies: {
-        sessionToken: {
-            name:
-                process.env.NODE_ENV === "production"
-                    ? "__Secure-next-auth.session-token"
-                    : "next-auth.session-token",
-            options: {
-                httpOnly: true,
-                sameSite: "lax",
-                path: "/",
-                secure: process.env.NODE_ENV === "production",
-            },
-        },
-    },
-
     pages: {
-        signIn: "/signin",
+        signIn: "/",
+        error: "/",
     },
 
     secret: process.env.NEXTAUTH_SECRET,
+
+    debug: process.env.NODE_ENV === "development",
 };
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);

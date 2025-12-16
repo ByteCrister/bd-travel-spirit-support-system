@@ -1,6 +1,5 @@
-import { authOptions } from "@/lib/auth/options.auth";
-import NextAuth from "next-auth";
+// next-learn/src/app/api/auth/[...nextauth]/route.ts
 
-const handler = NextAuth(authOptions);
+import { handlers } from "@/lib/auth/options.auth";
 
-export { handler as GET, handler as POST };
+export const { GET, POST } = handlers;

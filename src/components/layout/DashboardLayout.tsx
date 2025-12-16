@@ -71,7 +71,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     setIsLoggingOut(true);
     try {
       // NextAuth sign out
-      await signOut({ callbackUrl: "/signin" });
+      await signOut({ callbackUrl: "/" });
       setTimeout(() => {
         window.location.href = "/";
       }, 300);

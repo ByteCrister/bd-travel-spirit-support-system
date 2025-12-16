@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import UserModel from "@/models/user.model";
 import { IBaseUser } from "@/types/current-user.types";
-import { getUserIdFromSession } from "@/lib/auth/user-id.session.auth";
+import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { Types } from "mongoose";
 import ConnectDB from "@/config/db";
 

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import AuditModel, { IAuditDoc } from "@/models/audit.model";
 import { AuditListApiResponse, AuditLog } from "@/types/current-user.types";
 import { Types } from "mongoose";
-import { getUserIdFromSession } from "@/lib/auth/user-id.session.auth";
+import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import ConnectDB from "@/config/db";
 
 const DEFAULT_PAGE = 1;

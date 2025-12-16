@@ -15,7 +15,6 @@ import {
   FiArrowRight
 } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { signIn } from "next-auth/react";
 
 import {
@@ -38,16 +37,20 @@ import { LoginFormValues, loginValidator } from "@/utils/validators/login.valida
 import ForgotPasswordDialog from "./ForgotPasswordDialog";
 import useJoinAsGuideStore from "@/store/join-as-guide.store";
 import { showToast } from "../global/showToast";
+import { inter, jakarta } from "@/styles/fonts";
+import api from "@/utils/axios";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
+const errorMap: Record<string, string> = {
+  EMAIL_AND_PASS_REQUIRED: "Email and password required.",
+  TOO_MANY_ATTEMPTS: "Too many attempts. Try again in a minute.",
+  TOO_MANY_ATTEMPTS_TO_THIS_ACCOUNT: "Too many attempts on this account. Try again soon.",
+  EMAIL_AND_PASSWORD_REQUIRED: "Email and password required.",
+  NO_ACCOUNT_FOUND: "No account found with this email address.",
+  INVALID_PASSWORD: "Invalid email or password.",
+  GOOGLE_EMAIL_NOT_FOUND: "Google account email not found.",
+  USER_NOT_EXIST_WITH_THIS_GOOGLE_EMAIL: "No account found for this Google email. Please sign up first.",
+};
 
 export default function LoginDialog() {
   const {
@@ -69,29 +72,29 @@ export default function LoginDialog() {
     },
   });
 
+
   const handleSubmit = async (values: LoginFormValues) => {
+
     setIsLoading(true);
 
     try {
-      const res = await signIn("credentials", {
-        redirect: false,
+
+      await api.post("/auth/user/v1/credentials", {
         email: values.email,
         password: values.password,
       });
 
-      if (res?.error) {
-        console.error("Login failed:", res.error);
-        showToast.error("Login failed", String(res.error));
-      } else {
-        showToast.success("Login successful", "Redirecting to dashboard...");
-        // give the toast a moment to show (optional)
-        setTimeout(() => {
-          window.location.href = "/overview/dashboard";
-        }, 300);
-      }
-    } catch (err) {
-      console.error(err);
-      showToast.error("An unexpected error occurred", String(err));
+      await signIn("credentials", {
+        redirect: true,
+        email: values.email,
+        password: values.password,
+        callbackUrl: "/overview/dashboard",
+      });
+
+    } catch (error: unknown) {
+
+      showToast.error("Login Failed", extractErrorMessage(error) as string);
+
     } finally {
       setIsLoading(false);
     }
@@ -100,19 +103,20 @@ export default function LoginDialog() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      const res = await signIn("google", { redirect: false }); // disable auto redirect
+      const res = await signIn("google", {
+        redirect: false,
+        callbackUrl: "/overview/dashboard"
+      });
+
       if (res?.error) {
-        console.error("Google login failed:", res.error);
-        showToast.error("Google login failed", String(res.error));
+        showToast.error("Google Login Failed", errorMap[res.error]);
       } else {
         showToast.success("Login successful", "Redirecting to dashboard...");
-        setTimeout(() => {
-          window.location.href = "/overview/dashboard";
-        }, 300);
+        // Redirect after successful login
+        window.location.href = res?.url || "/overview/dashboard";
       }
-    } catch (err) {
-      console.error(err);
-      showToast.error("An unexpected error occurred", String(err));
+    } catch {
+      showToast.error("Google Login Error", "Failed to sign in with Google. Please try again.");
     } finally {
       setIsLoading(false);
     }
