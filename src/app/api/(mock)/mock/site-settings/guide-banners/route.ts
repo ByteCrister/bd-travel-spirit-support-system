@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const search = url.searchParams.get("search") ?? undefined;
 
   const result = listBanners({ limit, offset, sortBy, sortDir, active, search });
-  return NextResponse.json(result);
+  return NextResponse.json({ data: { ...result } });
 }
 
 export async function POST(req: Request) {
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: { message: "asset is required" } }, { status: 400 });
   }
   const created = createBanner(payload);
-  return NextResponse.json({ data: created }, { status: 201 });
+  return NextResponse.json({ data: { data: created } }, { status: 201 });
 }
 
 /** Reorder endpoint */

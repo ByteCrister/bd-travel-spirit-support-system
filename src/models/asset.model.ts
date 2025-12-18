@@ -1,4 +1,6 @@
+// models/asset.model.ts
 import { ASSET_TYPE, AssetType, STORAGE_PROVIDER, StorageProvider, VISIBILITY, Visibility } from "@/constants/asset.const";
+import { Types } from "mongoose";
 import { Schema, model, models, Document } from "mongoose";
 
 
@@ -25,6 +27,8 @@ export interface IAsset extends Document {
     createdAt: Date;
     updatedAt: Date;
 }
+// Used in apis
+export type AssetRef = Types.ObjectId | Pick<IAsset, "publicUrl">;
 
 const AssetSchema = new Schema<IAsset>(
     {

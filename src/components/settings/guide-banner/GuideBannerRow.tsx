@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
     Clock,
     Calendar,
@@ -18,7 +18,7 @@ import type {
     GuideBannerEntity,
     ID,
 } from "@/types/guide-banner-settings.types";
-import { useGuideBannersStore } from "@/store/guide-banner-setting.store";
+import { useGuideBannersStore } from "@/store/guide-bannerSetting.store";
 import {
     buildAssetSrc,
     formatISODate,
@@ -26,7 +26,6 @@ import {
 import GuideBannerForm from "./GuideBannerForm";
 import ConfirmDialog from "./ConfirmDialog";
 import GuideBannerDetailsDrawer from "./GuideBannerDetailsDrawer";
-import GuideBannerQuickEdit from "./GuideBannerQuickEdit";
 import Image from "next/image";
 import { RowActions } from "./RowActions";
 
@@ -42,7 +41,6 @@ export default function GuideBannerRow({ id, entity }: GuideBannerRowProps) {
     const [editOpen, setEditOpen] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [detailsOpen, setDetailsOpen] = useState(false);
-    const [quickEditExpanded, setQuickEditExpanded] = useState(false);
 
     const activePending = useMemo<boolean>(() => {
         const op = operations["patch"]?.byId?.[String(id)];
@@ -96,13 +94,18 @@ export default function GuideBannerRow({ id, entity }: GuideBannerRowProps) {
                         className="relative"
                     >
                         <div className="relative h-16 w-24 rounded-lg overflow-hidden border-2 border-border shadow-sm group-hover:border-primary/50 transition-colors">
-                            <Image
+                            {assetSrc ? (<Image
                                 src={assetSrc ?? ""}
                                 alt={entity.alt ?? ""}
                                 fill
                                 className="object-cover"
                                 sizes="100vw"
-                            />
+                            />) :
+                                (<div className="flex h-full w-full items-center justify-center bg-muted">
+                                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                </div>)
+                            }
+
                             {isTemp && (
                                 <motion.div
                                     initial={{ opacity: 0 }}
@@ -219,37 +222,12 @@ export default function GuideBannerRow({ id, entity }: GuideBannerRowProps) {
                     <RowActions
                         updatePending={updatePending}
                         deletePending={deletePending}
-                        quickEditExpanded={quickEditExpanded}
-                        setQuickEditExpanded={setQuickEditExpanded}
                         setEditOpen={setEditOpen}
                         setDetailsOpen={setDetailsOpen}
                         setConfirmOpen={setConfirmOpen}
                     />
                 </TableCell>
-            </motion.tr>
-
-            {/* Inline quick edit section */}
-            <AnimatePresence>
-                {quickEditExpanded && (
-                    <motion.tr
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                    >
-                        <td colSpan={6} className="py-0 bg-muted/30">
-                            <motion.div
-                                initial={{ y: -20 }}
-                                animate={{ y: 0 }}
-                                exit={{ y: -20 }}
-                                className="py-4 px-4"
-                            >
-                                <GuideBannerQuickEdit id={id} entity={entity} />
-                            </motion.div>
-                        </td>
-                    </motion.tr>
-                )}
-            </AnimatePresence>
+            </motion.tr >
 
             {editOpen && (
                 <GuideBannerForm
@@ -264,7 +242,8 @@ export default function GuideBannerRow({ id, entity }: GuideBannerRowProps) {
                     }}
                     onClose={() => setEditOpen(false)}
                 />
-            )}
+            )
+            }
 
             <ConfirmDialog
                 title="Remove banner?"

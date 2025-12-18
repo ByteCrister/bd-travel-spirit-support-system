@@ -85,6 +85,7 @@ export interface EnumGroup {
 ------------------------- */
 
 export interface GuideBanner {
+    _id?: ObjectId;
     asset: ObjectId;
     alt?: string | null;
     caption?: string | null;
@@ -105,7 +106,7 @@ export interface SiteSettingsDoc {
     socialLinks: SocialLink[];
     locations: LocationEntry[];
     enums: EnumGroup[];
-    guideBanners?: GuideBanner[];
+    guideBanners: GuideBanner[];
     createdAt?: Date;
     updatedAt?: Date;
 }

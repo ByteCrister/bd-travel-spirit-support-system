@@ -1,5 +1,7 @@
 // src/lib/storage-providers/asset-storage.interface.ts
 
+import { AssetType } from "@/constants/asset.const";
+
 /**
  * Represents the normalized metadata returned by any asset storage provider
  * after a successful upload or update.
@@ -12,7 +14,7 @@ export type UploadedAsset = {
     providerId: string;
 
     /** MIME type of the stored file (e.g., image/jpeg, application/pdf). */
-    contentType?: string;
+    contentType?: AssetType;
 
     /** Original file name (without path). */
     fileName?: string;

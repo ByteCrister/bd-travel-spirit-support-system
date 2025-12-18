@@ -1,7 +1,6 @@
-// src/stores/guide-banners.store.ts
+// src/stores/guide-bannerSetting.store.ts
 import { create } from "zustand";
 import { produce, enableMapSet } from "immer";
-import type { AxiosResponse } from "axios";
 import { v4 as uuidv4 } from "uuid";
 
 import {
@@ -12,13 +11,13 @@ import {
     GuideBannerEntity,
     GuideBannerCreateDTO,
     GuideBannerUpdateDTO,
-    GuideBannerPatchOperation,
     GuideBannerQueryParams,
     RequestError,
     RequestStatus,
     OperationTracker,
     EntityRequestState,
     GUIDE_BANNER_CONSTRAINTS,
+    GuideBannerListResponse,
 } from "../types/guide-banner-settings.types";
 
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
@@ -28,14 +27,14 @@ import { showToast } from "@/components/global/showToast";
 enableMapSet();
 
 /* Main API path constant requested */
-export const URL_AFTER_API = "/mock/site-settings/guide-banners";
+// export const URL_AFTER_API = "/mock/site-settings/guide-banners";
+export const URL_AFTER_API = "/site-settings/v1/guide-banners";
 
 /* Operation keys used by the store */
 const OP_CREATE = "create";
 const OP_UPDATE = "update";
 const OP_PATCH = "patch";
 const OP_DELETE = "delete";
-const OP_REORDER = "reorder";
 const OP_FETCH_LIST = "fetchList";
 const OP_FETCH_BY_ID = "fetchById";
 
@@ -98,6 +97,47 @@ function normalizeList(list: GuideBannerEntity[]) {
         allIds.push(id);
     }
     return { byId, allIds } as { byId: Record<string, GuideBannerEntity>; allIds: string[] };
+}
+
+/* -------------------------
+   Client-side order resolver
+------------------------- */
+function resolveGuideBannersOrderClient(
+    byId: Record<string, GuideBannerEntity>,
+    allIds: string[]
+) {
+    // Extract entities
+    const banners = allIds.map((id) => byId[id]).filter(Boolean);
+
+    // Special case: if only one banner and its order is 1, reset to 0
+    if (banners.length === 1 && banners[0].order === 1) {
+        banners[0] = { ...banners[0], order: 0 };
+    }
+
+    // Sort by order first, then createdAt for stability
+    banners.sort(
+        (a, b) =>
+            (a.order ?? 0) - (b.order ?? 0) ||
+            (new Date(a.createdAt ?? 0).getTime() -
+                new Date(b.createdAt ?? 0).getTime())
+    );
+
+    // Reassign sequential order starting from 0
+    banners.forEach((b, idx) => {
+        b.order = idx;
+    });
+
+    // Update normalized structures
+    const newById: Record<string, GuideBannerEntity> = {};
+    const newAllIds: string[] = [];
+
+    for (const b of banners) {
+        const id = String(b._id);
+        newById[id] = b;
+        newAllIds.push(id);
+    }
+
+    return { byId: newById, allIds: newAllIds };
 }
 
 /* Build initial state ---------------------------------------------------- */
@@ -307,14 +347,14 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
             get().setOperationPending(OP_FETCH_LIST, undefined, requestId);
 
             // forward reqParams to API
-            const resp: AxiosResponse = await api.get(URL_AFTER_API, { params: reqParams });
+            const resp = await api.get<GuideBannerListResponse>(URL_AFTER_API, { params: reqParams });
 
             // defensive shape checking
-            if (!resp?.data || typeof resp.data !== "object") {
+            if (!resp?.data.data || typeof resp.data.data !== "object") {
                 throw new Error("Invalid API response");
             }
 
-            const data = resp.data as {
+            const data = resp.data.data as {
                 data?: GuideBannerEntity[];
                 meta?: { total?: number; limit?: number; offset?: number; version?: number };
             };
@@ -419,7 +459,7 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
         try {
             get().setOperationPending(OP_CREATE, tempId, requestId);
 
-            const resp = await api.post(URL_AFTER_API, payload);
+            const resp = await api.post(`${URL_AFTER_API}/upload`, payload);
             if (!resp?.data || typeof resp.data !== "object" || !resp.data.data) {
                 throw new Error("Invalid API response");
             }
@@ -442,8 +482,10 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
                     const insertAt = oldIndex === -1 ? s.normalized.allIds.length : oldIndex;
                     if (!s.normalized.allIds.includes(createdId)) s.normalized.allIds.splice(insertAt, 0, createdId);
 
-                    // update total/version if provided by meta (safe guard)
-                    // meta handling left to caller or list fetch; if response returns meta it can be applied here
+                    // resolving order to ensure consistency
+                    const result = resolveGuideBannersOrderClient(s.normalized.byId, s.normalized.allIds);
+                    s.normalized.byId = result.byId;
+                    s.normalized.allIds = result.allIds;
                 })
             );
 
@@ -510,6 +552,12 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
             set(
                 produce((s: GuideBannersState) => {
                     s.normalized.byId[stringId] = updated;
+                    // resolving order
+                    if ('order' in payload && payload.order !== undefined) {
+                        const result = resolveGuideBannersOrderClient(s.normalized.byId, s.normalized.allIds);
+                        s.normalized.byId = result.byId;
+                        s.normalized.allIds = result.allIds;
+                    }
                 })
             );
 
@@ -540,88 +588,66 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
         }
     },
 
-    /* Thunks: patchBanner (small partial updates) --------------------------- */
-    async patchBanner(id: ID, ops: GuideBannerPatchOperation[]) {
-        const requestId = uuidv4();
-        const stringId = String(id);
-        const snapshot = get().normalized.byId[stringId] ? { ...get().normalized.byId[stringId] } : undefined;
-
-        // build optimistic mutated entity from ops
-        const optimistic = produce(snapshot ?? ({} as GuideBannerEntity), (draft: Partial<GuideBannerEntity>) => {
-            for (const op of ops) {
-                if (op.path === "/active" && op.op === "set") draft.active = Boolean(op.value);
-                if (op.path === "/order" && op.op === "set") draft.order = Number(op.value);
-                if ((op.path === "/caption" || op.path === "/alt") && op.op === "replace") {
-                    if (op.path === "/caption") draft.caption = op.value as string | null;
-                    if (op.path === "/alt") draft.alt = op.value as string | null;
-                }
-                if (op.path === "/asset" && op.op === "replace") draft.asset = op.value as ID;
-            }
-            draft.updatedAt = nowISO();
-        });
-
-        // optimistic apply
-        set(
-            produce((s: GuideBannersState) => {
-                s.normalized.byId[stringId] = optimistic as GuideBannerEntity;
-            })
-        );
-
-        // register rollback keyed by requestId
-        get().registerOptimistic(`optimistic:${requestId}`, () => {
-            if (snapshot) get().upsertLocal(snapshot);
-        });
-
-        try {
-            get().setOperationPending(OP_PATCH, id, requestId);
-            const resp = await api.patch(`${URL_AFTER_API}/${encodeURIComponent(stringId)}`, { ops });
-            if (!resp?.data || typeof resp.data !== "object" || !resp.data.data) {
-                throw new Error("Invalid API response");
-            }
-            const body = resp.data as { data: GuideBannerEntity };
-            const updated = body.data;
-            if (!updated || !updated._id) throw new Error("Invalid updated entity");
-
-            set(
-                produce((s: GuideBannersState) => {
-                    s.normalized.byId[stringId] = updated;
-                })
-            );
-
-            get().unregisterOptimistic(`optimistic:${requestId}`);
-            get().setOperationSuccess(OP_PATCH, id, requestId);
-            showToast.success("Guide banner updated");
-            return updated;
-        } catch (err) {
-            const error = getErrorObject(err);
-            const regKey = `optimistic:${requestId}`;
-            const reg = get().optimisticRegistry[regKey];
-            if (reg) {
-                try {
-                    reg.rollback();
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                } catch (_) {
-                    // swallow
-                }
-                get().unregisterOptimistic(regKey);
-            } else if (snapshot) {
-                get().upsertLocal(snapshot);
-            }
-            get().setOperationFailed(OP_PATCH, error, id, requestId);
-            showToast.error("Failed to update guide banner", error.message);
-            throw error;
-        }
-    },
-
     /* Thunks: toggleActive (convenience wrapper) --------------------------- */
     async toggleActive(id: ID) {
-        const current = get().normalized.byId[String(id)];
+        const stringId = String(id);
+        const current = get().normalized.byId[stringId];
         if (!current) {
             const err: RequestError = { message: "Entity not found" };
             get().setOperationFailed(OP_PATCH, err, id);
             throw err;
         }
-        return get().patchBanner(id, [{ op: "set", path: "/active", value: !current.active }]);
+
+        const requestId = uuidv4();
+
+        // Optimistic PATCH
+        set(produce((s: GuideBannersState) => {
+            const entity = s.normalized.byId[stringId];
+            if (!entity) return;
+
+            entity.active = !entity.active;
+            entity.updatedAt = nowISO();
+        }));
+
+        get().registerOptimistic(`optimistic:${requestId}`, () => {
+            get().upsertLocal(current);
+        });
+
+        try {
+            get().setOperationPending(OP_PATCH, id, requestId);
+
+            const resp = await api.patch(
+                `${URL_AFTER_API}/${encodeURIComponent(stringId)}/toggle-active`
+            );
+
+            if (!resp?.data?.data) throw new Error("Invalid API response");
+
+            const patch = resp.data.data as Partial<GuideBannerEntity>;
+
+            // Server PATCH merge
+            set(produce((s: GuideBannersState) => {
+                const entity = s.normalized.byId[stringId];
+                if (!entity) return;
+
+                Object.assign(entity, patch);
+            }));
+
+            get().unregisterOptimistic(`optimistic:${requestId}`);
+            get().setOperationSuccess(OP_PATCH, id, requestId);
+
+            showToast.success(`Guide banner ${patch.active ? "activated" : "deactivated"}`);
+            return get().normalized.byId[stringId];
+        } catch (err) {
+            const error = getErrorObject(err);
+            const regKey = `optimistic:${requestId}`;
+
+            get().optimisticRegistry[regKey]?.rollback();
+            get().unregisterOptimistic(regKey);
+
+            get().setOperationFailed(OP_PATCH, error, id, requestId);
+            showToast.error("Failed to toggle guide banner", error.message);
+            throw error;
+        }
     },
 
     /* Thunks: removeBanner ----------------------------------------------- */
@@ -633,6 +659,15 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
         // optimistic remove - capture index so rollback restores position
         const indexSnapshot = get().normalized.allIds.indexOf(stringId);
         get().removeLocal(stringId);
+
+        // re-ordering after removing the banner
+        set(
+            produce((s: GuideBannersState) => {
+                const result = resolveGuideBannersOrderClient(s.normalized.byId, s.normalized.allIds);
+                s.normalized.byId = result.byId;
+                s.normalized.allIds = result.allIds;
+            })
+        );
 
         get().registerOptimistic(`optimistic:${requestId}`, () => {
             if (snapshot) {
@@ -673,80 +708,5 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
             showToast.error("Failed to remove guide banner", error.message);
             throw error;
         }
-    },
-
-    /* Thunks: reorder (persist full order) ------------------------------- */
-    async reorder(orderedIds: ID[]) {
-        const requestId = uuidv4();
-        const stringIds = orderedIds.map(String);
-
-        // snapshot ids to allow safe rollback
-        const snapshotIds = [...get().normalized.allIds];
-
-        // optimistic reorder locally (do not create placeholder entities)
-        set(
-            produce((s: GuideBannersState) => {
-                s.normalized.allIds = stringIds;
-            })
-        );
-
-        get().registerOptimistic(`optimistic:${requestId}`, () => {
-            set(
-                produce((s: GuideBannersState) => {
-                    s.normalized.allIds = snapshotIds;
-                })
-            );
-        });
-
-        try {
-            get().setOperationPending(OP_REORDER, undefined, requestId);
-            const resp = await api.post(`${URL_AFTER_API}/reorder`, { orderedIds: stringIds });
-            if (!resp?.data || typeof resp.data !== "object" || !resp.data.data) {
-                throw new Error("Invalid API response");
-            }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const body = resp.data as { data: GuideBannerEntity[]; meta?: any };
-            const updatedList = Array.isArray(body.data) ? body.data : [];
-
-            // apply server truth; defensive normalizeList ensures only valid items are applied
-            const normalized = normalizeList(updatedList);
-            set(
-                produce((s: GuideBannersState) => {
-                    // merge server truth for byId preserving any local unknown entries
-                    s.normalized.byId = { ...(s.normalized.byId ?? {}), ...(normalized.byId ?? {}) };
-                    s.normalized.allIds = normalized.allIds;
-                    s.lastFetchedAt = nowISO();
-                    if (typeof body.meta?.total === "number") s.total = body.meta.total;
-                })
-            );
-
-            get().unregisterOptimistic(`optimistic:${requestId}`);
-            get().setOperationSuccess(OP_REORDER, undefined, requestId);
-            showToast.success("Banners reordered");
-            return updatedList;
-        } catch (err) {
-            const error = getErrorObject(err);
-            const regKey = `optimistic:${requestId}`;
-            const reg = get().optimisticRegistry[regKey];
-            if (reg) {
-                try {
-                    reg.rollback();
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                } catch (_) {
-                    // swallow
-                }
-                get().unregisterOptimistic(regKey);
-            } else {
-                // fallback restore
-                set(
-                    produce((s: GuideBannersState) => {
-                        s.normalized.allIds = snapshotIds;
-                    })
-                );
-            }
-            get().setOperationFailed(OP_REORDER, error, undefined, requestId);
-            showToast.error("Failed to reorder banners", error.message);
-            throw error;
-        }
-    },
+    }
 }));

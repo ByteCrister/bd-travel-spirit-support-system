@@ -1,5 +1,4 @@
 import type {
-    ID,
     ISODateString,
     GuideBannerFormValues,
     GuideBannerFormErrors,
@@ -17,26 +16,25 @@ export function formatISODate(date?: ISODateString): string {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function buildAssetSrc(asset?: string) {
-  if (!asset) return null;
+export function buildAssetSrc(asset?: string | null) {
+  if (typeof asset !== "string" || asset.length === 0) return null;
 
-  // already a data URL: data:image/png;base64,....
+  // already a data URL
   if (asset.startsWith("data:")) return asset;
 
   // plain http(s) url
   if (asset.startsWith("http://") || asset.startsWith("https://")) return asset;
 
-  // Heuristic: if asset looks like base64 (long continuous base64 chars), build a data URL
-  // Note: this treats short strings (ids) as non-base64
+  // heuristic: base64 blob
   const base64Candidate = asset.replace(/\s+/g, "");
-  const isLikelyBase64 = /^[A-Za-z0-9+/=]+$/.test(base64Candidate) && base64Candidate.length > 200;
+  const isLikelyBase64 =
+    /^[A-Za-z0-9+/=]+$/.test(base64Candidate) &&
+    base64Candidate.length > 200;
+
   if (isLikelyBase64) {
-    // default to png; change to image/jpeg if you know it's jpeg
-    const mime = "image/png";
-    return `data:${mime};base64,${base64Candidate}`;
+    return `data:image/png;base64,${base64Candidate}`;
   }
 
-  // unknown: return null so UI can show a placeholder
   return null;
 }
 

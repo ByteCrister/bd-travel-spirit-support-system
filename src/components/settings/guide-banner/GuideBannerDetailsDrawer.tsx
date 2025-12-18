@@ -27,7 +27,7 @@ import {
     BarChart3
 } from "lucide-react";
 import type { RequestError, ID } from "@/types/guide-banner-settings.types";
-import { useGuideBannersStore } from "@/store/guide-banner-setting.store";
+import { useGuideBannersStore } from "@/store/guide-bannerSetting.store";
 import { buildAssetSrc, formatISODate } from "@/utils/helpers/guide-banner-settings";
 import Image from "next/image";
 
@@ -51,7 +51,7 @@ export default function GuideBannerDetailsDrawer({ id, open, onClose }: GuideBan
     const devError: RequestError | null | undefined =
         operations["fetchById"]?.byId?.[String(id)]?.error ?? operations["update"]?.byId?.[String(id)]?.error;
 
-    const assetSrc = buildAssetSrc(entity.asset);
+    const assetSrc = buildAssetSrc(entity?.asset);
 
     return (
         <Drawer open={open} onOpenChange={(o) => (!o ? onClose() : undefined)}>
@@ -79,30 +79,30 @@ export default function GuideBannerDetailsDrawer({ id, open, onClose }: GuideBan
                                     <ImageIcon className="h-5 w-5 text-primary" />
                                     <h3 className="font-semibold text-lg">Image Preview</h3>
                                 </div>
-                                <div className="relative rounded-lg overflow-hidden border-2 border-border shadow-lg">
-                                    <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden border-2 border-border shadow-lg bg-gray-50">
-                                        {assetSrc ? (
-                                            // Next/Image works with data URLs but must be unoptimized for data URLs
-                                            <Image
-                                                src={assetSrc}
-                                                alt={entity.alt ?? ""}
-                                                fill
-                                                sizes="(max-width: 768px) 100vw, 400px"
-                                                className="object-contain"
-                                                unoptimized
-                                            />
-                                        ) : (
-                                            // fallback: plain <img> is more permissive; renders if data URL or external url works
-                                            <div className="flex items-center justify-center h-full">
-                                                <div className="text-center p-4">
-                                                    <p className="text-sm font-medium text-muted-foreground">No renderable image</p>
-                                                    <p className="text-xs mt-2 text-muted-foreground/80 break-all max-w-[20rem]">{String(entity.asset ?? "—")}</p>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+
+                                <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden border-2 border-border shadow-lg bg-gray-100 flex items-center justify-center">
+                                    {assetSrc ? (
+                                        <Image
+                                            src={assetSrc}
+                                            alt={entity.alt ?? ""}
+                                            fill
+                                            className="object-contain"
+                                            unoptimized
+                                            sizes="(max-width: 768px) 100vw, 400px"
+                                        />
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center text-center px-4">
+                                            <p className="text-sm font-medium text-muted-foreground">
+                                                No renderable image
+                                            </p>
+                                            <p className="text-xs mt-2 text-muted-foreground/80 break-all max-w-[20rem]">
+                                                {String(entity.asset ?? "—")}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </Card>
+
                         </motion.div>
 
                         {/* Status Badge */}

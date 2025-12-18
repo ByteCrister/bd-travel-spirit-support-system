@@ -1,7 +1,7 @@
 "use client";
 
-import { DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,10 +11,9 @@ import {
     ToggleLeft,
     Info,
     Zap,
-    Loader2
 } from "lucide-react";
-import type { GuideBannerQueryParams, ID } from "@/types/guide-banner-settings.types";
-import { useGuideBannersStore } from "@/store/guide-banner-setting.store";
+import type { GuideBannerQueryParams } from "@/types/guide-banner-settings.types";
+import { useGuideBannersStore } from "@/store/guide-bannerSetting.store";
 import { Table, TableHeader, TableRow, TableHead, TableBody } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,11 +24,9 @@ interface GuideBannerListProps {
 }
 
 export default function GuideBannerList({ query }: GuideBannerListProps) {
-    const { normalized, reorder, operations } = useGuideBannersStore();
+    const { normalized } = useGuideBannersStore();
     const ids = normalized.allIds;
     const byId = normalized.byId;
-
-    const reorderPending = operations["reorder"]?.global?.status === "pending";
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -41,17 +38,6 @@ export default function GuideBannerList({ query }: GuideBannerListProps) {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
-
-    const handleDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (!active || !over || active.id === over.id) return;
-        const oldIndex = ids.indexOf(String(active.id));
-        const newIndex = ids.indexOf(String(over.id));
-        if (oldIndex < 0 || newIndex < 0) return;
-
-        const next = arrayMove(ids, oldIndex, newIndex);
-        await reorder(next as ID[]);
-    };
 
     return (
         <motion.div
@@ -72,25 +58,11 @@ export default function GuideBannerList({ query }: GuideBannerListProps) {
                                 Drag and drop to reorder • {ids.length} {ids.length === 1 ? 'banner' : 'banners'}
                             </p>
                         </div>
-
-                        <AnimatePresence>
-                            {reorderPending && (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.8 }}
-                                    className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md border border-emerald-200"
-                                >
-                                    <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
-                                    <span className="text-sm font-medium text-emerald-700">Reordering...</span>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
                     </div>
                 </div>
 
                 {/* Table Section */}
-                <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                <DndContext sensors={sensors} >
                     <SortableContext items={ids} strategy={verticalListSortingStrategy}>
                         <div className="overflow-x-auto">
                             <Table>

@@ -17,8 +17,6 @@ import {
 type RowActionsProps = {
     updatePending?: boolean;
     deletePending?: boolean;
-    quickEditExpanded: boolean;
-    setQuickEditExpanded: (v: boolean) => void;
     setEditOpen: (v: boolean) => void;
     setDetailsOpen: (v: boolean) => void;
     setConfirmOpen: (v: boolean) => void;

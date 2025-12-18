@@ -1,5 +1,7 @@
 // types/guide-banner-settings.types.ts
 
+import { ApiResponse } from "./api.types";
+
 /* -------------------------
    Basic id and date helpers
    ------------------------- */
@@ -85,36 +87,22 @@ export interface GuideBannerUpdateDTO {
     active?: boolean;
 }
 
-/** Small, explicit patch operations */
-export type GuideBannerPatchOperation =
-    | { op: "set"; path: "/active"; value: boolean }
-    | { op: "set"; path: "/order"; value: number }
-    | { op: "replace"; path: "/caption" | "/alt"; value: string | null }
-    | { op: "replace"; path: "/asset"; value: ID };
-
 /* -------------------------
    API response shapes
    ------------------------- */
 
-/** Generic API wrapper for success or error */
-export interface ApiResult<T> {
-    data?: T;
-    error?: RequestError;
-    meta?: Record<string, unknown>;
-}
-
 /** Single entity response */
-export type GuideBannerResponse = ApiResult<GuideBannerEntity>;
+export type GuideBannerResponse = ApiResponse<GuideBannerEntity>;
 
 /** List response with pagination metadata */
-export interface GuideBannerListResponse {
+export type GuideBannerListResponse = ApiResponse<{
     data: GuideBannerEntity[];
     meta: {
         total: number;
         limit: number;
         offset: number;
     };
-}
+}>
 
 /** SiteSettings upsert response including embedded banners */
 export interface SiteSettingsUpsertResponse {
@@ -243,10 +231,8 @@ export interface GuideBannersActions {
     fetchById: (id: ID) => Promise<GuideBannerEntity>;
     createBanner: (payload: GuideBannerCreateDTO) => Promise<GuideBannerEntity>;
     updateBanner: (id: ID, payload: GuideBannerUpdateDTO) => Promise<GuideBannerEntity>;
-    patchBanner: (id: ID, ops: GuideBannerPatchOperation[]) => Promise<GuideBannerEntity>;
     toggleActive: (id: ID) => Promise<GuideBannerEntity>;
     removeBanner: (id: ID) => Promise<void>;
-    reorder: (orderedIds: ID[]) => Promise<GuideBannerEntity[]>;
 
     // Local-only helpers for optimistic patterns
     upsertLocal: (entity: GuideBannerEntity) => void;
