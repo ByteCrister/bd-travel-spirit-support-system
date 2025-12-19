@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { Clock, RefreshCw, GitCompare, AlertTriangle } from "lucide-react";
+import { RefreshCw, GitCompare, AlertTriangle } from "lucide-react";
 
 export interface VersionBannerProps {
-  version?: number;
   updatedAt?: string;
   conflict?: boolean;
   onReload?: () => void;
@@ -16,7 +15,6 @@ export interface VersionBannerProps {
 }
 
 export const VersionBanner: React.FC<VersionBannerProps> = ({
-  version,
   updatedAt,
   conflict = false,
   onReload,
@@ -33,14 +31,6 @@ export const VersionBanner: React.FC<VersionBannerProps> = ({
       }`}
     >
       <div className="flex items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Clock size={16} className="text-gray-500" />
-          <span className="text-sm text-gray-600 dark:text-gray-400">Version</span>
-          <Badge variant="outline" className="font-mono font-semibold">
-            v{version ?? "—"}
-          </Badge>
-        </div>
-        
         {updatedAt && (
           <div className="text-sm text-gray-600 dark:text-gray-400">
             Updated {format(new Date(updatedAt), "PPpp")}

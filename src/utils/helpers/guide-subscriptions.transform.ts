@@ -8,9 +8,23 @@ import {
 export function normalizePrice(input: string | number): number {
     const raw = typeof input === "string" ? input.trim() : input;
     const n = Number(raw);
-    if (Number.isNaN(n) || !isFinite(n)) {
+
+    if (Number.isNaN(n)) {
+        throw new Error("Invalid price: must be numeric");
+    }
+
+    if (n < 0) {
+        throw new Error("Invalid price: cannot be negative");
+    }
+
+    if (!Number.isFinite(n)) {
         throw new Error("Invalid price: must be a finite number");
     }
+
+    if (n > 1_000_000) {
+        throw new Error("Invalid price: exceeds maximum allowed value");
+    }
+
     return n;
 }
 
@@ -41,6 +55,7 @@ export function toSubscriptionTierDTO(
     const price = normalizePrice(values.price);
     const billing = normalizeBillingCycles(values.billingCycleDays);
     return {
+        _id: existing?._id ?? "",
         key: String(values.key ?? existing?.key ?? "").trim(),
         title: String(values.title ?? existing?.title ?? "").trim(),
         price,
@@ -48,8 +63,6 @@ export function toSubscriptionTierDTO(
         billingCycleDays: billing,
         perks: values.perks ?? existing?.perks ?? [],
         active: values.active ?? existing?.active ?? true,
-        metadata: values.metadata ?? existing?.metadata ?? {},
-        _id: existing?._id,
         createdAt: existing?.createdAt,
         updatedAt: existing?.updatedAt,
     };

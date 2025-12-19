@@ -3,7 +3,6 @@
 import { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import LoadingDashboard from "../global/LoadingDashboard";
 import { useCurrentUserStore } from "@/store/current-user.store";
 
 interface AuthWrapperProps {
@@ -18,17 +17,13 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
 
     const { fetchBaseUser } = useCurrentUserStore();
 
-    const { isLoading } = useQuery({
+    const {  } = useQuery({
         queryKey: ["baseUser"],
         queryFn: () => fetchBaseUser(),
         enabled: !skipFetch, // skip fetch for public-only routes
         staleTime: 5 * 60 * 1000, // cache 5 minutes
         retry: false, // do not retry on error
     });
-
-    if (isLoading) {
-        return <LoadingDashboard />;
-    }
 
     return <>{children}</>;
 }

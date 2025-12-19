@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
+
 import {
     ID,
     GuideSubscriptionsApiResponse,
@@ -10,32 +11,37 @@ import {
     SubscriptionTierMap,
     UpsertSubscriptionTierPayload,
     ValidationError,
-    TierListQuery
+    TierListQuery,
+    SubscriptionTierApiResponse,
+    QueryCacheEntry,
+    CacheKey,
 } from "@/types/guide-subscription-settings.types";
+
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
 
 /* -------------------------
-  Local helper types
+Local helper types
 ------------------------- */
 
-type ReorderPayload = { orderedIds: ID[]; editorId?: ID; note?: string };
 type ServerValidationShape = { errors?: ValidationError[] };
 
 /* -------------------------
-  Constants
+Constants
 ------------------------- */
 
-const URL_AFTER_API = "/mock/site-settings/guide-subscriptions";
+// const URL_AFTER_API = "/mock/site-settings/guide-subscriptions";
+const URL_AFTER_API = "/site-settings/v1/guide-subscriptions";
+
 const FETCH_TTL_MS = Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 1000 * 60 * 2; // 2 minutes
+const CACHE_MAX_ENTRIES = 50; // simple bound to avoid unbounded growth
 
 /* -------------------------
-  Pure helpers
+Pure helpers
 ------------------------- */
 
 function canonicalId(t: SubscriptionTierDTO): ID {
-    // prefer stable `key`, fallback to _id if provided
     return (t.key ?? t._id ?? "") as ID;
 }
 
@@ -53,10 +59,176 @@ function parseServerValidations(payload: unknown): ValidationError[] {
     return [];
 }
 
-/**
- * Defensive sanitizer: converts form-like shape into DTO-shaped values.
- * Throws a descriptive Error on invalid fields.
- */
+/** Deterministic serializer for TierListQuery to produce stable cache keys */
+export function serializeQuery(q: Partial<TierListQuery> | undefined): CacheKey {
+    const normalized = {
+        search: q?.search ?? "",
+        onlyActive: q?.onlyActive ? "1" : "0",
+        sortBy: q?.sortBy ?? "title",
+        sortDir: q?.sortDir ?? "asc",
+    };
+    return `q:${normalized.search}|a:${normalized.onlyActive}|s:${normalized.sortBy}|d:${normalized.sortDir}`;
+}
+
+/* Sorting helper used to keep cached lists consistent with query sort */
+function sortList(list: SubscriptionTierDTO[], sortBy?: TierListQuery["sortBy"], sortDir?: "asc" | "desc") {
+    if (!sortBy) return list;
+    const dir = sortDir === "desc" ? -1 : 1;
+    return list.slice().sort((a, b) => {
+        if (sortBy === "title") return dir * a.title.localeCompare(b.title);
+        if (sortBy === "price") return dir * (a.price - b.price);
+        if (sortBy === "createdAt") {
+            const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
+            const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
+            return dir * (ta - tb);
+        }
+        return 0;
+    });
+}
+
+/* -------------------------
+In-memory cache (module-level)
+------------------------- */
+
+const inMemoryCache: Record<CacheKey, QueryCacheEntry> = {};
+
+/* Evict oldest entry when cache grows beyond limit */
+function evictIfNeeded() {
+    const keys = Object.keys(inMemoryCache);
+    if (keys.length <= CACHE_MAX_ENTRIES) return;
+    // find oldest by createdAt
+    let oldestKey: string | null = null;
+    let oldestTime = Infinity;
+    for (const k of keys) {
+        try {
+            const e = inMemoryCache[k];
+            const t = Date.parse(e.createdAt);
+            if (!Number.isNaN(t) && t < oldestTime) {
+                oldestTime = t;
+                oldestKey = k;
+            }
+        } catch {
+            // ignore
+        }
+    }
+    if (oldestKey) delete inMemoryCache[oldestKey];
+}
+
+/* Create a cache entry */
+function makeCacheEntry<T>(
+    key: CacheKey,
+    query: TierListQuery,
+    value: T,
+    ttlMs = FETCH_TTL_MS,
+    updatedAt?: string
+): QueryCacheEntry<T> {
+    return {
+        key,
+        query,
+        value,
+        createdAt: new Date().toISOString(),
+        ttlMs,
+        updatedAt,
+    };
+}
+
+/* Check expiry */
+export function isExpired(entry: QueryCacheEntry): boolean {
+    const created = Date.parse(entry.createdAt);
+    if (Number.isNaN(created)) return true;
+    return Date.now() - created > (entry.ttlMs ?? FETCH_TTL_MS);
+}
+
+/* Get cached entry or undefined */
+function getCache<T = unknown>(key: CacheKey): QueryCacheEntry<T> | undefined {
+    const e = inMemoryCache[key] as QueryCacheEntry<T> | undefined;
+    if (!e) return undefined;
+    if (isExpired(e)) {
+        delete inMemoryCache[key];
+        return undefined;
+    }
+    return e;
+}
+
+/* Set cache and maintain eviction bound */
+function setCache<T = unknown>(entry: QueryCacheEntry<T>): void {
+    inMemoryCache[entry.key] = entry;
+    evictIfNeeded();
+}
+
+/* Invalidate by predicate */
+function invalidateCacheWhere(predicate: (entry: QueryCacheEntry) => boolean): void {
+    for (const k of Object.keys(inMemoryCache)) {
+        try {
+            const e = inMemoryCache[k];
+            if (predicate(e)) delete inMemoryCache[k];
+        } catch {
+            // swallow
+        }
+    }
+}
+
+/* Update a single cache entry in-place for an upserted tier */
+function updateCacheEntryForTier(returned: SubscriptionTierDTO, newUpdatedAt?: string) {
+    for (const k of Object.keys(inMemoryCache)) {
+        try {
+            const e = inMemoryCache[k];
+            const payload = e.value as { guideSubscriptions?: SubscriptionTierDTO[] } | undefined;
+            if (!payload || !Array.isArray(payload.guideSubscriptions)) continue;
+
+            const idx = payload.guideSubscriptions.findIndex((t) => canonicalId(t) === canonicalId(returned));
+            if (idx >= 0) {
+                payload.guideSubscriptions[idx] = returned;
+            } else {
+                const q = e.query;
+                if (q.onlyActive && !returned.active) {
+                    // skip
+                } else if (q.search && q.search.trim().length > 0) {
+                    const s = q.search.toLowerCase();
+                    if (returned.title.toLowerCase().includes(s) || returned.key.toLowerCase().includes(s)) {
+                        payload.guideSubscriptions.push(returned);
+                    }
+                } else {
+                    payload.guideSubscriptions.push(returned);
+                }
+            }
+
+            // re-sort according to query
+            payload.guideSubscriptions = sortList(payload.guideSubscriptions, e.query.sortBy, e.query.sortDir);
+
+            e.updatedAt = newUpdatedAt ?? e.updatedAt;
+            inMemoryCache[k] = e;
+        } catch {
+            // swallow
+        }
+    }
+}
+
+/* Remove tier from all cache entries */
+function removeTierFromCache(id: ID, newUpdatedAt?: string) {
+    for (const k of Object.keys(inMemoryCache)) {
+        try {
+            const e = inMemoryCache[k];
+            const payload = e.value as { guideSubscriptions?: SubscriptionTierDTO[] } | undefined;
+            if (!payload || !Array.isArray(payload.guideSubscriptions)) continue;
+            const newList = payload.guideSubscriptions.filter((t) => canonicalId(t) !== id);
+            if (newList.length !== payload.guideSubscriptions.length) {
+                payload.guideSubscriptions = newList;
+                // re-sort to keep consistency (though removal doesn't require it)
+                payload.guideSubscriptions = sortList(payload.guideSubscriptions, e.query.sortBy, e.query.sortDir);
+                e.updatedAt = newUpdatedAt ?? e.updatedAt;
+                inMemoryCache[k] = e;
+            }
+        } catch {
+            // swallow
+        }
+    }
+}
+
+/* -------------------------
+Defensive sanitizer
+------------------------- */
+
 function sanitizeToDto(input: Partial<SubscriptionTierDTO>): SubscriptionTierDTO {
     const priceRaw = input.price as unknown;
     const price = typeof priceRaw === "string" ? priceRaw.trim() : priceRaw;
@@ -69,6 +241,7 @@ function sanitizeToDto(input: Partial<SubscriptionTierDTO>): SubscriptionTierDTO
     if (!Array.isArray(billingRaw) || billingRaw.length === 0) {
         throw new Error("billingCycleDays required: provide an array of positive integers (days)");
     }
+
     const billing = billingRaw.map((v) => {
         const n = Number(v);
         if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) {
@@ -78,6 +251,7 @@ function sanitizeToDto(input: Partial<SubscriptionTierDTO>): SubscriptionTierDTO
     });
 
     return {
+        _id: input._id ?? "",
         key: String(input.key ?? "").trim(),
         title: String(input.title ?? "").trim(),
         price: priceNum,
@@ -85,15 +259,13 @@ function sanitizeToDto(input: Partial<SubscriptionTierDTO>): SubscriptionTierDTO
         billingCycleDays: billing,
         perks: input.perks ?? [],
         active: input.active ?? true,
-        metadata: input.metadata ?? {},
-        _id: input._id,
         createdAt: input.createdAt,
         updatedAt: input.updatedAt,
     };
 }
 
 /* -------------------------
-  Default query
+Default query
 ------------------------- */
 
 const DEFAULT_QUERY: TierListQuery = {
@@ -104,7 +276,7 @@ const DEFAULT_QUERY: TierListQuery = {
 };
 
 /* -------------------------
-  Store
+Store
 ------------------------- */
 
 export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
@@ -113,12 +285,12 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
             // data
             list: [],
             map: {},
+            cacheIndex: {},
 
             // meta
             loading: false,
             saving: false,
             error: null,
-            version: undefined,
             lastFetchedAt: undefined,
 
             // ui
@@ -129,15 +301,27 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
             query: DEFAULT_QUERY,
 
             /* -------------------------
-               fetchAll - TTL aware
-               ------------------------- */
-            fetchAll: async (force = false) => {
-                const { loading, lastFetchedAt } = get();
+            fetchAll - TTL aware
+            ------------------------- */
+            fetchAll: async (force = false, query?: TierListQuery) => {
+                const q = { ...DEFAULT_QUERY, ...(query ?? get().query) };
+                const key = serializeQuery(q);
+                const { loading } = get();
                 if (loading) return;
-                const now = Date.now();
-                if (!force && lastFetchedAt) {
-                    const age = now - Date.parse(lastFetchedAt);
-                    if (!Number.isNaN(age) && age < FETCH_TTL_MS) return;
+
+                if (!force) {
+                    const cached = getCache<{ guideSubscriptions: SubscriptionTierDTO[]; updatedAt?: string }>(key);
+                    if (cached) {
+                        const list = cached.value.guideSubscriptions ?? [];
+                        set((s) => {
+                            s.list = list;
+                            s.map = buildMap(list);
+                            s.lastFetchedAt = cached.updatedAt ?? s.lastFetchedAt;
+                            s.loading = false;
+                            s.error = null;
+                        });
+                        return;
+                    }
                 }
 
                 set((s) => {
@@ -146,15 +330,17 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
                 });
 
                 try {
-                    const resp = await api.get<GuideSubscriptionsApiResponse>(
-                        `${URL_AFTER_API}`
-                    );
-                    const payload = resp.data;
+                    const resp = await api.get<GuideSubscriptionsApiResponse>(`${URL_AFTER_API}`);
+                    if (!resp.data || !resp.data.data) throw new Error("Invalid response body.");
+                    const payload = resp.data.data;
                     const list = payload.guideSubscriptions ?? [];
+
+                    const entry = makeCacheEntry(key, q, { guideSubscriptions: list, updatedAt: payload.updatedAt }, FETCH_TTL_MS, payload.updatedAt);
+                    setCache(entry);
+
                     set((s) => {
                         s.list = list;
                         s.map = buildMap(list);
-                        s.version = payload.version;
                         s.lastFetchedAt = payload.updatedAt ?? new Date().toISOString();
                         s.loading = false;
                         s.error = null;
@@ -171,9 +357,8 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
             },
 
             /* -------------------------
-               upsertTier - create or update single tier
-               includes version for concurrency
-               ------------------------- */
+            upsertTier - create or update single tier
+            ------------------------- */
             upsertTier: async (payload: UpsertSubscriptionTierPayload) => {
                 set((s) => {
                     s.saving = true;
@@ -181,10 +366,11 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
                     s.validations = [];
                 });
 
-                // sanitize and validate on client
                 let sanitized: SubscriptionTierDTO;
+
                 try {
-                    sanitized = sanitizeToDto(payload.tier as Partial<SubscriptionTierDTO>);
+                    // Convert to clean internal DTO
+                    sanitized = sanitizeToDto(payload as Partial<SubscriptionTierDTO>);
                 } catch (e) {
                     const msg = e instanceof Error ? e.message : "Invalid input";
                     set((s) => {
@@ -195,7 +381,7 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
                     throw new Error(msg);
                 }
 
-                // client form-level validation with same rules (keeps validations array useful)
+                // Local validation
                 const localErrors = get().validateDraft(sanitized);
                 if (localErrors.length > 0) {
                     set((s) => {
@@ -206,39 +392,53 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
                 }
 
                 try {
-                    const resp = await api.post<{
-                        tier: SubscriptionTierDTO;
-                        version?: number;
-                        updatedAt?: string;
-                    }>(`${URL_AFTER_API}/tier`, {
-                        tier: sanitized,
-                        editorId: payload.editorId,
-                        note: payload.note,
-                        version: get().version, // include for concurrency check
-                    } as unknown);
+                    const hasId = Boolean(sanitized._id);
+                    const url = hasId
+                        ? `${URL_AFTER_API}/${encodeURIComponent(sanitized._id)}`
+                        : `${URL_AFTER_API}`;
 
-                    const returned = resp.data.tier;
+                    const method = hasId ? "put" : "post";
+
+                    console.log("[UPSERT]", { method, url, sanitized });
+
+                    const resp = await api[method]<SubscriptionTierApiResponse>(url, {
+                        tier: sanitized,
+                    });
+
+                    if (!resp.data || !resp.data.data) {
+                        throw new Error("Invalid response body.");
+                    }
+
+                    const { tier: returned, updatedAt } = resp.data.data;
+
                     set((s) => {
                         const id = canonicalId(returned);
                         const idx = s.list.findIndex((x) => canonicalId(x) === id);
+
                         if (idx >= 0) {
                             s.list[idx] = returned;
                         } else {
                             s.list.push(returned);
                         }
+
                         s.map = buildMap(s.list);
                         s.saving = false;
-                        s.version = resp.data.version ?? s.version;
-                        s.lastFetchedAt = resp.data.updatedAt ?? s.lastFetchedAt;
+                        s.lastFetchedAt = updatedAt ?? s.lastFetchedAt;
                         s.validations = [];
                     });
 
-                    showToast.success("Subscription saved", `Plan ${returned.title} saved.`);
+                    updateCacheEntryForTier(returned, updatedAt);
+
+                    const message = hasId
+                        ? `Plan "${returned.title}" updated.`
+                        : `Plan "${returned.title}" created.`;
+
+                    showToast.success("Subscription saved", message);
+
                     return returned;
                 } catch (err) {
                     const message = extractErrorMessage(err);
                     const serverValidations = parseServerValidations(
-                        // safe access to response body
                         (err as { response?: { data?: unknown } })?.response?.data
                     );
 
@@ -248,15 +448,17 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
                         s.validations = serverValidations;
                     });
 
-                    // If concurrency conflict (server should return 409), fetch latest and inform user
                     const status = (err as { response?: { status?: number } })?.response?.status;
+
                     if (status === 409) {
+                        invalidateCacheWhere(() => true);
                         try {
                             await get().fetchAll(true);
-                        } catch {
-                            /* best-effort */
-                        }
-                        showToast.warning("Conflict detected", "Another admin updated settings; data refreshed.");
+                        } catch { }
+                        showToast.warning(
+                            "Conflict detected",
+                            "Another admin updated settings; data refreshed."
+                        );
                     } else {
                         showToast.error("Failed to save subscription", message);
                     }
@@ -266,8 +468,8 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
             },
 
             /* -------------------------
-               removeTier
-               ------------------------- */
+            removeTier
+            ------------------------- */
             removeTier: async (id: ID) => {
                 set((s) => {
                     s.saving = true;
@@ -275,7 +477,6 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
                 });
 
                 const encodedId = encodeURIComponent(id);
-                // optimistic snapshot
                 const prev = get().list.slice();
 
                 set((s) => {
@@ -284,9 +485,9 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
                 });
 
                 try {
-                    await api.delete<{ version?: number; updatedAt?: string }>(
-                        `${URL_AFTER_API}/tier/${encodedId}`
-                    );
+                    const resp = await api.delete<{data: { updatedAt?: string }}>(`${URL_AFTER_API}/${encodedId}`);
+                    const updatedAt = resp?.data?.data.updatedAt;
+                    removeTierFromCache(id, updatedAt);
 
                     set((s) => {
                         s.saving = false;
@@ -295,7 +496,6 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
                     showToast.success("Subscription removed", "The plan has been deleted.");
                 } catch (err) {
                     const message = extractErrorMessage(err);
-                    // rollback immediately
                     set((s) => {
                         s.list = prev;
                         s.map = buildMap(prev);
@@ -308,70 +508,8 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
             },
 
             /* -------------------------
-               reorderTiers - optimistic with rollback
-               ------------------------- */
-            reorderTiers: async (orderedIds: ID[], editorId?: ID, note?: string) => {
-                set((s) => {
-                    s.saving = true;
-                    s.error = null;
-                });
-
-                const prev = get().list.slice();
-
-                // optimistic local reorder
-                set((s) => {
-                    const idToTier: Record<ID, SubscriptionTierDTO> = {};
-                    for (const t of s.list) idToTier[canonicalId(t)] = t;
-                    const newList: SubscriptionTierDTO[] = [];
-                    for (const id of orderedIds) {
-                        const item = idToTier[id];
-                        if (item) newList.push(item);
-                    }
-                    for (const t of s.list) {
-                        if (!orderedIds.includes(canonicalId(t))) newList.push(t);
-                    }
-                    s.list = newList;
-                    s.map = buildMap(s.list);
-                });
-
-                try {
-                    await api.post(`${URL_AFTER_API}/reorder`, {
-                        orderedIds,
-                        editorId,
-                        note,
-                        version: get().version,
-                    } as ReorderPayload & { version?: number });
-
-                    set((s) => {
-                        s.saving = false;
-                    });
-
-                    showToast.success("Order updated", "Subscription tiers order updated.");
-                } catch (err) {
-                    const message = extractErrorMessage(err);
-                    // rollback
-                    set((s) => {
-                        s.list = prev;
-                        s.map = buildMap(prev);
-                        s.saving = false;
-                        s.error = message;
-                    });
-                    showToast.error("Failed to reorder", message);
-
-                    // try authoritative reload (best-effort)
-                    try {
-                        await get().fetchAll(true);
-                    } catch {
-                        /* swallow */
-                    }
-
-                    throw new Error(message);
-                }
-            },
-
-            /* -------------------------
-               UI / helpers
-               ------------------------- */
+            UI / helpers
+            ------------------------- */
             setDraft: (d?: SubscriptionTierDTO | null) => {
                 set((s) => {
                     s.draft = d ?? null;

@@ -9,7 +9,6 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +43,7 @@ export const TierForm: React.FC<TierFormProps> = ({
     watch,
   } = useForm<SubscriptionTierFormValues>({
     defaultValues: {
+      _id: initialValues?._id ?? undefined,
       key: initialValues?.key ?? "",
       title: initialValues?.title ?? "",
       price: initialValues?.price ?? 0,
@@ -51,7 +51,6 @@ export const TierForm: React.FC<TierFormProps> = ({
       billingCycleDays: initialValues?.billingCycleDays ?? [30],
       perks: initialValues?.perks ?? [],
       active: initialValues?.active ?? true,
-      metadata: initialValues?.metadata ?? {},
     },
   });
 
@@ -88,12 +87,39 @@ export const TierForm: React.FC<TierFormProps> = ({
     }
 
     const priceNum = Number(raw.price);
+    // Not a number
     if (Number.isNaN(priceNum)) {
-      setError(namePrice, { type: "client", message: "Price is required and must be a number" });
+      setError(namePrice, {
+        type: "client",
+        message: "Price is required and must be a number",
+      });
       return;
     }
-    if (!isFinite(priceNum) || priceNum < 0) {
-      setError(namePrice, { type: "client", message: "Price must be a finite number >= 0" });
+
+    // Negative OR below zero by floating
+    if (priceNum < 0) {
+      setError(namePrice, {
+        type: "client",
+        message: "Price cannot be negative",
+      });
+      return;
+    }
+
+    // Prevent insane numbers like Infinity or 1e1000
+    if (!Number.isFinite(priceNum)) {
+      setError(namePrice, {
+        type: "client",
+        message: "Price must be a valid number",
+      });
+      return;
+    }
+
+    // Optional limit: prevent huge numbers like 999,999,999
+    if (priceNum > 1000000) {
+      setError(namePrice, {
+        type: "client",
+        message: "Price is unusually high — please lower it",
+      });
       return;
     }
 
@@ -124,8 +150,8 @@ export const TierForm: React.FC<TierFormProps> = ({
           <Code size={14} className="text-gray-500" />
           Key (Unique Identifier)
         </Label>
-        <Input 
-          {...register("key")} 
+        <Input
+          {...register("key")}
           placeholder="e.g., basic-monthly"
           className={`font-mono ${errors.key ? 'border-red-500 focus:ring-red-500' : ''}`}
         />
@@ -140,8 +166,8 @@ export const TierForm: React.FC<TierFormProps> = ({
       {/* Title Field */}
       <div className="space-y-2">
         <Label className="text-sm font-medium">Display Title</Label>
-        <Input 
-          {...register("title")} 
+        <Input
+          {...register("title")}
           placeholder="e.g., Basic Plan"
           className={errors.title ? 'border-red-500 focus:ring-red-500' : ''}
         />
@@ -160,11 +186,15 @@ export const TierForm: React.FC<TierFormProps> = ({
             <DollarSign size={14} className="text-green-600" />
             Price
           </Label>
-          <Input 
-            type="number" 
-            step="0.01" 
-            {...register("price")} 
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            {...register("price")}
             placeholder="9.99"
+            onKeyDown={(e) => {
+              if (e.key === "-" || e.key === "e") e.preventDefault();
+            }}
             className={errors.price ? 'border-red-500 focus:ring-red-500' : ''}
           />
           {errors.price && (
@@ -203,11 +233,10 @@ export const TierForm: React.FC<TierFormProps> = ({
                 type="button"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`relative p-4 rounded-lg border-2 transition-all ${
-                  isSelected
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                }`}
+                className={`relative p-4 rounded-lg border-2 transition-all ${isSelected
+                  ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
                 onClick={() => {
                   const current = new Set<number>(billing);
                   if (current.has(days)) {
@@ -246,6 +275,7 @@ export const TierForm: React.FC<TierFormProps> = ({
           Perks (comma separated)
         </Label>
         <Input
+          type="text"
           placeholder="e.g., Unlimited guides, Priority support, Custom branding"
           value={Array.isArray(perks) ? perks.join(", ") : ""}
           onChange={(e) =>
@@ -284,29 +314,6 @@ export const TierForm: React.FC<TierFormProps> = ({
         />
       </div>
 
-      {/* Metadata */}
-      <details className="group">
-        <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-2">
-          <Code size={14} />
-          Advanced: Metadata (JSON)
-        </summary>
-        <div className="mt-3">
-          <Textarea
-            className="font-mono text-xs"
-            rows={6}
-            value={JSON.stringify(watch("metadata") ?? {}, null, 2)}
-            onChange={(e) => {
-              try {
-                const parsed = JSON.parse(e.target.value);
-                setValue("metadata", parsed);
-              } catch {
-                // swallow invalid JSON until submit
-              }
-            }}
-          />
-        </div>
-      </details>
-
       {/* Timestamps */}
       {initialValues?._id && initialValues.updatedAt && (
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -318,9 +325,9 @@ export const TierForm: React.FC<TierFormProps> = ({
 
       {/* Actions */}
       <div className="flex items-center gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button 
+        <Button
           type="button"
-          variant="outline" 
+          variant="outline"
           onClick={onCancel}
           disabled={loading}
           className="gap-2"
@@ -328,8 +335,8 @@ export const TierForm: React.FC<TierFormProps> = ({
           <X size={16} />
           Cancel
         </Button>
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           disabled={loading}
           className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
         >

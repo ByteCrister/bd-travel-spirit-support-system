@@ -38,13 +38,16 @@ export default async function RootLayout({
     <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <body>
         <GlobalProvider>
+          {/* App content */}
           {children}
+
+          {/* Global toast notifications */}
+          <Toaster
+            position="bottom-right"
+            richColors
+            duration={5000}
+          />
         </GlobalProvider>
-        <Toaster
-          position="top-right"
-          richColors
-          duration={5000}
-        />
       </body>
     </html>
   );

@@ -59,7 +59,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     }
 
     const bannerEntry = {
-        asset: assetDoc.publicUrl,
+        asset: assetDoc._id,
         alt: body.alt ?? null,
         caption: body.caption ?? null,
         order: body.order ?? 0,
@@ -75,8 +75,16 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     site.markModified("guideBanners");
     await site.save();
 
-    const createdBanner = site.guideBanners.at(-1)!;
+    const siteObj = site.toObject();
+    const created = siteObj.guideBanners.at(-1)!;
 
-    return { data: createdBanner, status: 201 };
-
+    return {
+        data: {
+            ...created,
+            _id: String(created._id),
+            asset: assetDoc.publicUrl,
+        },
+        status: 201,
+    };
+    
 });

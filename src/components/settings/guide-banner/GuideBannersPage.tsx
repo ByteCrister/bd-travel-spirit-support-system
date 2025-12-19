@@ -70,9 +70,7 @@ export default function GuideBannersPage() {
             search: search || undefined,
         };
 
-        void fetchList(q).catch(() => {
-            // fetchList already shows toast and sets state; swallow here to avoid unhandled rejection logs
-        });
+        void fetchList(q);
     }, [fetchList, limit, offset, sortBy, sortDir, active, search]);
 
 

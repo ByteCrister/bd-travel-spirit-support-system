@@ -27,6 +27,7 @@ export interface AdvertisingConfig {
 }
 
 export interface SubscriptionTier {
+    _id?: ObjectId;
     key: string;
     title: string;
     price: number;
@@ -34,6 +35,8 @@ export interface SubscriptionTier {
     billingCycleDays: number[];
     perks?: string[];
     active: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export interface SocialLink {
@@ -177,7 +180,7 @@ const SubscriptionTierSchema = new Schema<SubscriptionTier>(
         perks: { type: [String], default: [] },
         active: { type: Boolean, default: true },
     },
-    { _id: false }
+    { timestamps: true }
 );
 
 const SocialLinkSchema = new Schema<SocialLink>(

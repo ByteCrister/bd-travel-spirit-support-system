@@ -1,10 +1,9 @@
 // components/GuideSubscriptions/TierList.tsx
 "use client";
-import React, { useMemo, useState } from "react";
+
+import React from "react";
 import type {
-  TierListProps,
   SubscriptionTierDTO,
-  TierListQuery,
   ID,
 } from "@/types/guide-subscription-settings.types";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,53 +12,28 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TierRow } from "./TierRow";
-import { ReorderControl } from "./ReorderControl";
 import { Search, Filter, ArrowUpDown, Package } from "lucide-react";
+import useGuideSubscriptionsStore from "@/store/guide-subscription-setting.store";
 
-export const TierList: React.FC<TierListProps & { query: TierListQuery }> = ({
-  tiers,
+/**
+ * TierList props for index/table component
+ */
+export interface TierListProps {
+  tiers: SubscriptionTierDTO[];
+  loading?: boolean;
+  onEdit: (tier: SubscriptionTierDTO) => void;
+  onDelete: (id: ID) => void;
+  onToggleActive?: (id: ID, active: boolean) => void;
+}
+
+export const TierList: React.FC<TierListProps> = ({
   loading,
+  tiers,
   onEdit,
   onDelete,
-  onReorder,
   onToggleActive,
-  query,
 }) => {
-  const [search, setSearch] = useState<string>(query.search ?? "");
-  const [onlyActive, setOnlyActive] = useState<boolean>(query.onlyActive ?? false);
-  const [sortBy, setSortBy] = useState<TierListQuery["sortBy"]>(query.sortBy ?? "title");
-  const [sortDir, setSortDir] = useState<TierListQuery["sortDir"]>(query.sortDir ?? "asc");
-
-  const filtered = useMemo(() => {
-    const s = search.trim().toLowerCase();
-    let out = tiers.slice();
-    if (s.length > 0) {
-      out = out.filter(
-        (t) => t.title.toLowerCase().includes(s) || t.key.toLowerCase().includes(s)
-      );
-    }
-    if (onlyActive) {
-      out = out.filter((t) => t.active);
-    }
-    if (sortBy === "title") {
-      out.sort((a, b) =>
-        sortDir === "asc"
-          ? a.title.localeCompare(b.title)
-          : b.title.localeCompare(a.title)
-      );
-    } else if (sortBy === "price") {
-      out.sort((a, b) =>
-        sortDir === "asc" ? a.price - b.price : b.price - a.price
-      );
-    } else if (sortBy === "createdAt") {
-      out.sort((a, b) =>
-        sortDir === "asc"
-          ? (a.createdAt ?? "").localeCompare(b.createdAt ?? "")
-          : (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
-      );
-    }
-    return out;
-  }, [tiers, search, onlyActive, sortBy, sortDir]);
+  const { query, setQuery } = useGuideSubscriptionsStore()
 
   return (
     <div className="space-y-6">
@@ -71,8 +45,8 @@ export const TierList: React.FC<TierListProps & { query: TierListQuery }> = ({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <Input
               placeholder="Search by key or title..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={query.search}
+              onChange={(e) => { setQuery({ search: e.target.value }) }}
               className="pl-10 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -83,15 +57,18 @@ export const TierList: React.FC<TierListProps & { query: TierListQuery }> = ({
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
               Active only
             </label>
-            <Switch 
-              checked={onlyActive} 
-              onCheckedChange={(v) => setOnlyActive(v)}
+            <Switch
+              checked={query.onlyActive ?? false}
+              onCheckedChange={(v) => setQuery({ onlyActive: v })}
               className="data-[state=checked]:bg-blue-600"
             />
           </div>
 
           {/* Sort By */}
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as "createdAt" | "title" | "price" | "order" | undefined)}>
+          <Select
+            value={query.sortBy ?? "title"}
+            onValueChange={(v) => setQuery({ sortBy: v as "title" | "price" | "createdAt" })}
+          >
             <SelectTrigger className="w-full lg:w-40 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
               <ArrowUpDown size={16} className="mr-2 text-gray-500" />
               <SelectValue />
@@ -100,12 +77,14 @@ export const TierList: React.FC<TierListProps & { query: TierListQuery }> = ({
               <SelectItem value="title">Title</SelectItem>
               <SelectItem value="price">Price</SelectItem>
               <SelectItem value="createdAt">Created At</SelectItem>
-              <SelectItem value="order">Order</SelectItem>
             </SelectContent>
           </Select>
 
           {/* Sort Direction */}
-          <Select value={sortDir} onValueChange={(v) => setSortDir(v as "asc" | "desc" | undefined)}>
+          <Select
+            value={query.sortDir ?? "asc"}
+            onValueChange={(v) => setQuery({ sortDir: v as "asc" | "desc" })}
+          >
             <SelectTrigger className="w-full lg:w-32 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
               <SelectValue />
             </SelectTrigger>
@@ -117,12 +96,12 @@ export const TierList: React.FC<TierListProps & { query: TierListQuery }> = ({
         </div>
 
         {/* Results Summary */}
-        {search && (
+        {query.search && (
           <div className="mt-3 flex items-center gap-2">
             <Badge variant="secondary" className="text-xs">
-              {filtered.length} {filtered.length === 1 ? 'result' : 'results'} found
+              {tiers.length} {tiers.length === 1 ? 'result' : 'results'} found
             </Badge>
-            {filtered.length !== tiers.length && (
+            {tiers.length !== tiers.length && (
               <span className="text-xs text-gray-500">
                 (filtered from {tiers.length} total)
               </span>
@@ -145,7 +124,7 @@ export const TierList: React.FC<TierListProps & { query: TierListQuery }> = ({
                 <p className="text-sm text-gray-500">Loading tiers...</p>
               </div>
             </motion.div>
-          ) : filtered.length === 0 ? (
+          ) : tiers.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -159,16 +138,16 @@ export const TierList: React.FC<TierListProps & { query: TierListQuery }> = ({
                 No subscription tiers found
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center max-w-md">
-                {search 
+                {query.search
                   ? "Try adjusting your search or filters to find what you're looking for."
                   : "Get started by creating your first subscription tier."}
               </p>
             </motion.div>
           ) : (
             <motion.ul layout className="space-y-3">
-              {filtered.map((tier, i) => (
-                <motion.li 
-                  key={tier.key} 
+              {tiers.map((tier, i) => (
+                <motion.li
+                  key={tier.key}
                   layout
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -180,7 +159,7 @@ export const TierList: React.FC<TierListProps & { query: TierListQuery }> = ({
                     index={i}
                     onEdit={() => onEdit(tier)}
                     onDuplicate={() => onEdit({ ...tier, key: `${tier.key}-copy` } as SubscriptionTierDTO)}
-                    onDelete={() => onDelete(tier.key as unknown as ID)}
+                    onDelete={() => onDelete(tier._id as unknown as ID)}
                     onToggleActive={(id, active) => onToggleActive?.(id, active)}
                   />
                 </motion.li>
@@ -189,20 +168,6 @@ export const TierList: React.FC<TierListProps & { query: TierListQuery }> = ({
           )}
         </AnimatePresence>
       </div>
-
-      {/* Reorder Control */}
-      {onReorder && filtered.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <ReorderControl
-            ids={tiers.map((t) => t.key)}
-            onReorder={(orderedIds) => onReorder(orderedIds)}
-          />
-        </motion.div>
-      )}
     </div>
   );
 };

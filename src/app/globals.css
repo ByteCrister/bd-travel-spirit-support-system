@@ -240,3 +240,8 @@
 *::-webkit-scrollbar-thumb:active {
   background-color: #303030;
 }
+
+[data-sonner-toaster] {
+  z-index: 9999 !important;
+  position: fixed !important;
+}

@@ -18,6 +18,8 @@ import {
     EntityRequestState,
     GUIDE_BANNER_CONSTRAINTS,
     GuideBannerListResponse,
+    GuideBannerQueryCacheEntry,
+    GuideBannerListMeta,
 } from "../types/guide-banner-settings.types";
 
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
@@ -155,8 +157,29 @@ const initialState: GuideBannersState = {
     },
     operations: {} as OperationTracker,
     optimisticRegistry: {},
+    queryCache: new Map<string, GuideBannerQueryCacheEntry>(),
     isHydrated: false,
 };
+
+const QUERY_CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 60_000;
+
+/* Query cache helpers (Map-based) -------------------------------------- */
+
+function serializeQueryParams(p: GuideBannerQueryParams) {
+    const normalized: Record<string, unknown> = {
+        limit: p.limit ?? GUIDE_BANNER_CONSTRAINTS.defaultLimit,
+        offset: p.offset ?? 0,
+        sortBy: p.sortBy ?? "order",
+        sortDir: p.sortDir ?? "asc",
+        active: typeof p.active === "boolean" ? p.active : undefined,
+        search: p.search ? String(p.search).trim() : undefined,
+    };
+    return JSON.stringify(normalized);
+}
+
+function isCacheEntryFresh(createdAt: ISODateString, ttl = QUERY_CACHE_TTL_MS) {
+    return Date.now() - new Date(createdAt).getTime() <= ttl;
+}
 
 /* Small utilities for optimistic registry TTL management ----------------- */
 type OptimisticEntry = { rollback: () => void; createdAt: ISODateString; timerId?: ReturnType<typeof setTimeout> };
@@ -182,6 +205,43 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
     ...initialState,
 
     /* Actions ---------------------------------------------------------------- */
+
+    // Get cached entry or null (also removes stale entries)
+    getCachedList(key: string) {
+        const entry = get().queryCache.get(key);
+        if (!entry) return null;
+        if (!isCacheEntryFresh(entry.createdAt)) {
+            // stale: remove and return null
+            set(produce((s: GuideBannersState) => { s.queryCache.delete(key); }));
+            return null;
+        }
+        return entry;
+    },
+
+    // Set or replace cache entry
+    setCachedList(key: string, data: GuideBannerEntity[], meta?: GuideBannerListMeta) {
+        set(produce((s: GuideBannersState) => {
+            s.queryCache.set(key, { data, meta, createdAt: nowISO() });
+        }));
+    },
+
+    // Invalidate cache: if predicate omitted, clear all; otherwise remove keys whose parsed params satisfy predicate
+    invalidateQueryCache(predicate?: (params: GuideBannerQueryParams) => boolean) {
+        if (!predicate) {
+            set(produce((s: GuideBannersState) => { s.queryCache = new Map(); }));
+            return;
+        }
+        set(produce((s: GuideBannersState) => {
+            for (const key of Array.from(s.queryCache.keys())) {
+                try {
+                    const params = JSON.parse(key) as GuideBannerQueryParams;
+                    if (predicate(params)) s.queryCache.delete(key);
+                } catch {
+                    s.queryCache.delete(key);
+                }
+            }
+        }));
+    },
 
     // Low-level request state setters (consistent; avoids races using requestId)
     setOperationPending(operation: string, id?: ID, requestId?: string) {
@@ -326,7 +386,6 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
     async fetchList(params?: GuideBannerQueryParams) {
         const requestId = uuidv4();
 
-        // sanitize and build request params with sensible defaults
         const reqParams: GuideBannerQueryParams = {
             limit: params?.limit ?? GUIDE_BANNER_CONSTRAINTS.defaultLimit,
             offset: params?.offset ?? 0,
@@ -336,8 +395,29 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
             search: params?.search ? String(params.search).trim() : undefined,
         };
 
+        const key = serializeQueryParams(reqParams);
+
+        // Try cache first
+        const cached = get().getCachedList(key);
+        if (cached) {
+            const list = Array.isArray(cached.data) ? cached.data : [];
+            const normalized = normalizeList(list);
+            set(
+                produce((s: GuideBannersState) => {
+                    s.normalized = normalized;
+                    s.total = typeof cached.meta?.total === "number" ? cached.meta!.total : list.length;
+                    s.lastFetchedAt = nowISO();
+                    s.lastQuery = reqParams;
+                    s.listRequest = { status: RequestStatus.Success, error: null, finishedAt: nowISO(), requestId };
+                    s.isHydrated = true;
+                })
+            );
+            get().setOperationSuccess(OP_FETCH_LIST, undefined, requestId);
+            return;
+        }
+
+        // Not cached or stale -> proceed with network call (existing logic)
         try {
-            // set list-level pending
             set(
                 produce((s: GuideBannersState) => {
                     s.listRequest = { status: RequestStatus.Pending, error: null, startedAt: nowISO(), requestId };
@@ -346,10 +426,8 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
 
             get().setOperationPending(OP_FETCH_LIST, undefined, requestId);
 
-            // forward reqParams to API
             const resp = await api.get<GuideBannerListResponse>(URL_AFTER_API, { params: reqParams });
 
-            // defensive shape checking
             if (!resp?.data.data || typeof resp.data.data !== "object") {
                 throw new Error("Invalid API response");
             }
@@ -360,19 +438,20 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
             };
 
             const list = Array.isArray(data.data) ? data.data : [];
+
+            // cache the server response
+            get().setCachedList(key, list, data.meta);
+
             const normalized = normalizeList(list);
 
             set(
                 produce((s: GuideBannersState) => {
                     s.normalized = normalized;
-                    // prefer server meta when provided
                     s.total = typeof data.meta?.total === "number" ? data.meta!.total : list.length;
                     s.lastFetchedAt = nowISO();
                     s.lastQuery = reqParams;
-                    // persist server offset/limit if present
                     if (typeof data.meta?.offset === "number") {
-                        s.listRequest = { ...(s.listRequest ?? {}), /* keep prior fields */ status: RequestStatus.Success, error: null, finishedAt: nowISO(), requestId };
-                        // nothing else required, client component should read lastQuery for offset/limit if needed
+                        s.listRequest = { ...(s.listRequest ?? {}), status: RequestStatus.Success, error: null, finishedAt: nowISO(), requestId };
                     } else {
                         s.listRequest = { status: RequestStatus.Success, error: null, finishedAt: nowISO(), requestId };
                     }
@@ -383,20 +462,17 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
             get().setOperationSuccess(OP_FETCH_LIST, undefined, requestId);
         } catch (err) {
             const error = getErrorObject(err);
-
             set(
                 produce((s: GuideBannersState) => {
                     s.listRequest = { status: RequestStatus.Failed, error, finishedAt: nowISO(), requestId };
                 })
             );
-
             get().setOperationFailed(OP_FETCH_LIST, error, undefined, requestId);
-
             showToast.error("Failed to load guide banners", error.message);
-
             throw error;
         }
     },
+
 
     /* Thunks: fetchById ---------------------------------------------------- */
     async fetchById(id: ID) {
@@ -486,11 +562,16 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
                     const result = resolveGuideBannersOrderClient(s.normalized.byId, s.normalized.allIds);
                     s.normalized.byId = result.byId;
                     s.normalized.allIds = result.allIds;
+
+                    // update total banner number
+                    s.total = s.total ?? 0 + 1;
                 })
             );
 
             get().unregisterOptimistic(tempId);
             get().setOperationSuccess(OP_CREATE, created._id, requestId);
+            // Invalidate the cache
+            get().invalidateQueryCache(() => true);
             showToast.success("Guide banner created");
             return created;
         } catch (err) {
@@ -564,6 +645,8 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
             // unregister optimistic keyed by requestId
             get().unregisterOptimistic(`optimistic:${requestId}`);
             get().setOperationSuccess(OP_UPDATE, id, requestId);
+            // Invalidate the cache
+            get().invalidateQueryCache(() => true);
             showToast.success("Guide banner saved");
             return updated;
         } catch (err) {
@@ -634,7 +717,8 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
 
             get().unregisterOptimistic(`optimistic:${requestId}`);
             get().setOperationSuccess(OP_PATCH, id, requestId);
-
+            // Invalidate the cache
+            get().invalidateQueryCache(() => true);
             showToast.success(`Guide banner ${patch.active ? "activated" : "deactivated"}`);
             return get().normalized.byId[stringId];
         } catch (err) {
@@ -677,6 +761,8 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
                         s.normalized.byId[stringId] = snapshot;
                         const idx = indexSnapshot >= 0 ? Math.min(indexSnapshot, s.normalized.allIds.length) : s.normalized.allIds.length;
                         if (!s.normalized.allIds.includes(stringId)) s.normalized.allIds.splice(idx, 0, stringId);
+                        // update total banner number
+                        s.total = s.total ?? 1 - 1;
                     })
                 );
             }
@@ -687,6 +773,8 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
             await api.delete(`${URL_AFTER_API}/${encodeURIComponent(stringId)}`);
             get().unregisterOptimistic(`optimistic:${requestId}`);
             get().setOperationSuccess(OP_DELETE, id, requestId);
+            // Invalidate the cache
+            get().invalidateQueryCache(() => true);
             showToast.success("Guide banner removed");
         } catch (err) {
             const error = getErrorObject(err);

@@ -11,9 +11,11 @@ export async function GET(_req: NextRequest) {
   const settings = getSiteSettings();
   return NextResponse.json(
     {
-      guideSubscriptions: settings.guideSubscriptions,
-      version: settings.version,
-      updatedAt: settings.updatedAt,
+      data: {
+        guideSubscriptions: settings.guideSubscriptions,
+        version: settings.version,
+        updatedAt: settings.updatedAt,
+      }
     },
     { status: 200 }
   );

@@ -3,10 +3,9 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useEditorContext } from "@/hooks/useEditorContext";
 import type { SubscriptionTierDTO, SubscriptionTierFormValues } from "@/types/guide-subscription-settings.types";
 import useGuideSubscriptionsStore from "@/store/guide-subscription-setting.store";
-import { suggestDuplicateKey, toSubscriptionTierDTO } from "@/utils/helpers/guide-subscriptions.transform";
+import { toSubscriptionTierDTO } from "@/utils/helpers/guide-subscriptions.transform";
 import { VersionBanner } from "./VersionBanner";
 import { TierList } from "./TierList";
 import { TierForm } from "./TierForm";
@@ -14,7 +13,6 @@ import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { UndoSnackbar } from "./UndoSnackbar";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, RefreshCw, Settings, TrendingUp, DollarSign, Package, AlertCircle, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function GuideSubscriptionsPage() {
@@ -22,21 +20,15 @@ export default function GuideSubscriptionsPage() {
     list,
     loading,
     saving,
-    version,
     lastFetchedAt,
     validations,
     error,
     fetchAll,
     upsertTier,
     removeTier,
-    reorderTiers,
     setDraft,
-    setQuery,
-    query,
     clearError,
   } = useGuideSubscriptionsStore();
-
-  const { editorId } = useEditorContext();
 
   const [editing, setEditing] = useState<SubscriptionTierDTO | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -44,10 +36,8 @@ export default function GuideSubscriptionsPage() {
   const [undoVisible, setUndoVisible] = useState(false);
 
   useEffect(() => {
-    fetchAll().catch(() => {});
+    fetchAll().catch(() => { });
   }, [fetchAll]);
-
-  const keys = useMemo(() => list.map((t) => t.key), [list]);
 
   const stats = useMemo(() => ({
     total: list.length,
@@ -56,16 +46,6 @@ export default function GuideSubscriptionsPage() {
   }), [list]);
 
   async function handleAdd() {
-    const draft: SubscriptionTierFormValues = {
-      key: "",
-      title: "",
-      price: 0,
-      currency: "USD",
-      billingCycleDays: [30],
-      perks: [],
-      active: true,
-      metadata: {},
-    };
     setEditing(null);
     setShowForm(true);
     setDraft(null);
@@ -77,52 +57,26 @@ export default function GuideSubscriptionsPage() {
     setDraft(tier);
   }
 
-  async function handleDuplicate(tier: SubscriptionTierDTO) {
-    const newKey = suggestDuplicateKey(tier.key, keys);
-    setEditing({ ...tier, key: newKey, _id: undefined, createdAt: undefined, updatedAt: undefined });
-    setShowForm(true);
-  }
-
-  async function internalSubmit(values: SubscriptionTierFormValues & { note?: string }) {
+  async function internalSubmit(values: SubscriptionTierFormValues) {
     const dto = toSubscriptionTierDTO(values, editing ?? undefined);
-    try {
-      await upsertTier({ tier: dto as any, editorId, note: (values as any).note });
-      setShowForm(false);
-      setEditing(null);
-    } catch (err) {
-      // errors are surfaced via store.validations and store.error
-    }
+    await upsertTier(dto);
+    setShowForm(false);
+    setEditing(null);
   }
 
   async function handleDeleteConfirm() {
     if (!confirmDelete.tier) return;
-    const id = confirmDelete.tier.key;
+    const id = confirmDelete.tier._id;
     setConfirmDelete({ open: false });
-    try {
-      await removeTier(id);
-      setUndoVisible(true);
-    } catch {
-      // store already handles rollback and toast
-    }
+    await removeTier(id);
+    setUndoVisible(true);
   }
 
   async function handleToggleActive(id: string, active: boolean) {
     const existing = list.find((t) => t.key === id);
     if (!existing) return;
     const payload = { ...existing, active };
-    try {
-      await upsertTier({ tier: payload, editorId });
-    } catch {
-      // store handles validations/error
-    }
-  }
-
-  async function handleReorder(orderedIds: string[]) {
-    try {
-      await reorderTiers(orderedIds, editorId);
-    } catch {
-      // store shows toasts
-    }
+    await upsertTier(payload);
   }
 
   return (
@@ -152,8 +106,8 @@ export default function GuideSubscriptionsPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => fetchAll(true)}
                 className="gap-2 hover:bg-gray-100 dark:hover:bg-gray-800"
                 disabled={loading}
@@ -161,7 +115,7 @@ export default function GuideSubscriptionsPage() {
                 <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
                 Refresh
               </Button>
-              <Button 
+              <Button
                 onClick={handleAdd}
                 className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
               >
@@ -172,7 +126,7 @@ export default function GuideSubscriptionsPage() {
           </div>
 
           {/* Stats Cards */}
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-3 gap-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -217,7 +171,7 @@ export default function GuideSubscriptionsPage() {
             </div>
           </motion.div>
 
-          <VersionBanner version={version} updatedAt={lastFetchedAt} />
+          <VersionBanner updatedAt={lastFetchedAt} />
         </motion.div>
 
         {/* Error Alert */}
@@ -249,7 +203,7 @@ export default function GuideSubscriptionsPage() {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Tier List */}
-          <motion.div 
+          <motion.div
             className="lg:col-span-2"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -260,17 +214,15 @@ export default function GuideSubscriptionsPage() {
               loading={loading}
               onEdit={handleEdit}
               onDelete={(id) => {
-                const tier = list.find((t) => t.key === id);
+                const tier = list.find((t) => t._id === id);
                 setConfirmDelete({ open: true, tier });
               }}
-              onReorder={(ids) => handleReorder(ids)}
               onToggleActive={(id, active) => handleToggleActive(id as string, active)}
-              query={query}
             />
           </motion.div>
 
           {/* Editor Sidebar */}
-          <motion.div 
+          <motion.div
             className="lg:col-span-1"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -285,15 +237,15 @@ export default function GuideSubscriptionsPage() {
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Editor Panel</h3>
                 </div>
-                
+
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {showForm 
+                  {showForm
                     ? "Editing subscription tier. Make changes below."
                     : "Select a tier to edit or create a new one to get started."}
                 </p>
 
                 {!showForm && (
-                  <Button 
+                  <Button
                     onClick={() => { setShowForm(true); setEditing(null); }}
                     className="w-full gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
@@ -301,15 +253,6 @@ export default function GuideSubscriptionsPage() {
                     Create New Tier
                   </Button>
                 )}
-
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600 dark:text-gray-400">Version</span>
-                    <Badge variant="outline" className="font-mono">
-                      {version ?? "—"}
-                    </Badge>
-                  </div>
-                </div>
               </div>
 
               {/* Tier Form */}
@@ -329,6 +272,7 @@ export default function GuideSubscriptionsPage() {
                     </div>
                     <TierForm
                       initialValues={{
+                        _id: editing?._id,
                         key: editing?.key,
                         title: editing?.title,
                         price: editing?.price,
@@ -336,8 +280,6 @@ export default function GuideSubscriptionsPage() {
                         billingCycleDays: editing?.billingCycleDays,
                         perks: editing?.perks,
                         active: editing?.active,
-                        metadata: editing?.metadata,
-                        _id: editing?._id,
                         createdAt: editing?.createdAt,
                         updatedAt: editing?.updatedAt,
                       }}
@@ -357,8 +299,8 @@ export default function GuideSubscriptionsPage() {
       {/* Dialogs */}
       <ConfirmDeleteDialog
         open={confirmDelete.open}
-        title={confirmDelete.tier?.title ?? ""}
-        keyName={confirmDelete.tier?.key ?? ""}
+        title={confirmDelete.tier?.title ?? "-"}
+        keyName={confirmDelete.tier?.key ?? "-"}
         price={confirmDelete.tier?.price}
         onConfirm={handleDeleteConfirm}
         onCancel={() => setConfirmDelete({ open: false })}
