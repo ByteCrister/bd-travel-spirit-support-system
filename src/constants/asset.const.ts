@@ -26,6 +26,7 @@ export enum ASSET_TYPE {
     VIDEO = "video",
     DOCUMENT = "document",
     AUDIO = "audio",
-    OTHER = "pdf",
+    PDF = "pdf",
+    OTHER = "other"
 }
 export type AssetType = `${ASSET_TYPE}`;

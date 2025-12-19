@@ -10,8 +10,6 @@ export interface IContentEmbedding extends Document {
   refId: Types.ObjectId; // Tour or TravelArticle
   dim: number;
   vector: number[]; // normalized
-  // Optional: fields used to generate it (audit/debug)
-  source: { model: string; version: string };
   updatedAt: Date;
 }
 const ContentEmbeddingSchema = new Schema<IContentEmbedding>(
@@ -25,7 +23,6 @@ const ContentEmbeddingSchema = new Schema<IContentEmbedding>(
     refId: { type: Schema.Types.ObjectId, required: true, index: true },
     dim: { type: Number, required: true },
     vector: [{ type: Number, required: true }],
-    source: { model: { type: String }, version: { type: String } },
   },
   { timestamps: true, versionKey: false }
 );

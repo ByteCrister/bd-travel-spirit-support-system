@@ -1,8 +1,44 @@
-// src/utils/helpers/fileBase64.ts
+// src/utils/helpers/file-conversion.ts
 import { DocumentDTO, ObjectIdString } from "@/types/employee.types";
 
-const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "pdf"];
-const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif"];
+// Images we accept from users
+export const IMAGE_EXTENSIONS = [
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "bmp",
+] as const;
+
+// Images that can be safely processed by canvas
+export const CANVAS_COMPRESSIBLE_IMAGE_EXTENSIONS = [
+  "jpg",
+  "jpeg",
+  "png",
+  "webp",
+  "bmp",
+] as const;
+
+// Non-image but allowed files
+export const DOCUMENT_EXTENSIONS = [
+  "pdf",
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "ppt",
+  "pptx",
+  "txt",
+  "csv",
+] as const;
+
+// Master allow-list
+export const ALLOWED_EXTENSIONS = [
+  ...IMAGE_EXTENSIONS,
+  ...DOCUMENT_EXTENSIONS,
+] as const;
+
 const DEFAULT_MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export type FileToBase64Options = {
@@ -10,7 +46,7 @@ export type FileToBase64Options = {
   maxWidth?: number;
   quality?: number; // 0..1
   maxFileBytes?: number;
-  allowedExtensions?: string[];
+  allowedExtensions?: readonly string[];
 };
 
 /**
@@ -25,7 +61,7 @@ export function getFileExtension(fileName: string): string {
  */
 export function isAllowedExtension(
   fileName: string,
-  allowed = ALLOWED_EXTENSIONS
+  allowed: readonly string[] = ALLOWED_EXTENSIONS
 ): boolean {
   const ext = getFileExtension(fileName);
   return allowed.includes(ext);
@@ -112,7 +148,8 @@ export async function fileToBase64(
   const ext = getFileExtension(file.name);
   let blobToConvert: Blob = file;
 
-  if (IMAGE_EXTENSIONS.includes(ext) && compressImages) {
+  if (compressImages &&
+    (IMAGE_EXTENSIONS as readonly string[]).includes(ext)) {
     blobToConvert = await compressImageFile(file, maxWidth, quality);
   }
 

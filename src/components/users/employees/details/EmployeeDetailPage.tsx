@@ -57,7 +57,7 @@ import {
     fileToAvatarBase64,
     filesToDocumentDTOs,
     getFileExtension,
-} from "@/utils/helpers/fileBase64";
+} from "@/utils/helpers/file-conversion";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 

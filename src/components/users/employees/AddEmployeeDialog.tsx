@@ -41,7 +41,7 @@ import { showToast } from "@/components/global/showToast";
 import { Skeleton } from "@/components/ui/skeleton";
 import NextImage from "next/image";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
-import { filesToDocumentDTOs, fileToAvatarBase64 } from "@/utils/helpers/fileBase64";
+import { filesToDocumentDTOs, fileToAvatarBase64 } from "@/utils/helpers/file-conversion";
 
 /* -------------------------
    Helpers & constants
