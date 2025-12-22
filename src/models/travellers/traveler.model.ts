@@ -5,12 +5,11 @@
 // ============================================
 
 import { ACCOUNT_STATUS, AccountStatus } from "@/constants/user.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 import mongoose, {
   Schema,
   Document,
   Types,
-  model,
-  models,
   Query,
 } from "mongoose";
 
@@ -211,4 +210,4 @@ TravelerSchema.index({ dateOfBirth: 1 });
  * =========================
  */
 export type ITravellerDoc = ITraveler & mongoose.Document;
-export const TravelerModel = models.Traveler || model<ITravellerDoc>("Traveler", TravelerSchema);
+export const TravelerModel = defineModel("Traveler", TravelerSchema);

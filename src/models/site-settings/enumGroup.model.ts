@@ -1,5 +1,6 @@
 // models/site-settings/enumGroup.model.ts
-import { Schema, Model, Types, models, model, HydratedDocument } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Model, Types, HydratedDocument } from "mongoose";
 
 export type ObjectId = Types.ObjectId;
 
@@ -61,8 +62,6 @@ EnumGroupSettingSchema.statics.upsertByName = async function (
     return existing;
 };
 
-const IEnumGroupSetting =
-    (models.IEnumGroupSetting as EnumGroupSettingModel) ||
-    model<IEnumGroupSetting, EnumGroupSettingModel>("IEnumGroupSetting", EnumGroupSettingSchema);
+const EnumGroupSetting = defineModel("EnumGroupSetting", EnumGroupSettingSchema)
 
-export default IEnumGroupSetting;
+export default EnumGroupSetting;

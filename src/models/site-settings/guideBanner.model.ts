@@ -1,5 +1,6 @@
 // models/site-settings/guideBanner.model.ts
-import { Schema, Model, Types, models, model, HydratedDocument } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Model, Types, HydratedDocument } from "mongoose";
 
 export type ObjectId = Types.ObjectId;
 
@@ -46,8 +47,6 @@ GuideBannerSettingSchema.statics.upsertByAsset = async function (
     return existing;
 };
 
-const GuideBannerSetting =
-    (models.GuideBannerSetting as GuideBannerSettingModel) ||
-    model<IGuideBannerSetting, GuideBannerSettingModel>("GuideBannerSetting", GuideBannerSettingSchema);
+const GuideBannerSetting = defineModel("GuideBannerSetting", GuideBannerSettingSchema);
 
 export default GuideBannerSetting;

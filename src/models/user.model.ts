@@ -1,8 +1,9 @@
 // user.model.ts
-import mongoose, { Schema, model, models, Document } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 import bcrypt from "bcryptjs";
 import validator from 'validator';
 import { USER_ROLE, UserRole } from "@/constants/user.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 
 const passwordRegex = /^(?=.{6,}$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).+$/
 
@@ -97,5 +98,5 @@ UserSchema.statics.authenticate = async function (this: IUserModel, email: strin
 UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ role: 1 });
 
-export const UserModel: IUserModel = (models.User as IUserModel) || model<IUserDoc, IUserModel>("User", UserSchema);
+export const UserModel = defineModel("User", UserSchema);
 export default UserModel;

@@ -1,5 +1,6 @@
 // models/site-settings/socialLink.model.ts
-import { Schema, Model, Types, models, model } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Model, Types } from "mongoose";
 
 export type ObjectId = Types.ObjectId;
 
@@ -63,8 +64,6 @@ SocialLinkSettingSchema.statics.normalizeAndAssignOrder = function (
     return links.map((s, idx) => ({ ...s, order: idx + 1 }));
 };
 
-const SocialLinkSetting =
-    (models.SocialLinkSetting as SocialLinkSettingModel) ||
-    model<ISocialLinkSetting, SocialLinkSettingModel>("SocialLinkSetting", SocialLinkSettingSchema);
+const SocialLinkSetting = defineModel("SocialLinkSetting", SocialLinkSettingSchema) as SocialLinkSettingModel;
 
 export default SocialLinkSetting;

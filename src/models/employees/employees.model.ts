@@ -6,9 +6,10 @@ import {
     EmployeeStatus,
     EmploymentType,
 } from "@/constants/employee.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 
 import { DayOfWeek } from "@/types/employee.types";
-import { Schema, Document, Types, models, model } from "mongoose";
+import { Schema, Document, Types } from "mongoose";
 
 /* =========================================================
    PAYROLL SYSTEM (AUTO + MANUAL + FAILURE TRACKING)
@@ -320,7 +321,6 @@ EmployeeSchema.index({
 });
 
 
-const EmployeeModel =
-    models.employees || model<IEmployee>("employees", EmployeeSchema);
+const EmployeeModel = defineModel("Employees", EmployeeSchema);
 
 export default EmployeeModel;

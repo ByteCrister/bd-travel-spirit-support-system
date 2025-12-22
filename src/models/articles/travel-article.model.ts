@@ -1,7 +1,8 @@
 // models/travelArticle.model.ts
 import { ARTICLE_STATUS, ARTICLE_TYPE, ArticleStatus, ArticleType } from "@/constants/article.const";
 import { TRAVEL_TYPE, TravelType } from "@/constants/tour.const";
-import { model, models, Schema, Types, Document } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Types, Document } from "mongoose";
 
 /**
  * Interface for structured activities
@@ -203,6 +204,4 @@ TravelArticleSchema.index({
 TravelArticleSchema.index({ topicTags: 1 });
 TravelArticleSchema.index({ contentEmbeddingId: 1 });
 
-export const TravelArticleModel =
-  models.TravelArticle ||
-  model<ITravelArticle>("TravelArticle", TravelArticleSchema);
+export const TravelArticleModel = defineModel("TravelArticle", TravelArticleSchema);

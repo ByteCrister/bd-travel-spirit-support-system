@@ -3,6 +3,7 @@ import {
   ADMIN_NOTIFICATION_PRIORITY,
   ADMIN_NOTIFICATION_TYPE,
 } from "@/constants/admin-notification.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 import { models } from "mongoose";
 import { Schema, model, Document, Types } from "mongoose";
 
@@ -121,7 +122,4 @@ export const getAdminNotificationModel =
 /**
  * Default model export for single-connection applications.
  */
-export const AdminNotification = model<IAdminNotification>(
-  "AdminNotification",
-  AdminNotificationSchema
-);
+export const AdminNotification = defineModel("AdminNotification", AdminNotificationSchema);

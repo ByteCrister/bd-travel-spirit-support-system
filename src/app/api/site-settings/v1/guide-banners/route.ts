@@ -1,12 +1,15 @@
 // app/api/site-settings/v1/guide-banners/route.ts
 import { NextRequest } from "next/server";
+
 import ConnectDB from "@/config/db";
-import SiteSettings, { GuideBanner, ISiteSettings } from "@/models/site-settings.model";
+import GuideBannerSetting from "@/models/site-settings/guideBanner.model";
 import "@/models/asset.model";
+
 import type { IAsset } from "@/models/asset.model";
 import { GUIDE_BANNER_SORT_KEYS, type GuideBannerSortKey } from "@/types/guide-banner-settings.types";
 import { Lean } from "@/types/mongoose-lean.types";
 import { withErrorHandler } from "@/lib/helpers/withErrorHandler";
+import { GuideBanner } from "@/models/site-settings.model";
 
 /* -------------------------
    Query parsing
@@ -19,7 +22,6 @@ function parseQuery(req: NextRequest) {
     const sortByRaw = searchParams.get("sortBy") ?? "order";
     const sortDir = searchParams.get("sortDir") === "desc" ? -1 : 1;
 
-    // Narrow sortBy to the known keys using a type guard
     const sortBy = isGuideBannerSortKey(sortByRaw) ? sortByRaw : "order";
 
     const activeParam = searchParams.get("active");
@@ -30,26 +32,15 @@ function parseQuery(req: NextRequest) {
     return { limit, offset, sortBy, sortDir, active, search };
 }
 
-/* Type guard to narrow string -> GuideBannerSortKey */
 function isGuideBannerSortKey(v: unknown): v is GuideBannerSortKey {
     return typeof v === "string" && (GUIDE_BANNER_SORT_KEYS as readonly string[]).includes(v);
 }
 
 /* -------------------------
-   Helper types for populated/lean docs
+   Helper types
 ------------------------- */
-
-/**
- * After populate(..., options: { lean: true }) + .lean(), the populated asset will be a plain object
- * with only the selected fields. We model that shape here.
- */
 type PopulatedAssetLean = Lean<Pick<IAsset, "_id" | "publicUrl">>;
 
-/**
- * A guide banner as returned from the DB after .lean().
- * - asset may be populated (PopulatedAssetLean) or still an ObjectId/string or null.
- * - createdAt/updatedAt are Date objects in the DB; we keep them as Date here and convert to ISO later.
- */
 type GuideBannerLean = Lean<
     GuideBanner & {
         _id: unknown;
@@ -59,8 +50,10 @@ type GuideBannerLean = Lean<
     }
 >;
 
-/* Typed accessor for sort keys to avoid any casts */
-function getFieldForSort(b: GuideBannerLean, key: GuideBannerSortKey): Date | number | boolean | undefined {
+function getFieldForSort(
+    b: GuideBannerLean,
+    key: GuideBannerSortKey
+): Date | number | boolean | undefined {
     switch (key) {
         case "order":
             return typeof b.order === "number" ? b.order : undefined;
@@ -77,48 +70,51 @@ function getFieldForSort(b: GuideBannerLean, key: GuideBannerSortKey): Date | nu
    GET Guide Banner List
 ------------------------- */
 export const GET = withErrorHandler(async (req: NextRequest) => {
-
     await ConnectDB();
+
     const { limit, offset, sortBy, sortDir, active, search } = parseQuery(req);
 
-    const settings = (await SiteSettings.findOne()
+    /* -------------------------
+       Mongo-level filters
+    ------------------------- */
+    const filter: Record<string, unknown> = {};
+
+    if (typeof active === "boolean") {
+        filter.active = active;
+    }
+
+    if (search) {
+        filter.$or = [
+            { alt: { $regex: search, $options: "i" } },
+            { caption: { $regex: search, $options: "i" } },
+        ];
+    }
+
+    const docs = await GuideBannerSetting.find(filter)
         .populate({
-            path: "guideBanners.asset",
+            path: "asset",
             select: "_id publicUrl",
             options: { lean: true },
         })
         .lean()
-        .exec()) as Lean<ISiteSettings> | null;
+        .exec();
 
-    if (!settings?.guideBanners?.length) {
+    if (!docs.length) {
         return {
             data: {
                 data: [],
                 meta: { total: 0, limit, offset },
-            }, status: 200
+            },
+            status: 200,
         };
-    }
-
-    /* -------------------------
-       In-memory filtering (subdocs)
-    ------------------------- */
-    let banners: GuideBannerLean[] = settings.guideBanners as GuideBannerLean[];
-
-    if (typeof active === "boolean") {
-        banners = banners.filter((b) => Boolean(b.active) === active);
-    }
-
-    if (search) {
-        const q = search.toLowerCase();
-        banners = banners.filter(
-            (b) => (b.alt ?? "").toLowerCase().includes(q) || (b.caption ?? "").toLowerCase().includes(q)
-        );
     }
 
     /* -------------------------
        Sorting (type-safe)
     ------------------------- */
-    banners.sort((a: GuideBannerLean, b: GuideBannerLean) => {
+    const banners: GuideBannerLean[] = docs as GuideBannerLean[];
+
+    banners.sort((a, b) => {
         const av = getFieldForSort(a, sortBy);
         const bv = getFieldForSort(b, sortBy);
 
@@ -126,22 +122,18 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
         if (av == null) return -1 * sortDir;
         if (bv == null) return 1 * sortDir;
 
-        // Date comparison
         if (av instanceof Date && bv instanceof Date) {
             return (av.getTime() - bv.getTime()) * sortDir;
         }
 
-        // Numeric comparison
         if (typeof av === "number" && typeof bv === "number") {
             return (av - bv) * sortDir;
         }
 
-        // Boolean comparison (true > false)
         if (typeof av === "boolean" && typeof bv === "boolean") {
             return (Number(av) - Number(bv)) * sortDir;
         }
 
-        // Fallback to string compare
         return String(av).localeCompare(String(bv)) * sortDir;
     });
 
@@ -151,7 +143,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     /* -------------------------
        Mapping → API entity
     ------------------------- */
-    const data = page.map((b: GuideBannerLean) => ({
+    const data = page.map((b) => ({
         _id: String(b._id),
         asset:
             b.asset && typeof b.asset === "object" && "publicUrl" in b.asset
@@ -169,7 +161,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
         data: {
             data,
             meta: { total, limit, offset },
-        }, status: 200
+        },
+        status: 200,
     };
-
 });

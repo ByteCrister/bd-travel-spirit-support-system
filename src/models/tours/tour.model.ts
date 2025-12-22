@@ -27,7 +27,8 @@ import {
   PaymentMethod,
   Currency,
 } from "@/constants/tour.const";
-import { Schema, model, models, Types, Document } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Types, Document } from "mongoose";
 
 interface IAttraction {
   title: string;
@@ -406,4 +407,4 @@ TourSchema.index({ categories: 1 });
 TourSchema.index({ audience: 1 });
 TourSchema.index({ featured: 1, trendingUntil: -1 });
 
-export const TourModel = models.Tour || model<ITour>("Tour", TourSchema);
+export const TourModel = defineModel("Tour", TourSchema);

@@ -1,14 +1,13 @@
 // models/tourFAQ.model.ts
-import mongoose, {
+import {
     Schema,
     Document,
     Types,
-    model,
-    models,
     Query,
 } from "mongoose";
 import { MODERATION_STATUS, ModerationStatus } from "@/constants/tour.const";
 import { FAQ_REPORT_REASON, FaqReportReason } from "@/constants/faq-report.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 
 export interface ITourFAQReport {
     reportedBy: Types.ObjectId;
@@ -113,6 +112,4 @@ TourFAQSchema.index({ "reports.reason": 1 });
 TourFAQSchema.index({ likes: -1 });
 TourFAQSchema.index({ dislikes: -1 });
 
-export const TourFAQModel =
-    (models.TourFAQ as mongoose.Model<ITourFAQ>) ||
-    model<ITourFAQ>("TourFAQ", TourFAQSchema);
+export const TourFAQModel = defineModel("TourFAQ", TourFAQSchema);

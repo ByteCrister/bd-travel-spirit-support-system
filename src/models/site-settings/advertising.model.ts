@@ -1,8 +1,9 @@
 // models/site-settings/advertising.model.ts
 
-import { Schema, Model, Types, models, model, HydratedDocument } from "mongoose";
+import { Schema, Model, Types, HydratedDocument } from "mongoose";
 import { PLACEMENT, PlacementType } from "@/constants/advertising.const";
 import { Currency, CURRENCY } from "@/constants/tour.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 
 
 // imported currency type
@@ -82,8 +83,6 @@ AdvertisingSettingSchema.statics.upsertByPlacement = async function (
 /**
  * Model
  */
-const AdvertisingSetting: AdvertisingSettingModel =
-    (models.AdvertisingSetting as AdvertisingSettingModel) ||
-    model<IAdvertisingDoc, AdvertisingSettingModel>("AdvertisingSetting", AdvertisingSettingSchema);
+const AdvertisingSetting = defineModel("AdvertisingSetting", AdvertisingSettingSchema);
 
 export default AdvertisingSetting;

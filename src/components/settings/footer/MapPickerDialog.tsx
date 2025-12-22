@@ -1,6 +1,7 @@
 // src/components/settings/settings/footer/MapPickerDialog.tsx
 "use client";
 
+import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 import { useState, useEffect, FC } from "react";
 import {
@@ -11,15 +12,24 @@ import {
 } from "@/components/ui/dialog";
 import { MapPin } from "lucide-react";
 
-import {
-    MapContainer,
-    TileLayer,
-    Marker,
-    useMapEvents,
-    useMap,
-} from "react-leaflet";
+const MapContainer = dynamic(
+    () => import("react-leaflet").then((m) => m.MapContainer),
+    { ssr: false }
+);
 
-import L, { LatLngExpression, LeafletMouseEvent } from "leaflet";
+const TileLayer = dynamic(
+    () => import("react-leaflet").then((m) => m.TileLayer),
+    { ssr: false }
+);
+
+const Marker = dynamic(
+    () => import("react-leaflet").then((m) => m.Marker),
+    { ssr: false }
+);
+
+import { useMap, useMapEvents } from "react-leaflet";
+
+import { LatLngExpression, LeafletMouseEvent } from "leaflet";
 import { Button } from "@/components/ui/button";
 
 
@@ -65,7 +75,13 @@ const CenterMap: FC<{ center: [number, number] }> = ({ center }) => {
 // -------------------------------------------------
 // FIX 2 — Configure Leaflet Icons (same as before)
 // -------------------------------------------------
-function configureLeafletIcons(): void {
+let L: typeof import("leaflet") | null = null;
+
+async function configureLeafletIcons() {
+    if (!L) {
+        L = (await import("leaflet")).default;
+    }
+
     const flag = "_configured";
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((L.Icon.Default as any)[flag]) return;

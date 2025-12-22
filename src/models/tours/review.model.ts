@@ -2,8 +2,6 @@
 
 import mongoose, {
     Schema,
-    model,
-    models,
     Document,
     Types,
     Query,
@@ -12,6 +10,7 @@ import mongoose, {
 } from "mongoose";
 import { TourModel } from "./tour.model";
 import { TRAVEL_TYPE, TravelType } from "@/constants/tour.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 
 export interface IReviewReply {
     _id: Types.ObjectId;
@@ -313,6 +312,4 @@ ReviewSchema.methods.addReply = async function (
 // EXPORT: Use existing model if already compiled (avoids overwrite errors)
 ////////////////////////////////////////////////////////////////////////////////
 
-export const ReviewModel =
-    (models.Review as mongoose.Model<IReview>) ||
-    model<IReview>("Review", ReviewSchema);
+export const ReviewModel = defineModel("Review", ReviewSchema);

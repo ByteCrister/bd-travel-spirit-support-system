@@ -1,7 +1,8 @@
 // models/asset.model.ts
 import { ASSET_TYPE, AssetType, STORAGE_PROVIDER, StorageProvider, VISIBILITY, Visibility } from "@/constants/asset.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 import { Types } from "mongoose";
-import { Schema, model, models, Document } from "mongoose";
+import { Schema, Document } from "mongoose";
 
 
 export interface IAsset extends Document {
@@ -79,4 +80,4 @@ AssetSchema.index(
 // Text search on metadata
 AssetSchema.index({ title: "text", description: "text", tags: "text" });
 
-export const AssetModel = models.Asset || model<IAsset>("Asset", AssetSchema);
+export const AssetModel = defineModel("Asset", AssetSchema);

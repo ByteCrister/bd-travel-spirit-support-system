@@ -1,6 +1,7 @@
 // models/siteSettings.ts
 import { PLACEMENT, PlacementType } from "@/constants/advertising.const";
-import { Schema, Model, Types, models, model } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Model, Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
 /* -------------------------
@@ -277,9 +278,7 @@ SiteSettingsSchema.pre("save", function (next) {
    Model
 ------------------------- */
 
-const SiteSettings: SiteSettingsModel =
-    (models.SiteSettings as SiteSettingsModel) ||
-    model<ISiteSettings, SiteSettingsModel>("SiteSettings", SiteSettingsSchema);
+const SiteSettings: SiteSettingsModel = defineModel("SiteSettings", SiteSettingsSchema);
 
 export default SiteSettings;
 

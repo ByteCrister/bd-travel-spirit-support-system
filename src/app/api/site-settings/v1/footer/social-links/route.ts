@@ -1,14 +1,16 @@
-// app/api/site-settings/footer/social-links/route.ts
+// app/api/site-settings/v1/footer/social-links/route.ts
 import { NextRequest } from "next/server";
-import mongoose from "mongoose";
+import { Types } from "mongoose";
+
 import ConnectDB from "@/config/db";
+import SocialLinkSetting from "@/models/site-settings/socialLink.model";
+
 import { socialLinkSchema } from "@/utils/validators/footer-settings.validator";
-import SiteSettings from "@/models/site-settings.model";
-import { SocialLinkDTO } from "@/types/footer-settings.types";
+import type { SocialLinkDTO } from "@/types/footer-settings.types";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 
+// Add social link
 export const POST = withErrorHandler(async (req: NextRequest) => {
-
     await ConnectDB();
 
     const body = await req.json();
@@ -20,57 +22,82 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
 
     const payload = parsed.data;
 
-    const newId = new mongoose.Types.ObjectId();
-    const newEntry = {
-        _id: newId,
+    /**
+     * 1. Create new social link document
+     */
+    const created = await SocialLinkSetting.create({
         key: payload.key,
         label: payload.label ?? "",
         icon: payload.icon ?? "",
         url: payload.url,
         active: payload.active ?? true,
         order: payload.order ?? 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    };
+    });
 
-    // Merge with existing social links
-    const existingSettings = await SiteSettings.findOne().lean();
-    const merged = [...(existingSettings?.socialLinks ?? []), newEntry];
+    /**
+     * 2. Re-normalize ordering + active flags (same logic as old singleton)
+     */
+    const allLinks = await SocialLinkSetting.find().lean();
+    const normalized = SocialLinkSetting.normalizeAndAssignOrder(allLinks);
 
-    // Save via upsertSingleton
-    const saved = await SiteSettings.upsertSingleton({ socialLinks: merged });
+    /**
+     * 3. Persist normalization results
+     *    (only update fields that may change)
+     */
+    const bulkOps = normalized.map((l) => ({
+        updateOne: {
+            filter: { _id: l._id },
+            update: {
+                active: l.active,
+                order: l.order,
+            },
+        },
+    }));
 
-    const savedEntry =
-        saved.socialLinks.find((s) => String(s._id) === String(newId)) || newEntry;
+    if (bulkOps.length) {
+        await SocialLinkSetting.bulkWrite(bulkOps);
+    }
 
-    // Convert to DTO
-    const dto: SocialLinkDTO = {
-        id: String(savedEntry._id),
-        key: savedEntry.key,
-        label: savedEntry.label,
-        icon: savedEntry.icon,
-        url: savedEntry.url,
-        active: savedEntry.active,
-        order: savedEntry.order,
-        createdAt: savedEntry.createdAt ? savedEntry.createdAt.toISOString() : null,
-        updatedAt: savedEntry.updatedAt ? savedEntry.updatedAt.toISOString() : null,
-    };
+    /**
+     * 4. Re-fetch final ordered list
+     */
+    const finalLinks = await SocialLinkSetting.find()
+        .sort({ order: 1, createdAt: 1 })
+        .lean();
 
-    const list: SocialLinkDTO[] = saved.socialLinks.map((s) => ({
-        id: String(s._id),
+    /**
+     * 5. Build DTOs
+     */
+    const list: SocialLinkDTO[] = finalLinks.map((s) => ({
+        id: (s._id as Types.ObjectId).toString(),
         key: s.key,
-        label: s.label,
-        icon: s.icon,
+        label: s.label ?? null,
+        icon: s.icon ?? null,
         url: s.url,
-        active: s.active,
-        order: Number(s.order ?? 0),
+        active: !!s.active,
+        order: typeof s.order === "number" ? s.order : 0,
         createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : null,
         updatedAt: s.updatedAt ? new Date(s.updatedAt).toISOString() : null,
     }));
 
-    return {
-        data: { socialLinks: list, link: dto },
-        status: 201,
+    const link: SocialLinkDTO = {
+        id: (created._id as Types.ObjectId).toString(),
+        key: created.key,
+        label: created.label ?? null,
+        icon: created.icon ?? null,
+        url: created.url,
+        active: !!created.active,
+        order: created.order ?? 0,
+        createdAt: created.createdAt
+            ? created.createdAt.toISOString()
+            : null,
+        updatedAt: created.updatedAt
+            ? created.updatedAt.toISOString()
+            : null,
     };
 
+    return {
+        data: { socialLinks: list, link },
+        status: 201,
+    };
 });

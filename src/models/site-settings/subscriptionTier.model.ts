@@ -1,6 +1,7 @@
 // models/subscriptionTier.ts
 import { Currency, CURRENCY } from "@/constants/tour.const";
-import { Schema, Model, Types, models, model } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Model, Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 
 // imported currency type
@@ -50,17 +51,17 @@ SubscriptionTierSettingSchema.statics.upsertByKey = async function (
     payload: Partial<ISubscriptionTierSetting>
 ): Promise<HydratedDocument<ISubscriptionTierSetting>> {
     if (!payload.key) throw new Error("key is required for upsertByKey");
-    const existing = await this.findOne({ key: payload.key });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { _id, ...rest } = payload; // ignore _id
+    const existing = await this.findOne({ key: rest.key });
     if (!existing) {
-        return this.create(payload);
+        return this.create(rest);
     }
-    Object.assign(existing, payload);
+    Object.assign(existing, rest);
     await existing.save();
     return existing;
 };
 
-const SubscriptionTierSetting =
-    (models.SubscriptionTierSetting as SubscriptionTierSettingModel) ||
-    model<ISubscriptionTierSetting, SubscriptionTierSettingModel>("SubscriptionTierSetting", SubscriptionTierSettingSchema);
+const SubscriptionTierSetting = defineModel("SubscriptionTierSetting", SubscriptionTierSettingSchema) as SubscriptionTierSettingModel;;
 
 export default SubscriptionTierSetting;

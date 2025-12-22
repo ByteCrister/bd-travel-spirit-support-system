@@ -1,5 +1,6 @@
 import { MODERATION_STATUS, ModerationStatusType } from '@/constants/chatmessage.const';
-import mongoose, { Schema, Document, models, model } from 'mongoose';
+import { defineModel } from '@/lib/helpers/defineModel';
+import mongoose, { Schema, Document } from 'mongoose';
 
 /**
  * Chat message document interface.
@@ -101,5 +102,4 @@ ChatMessageSchema.index(
  * Export the ChatMessage model.
  * Uses existing model if already compiled (avoids hot-reload issues).
  */
-export const ChatMessageModel =
-  models.ChatMessage || model<IChatMessage>('ChatMessage', ChatMessageSchema);
+export const ChatMessageModel = defineModel("ChatMessage", ChatMessageSchema);

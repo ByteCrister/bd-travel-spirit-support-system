@@ -42,7 +42,7 @@ Pure helpers
 ------------------------- */
 
 function canonicalId(t: SubscriptionTierDTO): ID {
-    return (t.key ?? t._id ?? "") as ID;
+    return t._id as ID;
 }
 
 function buildMap(list: SubscriptionTierDTO[]): SubscriptionTierMap {
@@ -485,11 +485,15 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
                 });
 
                 try {
-                    const resp = await api.delete<{data: { updatedAt?: string }}>(`${URL_AFTER_API}/${encodedId}`);
+                    const resp = await api.delete<{ data: { updatedAt?: string } }>(`${URL_AFTER_API}/${encodedId}`);
                     const updatedAt = resp?.data?.data.updatedAt;
                     removeTierFromCache(id, updatedAt);
 
+                    // Update store list & map
                     set((s) => {
+                        s.list = s.list.filter((t) => canonicalId(t) !== id);
+                        s.map = buildMap(s.list);
+                        s.lastFetchedAt = updatedAt ?? s.lastFetchedAt;
                         s.saving = false;
                     });
 

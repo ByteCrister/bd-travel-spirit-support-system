@@ -4,7 +4,8 @@ import {
     SubscriberSource,
     SubscriberStatus,
 } from "@/constants/subscriber.const";
-import { Schema, model, models, Document } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Document } from "mongoose";
 
 export interface ISubscriber extends Document {
     email: string;
@@ -41,5 +42,6 @@ const subscriberSchema = new Schema<ISubscriber>(
 // Ensure email uniqueness at the database level
 subscriberSchema.index({ email: 1 }, { unique: true });
 
-export default models.Subscriber ||
-    model<ISubscriber>("Subscriber", subscriberSchema);
+const Subscriber = defineModel("Subscriber", subscriberSchema);
+
+export default Subscriber;

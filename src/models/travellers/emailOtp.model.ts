@@ -1,7 +1,8 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { TravelerModel } from "./traveler.model";
+import { defineModel } from "@/lib/helpers/defineModel";
 
 export enum OTP_PURPOSE {
   SIGNUP = "signup",
@@ -56,7 +57,7 @@ const EmailOtpSchema = new Schema<IEmailOtpDoc>(
     versionKey: false,
     toJSON: {
       transform: (_doc, ret) => {
-        delete ret.tokenHash; 
+        delete ret.tokenHash;
         return ret;
       },
     },
@@ -159,8 +160,6 @@ EmailOtpSchema.statics.revokeByEmail = async function (
   return (res.modifiedCount ?? 0) as number;
 };
 
-export const EmailOtpModel =
-  (models.EmailOtp as IEmailOtpModel) ||
-  model<IEmailOtpDoc, IEmailOtpModel>("EmailOtp", EmailOtpSchema);
+const EmailOtpModel = defineModel("EmailOtp", EmailOtpSchema);
 
 export default EmailOtpModel;

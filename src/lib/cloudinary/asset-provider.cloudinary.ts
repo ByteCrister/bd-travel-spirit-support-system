@@ -18,6 +18,7 @@
 import cloudinary from "@/config/cloudinary";
 import { AssetStorageProvider, UploadedAsset } from "../storage-providers/asset-storage.interface";
 import { ASSET_TYPE, AssetType } from "@/constants/asset.const";
+import { v4 as uuidv4 } from "uuid";
 
 /* -------------------------------------------------------------------------- */
 /*                               Helper functions                             */
@@ -118,11 +119,13 @@ export class CloudinaryAssetProvider implements AssetStorageProvider {
      *  3. Move the asset into its final folder (rename)
      *  4. Return normalized metadata for persistence
      */
-    async create(base64: string, fileName?: string): Promise<UploadedAsset> {
+    async create(base64: string): Promise<UploadedAsset> {
+        // Generate a unique name if not provided
+        const uniqueName = uuidv4();
         // Initial upload (temporary location)
         const res = await cloudinary.uploader.upload(base64, {
             folder: this.folder,
-            public_id: fileName ? fileName.split(".")[0] : undefined,
+            public_id: uniqueName,
             resource_type: "auto",
         });
 
@@ -170,10 +173,9 @@ export class CloudinaryAssetProvider implements AssetStorageProvider {
     async update(
         oldProviderId: string,
         newBase64: string,
-        newFileName?: string
     ): Promise<UploadedAsset> {
         await this.delete(oldProviderId);
-        return this.create(newBase64, newFileName);
+        return this.create(newBase64);
     }
 
     /**

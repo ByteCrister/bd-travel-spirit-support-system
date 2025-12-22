@@ -1,8 +1,7 @@
 // audit.model.ts
+import { defineModel } from "@/lib/helpers/defineModel";
 import {
     Schema,
-    model,
-    models,
     Document,
     Types,
     ClientSession,
@@ -175,8 +174,6 @@ AuditSchema.statics.getRecentForActor = function (
 };
 
 /** Export */
-export const AuditModel: IAuditModel =
-    (models.Audit as IAuditModel) ||
-    model<IAuditDoc, IAuditModel>("Audit", AuditSchema);
+export const AuditModel = defineModel("Audit", AuditSchema);
 
 export default AuditModel;

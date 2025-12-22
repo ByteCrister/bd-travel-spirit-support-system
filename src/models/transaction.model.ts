@@ -1,5 +1,6 @@
 // models/transaction.model.ts
-import mongoose, { Schema, Document, Model } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import mongoose, { Schema, Document } from "mongoose";
 
 export type TransactionStatus = "pending" | "succeeded" | "failed";
 
@@ -39,6 +40,4 @@ const TransactionSchema = new Schema<ITransaction>(
   { timestamps: true }
 );
 
-export const TransactionModel: Model<ITransaction> =
-  mongoose.models.Transaction ||
-  mongoose.model<ITransaction>("Transaction", TransactionSchema);
+export const TransactionModel = defineModel("Transaction", TransactionSchema);

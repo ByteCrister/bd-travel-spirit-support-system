@@ -6,7 +6,7 @@
 // lifecycle, authentication, and verification process.
 // ============================================================
 
-import { Schema, Document, Types, model, models, Query } from "mongoose";
+import { Schema, Document, Types, Query } from "mongoose";
 import {
     GUIDE_DOCUMENT_CATEGORY,
     GUIDE_DOCUMENT_TYPE,
@@ -17,6 +17,7 @@ import {
     GuideSocialPlatform,
     GuideStatus,
 } from "@/constants/guide.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 
 // =========================
 // INTERFACES
@@ -228,4 +229,4 @@ GuideSchema.index({ createdAt: -1 });
 // MODEL FACTORY
 // =========================
 
-export const GuideModel = models.Guide || model<IGuide>("Guide", GuideSchema);
+export const GuideModel = defineModel("Guide", GuideSchema);

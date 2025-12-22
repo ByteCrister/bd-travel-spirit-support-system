@@ -1,20 +1,16 @@
 // app/api/site-settings/v1/guide-subscriptions/route.ts
 import { NextRequest } from "next/server";
-import type {
-    SubscriptionTierDTO,
-    UpsertSubscriptionTierPayload,
-} from "@/types/guide-subscription-settings.types";
 import ConnectDB from "@/config/db";
-import SiteSettings, { ISiteSettings, SubscriptionTier } from "@/models/site-settings.model";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
-import { HydratedDocument } from "mongoose";
+import type { SubscriptionTierDTO, UpsertSubscriptionTierPayload } from "@/types/guide-subscription-settings.types";
+import SubscriptionTierSetting, { ISubscriptionTierSetting } from "@/models/site-settings/subscriptionTier.model";
 
 /* -------------------------
  Utility: map mongoose doc to DTO
 ------------------------- */
-function mapTierToDto(t: SubscriptionTier): SubscriptionTierDTO {
+function mapTierToDto(t: ISubscriptionTierSetting): SubscriptionTierDTO {
     return {
-        _id: t._id?.toString() ?? "",
+        _id: t._id!.toString(),
         key: t.key,
         title: t.title,
         price: t.price,
@@ -28,33 +24,22 @@ function mapTierToDto(t: SubscriptionTier): SubscriptionTierDTO {
 }
 
 /* -------------------------
- GET handler: fetchAll
+ GET handler: fetchAll tiers
 ------------------------- */
 export const GET = withErrorHandler(async (request: NextRequest) => {
-
     await ConnectDB();
 
     const url = new URL(request.url);
     const onlyActive = url.searchParams.get("onlyActive") === "1";
     const search = (url.searchParams.get("search") ?? "").trim();
-    const sortBy = (url.searchParams.get("sortBy") as
-        | "price"
-        | "title"
-        | "createdAt"
-        | null) ?? "title";
+    const sortBy = (url.searchParams.get("sortBy") as "price" | "title" | "createdAt" | null) ?? "title";
     const sortDir = (url.searchParams.get("sortDir") as "asc" | "desc") ?? "asc";
 
-    // Fetch the singleton site settings
-    const doc = await SiteSettings.findOne().lean();
-    const version = doc?.updatedAt ? Math.floor(new Date(doc.updatedAt).getTime() / 1000) : 0;
-    const updatedAt = doc?.updatedAt instanceof Date ? doc.updatedAt.toISOString() : undefined;
-
-    let tiers: SubscriptionTier[] = Array.isArray(doc?.guideSubscriptions) ? [...doc.guideSubscriptions] : [];
+    // Fetch all tiers
+    let tiers: ISubscriptionTierSetting[] = await SubscriptionTierSetting.find().lean();
 
     // Apply server-side filters
-    if (onlyActive) {
-        tiers = tiers.filter(t => t.active);
-    }
+    if (onlyActive) tiers = tiers.filter(t => t.active);
     if (search.length > 0) {
         const s = search.toLowerCase();
         tiers = tiers.filter(t => (t.title ?? "").toLowerCase().includes(s) || (t.key ?? "").toLowerCase().includes(s));
@@ -64,7 +49,6 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     tiers.sort((a, b) => {
         let av: string | number = "";
         let bv: string | number = "";
-
         switch (sortBy) {
             case "price":
                 av = a.price ?? 0;
@@ -78,7 +62,6 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
                 av = (a.title ?? "").toLowerCase();
                 bv = (b.title ?? "").toLowerCase();
         }
-
         if (av < bv) return sortDir === "asc" ? -1 : 1;
         if (av > bv) return sortDir === "asc" ? 1 : -1;
         return 0;
@@ -86,18 +69,20 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
     const dtoList: SubscriptionTierDTO[] = tiers.map(mapTierToDto);
 
+    const updatedAt = tiers.length > 0 ? tiers[0].updatedAt?.toISOString() : undefined;
+    const version = tiers.length > 0 && tiers[0].updatedAt ? Math.floor(new Date(tiers[0].updatedAt).getTime() / 1000) : 0;
+
     return {
-        data: {
-            guideSubscriptions: dtoList,
-            version,
-            updatedAt,
-        },
+        data: { guideSubscriptions: dtoList, version, updatedAt },
         status: 200,
-    }
-})
+    };
+});
 
 /* -------------------------
  POST handler: upsertTier
+------------------------- */
+/* -------------------------
+ POST handler: create/upsert tier
 ------------------------- */
 export const POST = withErrorHandler(async (req: NextRequest) => {
     await ConnectDB();
@@ -109,44 +94,18 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         throw new ApiError("Invalid JSON", 400);
     }
 
-    const tier = payload.tier as Partial<SubscriptionTier>;
+    console.log(payload);
+
+    const tier = payload.tier as Partial<ISubscriptionTierSetting>;
     if (!tier.key || !tier.title) {
         throw new ApiError("Missing required fields: key, title", 400);
     }
 
-    let doc: ISiteSettings | null = await SiteSettings.findOne();
-    if (!doc) {
-        doc = await SiteSettings.create({});
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { _id: _, ...tierData } = tier;
-    // Create new tier
-    const toInsert = {
-        ...tierData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    } as SubscriptionTier;
-
-    // Push as Mongoose subdocument
-    doc.guideSubscriptions.push(toInsert);
-
-    // Save the document
-    await doc.save();
-
-    // Get the last inserted tier (Mongoose subdoc)
-    const inserted = doc.guideSubscriptions[doc.guideSubscriptions.length - 1] as HydratedDocument<SubscriptionTier>;
+    // Use the model's upsertByKey helper
+    const savedTier = await SubscriptionTierSetting.upsertByKey(tier);
 
     return {
-        data: {
-            tier: {
-                ...inserted.toObject(),
-                _id: inserted._id!.toString(),
-                createdAt: inserted.createdAt?.toISOString(),
-                updatedAt: inserted.updatedAt?.toISOString(),
-            },
-            updatedAt: doc.updatedAt?.toISOString(),
-        },
+        data: { tier: mapTierToDto(savedTier) },
         status: 201,
-    }
+    };
 });

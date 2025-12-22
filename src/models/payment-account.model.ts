@@ -7,6 +7,7 @@ import {
     PaymentOwnerType,
     PaymentPurpose,
 } from "@/constants/payment.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 
 /* ---------------------------------------------
    Embedded Sub Schemas
@@ -209,10 +210,6 @@ StripePaymentAccountSchema.index({
 --------------------------------------------- */
 
 
-const StripePaymentAccountModel = (mongoose.models.StripePaymentAccount as IStripePaymentAccountModel) ||
-    mongoose.model<IStripePaymentAccount, IStripePaymentAccountModel>(
-        "StripePaymentAccount",
-        StripePaymentAccountSchema
-    );
+const StripePaymentAccountModel = defineModel("StripePaymentAccount", StripePaymentAccountSchema);
 
 export default StripePaymentAccountModel;

@@ -1,5 +1,6 @@
 // models/tourFAQVote.model.ts
-import { Schema, model, models, Document, Types } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Document, Types } from "mongoose";
 
 export type FAQ_VOTE_TYPE = "like" | "dislike";
 
@@ -33,5 +34,4 @@ const TourFAQVoteSchema = new Schema<ITourFAQVote>(
 // Enforce one vote per user per FAQ
 TourFAQVoteSchema.index({ faqId: 1, userId: 1 }, { unique: true });
 
-export const TourFAQVoteModel =
-  models.TourFAQVote || model<ITourFAQVote>("TourFAQVote", TourFAQVoteSchema);
+export const TourFAQVoteModel = defineModel("TourFAQVote", TourFAQVoteSchema);

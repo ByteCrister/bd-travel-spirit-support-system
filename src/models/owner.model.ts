@@ -1,7 +1,6 @@
-import mongoose, {
+import { defineModel } from "@/lib/helpers/defineModel";
+import {
     Schema,
-    model,
-    models,
     Document,
     Types,
     Query,
@@ -17,7 +16,7 @@ export interface IOwnerDoc extends Document {
 /** Owner Schema */
 const OwnerSchema = new Schema<IOwnerDoc>(
     {
-        user: { type: Schema.Types.ObjectId, ref: "User", required: true},
+        user: { type: Schema.Types.ObjectId, ref: "User", required: true },
         name: { type: String, required: true },
     },
     {
@@ -37,7 +36,6 @@ OwnerSchema.pre<Query<IOwnerDoc[], IOwnerDoc>>(/^find/, function (next) {
 OwnerSchema.index({ user: 1 }, { unique: true });
 
 /** Export model */
-export const OwnerModel: mongoose.Model<IOwnerDoc> =
-    (models.Owner as mongoose.Model<IOwnerDoc>) || model<IOwnerDoc>("Owner", OwnerSchema);
+export const OwnerModel = defineModel("Owner", OwnerSchema);
 
 export default OwnerModel;

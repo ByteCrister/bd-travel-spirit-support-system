@@ -1,26 +1,19 @@
 // app/api/site-settings/v1/guide-subscriptions/[id]/route.ts
 import { NextRequest } from "next/server";
-import type {
-    UpsertSubscriptionTierPayload,
-} from "@/types/guide-subscription-settings.types";
-import ConnectDB from "@/config/db";
-import SiteSettings, { SubscriptionTier } from "@/models/site-settings.model";
-import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
-import { HydratedDocument } from "mongoose";
 import { isValidObjectId } from "mongoose";
-
-interface Params {
-    params: Promise<{ id: string }>;
-}
+import ConnectDB from "@/config/db";
+import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
+import type { UpsertSubscriptionTierPayload } from "@/types/guide-subscription-settings.types";
+import SubscriptionTierSetting, { ISubscriptionTierSetting } from "@/models/site-settings/subscriptionTier.model";
 
 /* -------------------------
  PUT handler: upsertTier
 ------------------------- */
-export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params) => {
+export const PUT = withErrorHandler(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     await ConnectDB();
 
-    const id = decodeURIComponent((await params).id);
-    if (!id) throw new ApiError("Missing tier id param", 400);
+    const id = (await params).id;
+    if (!id || !isValidObjectId(id)) throw new ApiError("Invalid tier id", 400);
 
     let payload: { tier: UpsertSubscriptionTierPayload };
     try {
@@ -29,35 +22,28 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
         throw new ApiError("Invalid JSON", 400);
     }
 
-    const tier = payload.tier as Partial<SubscriptionTier>;
-    if (!tier.title || !tier.key) throw new ApiError("Missing required fields", 400);
+    const tier = payload.tier as Partial<ISubscriptionTierSetting>;
+    if (!tier.key || !tier.title) throw new ApiError("Missing required fields: key, title", 400);
 
-    const doc = await SiteSettings.findOne();
-    if (!doc) throw new ApiError("Settings not found", 404);
-
-    const subDoc = doc.guideSubscriptions.find(
-        (t) => t._id!.toString() === id
-    ) as HydratedDocument<SubscriptionTier>;
-
-    if (!subDoc) throw new ApiError("Tier not found", 404);
+    const existingTier = await SubscriptionTierSetting.findById(id);
+    if (!existingTier) throw new ApiError("Subscription tier not found", 404);
 
     // Update fields
-    subDoc.set({
+    Object.assign(existingTier, {
         ...tier,
         updatedAt: new Date(),
     });
 
-    await doc.save();
+    await existingTier.save();
 
     return {
         data: {
             tier: {
-                ...subDoc.toObject(),
-                _id: subDoc._id!.toString(),
-                createdAt: subDoc.createdAt?.toISOString(),
-                updatedAt: subDoc.updatedAt?.toISOString(),
+                ...existingTier.toObject(),
+                _id: existingTier._id.toString(),
+                createdAt: existingTier.createdAt?.toISOString(),
+                updatedAt: existingTier.updatedAt?.toISOString(),
             },
-            updatedAt: doc.updatedAt?.toISOString(),
         },
         status: 200,
     };
@@ -66,38 +52,19 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
 /* -------------------------
  DELETE handler: removeTier
 ------------------------- */
-export const DELETE = withErrorHandler(async (req: Request, { params }: Params) => {
-
+export const DELETE = withErrorHandler(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
+    if (!id || !isValidObjectId(id)) throw new ApiError("Invalid subscription id", 400);
 
     await ConnectDB();
 
-    if (!id || !isValidObjectId(id)) {
-        throw new ApiError("Invalid subscription id", 400);
-    }
-
-    const settings = await SiteSettings.findOne();
-    if (!settings) {
-        throw new ApiError("Settings not found", 404);
-    }
-
-    const before = settings.guideSubscriptions.length;
-    settings.guideSubscriptions = settings.guideSubscriptions.filter(
-        (tier) => tier._id?.toString() !== id
-    );
-
-    if (settings.guideSubscriptions.length === before) {
-        throw new ApiError("Subscription tier not found", 404);
-    }
-
-    await settings.save();
-    const updated = await SiteSettings.findOne().lean();
+    const deleted = await SubscriptionTierSetting.findByIdAndDelete(id);
+    if (!deleted) throw new ApiError("Subscription tier not found", 404);
 
     return {
         data: {
-            updatedAt: updated?.updatedAt?.toISOString()
+            updatedAt: deleted.updatedAt?.toISOString(),
         },
         status: 200,
-    }
-
+    };
 });

@@ -4,6 +4,7 @@ import {
     PLACEMENT,
     PlacementType,
 } from "@/constants/advertising.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 import mongoose, { Schema, Document, Model, Types, Query } from "mongoose";
 
 /* -------------------------------------------
@@ -215,8 +216,6 @@ AdSchema.pre("aggregate", function (next: () => void) {
  * MODEL
  * ----------------------------------------- */
 
-const Advertisement =
-    mongoose.models.Advertisement ||
-    mongoose.model<IAdvertisement, AdvertisementModel>("Advertisement", AdSchema);
+const Advertisement = defineModel("Advertisement", AdSchema);
 
 export default Advertisement;

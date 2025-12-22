@@ -1,5 +1,5 @@
 // models/pendingGuide.model.ts
-import mongoose, { Schema, Document, model, models } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 import {
     GUIDE_DOCUMENT_CATEGORY,
     GUIDE_DOCUMENT_TYPE,
@@ -8,6 +8,7 @@ import {
     GuideDocumentType,
     GuideStatus,
 } from "@/constants/guide.const";
+import { defineModel } from "@/lib/helpers/defineModel";
 
 /** ===============================
  * TYPES
@@ -149,8 +150,6 @@ PendingGuideSchema.index({ companyName: 1 });
 /** ===============================
  * MODEL EXPORT
  * =============================== */
-const PendingGuideModel =
-    models.PendingGuide ||
-    model<IPendingGuide>("PendingGuide", PendingGuideSchema);
+const PendingGuideModel = defineModel("PendingGuide", PendingGuideSchema);
 
 export default PendingGuideModel

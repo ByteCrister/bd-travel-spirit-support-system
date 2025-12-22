@@ -1,6 +1,7 @@
 // models/travelComment.model.ts
 import { COMMENT_STATUS, CommentStatus } from "@/constants/articleComment.const";
-import { Schema, model, models, Types, Document } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Types, Document } from "mongoose";
 
 /**
  * Interface describing the shape of a Travel Comment document.
@@ -141,6 +142,4 @@ TravelCommentSchema.statics.addReply = async function (
  * Exported TravelComment model.
  * Uses existing model if already compiled (hot-reload safe).
  */
-export const TravelCommentModel =
-  models.TravelComment ||
-  model<ITravelComment>("TravelComment", TravelCommentSchema);
+export const TravelCommentModel = defineModel("TravelComment", TravelCommentSchema);

@@ -1,5 +1,6 @@
 // models/site-settings/location.model.ts
-import { Schema, Model, Types, models, model, HydratedDocument } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Model, Types, HydratedDocument } from "mongoose";
 
 export type ObjectId = Types.ObjectId;
 
@@ -63,8 +64,6 @@ LocationSettingSchema.statics.upsertByKey = async function (
     return existing;
 };
 
-const LocationSetting =
-    (models.LocationSetting as LocationSettingModel) ||
-    model<ILocationEntry, LocationSettingModel>("LocationSetting", LocationSettingSchema);
+const LocationSetting = defineModel("LocationSetting", LocationSettingSchema);
 
 export default LocationSetting;

@@ -7,7 +7,8 @@ import {
   USER_NOTIFICATION_TYPE,
   UserNotificationType,
 } from "@/constants/customer-notification.const";
-import { Schema, Document, Types, models, model } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { Schema, Document, Types } from "mongoose";
 
 /**
  * =========================
@@ -112,6 +113,4 @@ UserNotificationSchema.pre("save", function (next) {
  * =========================
  * Ensures hot-reload safety in dev and supports multi-connection setups.
  */
-export const UserNotificationModel =
-  models.UserNotification ||
-  model<IUserNotification>("UserNotification", UserNotificationSchema);
+export const UserNotificationModel = defineModel("UserNotification", UserNotificationSchema);

@@ -1,10 +1,9 @@
 // models/report.model.ts
 
 import { REPORT_PRIORITY, REPORT_REASON, REPORT_STATUS, ReportPriority, ReportReason, ReportStatus } from "@/constants/report.const";
-import mongoose, {
+import { defineModel } from "@/lib/helpers/defineModel";
+import {
     Schema,
-    model,
-    models,
     Document,
     Types,
     Query,
@@ -249,6 +248,4 @@ ReportSchema.statics.paginate = async function (
 // EXPORT: Safe model factory for hot-reload
 ////////////////////////////////////////////////////////////////////////////////
 
-export const ReportModel =
-    (models.Report as mongoose.Model<IReport>) ||
-    model<IReport>("Report", ReportSchema);
+export const ReportModel = defineModel("Report", ReportSchema);
