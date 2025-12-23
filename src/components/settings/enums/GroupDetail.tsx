@@ -20,10 +20,6 @@ export default function GroupDetail({ selected }: { selected: string | null }): 
 
   const [editing, setEditing] = useState(false);
 
-  useEffect(() => {
-    if (selected) void fetchGroup(selected);
-  }, [selected, fetchGroup]);
-
   const status = groupState?.status ?? "idle";
   const error = groupState?.error ?? null;
   const data = groupState?.data ?? null;
@@ -31,6 +27,7 @@ export default function GroupDetail({ selected }: { selected: string | null }): 
   const form = useForm<EnumGroupFormSchema>({
     resolver: zodResolver(enumGroupSchema),
     defaultValues: {
+      _id: data?._id,
       name: data?.name ?? "",
       description: data?.description ?? undefined,
       values: data?.values ?? [],
@@ -39,6 +36,7 @@ export default function GroupDetail({ selected }: { selected: string | null }): 
 
   useEffect(() => {
     form.reset({
+      _id: data?._id,
       name: data?.name ?? "",
       description: data?.description ?? undefined,
       values: data?.values ?? [],
@@ -129,8 +127,10 @@ export default function GroupDetail({ selected }: { selected: string | null }): 
 
   const onSave: SubmitHandler<EnumGroupFormSchema> = async (values) => {
     const payload = {
-      name: selected,
-      description: values.description ?? null,
+      _id: data?._id ?? "",
+      name: data?.name ?? "",
+      description: values.description ?? "",
+      values: data?.values ?? []
     } as const;
 
     try {
@@ -329,7 +329,7 @@ export default function GroupDetail({ selected }: { selected: string | null }): 
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
             >
-              <ValuesSection groupName={selected} values={data?.values ?? []} />
+              <ValuesSection _id={selected} values={data?.values ?? []} />
             </motion.div>
           )}
         </AnimatePresence>

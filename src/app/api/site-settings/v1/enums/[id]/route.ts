@@ -1,4 +1,4 @@
-// app/api/site-settings/v1/enums/[name]/route.ts
+// app/api/site-settings/v1/enums/[id]/route.ts
 import type { NextRequest } from "next/server";
 
 import type {
@@ -19,9 +19,7 @@ function mergePartialValues(
     existing: EnumValue[] = [],
     partials: Partial<EnumValue>[] = []
 ): EnumValue[] {
-    const map = new Map<string, EnumValue>(
-        existing.map((v) => [v.key, { ...v }])
-    );
+    const map = new Map<string, EnumValue>(existing.map((v) => [v.key, { ...v }]));
 
     for (const p of partials) {
         if (!p?.key) continue;
@@ -48,30 +46,31 @@ function mergePartialValues(
 }
 
 /* ---------------------------------------------------
-   Params type
+   Params type (now using id)
 ---------------------------------------------------- */
 interface Params {
-    params: Promise<{ name: string }>;
+    params: Promise<{ id: string }>;
 }
 
 /* ---------------------------------------------------
-   GET — Fetch single enum group
+   GET — Fetch single enum group by id (only non-deleted)
 ---------------------------------------------------- */
 export const GET = withErrorHandler(
     async (_req: NextRequest, { params }: Params) => {
         await ConnectDB();
-        const { name } = await params;
+        const { id } = await params;
 
-        if (!name) {
-            throw new ApiError("Missing enum group name", 400);
+        if (!id) {
+            throw new ApiError("Missing enum group id", 400);
         }
 
-        const doc = await EnumGroupSetting.findOne({ name }).lean();
+        const doc = await EnumGroupSetting.findOne({ _id: id, deletedAt: null }).lean();
 
         let group: EnumGroup | null = null;
 
         if (doc) {
             group = {
+                _id: doc._id.toString(),
                 name: doc.name,
                 description: doc.description ?? null,
                 values: doc.values.map(
@@ -97,22 +96,22 @@ export const GET = withErrorHandler(
 );
 
 /* ---------------------------------------------------
-   PUT — Partially update enum group metadata + values
+   PUT — Partially update enum group metadata + values by id
 ---------------------------------------------------- */
 export const PUT = withErrorHandler(
     async (req: NextRequest, { params }: Params) => {
         await ConnectDB();
-        const { name } = await params;
+        const { id } = await params;
 
-        if (!name) {
-            throw new ApiError("Missing enum group name", 400);
+        if (!id) {
+            throw new ApiError("Missing enum group id", 400);
         }
 
         const payload = (await req.json()) as UpdateEnumGroupPayload;
 
-        const doc = await EnumGroupSetting.findOne({ name });
+        const doc = await EnumGroupSetting.findOne({ _id: id, deletedAt: null });
         if (!doc) {
-            throw new ApiError(`Enum group '${name}' not found`, 404);
+            throw new ApiError(`Enum group with id '${id}' not found`, 404);
         }
 
         if (payload.description !== undefined) {
@@ -126,6 +125,7 @@ export const PUT = withErrorHandler(
         await doc.save();
 
         const enumGroup: EnumGroup = {
+            _id: doc._id.toString(),
             name: doc.name,
             description: doc.description ?? null,
             values: doc.values.map((v) => ({
@@ -142,34 +142,33 @@ export const PUT = withErrorHandler(
 );
 
 /* ---------------------------------------------------
-   PATCH — Insert/update specific values only
+   PATCH — Insert/update specific values only by id
 ---------------------------------------------------- */
 export const PATCH = withErrorHandler(
     async (req: NextRequest, { params }: Params) => {
         await ConnectDB();
-        const { name } = await params;
+        const { id } = await params;
 
-        if (!name) {
-            throw new ApiError("Missing enum group name", 400);
+        if (!id) {
+            throw new ApiError("Missing enum group id", 400);
         }
 
         const payload = (await req.json()) as Partial<UpsertEnumValuesPayload>;
         const incoming = Array.isArray(payload.values) ? payload.values : [];
 
-        const doc = await EnumGroupSetting.findOne({ name });
+        const doc = await EnumGroupSetting.findOne({ _id: id, deletedAt: null });
         if (!doc) {
-            throw new ApiError(`Enum group '${name}' not found`, 404);
+            throw new ApiError(`Enum group with id '${id}' not found`, 404);
         }
 
-        doc.values = payload.replace
-            ? (incoming as EnumValue[])
-            : mergePartialValues(doc.values, incoming);
+        doc.values = payload.replace ? (incoming as EnumValue[]) : mergePartialValues(doc.values, incoming);
 
         await doc.save();
 
         return {
             data: {
                 enumGroup: {
+                    _id: doc._id.toString(),
                     name: doc.name,
                     description: doc.description ?? null,
                     values: doc.values,
@@ -181,21 +180,22 @@ export const PATCH = withErrorHandler(
 );
 
 /* ---------------------------------------------------
-   DELETE — delete the entire enum group
+   DELETE — soft-delete the entire enum group by id
 ---------------------------------------------------- */
 export const DELETE = withErrorHandler(
     async (_req: NextRequest, { params }: Params) => {
         await ConnectDB();
-        const { name } = await params;
+        const { id } = await params;
 
-        if (!name) {
-            throw new ApiError("Enum group name is required", 400);
+        if (!id) {
+            throw new ApiError("Enum group id is required", 400);
         }
 
-        const deleted = await EnumGroupSetting.findOneAndDelete({ name });
+        // Use the model's soft-delete helper so deletedAt and nested values are handled consistently
+        const deleted = await EnumGroupSetting.softDeleteGroupById(id);
 
         if (!deleted) {
-            throw new ApiError(`Enum group '${name}' not found`, 404);
+            throw new ApiError(`Enum group with id '${id}' not found`, 404);
         }
 
         return { data: null, status: 200 };

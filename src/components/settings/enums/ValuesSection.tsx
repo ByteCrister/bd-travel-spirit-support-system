@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import ValuesTable from "./ValuesTable";
 import ValueEditorDialog from "./ValueEditorDialog";
 
-export default function ValuesSection({ groupName, values }: { groupName: string; values: EnumValue[] }): JSX.Element {
+export default function ValuesSection({ _id, values }: { _id: string; values: EnumValue[] }): JSX.Element {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<EnumValue | null>(null);
 
@@ -46,7 +46,7 @@ export default function ValuesSection({ groupName, values }: { groupName: string
       </div>
 
       <ValuesTable
-        groupName={groupName}
+        _id={_id}
         values={values}
         onEdit={(v) => { setEditTarget(v); setEditorOpen(true); }}
       />
@@ -54,7 +54,7 @@ export default function ValuesSection({ groupName, values }: { groupName: string
       <ValueEditorDialog
         open={editorOpen}
         onOpenChange={setEditorOpen}
-        groupName={groupName}
+        _id={_id}
         defaultValue={editTarget as EnumValueForm ?? undefined}
       />
     </div>

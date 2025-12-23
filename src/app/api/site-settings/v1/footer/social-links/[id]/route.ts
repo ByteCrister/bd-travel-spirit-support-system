@@ -79,7 +79,7 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
     /**
      * 3. Re-fetch final ordered list
      */
-    const finalLinks = await SocialLinkSetting.find()
+    const finalLinks = await SocialLinkSetting.find({ deleteAt: null })
         .sort({ order: 1, createdAt: 1 })
         .lean();
 
@@ -115,10 +115,10 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
 });
 
 /**
- * DELETE: remove a single social link
+ * DELETE: Soft delete a single social link
  */
-export const DELETE = withErrorHandler(async (_req: NextRequest, { params }: Params) => {
-    const id = decodeURIComponent((await params).id);
+export const DELETE = withErrorHandler(async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
 
     await ConnectDB();
 
@@ -126,15 +126,16 @@ export const DELETE = withErrorHandler(async (_req: NextRequest, { params }: Par
         throw new ApiError("Invalid social link id", 400);
     }
 
-    const deleted = await SocialLinkSetting.findByIdAndDelete(id);
+    // Use soft delete instead of hard delete
+    const deleted = await SocialLinkSetting.softDeleteById(id);
     if (!deleted) {
         throw new ApiError("Social link not found", 404);
     }
 
     /**
-     * Re-normalize remaining links
+     * Re-normalize remaining non-deleted links only
      */
-    const remaining = await SocialLinkSetting.find().lean();
+    const remaining = await SocialLinkSetting.find({ deleteAt: null }).lean();
     const normalized = SocialLinkSetting.normalizeAndAssignOrder(remaining);
 
     if (normalized.length) {
@@ -151,5 +152,15 @@ export const DELETE = withErrorHandler(async (_req: NextRequest, { params }: Par
         );
     }
 
-    return { data: null, status: 200 };
+    return {
+        data: {
+            message: "Social link soft deleted successfully",
+            deletedLink: {
+                id: (deleted._id as Types.ObjectId).toString(),
+                key: deleted.key,
+                deleteAt: deleted.deleteAt ? new Date(deleted.deleteAt).toISOString() : null
+            }
+        },
+        status: 200
+    };
 });

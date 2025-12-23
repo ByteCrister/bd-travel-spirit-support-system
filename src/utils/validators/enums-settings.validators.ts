@@ -12,6 +12,7 @@ export const enumValueSchema = z.object({
 export type EnumValueFormSchema = z.infer<typeof enumValueSchema>;
 
 export const enumGroupSchema = z.object({
+    _id: z.string().optional(),
     name: z.string().min(1, "Name is required"),
     description: z.string().optional().nullable(),
     values: z.array(enumValueSchema).optional(),

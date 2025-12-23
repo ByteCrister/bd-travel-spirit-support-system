@@ -7,6 +7,7 @@ import LocationSetting from "@/models/site-settings/location.model";
 
 import { locationSchema } from "@/utils/validators/footer-settings.validator";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
+import { LocationEntryDTO } from "@/types/footer-settings.types";
 
 interface Params {
     params: Promise<{ id: string }>;
@@ -46,11 +47,12 @@ export const PUT = withErrorHandler(
         }
 
         /**
-         * Enforce unique key (except same id)
+         * Enforce unique key - only check non-deleted records
          */
         const keyConflict = await LocationSetting.findOne({
             key: parsed.data.key,
             _id: { $ne: locationId },
+            deleteAt: null, // Only check non-deleted records
         }).lean();
 
         if (keyConflict) {
@@ -60,8 +62,8 @@ export const PUT = withErrorHandler(
         /**
          * Prepare payload
          */
-        const payload = {
-            _id: locationId,
+        const payload: LocationEntryDTO = {
+            id: locationId.toString(),
             key: parsed.data.key,
             country: parsed.data.country,
             region: parsed.data.region ?? undefined,
@@ -117,28 +119,5 @@ export const PUT = withErrorHandler(
             },
             status: 200,
         };
-    }
-);
-
-/**
- * DELETE: remove location by id (strict)
- */
-export const DELETE = withErrorHandler(
-    async (_req: NextRequest, { params }: Params) => {
-        const id = decodeURIComponent((await params).id);
-
-        if (!isValidObjectId(id)) {
-            throw new ApiError("Invalid location id", 400);
-        }
-
-        await ConnectDB();
-
-        const deleted = await LocationSetting.findByIdAndDelete(id);
-
-        if (!deleted) {
-            throw new ApiError("Location not found", 404);
-        }
-
-        return { data: null, status: 200 };
     }
 );

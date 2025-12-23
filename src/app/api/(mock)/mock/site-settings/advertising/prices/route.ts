@@ -17,5 +17,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
   const dto = createPrice(payload);
-  return NextResponse.json(dto, { status: 201 });
+  return NextResponse.json({ data: dto }, { status: 201 });
 }

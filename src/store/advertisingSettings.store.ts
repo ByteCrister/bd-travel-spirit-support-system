@@ -22,6 +22,10 @@ import type {
   UpdateAdvertisingPricePayload,
   BulkUpdateAdvertisingPricesPayload,
   ObjectId,
+  FetchAdvertisingConfigRes,
+  CreateAdvertisingPriceRes,
+  UpdateAdvertisingPriceRes,
+  BulkUpdateRes,
 } from "@/types/advertising-settings.types";
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
@@ -99,10 +103,13 @@ const storeCreator: Creator = (set, get) => ({
   fetchConfig: async () => {
     set((s) => ({ ...s, loading: true, lastError: null }));
     try {
-      const res = await api.get<AdvertisingConfigDTO>(
+      const res = await api.get<FetchAdvertisingConfigRes>(
         `${URL_AFTER_API}/config`
       );
-      const config = res.data;
+      if (!res.data.data) {
+        throw new Error("Invalid response body.");
+      }
+      const config = res.data.data;
       // Denormalize to rows for UI
       const rows = (config.pricing ?? []).map(mapDtoToRow);
       set((s) =>
@@ -125,11 +132,14 @@ const storeCreator: Creator = (set, get) => ({
   createPrice: async (payload: CreateAdvertisingPricePayload) => {
     set((s) => ({ ...s, saving: true, lastError: null }));
     try {
-      const res = await api.post<AdvertisingPriceDTO>(
+      const res = await api.post<CreateAdvertisingPriceRes>(
         `${URL_AFTER_API}/prices`,
         payload
       );
-      const dto = res.data;
+      if (!res.data.data) {
+        throw new Error("Invalid response body.");
+      }
+      const dto = res.data.data;
       const row = mapDtoToRow(dto);
       set((s) =>
         produce(s, (draft) => {
@@ -185,11 +195,14 @@ const storeCreator: Creator = (set, get) => ({
         );
       }
 
-      const res = await api.put<AdvertisingPriceDTO>(
+      const res = await api.put<UpdateAdvertisingPriceRes>(
         `${URL_AFTER_API}/prices/${payload.id}`,
         payload
       );
-      const dto = res.data;
+      if (!res.data.data) {
+        throw new Error("Invalid response body.");
+      }
+      const dto = res.data.data;
       const row = mapDtoToRow(dto);
       set((s) =>
         produce(s, (draft) => {
@@ -260,11 +273,14 @@ const storeCreator: Creator = (set, get) => ({
         );
       }
 
-      const res = await api.put<AdvertisingConfigDTO>(
+      const res = await api.put<BulkUpdateRes>(
         `${URL_AFTER_API}/prices/bulk`,
         payload
       );
-      const config = res.data;
+      if (!res.data.data) {
+        throw new Error("Invalid response body.");
+      }
+      const config = res.data.data;
       const rows = (config.pricing ?? []).map(mapDtoToRow);
       set((s) =>
         produce(s, (draft) => {

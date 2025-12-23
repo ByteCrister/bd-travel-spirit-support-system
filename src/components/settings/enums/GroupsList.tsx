@@ -28,7 +28,7 @@ export default function GroupsList({
     onSelect
 }: {
     selected: string | null;
-    onSelect: (name: string) => void;
+    onSelect: (_id: string) => void;
 }): JSX.Element {
     const {
         groups,
@@ -36,7 +36,6 @@ export default function GroupsList({
         status,
         error,
         fetchAll,
-        fetchGroup,
         deleteGroup
     } = useEnumSettingsStore();
 
@@ -81,14 +80,9 @@ export default function GroupsList({
         });
     }, [sorted, debouncedQuery]);
 
-    function handleSelect(name: string) {
-        onSelect(name);
-        void fetchGroup(name, { force: false });
-    }
-
-    async function handleConfirmDelete(name: string) {
-        setDeleting(name);
-        await deleteGroup(name);
+    async function handleConfirmDelete(_id: string) {
+        setDeleting(_id);
+        await deleteGroup(_id);
         setDeleting(null);
     }
 
@@ -254,9 +248,9 @@ export default function GroupsList({
                                 >
                                     <GroupCard
                                         group={g}
-                                        selected={selected === g.name}
-                                        onSelect={() => handleSelect(g.name)}
-                                        onOpen={() => handleSelect(g.name)}
+                                        selected={selected === g._id}
+                                        onSelect={() => { onSelect(g._id); }}
+                                        onOpen={() => onSelect(g._id)}
                                     />
                                     {/* Delete button positioned top-right of the card */}
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -286,10 +280,10 @@ export default function GroupsList({
                                                         <Button
                                                             size="sm"
                                                             className="bg-red-600 hover:bg-red-700"
-                                                            onClick={() => void handleConfirmDelete(g.name)}
-                                                            disabled={deleting === g.name}
+                                                            onClick={() => void handleConfirmDelete(g._id)}
+                                                            disabled={deleting === g._id}
                                                         >
-                                                            {deleting === g.name ? "Deleting..." : "Delete"}
+                                                            {deleting === g._id ? "Deleting..." : "Delete"}
                                                         </Button>
                                                     </AlertDialogAction>
                                                 </div>
@@ -309,7 +303,7 @@ export default function GroupsList({
                 onCreated={(name) => {
                     showToast.success("Created", `Group ${name} created`);
                     setCreateOpen(false);
-                    handleSelect(name);
+                    onSelect(selected!);
                 }}
             />
 

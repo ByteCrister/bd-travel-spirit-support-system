@@ -2,14 +2,14 @@
 // Types for admin advertising prices management (singleton SiteSettings.advertising)
 
 import { PlacementType } from "@/constants/advertising.const";
+import { Currency } from "@/constants/tour.const";
+import { ApiResponse } from "./api.types";
 
 /* -------------------------
    Primitives
 ------------------------- */
 
 export type ObjectId = string;
-export type Currency = "USD" | "EUR" | "BDT" | string;
-
 /* -------------------------
    Placement literals
    Keep these values in sync with constants/advertising.const.ts
@@ -27,11 +27,18 @@ export interface AdvertisingPriceDTO {
     updatedAt: string;            // ISO timestamp
 }
 
+export type CreateAdvertisingPriceRes = ApiResponse<AdvertisingPriceDTO>;
+export type UpdateAdvertisingPriceRes = CreateAdvertisingPriceRes;
+
 export interface AdvertisingConfigDTO {
     pricing: AdvertisingPriceDTO[];
     notes?: string | null;
     version?: number;
 }
+
+export type FetchAdvertisingConfigRes = ApiResponse<AdvertisingConfigDTO>;
+
+export type BulkUpdateRes = FetchAdvertisingConfigRes;
 
 /* -------------------------
    API request payloads

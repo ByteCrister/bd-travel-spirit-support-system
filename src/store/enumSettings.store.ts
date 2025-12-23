@@ -7,7 +7,6 @@ import { devtools } from "zustand/middleware";
 import {
     EnumSettingsSlice,
     EnumGroup,
-    EnumKey,
     CreateEnumGroupPayload,
     UpdateEnumGroupPayload,
     UpsertEnumValuesPayload,
@@ -16,6 +15,7 @@ import {
     GetEnumGroupResponse,
     EnumValue,
     EnumGroupResponse,
+    ID,
 } from "../types/enum-settings.types";
 
 import api from "@/utils/axios";
@@ -34,9 +34,9 @@ const genClientId = (prefix = "cm") =>
     `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
 /** Ensure a group's EnumGroupState exists (mutates groups object) */
-function ensureGroupState(groups: Record<EnumKey, EnumGroupState>, name: EnumKey): void {
-    if (!groups[name]) {
-        groups[name] = {
+function ensureGroupState(groups: Record<ID, EnumGroupState>, _id: ID): void {
+    if (!groups[_id]) {
+        groups[_id] = {
             data: null,
             status: "idle",
             error: null,
@@ -50,13 +50,13 @@ function ensureGroupState(groups: Record<EnumKey, EnumGroupState>, name: EnumKey
 /* Routes */
 const ROUTES = {
     fetchAll: URL_AFTER_API,
-    fetchGroup: (name: string) => `${URL_AFTER_API}/${encodeURIComponent(name)}`,
+    fetchGroup: (_id: string) => `${URL_AFTER_API}/${encodeURIComponent(_id)}`,
     createGroup: URL_AFTER_API,
-    updateGroup: (name: string) => `${URL_AFTER_API}/${encodeURIComponent(name)}`,
-    upsertValues: (name: string) => `${URL_AFTER_API}/${encodeURIComponent(name)}/values`,
-    removeValue: (name: string, valueKey: string) =>
-        `${URL_AFTER_API}/${encodeURIComponent(name)}/values/${encodeURIComponent(valueKey)}`,
-    deleteGroup: (name: string) => `${URL_AFTER_API}/${encodeURIComponent(name)}`,
+    updateGroup: (_id: string) => `${URL_AFTER_API}/${encodeURIComponent(_id)}`,
+    upsertValues: (_id: string) => `${URL_AFTER_API}/${encodeURIComponent(_id)}/values`,
+    removeValue: (_id: string, valueKey: string) =>
+        `${URL_AFTER_API}/${encodeURIComponent(_id)}/values/${encodeURIComponent(valueKey)}`,
+    deleteGroup: (_id: string) => `${URL_AFTER_API}/${encodeURIComponent(_id)}`,
 };
 
 /** Merge partial EnumValue updates into existing EnumValue[] */
@@ -114,17 +114,17 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
 
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        s.order = enums.map((g) => g.name);
+                        s.order = enums.map((g) => g._id);
                         s.status = "success";
                         s.error = null;
                         for (const g of enums) {
-                            ensureGroupState(s.groups, g.name);
-                            s.groups[g.name] = {
+                            ensureGroupState(s.groups, g._id);
+                            s.groups[g._id] = {
                                 data: g,
                                 status: "success",
                                 error: null,
                                 lastFetchedAt: fetchedAt,
-                                optimistic: s.groups[g.name]?.optimistic ?? {},
+                                optimistic: s.groups[g._id]?.optimistic ?? {},
                             };
                         }
                     })
@@ -142,22 +142,23 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
             }
         },
 
-        fetchGroup: async (name: EnumKey, opts = { force: false }) => {
-            ensureGroupState(get().groups, name);
-            const groupState = get().groups[name];
+        fetchGroup: async (_id: ID, opts = { force: false }) => {
+            ensureGroupState(get().groups, _id)
+
+            const groupState = get().groups[_id];
             if (!opts.force && groupState.data && groupState.status === "success") {
                 return groupState.data;
             }
             set(
                 produce((s: Draft<EnumSettingsSlice>) => {
-                    ensureGroupState(s.groups, name);
-                    s.groups[name].status = "loading";
-                    s.groups[name].error = null;
+                    ensureGroupState(s.groups, _id);
+                    s.groups[_id].status = "loading";
+                    s.groups[_id].error = null;
                 })
             );
 
             try {
-                const res = await api.get<GetEnumGroupResponse>(ROUTES.fetchGroup(name));
+                const res = await api.get<GetEnumGroupResponse>(ROUTES.fetchGroup(_id));
                 const payload = res.data.data;
 
                 if (!payload) {
@@ -168,11 +169,11 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
 
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, name);
-                        s.groups[name].data = enumGroup;
-                        s.groups[name].status = "success";
-                        s.groups[name].lastFetchedAt = fetchedAt;
-                        if (!s.order.includes(name)) s.order.push(name);
+                        ensureGroupState(s.groups, _id);
+                        s.groups[_id].data = enumGroup;
+                        s.groups[_id].status = "success";
+                        s.groups[_id].lastFetchedAt = fetchedAt;
+                        if (!s.order.includes(_id)) s.order.push(_id);
                     })
                 );
                 return;
@@ -180,9 +181,9 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
                 const message = extractErrorMessage(err);
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, name);
-                        s.groups[name].status = "error";
-                        s.groups[name].error = message;
+                        ensureGroupState(s.groups, _id);
+                        s.groups[_id].status = "error";
+                        s.groups[_id].error = message;
                     })
                 );
                 showToast.error("Failed to load enum group", message);
@@ -203,15 +204,15 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
 
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, enumGroup.name);
-                        s.groups[enumGroup.name] = {
+                        ensureGroupState(s.groups, enumGroup._id);
+                        s.groups[enumGroup._id] = {
                             data: enumGroup,
                             status: "success",
                             error: null,
                             lastFetchedAt: nowIso(),
                             optimistic: {},
                         };
-                        if (!s.order.includes(enumGroup.name)) s.order.push(enumGroup.name);
+                        if (!s.order.includes(enumGroup._id)) s.order.push(enumGroup._id);
                     })
                 );
 
@@ -225,20 +226,20 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
         },
 
         updateGroup: async (payload: UpdateEnumGroupPayload) => {
-            const { name, clientMutationId } = payload;
+            const { _id, clientMutationId } = payload;
             const cmid = clientMutationId ?? genClientId("updateGroup");
-            ensureGroupState(get().groups, name);
+            ensureGroupState(get().groups, _id);
 
-            const prev = get().groups[name].data ?? null;
+            const prev = get().groups[_id].data ?? null;
 
             set(
                 produce((s: Draft<EnumSettingsSlice>) => {
-                    ensureGroupState(s.groups, name);
-                    s.groups[name].optimistic = s.groups[name].optimistic ?? {};
-                    s.groups[name].optimistic![cmid] = nowIso();
-                    s.groups[name].status = "loading";
-                    s.groups[name].error = null;
-                    const existing = s.groups[name].data;
+                    ensureGroupState(s.groups, _id);
+                    s.groups[_id].optimistic = s.groups[_id].optimistic ?? {};
+                    s.groups[_id].optimistic![cmid] = nowIso();
+                    s.groups[_id].status = "loading";
+                    s.groups[_id].error = null;
+                    const existing = s.groups[_id].data;
                     if (existing) {
                         // merge top-level fields from payload, and merge values properly
                         const merged: EnumGroup = {
@@ -249,13 +250,13 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
                                 ? mergePartialValues(existing.values ?? [], payload.values)
                                 : existing.values ?? [],
                         };
-                        s.groups[name].data = merged;
+                        s.groups[_id].data = merged;
                     }
                 })
             );
 
             try {
-                const res = await api.put<EnumGroupResponse>(ROUTES.updateGroup(name), payload);
+                const res = await api.put<EnumGroupResponse>(ROUTES.updateGroup(_id), payload);
                 const data = res.data.data;
                 if (!data) {
                     throw new Error("Empty response data.");
@@ -265,26 +266,26 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
 
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, name);
-                        s.groups[name].data = enumGroup;
-                        s.groups[name].status = "success";
-                        s.groups[name].error = null;
-                        if (s.groups[name].optimistic) delete s.groups[name].optimistic![cmid];
-                        if (!s.order.includes(name)) s.order.push(name);
+                        ensureGroupState(s.groups, _id);
+                        s.groups[_id].data = enumGroup;
+                        s.groups[_id].status = "success";
+                        s.groups[_id].error = null;
+                        if (s.groups[_id].optimistic) delete s.groups[_id].optimistic![cmid];
+                        if (!s.order.includes(_id)) s.order.push(_id);
                     })
                 );
 
-                showToast.success("Enum group updated", `Saved ${name}`);
+                showToast.success("Enum group updated", `Saved ${data.enumGroup.name}`);
                 return enumGroup;
             } catch (err) {
                 const message = extractErrorMessage(err);
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, name);
-                        s.groups[name].data = prev;
-                        s.groups[name].status = "error";
-                        s.groups[name].error = message;
-                        if (s.groups[name].optimistic) delete s.groups[name].optimistic![cmid];
+                        ensureGroupState(s.groups, _id);
+                        s.groups[_id].data = prev;
+                        s.groups[_id].status = "error";
+                        s.groups[_id].error = message;
+                        if (s.groups[_id].optimistic) delete s.groups[_id].optimistic![cmid];
                     })
                 );
                 showToast.error("Failed to update enum group", message);
@@ -293,41 +294,43 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
         },
 
         upsertValues: async (payload: UpsertEnumValuesPayload & { clientMutationId?: string }) => {
-            const groupName = payload.groupName;
+            const _id = payload._id;
             const cmid = payload.clientMutationId ?? genClientId("upsertValues");
-            ensureGroupState(get().groups, groupName);
+            ensureGroupState(get().groups, _id);
 
-            const prev = get().groups[groupName].data ?? null;
+            const prev = get().groups[_id].data ?? null;
+            const name = payload.name;
             const incoming = payload.values ?? [];
 
             set(
                 produce((s: Draft<EnumSettingsSlice>) => {
-                    ensureGroupState(s.groups, groupName);
-                    s.groups[groupName].optimistic = s.groups[groupName].optimistic ?? {};
-                    s.groups[groupName].optimistic![cmid] = nowIso();
-                    s.groups[groupName].status = "loading";
-                    s.groups[groupName].error = null;
+                    ensureGroupState(s.groups, _id);
+                    s.groups[_id].optimistic = s.groups[_id].optimistic ?? {};
+                    s.groups[_id].optimistic![cmid] = nowIso();
+                    s.groups[_id].status = "loading";
+                    s.groups[_id].error = null;
 
-                    if (!s.groups[groupName].data) {
-                        s.groups[groupName].data = {
-                            name: groupName,
+                    if (!s.groups[_id].data) {
+                        s.groups[_id].data = {
+                            _id,
+                            name,
                             description: null,
                             values: incoming,
                         } as EnumGroup;
                     } else {
                         if (payload.replace) {
-                            s.groups[groupName].data!.values = incoming;
+                            s.groups[_id].data!.values = incoming;
                         } else {
-                            const map = new Map((s.groups[groupName].data!.values ?? []).map((v) => [v.key, v]));
+                            const map = new Map((s.groups[_id].data!.values ?? []).map((v) => [v.key, v]));
                             for (const v of incoming) map.set(v.key, v);
-                            s.groups[groupName].data!.values = Array.from(map.values());
+                            s.groups[_id].data!.values = Array.from(map.values());
                         }
                     }
                 })
             );
 
             try {
-                const res = await api.post<EnumGroupResponse>(ROUTES.upsertValues(groupName), payload);
+                const res = await api.post<EnumGroupResponse>(ROUTES.upsertValues(_id), payload);
 
                 const data = res.data.data;
                 if (!data) {
@@ -338,26 +341,26 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
 
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, groupName);
-                        s.groups[groupName].data = enumGroup;
-                        s.groups[groupName].status = "success";
-                        s.groups[groupName].error = null;
-                        if (s.groups[groupName].optimistic) delete s.groups[groupName].optimistic![cmid];
-                        if (!s.order.includes(groupName)) s.order.push(groupName);
+                        ensureGroupState(s.groups, _id);
+                        s.groups[_id].data = enumGroup;
+                        s.groups[_id].status = "success";
+                        s.groups[_id].error = null;
+                        if (s.groups[_id].optimistic) delete s.groups[_id].optimistic![cmid];
+                        if (!s.order.includes(_id)) s.order.push(_id);
                     })
                 );
 
-                showToast.success("Values saved", `Updated values for ${groupName}`);
+                showToast.success("Values saved", `Updated values for ${enumGroup.name}`);
                 return enumGroup;
             } catch (err) {
                 const message = extractErrorMessage(err);
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, groupName);
-                        s.groups[groupName].data = prev;
-                        s.groups[groupName].status = "error";
-                        s.groups[groupName].error = message;
-                        if (s.groups[groupName].optimistic) delete s.groups[groupName].optimistic![cmid];
+                        ensureGroupState(s.groups, _id);
+                        s.groups[_id].data = prev;
+                        s.groups[_id].status = "error";
+                        s.groups[_id].error = message;
+                        if (s.groups[_id].optimistic) delete s.groups[_id].optimistic![cmid];
                     })
                 );
                 showToast.error("Failed to update values", message);
@@ -365,26 +368,26 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
             }
         },
 
-        removeValue: async (groupName: EnumKey, valueKey: string, opts: { clientMutationId?: string } = {}) => {
+        removeValue: async (_id: ID, valueKey: string, opts: { clientMutationId?: string } = {}) => {
             const cmid = opts.clientMutationId ?? genClientId("removeValue");
-            ensureGroupState(get().groups, groupName);
-            const prev = get().groups[groupName].data ?? null;
+            ensureGroupState(get().groups, _id);
+            const prev = get().groups[_id].data ?? null;
 
             set(
                 produce((s: Draft<EnumSettingsSlice>) => {
-                    ensureGroupState(s.groups, groupName);
-                    s.groups[groupName].optimistic = s.groups[groupName].optimistic ?? {};
-                    s.groups[groupName].optimistic![cmid] = nowIso();
-                    s.groups[groupName].status = "loading";
-                    s.groups[groupName].error = null;
-                    if (s.groups[groupName].data && Array.isArray(s.groups[groupName].data.values)) {
-                        s.groups[groupName].data!.values = s.groups[groupName].data!.values.filter((v) => v.key !== valueKey);
+                    ensureGroupState(s.groups, _id);
+                    s.groups[_id].optimistic = s.groups[_id].optimistic ?? {};
+                    s.groups[_id].optimistic![cmid] = nowIso();
+                    s.groups[_id].status = "loading";
+                    s.groups[_id].error = null;
+                    if (s.groups[_id].data && Array.isArray(s.groups[_id].data.values)) {
+                        s.groups[_id].data!.values = s.groups[_id].data!.values.filter((v) => v.key !== valueKey);
                     }
                 })
             );
 
             try {
-                const res = await api.delete<EnumGroupResponse>(ROUTES.removeValue(groupName, valueKey));
+                const res = await api.delete<EnumGroupResponse>(ROUTES.removeValue(_id, valueKey));
                 const data = res.data.data;
                 if (!data) {
                     throw new Error("Empty response data.");
@@ -394,25 +397,25 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
 
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, groupName);
-                        s.groups[groupName].data = enumGroup;
-                        s.groups[groupName].status = "success";
-                        s.groups[groupName].error = null;
-                        if (s.groups[groupName].optimistic) delete s.groups[groupName].optimistic![cmid];
+                        ensureGroupState(s.groups, _id);
+                        s.groups[_id].data = enumGroup;
+                        s.groups[_id].status = "success";
+                        s.groups[_id].error = null;
+                        if (s.groups[_id].optimistic) delete s.groups[_id].optimistic![cmid];
                     })
                 );
 
-                showToast.success("Value removed", `Removed ${valueKey} from ${groupName}`);
+                showToast.success("Value removed", `Removed ${valueKey} from ${prev?.name}`);
                 return enumGroup;
             } catch (err) {
                 const message = extractErrorMessage(err);
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, groupName);
-                        s.groups[groupName].data = prev;
-                        s.groups[groupName].status = "error";
-                        s.groups[groupName].error = message;
-                        if (s.groups[groupName].optimistic) delete s.groups[groupName].optimistic![cmid];
+                        ensureGroupState(s.groups, _id);
+                        s.groups[_id].data = prev;
+                        s.groups[_id].status = "error";
+                        s.groups[_id].error = message;
+                        if (s.groups[_id].optimistic) delete s.groups[_id].optimistic![cmid];
                     })
                 );
                 showToast.error("Failed to remove value", message);
@@ -420,20 +423,20 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
             }
         },
 
-        setValueActive: async (groupName: EnumKey, valueKey: string, active: boolean, opts: { clientMutationId?: string } = {}) => {
+        setValueActive: async (_id: ID, valueKey: string, active: boolean, opts: { clientMutationId?: string } = {}) => {
             const cmid = opts.clientMutationId ?? genClientId("setActive");
-            ensureGroupState(get().groups, groupName);
-            const prev = get().groups[groupName].data ?? null;
+            ensureGroupState(get().groups, _id);
+            const prev = get().groups[_id].data ?? null;
 
             set(
                 produce((s: Draft<EnumSettingsSlice>) => {
-                    ensureGroupState(s.groups, groupName);
-                    s.groups[groupName].optimistic = s.groups[groupName].optimistic ?? {};
-                    s.groups[groupName].optimistic![cmid] = nowIso();
-                    s.groups[groupName].status = "loading";
-                    s.groups[groupName].error = null;
-                    if (s.groups[groupName].data && Array.isArray(s.groups[groupName].data.values)) {
-                        s.groups[groupName].data!.values = s.groups[groupName].data!.values.map((v) =>
+                    ensureGroupState(s.groups, _id);
+                    s.groups[_id].optimistic = s.groups[_id].optimistic ?? {};
+                    s.groups[_id].optimistic![cmid] = nowIso();
+                    s.groups[_id].status = "loading";
+                    s.groups[_id].error = null;
+                    if (s.groups[_id].data && Array.isArray(s.groups[_id].data.values)) {
+                        s.groups[_id].data!.values = s.groups[_id].data!.values.map((v) =>
                             v.key === valueKey ? { ...v, active } : v
                         );
                     }
@@ -441,7 +444,7 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
             );
 
             try {
-                const res = await api.patch<EnumGroupResponse>(`${URL_AFTER_API}/${groupName}`, {
+                const res = await api.patch<EnumGroupResponse>(`${URL_AFTER_API}/${_id}`, {
                     values: [{ key: valueKey, active }],
                     replace: false,
                 });
@@ -454,11 +457,11 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
 
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, groupName);
-                        s.groups[groupName].data = enumGroup;
-                        s.groups[groupName].status = "success";
-                        s.groups[groupName].error = null;
-                        if (s.groups[groupName].optimistic) delete s.groups[groupName].optimistic![cmid];
+                        ensureGroupState(s.groups, _id);
+                        s.groups[_id].data = enumGroup;
+                        s.groups[_id].status = "success";
+                        s.groups[_id].error = null;
+                        if (s.groups[_id].optimistic) delete s.groups[_id].optimistic![cmid];
                     })
                 );
 
@@ -468,11 +471,11 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
                 const message = extractErrorMessage(err);
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, groupName);
-                        s.groups[groupName].data = prev;
-                        s.groups[groupName].status = "error";
-                        s.groups[groupName].error = message;
-                        if (s.groups[groupName].optimistic) delete s.groups[groupName].optimistic![cmid];
+                        ensureGroupState(s.groups, _id);
+                        s.groups[_id].data = prev;
+                        s.groups[_id].status = "error";
+                        s.groups[_id].error = message;
+                        if (s.groups[_id].optimistic) delete s.groups[_id].optimistic![cmid];
                     })
                 );
                 showToast.error("Failed to update value", message);
@@ -480,52 +483,52 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
             }
         },
 
-        deleteGroup: async (name: EnumKey, opts: { clientMutationId?: string } = {}) => {
+        deleteGroup: async (_id: ID, opts: { clientMutationId?: string } = {}) => {
             const cmid = opts.clientMutationId ?? genClientId("deleteGroup");
-            ensureGroupState(get().groups, name);
+            ensureGroupState(get().groups, _id);
 
             // Save previous snapshot to revert on error
-            const prevGroup = get().groups[name]?.data ?? null;
+            const prevGroup = get().groups[_id]?.data ?? null;
             const prevOrder = [...get().order];
 
             // Optimistic update: remove group data and remove from order
             set(
                 produce((s: Draft<EnumSettingsSlice>) => {
-                    ensureGroupState(s.groups, name);
-                    s.groups[name].optimistic = s.groups[name].optimistic ?? {};
-                    s.groups[name].optimistic![cmid] = nowIso();
-                    s.groups[name].status = "loading";
-                    s.groups[name].error = null;
+                    ensureGroupState(s.groups, _id);
+                    s.groups[_id].optimistic = s.groups[_id].optimistic ?? {};
+                    s.groups[_id].optimistic![cmid] = nowIso();
+                    s.groups[_id].status = "loading";
+                    s.groups[_id].error = null;
 
                     // remove data locally
-                    s.groups[name].data = null;
+                    s.groups[_id].data = null;
                     // remove from order
-                    s.order = s.order.filter((n) => n !== name);
+                    s.order = s.order.filter((n) => n !== _id);
                 })
             );
 
             try {
                 // call API to delete group
-                await api.delete<EnumGroupResponse>(ROUTES.deleteGroup(name));
+                await api.delete<EnumGroupResponse>(ROUTES.deleteGroup(_id));
 
                 // success: clear optimistic marker and group state
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        // ensureGroupState(s.groups, name); // group state already exists
-                        if (s.groups[name]) {
-                            if (s.groups[name].optimistic) delete s.groups[name].optimistic![cmid];
-                            s.groups[name].status = "success";
-                            s.groups[name].error = null;
+                        // ensureGroupState(s.groups, _id); // group state already exists
+                        if (s.groups[_id]) {
+                            if (s.groups[_id].optimistic) delete s.groups[_id].optimistic![cmid];
+                            s.groups[_id].status = "success";
+                            s.groups[_id].error = null;
                             // keep data null (deleted)
                         }
-                        // ensure order does not contain the deleted name
-                        s.order = s.order.filter((n) => n !== name);
+                        // ensure order does not contain the deleted _id
+                        s.order = s.order.filter((n) => n !== _id);
                         // optionally remove the group key entirely to keep store clean
-                        delete s.groups[name];
+                        delete s.groups[_id];
                     })
                 );
 
-                showToast.success("Group deleted", `Removed group ${name}`);
+                showToast.success("Group deleted", `Removed group ${prevGroup?.name}`);
                 return;
             } catch (err) {
                 const message = extractErrorMessage(err);
@@ -533,11 +536,11 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
                 // revert to previous snapshot
                 set(
                     produce((s: Draft<EnumSettingsSlice>) => {
-                        ensureGroupState(s.groups, name);
-                        s.groups[name].data = prevGroup;
-                        s.groups[name].status = "error";
-                        s.groups[name].error = message;
-                        if (s.groups[name].optimistic) delete s.groups[name].optimistic![cmid];
+                        ensureGroupState(s.groups, _id);
+                        s.groups[_id].data = prevGroup;
+                        s.groups[_id].status = "error";
+                        s.groups[_id].error = message;
+                        if (s.groups[_id].optimistic) delete s.groups[_id].optimistic![cmid];
                         s.order = prevOrder;
                     })
                 );
@@ -558,14 +561,14 @@ export const useEnumSettingsStore = create<EnumSettingsSlice>()(
             );
         },
 
-        getGroupOrNull: (name: EnumKey) => {
-            const g = get().groups[name];
+        getGroupOrNull: (_id: ID) => {
+            const g = get().groups[_id];
             return g?.data ?? null;
         },
 
         listGroups: () => {
             const s = get();
-            return s.order.map((name) => s.groups[name]?.data).filter(Boolean) as EnumGroup[];
+            return s.order.map((_id) => s.groups[_id]?.data).filter(Boolean) as EnumGroup[];
         },
     }))
 );

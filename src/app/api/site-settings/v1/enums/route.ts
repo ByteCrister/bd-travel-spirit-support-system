@@ -16,11 +16,15 @@ import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
    GET: Fetch all enum groups
 ------------------------------ */
 export const GET = withErrorHandler(async () => {
+
     await ConnectDB();
 
-    const docs = await EnumGroupSetting.find().lean();
+    let query = EnumGroupSetting.find();
+    query = query.where({ deletedAt: null })
+    const docs = await query.lean();
 
     const enums: EnumGroup[] = docs.map((g) => ({
+        _id: g._id.toString(),
         name: g.name,
         description: g.description ?? null,
         values: (Array.isArray(g.values) ? g.values : []).map((v) => ({
@@ -53,11 +57,13 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         throw new ApiError("Field 'name' is required and must be a string.", 422);
     }
 
-    /**
-     * Prevent duplicate enum group names
-     */
-    const exists = await EnumGroupSetting.findOne({ name: body.name }).lean();
-    if (exists) {
+    // Check if a non-deleted group already exists with this name
+    const existingActiveGroup = await EnumGroupSetting.findOne({
+        name: body.name,
+        deletedAt: null
+    }).lean();
+
+    if (existingActiveGroup) {
         throw new ApiError(`Enum group '${body.name}' already exists.`, 409);
     }
 
@@ -75,9 +81,11 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         name: body.name,
         description: body.description ?? null,
         values,
+        deletedAt: null,
     });
 
     const enumGroup: EnumGroup = {
+        _id: created._id.toString(),
         name: created.name,
         description: created.description ?? null,
         values: created.values.map((v) => ({

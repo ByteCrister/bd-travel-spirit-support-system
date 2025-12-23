@@ -3,8 +3,8 @@ import { NextRequest } from "next/server";
 import { isValidObjectId } from "mongoose";
 import ConnectDB from "@/config/db";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
-import type { UpsertSubscriptionTierPayload } from "@/types/guide-subscription-settings.types";
-import SubscriptionTierSetting, { ISubscriptionTierSetting } from "@/models/site-settings/subscriptionTier.model";
+import type { UpdateSubscriptionTierPayload } from "@/types/guide-subscription-settings.types";
+import SubscriptionTierSetting from "@/models/site-settings/subscriptionTier.model";
 
 /* -------------------------
  PUT handler: upsertTier
@@ -15,24 +15,22 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: { param
     const id = (await params).id;
     if (!id || !isValidObjectId(id)) throw new ApiError("Invalid tier id", 400);
 
-    let payload: { tier: UpsertSubscriptionTierPayload };
+    let payload: { tier: UpdateSubscriptionTierPayload };
     try {
         payload = await req.json();
     } catch {
         throw new ApiError("Invalid JSON", 400);
     }
 
-    const tier = payload.tier as Partial<ISubscriptionTierSetting>;
+    const tier = payload.tier;
     if (!tier.key || !tier.title) throw new ApiError("Missing required fields: key, title", 400);
 
-    const existingTier = await SubscriptionTierSetting.findById(id);
+    // Find the tier by ID and ensure it is not deleted
+    const existingTier = await SubscriptionTierSetting.findOne({ _id: id, deletedAt: null });
     if (!existingTier) throw new ApiError("Subscription tier not found", 404);
 
-    // Update fields
-    Object.assign(existingTier, {
-        ...tier,
-        updatedAt: new Date(),
-    });
+    // Update fields (excluding deletedAt)
+    Object.assign(existingTier, tier);
 
     await existingTier.save();
 
@@ -58,12 +56,12 @@ export const DELETE = withErrorHandler(async (req: Request, { params }: { params
 
     await ConnectDB();
 
-    const deleted = await SubscriptionTierSetting.findByIdAndDelete(id);
-    if (!deleted) throw new ApiError("Subscription tier not found", 404);
+    const deletedTier = await SubscriptionTierSetting.softDeleteById(id);
+    if (!deletedTier) throw new ApiError("Subscription tier not found", 404);
 
     return {
         data: {
-            updatedAt: deleted.updatedAt?.toISOString(),
+            updatedAt: deletedTier.updatedAt?.toISOString(),
         },
         status: 200,
     };

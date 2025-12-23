@@ -48,7 +48,12 @@ export const authConfig: NextAuthConfig = {
                 const isPasswordCorrect = await compare(password, user.password);
                 if (!isPasswordCorrect) return null;
 
-                return { id: (user._id as Types.ObjectId).toString() };
+                // Return all necessary user data
+                return {
+                    id: (user._id as Types.ObjectId).toString(),
+                    email: user.email,
+                    role: user.role,
+                };
             },
         }),
 
@@ -67,6 +72,8 @@ export const authConfig: NextAuthConfig = {
                 if (!existingUser) return false;
 
                 user.id = (existingUser._id as Types.ObjectId).toString();
+                user.role = existingUser.role;
+                user.email = existingUser.email;
             }
 
             return true;
@@ -76,6 +83,8 @@ export const authConfig: NextAuthConfig = {
             // initial login
             if (user) {
                 token.id = user.id;
+                token.email = user.email;
+                token.role = user.role;
                 token.exp = Math.floor(Date.now() / 1000) + ONE_MONTH;
             }
 
@@ -85,6 +94,8 @@ export const authConfig: NextAuthConfig = {
         async session({ session, token }: { session: Session; token: MyJWT }) {
             if (session.user) {
                 session.user.id = token.id ?? "";
+                session.user.email = token.email ?? "";
+                session.user.role = token.role ?? "";
             }
 
             if (token.exp) {

@@ -4,6 +4,7 @@ import ConnectDB from "@/config/db";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import type { SubscriptionTierDTO, UpsertSubscriptionTierPayload } from "@/types/guide-subscription-settings.types";
 import SubscriptionTierSetting, { ISubscriptionTierSetting } from "@/models/site-settings/subscriptionTier.model";
+import { FilterQuery } from "mongoose";
 
 /* -------------------------
  Utility: map mongoose doc to DTO
@@ -35,42 +36,56 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     const sortBy = (url.searchParams.get("sortBy") as "price" | "title" | "createdAt" | null) ?? "title";
     const sortDir = (url.searchParams.get("sortDir") as "asc" | "desc") ?? "asc";
 
-    // Fetch all tiers
-    let tiers: ISubscriptionTierSetting[] = await SubscriptionTierSetting.find().lean();
+    // Build query - exclude soft-deleted by default
+    const query: FilterQuery<ISubscriptionTierSetting> = {};
 
-    // Apply server-side filters
-    if (onlyActive) tiers = tiers.filter(t => t.active);
-    if (search.length > 0) {
-        const s = search.toLowerCase();
-        tiers = tiers.filter(t => (t.title ?? "").toLowerCase().includes(s) || (t.key ?? "").toLowerCase().includes(s));
+    // fetch items which are not deleted only
+    query.deletedAt = null;
+
+    // Apply active filter
+    if (onlyActive) {
+        query.active = true;
     }
 
-    // Sorting
-    tiers.sort((a, b) => {
-        let av: string | number = "";
-        let bv: string | number = "";
-        switch (sortBy) {
-            case "price":
-                av = a.price ?? 0;
-                bv = b.price ?? 0;
-                break;
-            case "createdAt":
-                av = a.createdAt?.getTime() ?? 0;
-                bv = b.createdAt?.getTime() ?? 0;
-                break;
-            default:
-                av = (a.title ?? "").toLowerCase();
-                bv = (b.title ?? "").toLowerCase();
-        }
-        if (av < bv) return sortDir === "asc" ? -1 : 1;
-        if (av > bv) return sortDir === "asc" ? 1 : -1;
-        return 0;
-    });
+    // Apply search filter using MongoDB regex (case-insensitive)
+    if (search.length > 0) {
+        query.$or = [
+            { title: { $regex: search, $options: 'i' } },
+            { key: { $regex: search, $options: 'i' } }
+        ];
+    }
+
+    // Build sort object
+    const sortOptions: Record<string, 1 | -1> = {};
+
+    switch (sortBy) {
+        case "price":
+            sortOptions.price = sortDir === "asc" ? 1 : -1;
+            break;
+        case "createdAt":
+            sortOptions.createdAt = sortDir === "asc" ? 1 : -1;
+            break;
+        default: // "title"
+            sortOptions.title = sortDir === "asc" ? 1 : -1;
+    }
+
+    // Execute optimized query with filtering and sorting in MongoDB
+    const tiers: ISubscriptionTierSetting[] = await SubscriptionTierSetting
+        .find(query)
+        .sort(sortOptions)
+        .lean()
+        .exec();
 
     const dtoList: SubscriptionTierDTO[] = tiers.map(mapTierToDto);
 
-    const updatedAt = tiers.length > 0 ? tiers[0].updatedAt?.toISOString() : undefined;
-    const version = tiers.length > 0 && tiers[0].updatedAt ? Math.floor(new Date(tiers[0].updatedAt).getTime() / 1000) : 0;
+    // Calculate version based on latest updatedAt
+    const latestUpdate = tiers.reduce((latest, tier) => {
+        const tierTime = tier.updatedAt?.getTime() || 0;
+        return tierTime > latest ? tierTime : latest;
+    }, 0);
+
+    const version = Math.floor(latestUpdate / 1000);
+    const updatedAt = latestUpdate > 0 ? new Date(latestUpdate).toISOString() : undefined;
 
     return {
         data: { guideSubscriptions: dtoList, version, updatedAt },
@@ -78,9 +93,6 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     };
 });
 
-/* -------------------------
- POST handler: upsertTier
-------------------------- */
 /* -------------------------
  POST handler: create/upsert tier
 ------------------------- */
@@ -93,8 +105,6 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     } catch {
         throw new ApiError("Invalid JSON", 400);
     }
-
-    console.log(payload);
 
     const tier = payload.tier as Partial<ISubscriptionTierSetting>;
     if (!tier.key || !tier.title) {

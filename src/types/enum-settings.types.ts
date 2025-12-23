@@ -30,6 +30,7 @@ export interface EnumValue {
 
 /** Grouping of enum values (stored as SiteSettings.enums item) */
 export interface EnumGroup {
+    _id: ID;
     /** Stable name/key for the group, e.g. "ad_placements" */
     name: EnumKey;
     /** Short description for admins */
@@ -61,6 +62,7 @@ export interface CreateEnumGroupPayload {
 
 /** Request to update an existing EnumGroup (partial allowed) */
 export interface UpdateEnumGroupPayload {
+    _id: ID;
     name: EnumKey; // identifies group to update
     description?: string | null;
     values?: Partial<EnumValue>[]; // partial updates; server resolves by key
@@ -70,7 +72,8 @@ export interface UpdateEnumGroupPayload {
 
 /** Request to add/replace values within a group */
 export interface UpsertEnumValuesPayload {
-    groupName: EnumKey;
+    _id: ID;
+    name: string
     values: EnumValue[]; // server will upsert by key
     replace?: boolean; // true = replace all values, false = merge/upsert
 }
@@ -115,7 +118,7 @@ export interface EnumSettingsSlice {
     fetchAll: (opts?: { force?: boolean }) => Promise<void>;
 
     /** fetch single group */
-    fetchGroup: (name: EnumKey, opts?: { force?: boolean }) => Promise<void>;
+    fetchGroup: (_id: EnumKey, opts?: { force?: boolean }) => Promise<void>;
 
     /** create a new group */
     createGroup: (payload: CreateEnumGroupPayload) => Promise<EnumGroup>;
@@ -130,27 +133,27 @@ export interface EnumSettingsSlice {
 
     /** remove a value by key from a group */
     removeValue: (
-        groupName: EnumKey,
+        _id: ID,
         valueKey: string,
         opts?: { clientMutationId?: string }
     ) => Promise<EnumGroup>;
 
     /** set value active/inactive */
     setValueActive: (
-        groupName: EnumKey,
+        _id: ID,
         valueKey: string,
         active: boolean,
         opts?: { clientMutationId?: string }
     ) => Promise<EnumGroup>;
 
     /** delete an entire enum group */
-    deleteGroup: (name: EnumKey, opts?: { clientMutationId?: string }) => Promise<void>;
+    deleteGroup: (_id: ID, opts?: { clientMutationId?: string }) => Promise<void>;
 
     /** local utility to clear errors */
     clearError: () => void;
 
     /** selectors/helpers usable in components */
-    getGroupOrNull: (name: EnumKey) => EnumGroup | null;
+    getGroupOrNull: (_id: ID) => EnumGroup | null;
     listGroups: () => EnumGroup[];
 }
 

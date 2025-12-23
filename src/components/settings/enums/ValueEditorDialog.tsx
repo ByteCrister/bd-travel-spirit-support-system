@@ -26,16 +26,16 @@ const schema = enumValueSchema;
 export default function ValueEditorDialog({
   open,
   onOpenChange,
-  groupName,
+  _id,
   defaultValue,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  groupName: string;
+  _id: string;
   defaultValue?: EnumValueForm;
 }): JSX.Element {
   const { upsertValues, groups } = useEnumSettingsStore();
-  const group = groups[groupName]?.data;
+  const group = groups[_id]?.data;
 
   const form = useForm<EnumValueFormSchema>({
     resolver: zodResolver(schema),
@@ -62,7 +62,7 @@ export default function ValueEditorDialog({
       return;
     }
 
-    await upsertValues({ groupName, values: [{ ...values }], clientMutationId: undefined });
+    await upsertValues({ _id, name: group?.name ?? "", values: [{ ...values, active: values.active ?? true }], clientMutationId: undefined });
 
     onOpenChange(false);
   }

@@ -61,7 +61,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     /**
      * 4. Re-fetch final ordered list
      */
-    const finalLinks = await SocialLinkSetting.find()
+    const finalLinks = await SocialLinkSetting.find({ deleteAt: null })
         .sort({ order: 1, createdAt: 1 })
         .lean();
 

@@ -16,11 +16,11 @@ export const GET = withErrorHandler(async () => {
     await ConnectDB();
 
     const [socialLinks, locations] = await Promise.all([
-        SocialLinkSetting.find()
+        SocialLinkSetting.find({ deleteAt: null })
             .sort({ order: 1, createdAt: 1 })
             .lean(),
 
-        LocationSetting.find()
+        LocationSetting.find({ deleteAt: null })
             .sort({ createdAt: 1 })
             .lean(),
     ]);

@@ -535,7 +535,7 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
         try {
             get().setOperationPending(OP_CREATE, tempId, requestId);
 
-            const resp = await api.post(`${URL_AFTER_API}/upload`, payload);
+            const resp = await api.post(`${URL_AFTER_API}`, payload);
             if (!resp?.data || typeof resp.data !== "object" || !resp.data.data) {
                 throw new Error("Invalid API response");
             }

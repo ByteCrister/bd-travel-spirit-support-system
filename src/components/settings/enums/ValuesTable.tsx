@@ -12,29 +12,29 @@ import { motion, AnimatePresence } from "framer-motion";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 
 interface Props {
-  groupName: string;
+  _id: string;
   values: EnumValue[];
   onEdit: (v: EnumValue) => void;
 }
 
-export default function ValuesTable({ groupName, values, onEdit }: Props): JSX.Element {
+export default function ValuesTable({ _id, values, onEdit }: Props): JSX.Element {
   const {
     removeValue,
     setValueActive,
     groups
   } = useEnumSettingsStore();
-  const groupState = groups[groupName];
+  const groupState = groups[_id];
   const optimistic = groupState?.optimistic ?? {};
 
   const handleRemove = useCallback(
     async (key: string) => {
       try {
-        await removeValue(groupName, key);
+        await removeValue(_id, key);
       } catch {
         // removeValue will show toast or handle errors
       }
     },
-    [removeValue, groupName]
+    [removeValue, _id]
   );
 
   return (
@@ -115,7 +115,7 @@ export default function ValuesTable({ groupName, values, onEdit }: Props): JSX.E
                       >
                         <Switch
                           checked={!!v.active}
-                          onCheckedChange={(val) => void setValueActive(groupName, v.key, !!val)}
+                          onCheckedChange={async(val) => await setValueActive(_id, v.key, !!val)}
                           disabled={pending}
                           aria-label={`Set ${v.key} active`}
                           className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-green-500 data-[state=checked]:to-green-600"
@@ -137,7 +137,7 @@ export default function ValuesTable({ groupName, values, onEdit }: Props): JSX.E
                         </motion.div>
                         <ConfirmDeleteDialog
                           title={`Delete value "${v.key}"`}
-                          description={`Permanently remove "${v.key}" from ${groupName}. This cannot be undone.`}
+                          description={`Permanently remove "${v.key}" from ${groupState.data?.name}. This cannot be undone.`}
                           confirmLabel="Delete value"
                           cancelLabel="Cancel"
                           onConfirm={() => handleRemove(v.key)}

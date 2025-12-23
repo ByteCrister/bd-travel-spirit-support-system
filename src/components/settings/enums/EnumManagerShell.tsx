@@ -1,13 +1,22 @@
 // src/components/enums/EnumManagerShell.tsx
 "use client";
 
-import React, { JSX, useState } from "react";
+import { JSX, useState } from "react";
 import { motion } from "framer-motion";
 import GroupsList from "./GroupsList";
 import GroupDetail from "./GroupDetail";
+import useEnumSettingsStore from "@/store/enumSettings.store";
 
 export default function EnumManagerShell(): JSX.Element {
+  const { fetchGroup } = useEnumSettingsStore();
+
   const [selected, setSelected] = useState<string | null>(null);
+
+  const handleSelect = async (_id: string) => {
+    // alert(_id)
+    setSelected(_id);
+    await fetchGroup(_id);
+  }
 
   return (
     <motion.div
@@ -23,7 +32,7 @@ export default function EnumManagerShell(): JSX.Element {
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <GroupsList selected={selected} onSelect={setSelected} />
+          <GroupsList selected={selected} onSelect={(_id: string) => handleSelect(_id)} />
         </motion.div>
         <motion.div
           className="flex-1 md:pl-4"

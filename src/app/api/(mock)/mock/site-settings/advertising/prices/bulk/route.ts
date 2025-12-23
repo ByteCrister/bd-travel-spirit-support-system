@@ -9,5 +9,5 @@ export async function PUT(req: NextRequest) {
   const payload = body as BulkUpdateAdvertisingPricesPayload;
   if (!payload) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   const config = bulkUpdatePrices(payload);
-  return NextResponse.json(config, { status: 200 });
+  return NextResponse.json({ data: config }, { status: 200 });
 }

@@ -1,4 +1,4 @@
-// app/api/site-settings/v1/enums/[name]/values/route.ts
+// app/api/site-settings/v1/enums/[id]/values/route.ts
 import { NextRequest } from "next/server";
 
 import ConnectDB from "@/config/db";
@@ -13,19 +13,19 @@ import {
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 
 interface RouteParams {
-    params: Promise<{ name: string }>;
+    params: Promise<{ id: string }>;
 }
 
 /* ---------------------------------------------------
-   POST — insert / merge / replace enum values
+   POST — insert / merge / replace enum values (by group id)
 ---------------------------------------------------- */
 export const POST = withErrorHandler(
     async (req: NextRequest, { params }: RouteParams) => {
         await ConnectDB();
 
-        const { name } = await params;
-        if (!name) {
-            throw new ApiError("Missing enum group name", 400);
+        const { id } = await params;
+        if (!id) {
+            throw new ApiError("Missing enum group id", 400);
         }
 
         const body = (await req.json()) as UpsertEnumValuesPayload & {
@@ -43,41 +43,41 @@ export const POST = withErrorHandler(
             : [];
 
         /**
-         * Find existing enum group
+         * Find existing enum group (must be non-deleted)
          */
-        const group = await EnumGroupSetting.findOne({ name });
-
-        /**
-         * Create group if missing
-         */
+        const group = await EnumGroupSetting.findOne({ _id: id, deletedAt: null });
         if (!group) {
-            const created = await EnumGroupSetting.create({
-                name,
-                description: null,
-                values: incoming,
-            });
-
-            const enumGroup: EnumGroup = {
-                name: created.name,
-                description: created.description ?? null,
-                values: created.values,
-            };
-
-            return { data: { enumGroup }, status: 201 };
+            throw new ApiError(`Enum group with id '${id}' not found`, 404);
         }
 
         /**
          * Update existing group
+         *
+         * - If replace: replace values array entirely (ensure deletedAt cleared)
+         * - If merge: merge incoming values into existing values. If an incoming key
+         *   matches a soft-deleted value, restore it (clear deletedAt and set active).
          */
         if (body.replace) {
-            group.values = incoming;
+            // Ensure incoming values are not soft-deleted
+            group.values = incoming.map((v) => ({ ...v, deletedAt: null }));
         } else {
             const map = new Map<string, EnumValue>(
-                group.values.map((v) => [v.key, v])
+                group.values.map((v) => [v.key, { ...v }])
             );
 
             for (const v of incoming) {
-                map.set(v.key, v);
+                const existing = map.get(v.key);
+                if (existing) {
+                    // Merge fields from incoming
+                    existing.label = v.label ?? existing.label;
+                    existing.value = v.value ?? existing.value;
+                    existing.description = v.description ?? existing.description;
+                    existing.active = v.active ?? existing.active;
+                    map.set(v.key, existing);
+                } else {
+                    // New value: ensure deletedAt is null
+                    map.set(v.key, v);
+                }
             }
 
             group.values = Array.from(map.values());
@@ -86,6 +86,7 @@ export const POST = withErrorHandler(
         await group.save();
 
         const enumGroup: EnumGroup = {
+            _id: group._id.toString(),
             name: group.name,
             description: group.description ?? null,
             values: group.values,

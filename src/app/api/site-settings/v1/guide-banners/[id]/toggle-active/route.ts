@@ -18,27 +18,42 @@ export const PATCH = withErrorHandler(async (
 
     await ConnectDB();
 
-    // Find the banner
-    const banner = await GuideBannerSetting.findById(id);
+    // Find the banner and ensure it's not soft-deleted (deleteAt === null)
+    const banner = await GuideBannerSetting.findOne({ _id: id, deleteAt: null });
     if (!banner) throw new ApiError("Guide banner not found", 404);
 
-    // Toggle active field
-    banner.active = !banner.active;
+    // Ensure active is boolean (default true if undefined) and toggle
+    const currentActive = typeof banner.active === "boolean" ? banner.active : true;
+    banner.active = !currentActive;
     await banner.save();
 
-    // Fetch asset URL
+    // Fetch asset URL (only non-deleted assets)
     let assetUrl: string | null = null;
     if (banner.asset) {
-        const assetDoc = await AssetModel.findById(banner.asset).select("publicUrl").lean();
+        const assetDoc = await AssetModel.findOne({
+            _id: banner.asset,
+            $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+        })
+            .select("publicUrl")
+            .lean()
+            .exec();
+
         assetUrl = assetDoc?.publicUrl ?? null;
     }
 
+    const obj = banner.toObject();
+
     return {
         data: {
-            ...banner.toObject(),
+            _id: String(obj._id),
             asset: assetUrl,
+            alt: obj.alt ?? null,
+            caption: obj.caption ?? null,
+            order: typeof obj.order === "number" ? obj.order : 0,
+            active: typeof obj.active === "boolean" ? obj.active : true,
+            createdAt: obj.createdAt ? new Date(obj.createdAt).toISOString() : undefined,
+            updatedAt: obj.updatedAt ? new Date(obj.updatedAt).toISOString() : undefined,
         },
         status: 200,
     };
-
 });
