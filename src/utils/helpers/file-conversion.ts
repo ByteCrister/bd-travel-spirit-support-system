@@ -52,7 +52,8 @@ export type FileToBase64Options = {
 /**
  * Get file extension in lowercase
  */
-export function getFileExtension(fileName: string): string {
+export function getFileExtension(fileName: string | undefined | null): string {
+  if (!fileName) return "";
   return fileName.split(".").pop()?.toLowerCase() ?? "";
 }
 

@@ -1,54 +1,18 @@
 import { GUIDE_SOCIAL_PLATFORM } from "@/constants/guide.const";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-// Types for form data
-export interface PersonalInfo {
-  fullName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-}
-
-export interface CompanyDetails {
-  companyName: string;
-  bio: string;
-  social: {
-    platform: GUIDE_SOCIAL_PLATFORM;
-    url: string;
-  }[];
-}
-
-export interface DocumentFile {
-  name: string;
-  base64: string;
-  uploadedAt: string;
-  type: string;
-  size: number;
-}
-
-export interface SegmentedDocuments {
-  governmentId: DocumentFile[];
-  businessLicense: DocumentFile[];
-  professionalPhoto: DocumentFile[];
-  certifications: DocumentFile[];
-}
-
-export interface FormData {
-  personalInfo: PersonalInfo;
-  companyDetails: CompanyDetails;
-  documents: SegmentedDocuments;
-}
+import api from "@/utils/axios"; // Make sure you have this import
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
+import { ApiResponse } from "@/types/api.types";
+import { CompanyDetails, DocumentFile, FormData, PersonalInfo, SegmentedDocuments } from "@/types/register-as-guide.types";
 
 export interface RegisterGuideState {
   currentStep: number;
   formData: FormData;
   isSubmitting: boolean;
   errors: Record<string, string>;
+  isSearching: boolean;
+  searchError: string | null;
 
   // Actions
   setCurrentStep: (step: number) => void;
@@ -64,17 +28,22 @@ export interface RegisterGuideState {
   clearAllErrors: () => void;
   setSubmitting: (isSubmitting: boolean) => void;
   resetForm: () => void;
+
+  // Fetch and fill form data method
+  fetchAndFillApplication: (email: string, accessToken: string) => Promise<boolean>;
+  setSearching: (isSearching: boolean) => void;
+  setSearchError: (error: string | null) => void;
 }
 
 const initialFormData: FormData = {
   personalInfo: {
-    fullName: "",
+    name: "",
     email: "",
     phone: "",
-    address: "",
+    street: "",
     city: "",
-    state: "",
-    zipCode: "",
+    division: "",
+    zip: "",
     country: "Bangladesh",
   },
   companyDetails: {
@@ -90,13 +59,25 @@ const initialFormData: FormData = {
   },
 };
 
+// Validation helpers
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const isValidAccessToken = (token: string): boolean => {
+  return token.length === 20;
+};
+
 export const useRegisterGuideStore = create<RegisterGuideState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       currentStep: 1,
       formData: initialFormData,
       isSubmitting: false,
       errors: {},
+      isSearching: false,
+      searchError: null,
 
       setCurrentStep: (step: number) => {
         set({ currentStep: step });
@@ -129,7 +110,7 @@ export const useRegisterGuideStore = create<RegisterGuideState>()(
             ...state.formData,
             documents: {
               ...state.formData.documents,
-              [segment]: [...state.formData.documents[segment], document],
+              [segment]: [document],
             },
           },
         }));
@@ -171,13 +152,115 @@ export const useRegisterGuideStore = create<RegisterGuideState>()(
         set({ isSubmitting });
       },
 
+      setSearching: (isSearching: boolean) => {
+        set({ isSearching });
+      },
+
+      setSearchError: (error: string | null) => {
+        set({ searchError: error });
+      },
+
       resetForm: () => {
         set({
           currentStep: 1,
           formData: initialFormData,
           isSubmitting: false,
           errors: {},
+          searchError: null,
+          isSearching: false,
         });
+      },
+
+      fetchAndFillApplication: async (email: string, accessToken: string): Promise<boolean> => {
+        if (get().isSearching) return false;
+        // Clear previous errors
+        set({
+          searchError: null,
+          isSearching: true
+        });
+
+        // Validate email format
+        if (!isValidEmail(email)) {
+          set({
+            searchError: "Please enter a valid email address",
+            isSearching: false
+          });
+          return false;
+        }
+
+        // Validate access token length
+        if (!isValidAccessToken(accessToken)) {
+          set({
+            searchError: "Invalid access token",
+            isSearching: false
+          });
+          return false;
+        }
+
+        try {
+          // Make GET request with email and accessToken in the body
+          const response = await api.get<ApiResponse<FormData>>('/guide-applications/v1/application', {
+            data: { email, accessToken }
+          });
+
+          // Assuming the API returns the formData structure
+          const formDataResponse: FormData | undefined = response.data?.data;
+
+          if (!formDataResponse) {
+            throw new Error("Invalid response body")
+          }
+
+          if (!formDataResponse) {
+            set({
+              searchError: "No application data found",
+              isSearching: false
+            });
+            return false;
+          }
+
+          // Update the form data in the store
+          set({
+            formData: {
+              // Merge with initial data to ensure all fields exist
+              ...initialFormData,
+              // Update with fetched data
+              personalInfo: {
+                ...initialFormData.personalInfo,
+                ...formDataResponse.personalInfo,
+                // Ensure email from request is used
+                email: email
+              },
+              companyDetails: {
+                ...initialFormData.companyDetails,
+                ...formDataResponse.companyDetails,
+              },
+              documents: {
+                ...initialFormData.documents,
+                ...formDataResponse.documents,
+              },
+            },
+            isSearching: false,
+            // Optionally set to step 4 (review) if you want to jump to review
+            // currentStep: 4
+          });
+
+          return true;
+
+        } catch (error: unknown) {
+
+          let errorMessage = "Failed to fetch application data";
+
+          errorMessage = extractErrorMessage(error) ?? errorMessage;
+
+          console.error('Fetch application error:', error);
+
+          set({
+            searchError: errorMessage,
+            isSearching: false
+          });
+
+          return false;
+        }
       },
     }),
     {

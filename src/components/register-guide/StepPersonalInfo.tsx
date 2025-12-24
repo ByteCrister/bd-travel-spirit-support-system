@@ -194,37 +194,37 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
                 </Label>
                 <div className="relative">
                   <Input
-                    id="address"
+                    id="street"
                     type="text"
                     placeholder="Enter your street address"
-                    value={formData.personalInfo.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    value={formData.personalInfo.street}
+                    onChange={(e) => handleInputChange('street', e.target.value)}
                     className={cn(
                       "h-12 pl-4 pr-12 transition-all duration-300",
-                      getFieldError('address') && "border-red-500 bg-red-50",
-                      isFieldValid('address') && "border-green-500 bg-green-50",
+                      getFieldError('street') && "border-red-500 bg-red-50",
+                      isFieldValid('street') && "border-green-500 bg-green-50",
                       "focus:border-blue-500"
                     )}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <AnimatePresence mode="wait">
-                      {getFieldError('address') ? (
+                      {getFieldError('street') ? (
                         <AlertCircle className="w-5 h-5 text-red-500" />
-                      ) : isFieldValid('address') ? (
+                      ) : isFieldValid('street') ? (
                         <CheckCircle className="w-5 h-5 text-green-500" />
                       ) : null}
                     </AnimatePresence>
                   </div>
                 </div>
                 <AnimatePresence>
-                  {getFieldError('address') && (
+                  {getFieldError('street') && (
                     <motion.p
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="text-sm text-destructive flex items-center space-x-1"
                     >
                       <AlertCircle className="w-4 h-4" />
-                      <span>{getFieldError('address')}</span>
+                      <span>{getFieldError('street')}</span>
                     </motion.p>
                   )}
                 </AnimatePresence>

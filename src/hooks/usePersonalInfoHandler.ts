@@ -9,7 +9,7 @@ import { Building, Mail, MapPin, Phone, User } from 'lucide-react'
 
 export const formFields = [
     {
-        id: 'fullName',
+        id: 'name',
         label: 'Full Name',
         placeholder: 'Enter your full name',
         icon: User,
@@ -33,7 +33,7 @@ export const formFields = [
         type: 'tel'
     },
     {
-        id: 'address',
+        id: 'street',
         label: 'Street Address',
         placeholder: 'Enter your street address',
         icon: MapPin,
@@ -51,14 +51,14 @@ export const locationFields = [
         required: true
     },
     {
-        id: 'state',
-        label: 'State/Province',
-        placeholder: 'State',
+        id: 'division',
+        label: 'Division/State',
+        placeholder: 'Division',
         icon: Building,
         required: true
     },
     {
-        id: 'zipCode',
+        id: 'zip',
         label: 'Zip Code',
         placeholder: 'Zip Code',
         icon: Building,

@@ -1,0 +1,165 @@
+// src/app/api/guide-applications/v1/application/route.ts
+import { NextRequest } from "next/server";
+import { Types } from "mongoose";
+import UserModel from "@/models/user.model";
+import AssetModel, { IAsset } from "@/models/asset.model";
+import {
+    GUIDE_DOCUMENT_CATEGORY,
+    GUIDE_SOCIAL_PLATFORM,
+    GUIDE_STATUS,
+} from "@/constants/guide.const";
+import { Lean } from "@/types/mongoose-lean.types";
+import GuideModel, { GuideSocialLink, IGuide, IGuideDocument } from "@/models/guide/guide.model";
+import { DocumentFile, FormData, SegmentedDocuments } from "@/types/register-as-guide.types";
+import ConnectDB from "@/config/db";
+import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
+
+/** Helpers */
+const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};
+
+const isValidAccessToken = (token: string): boolean => {
+    return typeof token === "string" && token.length === 20;
+};
+
+function mapCategoryToSegment(category: string): keyof SegmentedDocuments | null {
+    switch (category) {
+        case GUIDE_DOCUMENT_CATEGORY.GOVERNMENT_ID:
+            return "governmentId";
+        case GUIDE_DOCUMENT_CATEGORY.BUSINESS_LICENSE:
+            return "businessLicense";
+        case GUIDE_DOCUMENT_CATEGORY.PROFESSIONAL_PHOTO:
+            return "professionalPhoto";
+        case GUIDE_DOCUMENT_CATEGORY.CERTIFICATION:
+            return "certifications";
+        default:
+            return null;
+    }
+}
+
+function buildDocumentFileFromAsset(asset: Lean<IAsset>): DocumentFile {
+    const publicUrl = asset.publicUrl ?? "";
+    const base64 = Buffer.from(publicUrl, "utf-8").toString("base64");
+    return {
+        name: asset.title || asset.objectKey || String(asset._id),
+        base64,
+        uploadedAt: asset.createdAt ? new Date(asset.createdAt).toISOString() : new Date().toISOString(),
+        type: asset.contentType || String(asset.assetType) || "application/octet-stream",
+        size: asset.fileSize ?? 0,
+    };
+}
+
+function buildDocumentFileFromGuideDoc(doc: Lean<IGuideDocument>): DocumentFile {
+    // Guide documents only have AssetUrl (ObjectId reference), not direct file properties
+    // We need to handle this case differently since we can't get file info from just an ObjectId
+    return {
+        name: "Document from Guide",
+        base64: "",
+        uploadedAt: doc.uploadedAt ? new Date(doc.uploadedAt).toISOString() : new Date().toISOString(),
+        type: "unknown",
+        size: 0,
+    };
+}
+
+/**
+ * GET handler for Next.js App Router
+ * Example: GET /api/guide-applications?email=foo@bar.com&accessToken=xxxxxxxxxxxxxxxxxxxx
+ */
+export const GET = withErrorHandler(async (request: NextRequest) => {
+
+    const url = new URL(request.url);
+    const email = String(url.searchParams.get("email") ?? "").trim();
+    const accessToken = String(url.searchParams.get("accessToken") ?? "").trim();
+
+    if (!email || !isValidEmail(email)) {
+        throw new ApiError("Please enter a valid email address", 400)
+    }
+
+    if (!accessToken || !isValidAccessToken(accessToken)) {
+        throw new ApiError("Invalid access token", 400)
+    }
+
+    ConnectDB();
+
+    // Find user by email
+    const user = await UserModel.findOne({ email }).lean();
+    if (!user) {
+        throw new ApiError("User not found", 404)
+    }
+
+    // Find guide by accessToken and owner.user === user._id
+    const guide = await GuideModel.findOne({
+        accessToken,
+        "owner.user": user._id as Types.ObjectId,
+    }).lean() as Lean<IGuide> | null;
+
+    if (!guide) {
+        throw new ApiError("Guide application not found for provided token and email", 404)
+    }
+
+    // Only allow search for pending guides
+    if (guide.status !== GUIDE_STATUS.PENDING) {
+        throw new ApiError("Only pending applications can be fetched", 403)
+    }
+
+    // Build base FormData
+    const formData: FormData = {
+        personalInfo: {
+            name: guide.owner?.name ?? "",
+            email,
+            phone: guide.owner?.phone ?? "",
+            street: guide.address?.street ?? "",
+            zip: guide.address?.zip ?? "",
+            city: guide.address?.city ?? "",
+            division: guide.address?.division ?? "",
+            country: guide.address?.country ?? "Bangladesh",
+        },
+        companyDetails: {
+            companyName: guide.companyName ?? "",
+            bio: guide.bio ?? "",
+            social: Array.isArray(guide.social) && guide.social.length
+                ? (guide.social as Lean<GuideSocialLink>[]).map((s) => ({
+                    platform: s.platform as GUIDE_SOCIAL_PLATFORM,
+                    url: s.url,
+                }))
+                : [{ platform: GUIDE_SOCIAL_PLATFORM.FACEBOOK, url: "" }],
+        },
+        documents: {
+            governmentId: [],
+            businessLicense: [],
+            professionalPhoto: [],
+            certifications: [],
+        },
+    };
+
+    // guide.documents is expected to be an array of IGuideDocument-like objects
+    const docs: Lean<IGuideDocument>[] = Array.isArray(guide.documents) ? (guide.documents as Lean<IGuideDocument>[]) : [];
+
+    for (const doc of docs) {
+        const segmentKey = mapCategoryToSegment(String(doc.category));
+        if (!segmentKey) continue;
+
+        let asset: Lean<IAsset> | null = null;
+
+        // Guide documents store AssetUrl as ObjectId, not fileUrl
+        if (doc.AssetUrl) {
+            // AssetUrl is already a Types.ObjectId in the IGuideDocument interface
+            asset = await AssetModel.findOne({
+                _id: doc.AssetUrl,
+                deletedAt: null
+            }).lean() as Lean<IAsset> | null;
+        }
+
+        const documentFile: DocumentFile = asset
+            ? buildDocumentFileFromAsset(asset)
+            : buildDocumentFileFromGuideDoc(doc);
+
+        // Each segment array must contain only one value
+        formData.documents[segmentKey] = [documentFile];
+    }
+
+    return { data: formData, status: 200 };
+
+})

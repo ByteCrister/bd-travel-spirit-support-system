@@ -12,6 +12,7 @@ import { Shield, Users, Globe, Star, Heart } from 'lucide-react'
 import { GuideRegisterHeader } from './GuideRegisterHeader'
 import { GuideRegisterFooter } from './GuideRegisterFooter'
 import { showToast } from '../global/showToast'
+import SearchApplication from './SearchApplication'
 
 const RegisterAsGuide: React.FC = () => {
   const {
@@ -151,6 +152,8 @@ const RegisterAsGuide: React.FC = () => {
       <div className="container mx-auto px-4 py-12">
         {/* Progress Stepper */}
         <Stepper currentStep={currentStep} totalSteps={totalSteps} />
+
+        <SearchApplication />
 
         {/* Step Content */}
         <div className="max-w-6xl mx-auto">

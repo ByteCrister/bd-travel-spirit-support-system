@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 // Personal Info validation schema
 export const personalInfoSchema = z.object({
-  fullName: z
+  name: z
     .string()
     .trim()
     .min(2, 'Full name must be at least 2 characters')
@@ -26,7 +26,7 @@ export const personalInfoSchema = z.object({
       'Phone number must be 7–15 digits and may include a leading +'
     ),
 
-  address: z
+  street: z
     .string()
     .trim()
     .min(5, 'Address must be at least 5 characters')
@@ -38,13 +38,13 @@ export const personalInfoSchema = z.object({
     .min(2, 'City must be at least 2 characters')
     .max(100, 'City must not exceed 100 characters'),
 
-  state: z
+  division: z
     .string()
     .trim()
     .min(2, 'State must be at least 2 characters')
     .max(100, 'State must not exceed 100 characters'),
 
-  zipCode: z
+  zip: z
     .string()
     .trim()
     .regex(/^[A-Za-z0-9\- ]{3,10}$/, 'Please enter a valid zip/postal code'),
