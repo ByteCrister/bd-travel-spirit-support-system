@@ -34,6 +34,7 @@ import {
   BulkUpdateAdvertisingPricesPayload,
   UpdateAdvertisingPricePayload,
 } from "@/types/advertising-settings.types";
+import { Currency, CURRENCY } from "@/constants/tour.const";
 
 interface Props {
   open: boolean;
@@ -42,10 +43,10 @@ interface Props {
   onSubmit: (payload: BulkUpdateAdvertisingPricesPayload) => Promise<void>;
 }
 
-const currencies = ["USD", "EUR", "BDT", "GBP", "JPY"];
+const currencies = Object.values(CURRENCY);
 
 const BulkEditDrawer: React.FC<Props> = ({ open, onClose, selectedRows, onSubmit }) => {
-  const [currency, setCurrency] = useState<string>("");
+  const [currency, setCurrency] = useState<Currency>(CURRENCY.USD);
   const [setActive, setSetActive] = useState<boolean | null>(null);
   const [multiplier, setMultiplier] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
@@ -55,7 +56,7 @@ const BulkEditDrawer: React.FC<Props> = ({ open, onClose, selectedRows, onSubmit
     try {
       const updates: UpdateAdvertisingPricePayload[] = selectedRows.map(
         (r): UpdateAdvertisingPricePayload => {
-          const upd: UpdateAdvertisingPricePayload = { id: r.id };
+          const upd: UpdateAdvertisingPricePayload = { id: r.id, title: r.title };
 
           if (currency) {
             upd.currency = currency;
@@ -84,7 +85,7 @@ const BulkEditDrawer: React.FC<Props> = ({ open, onClose, selectedRows, onSubmit
       await onSubmit(payload);
 
       // Reset form
-      setCurrency("");
+      setCurrency(CURRENCY.BDT);
       setSetActive(null);
       setMultiplier("");
       onClose();
@@ -93,7 +94,7 @@ const BulkEditDrawer: React.FC<Props> = ({ open, onClose, selectedRows, onSubmit
     }
   };
 
-  const hasChanges = currency !== "" || setActive !== null || multiplier !== "";
+  const hasChanges = currency !== CURRENCY.BDT || setActive !== null || multiplier !== "";
 
   return (
     <Drawer open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -145,7 +146,7 @@ const BulkEditDrawer: React.FC<Props> = ({ open, onClose, selectedRows, onSubmit
                 <HiCurrencyDollar className="h-5 w-5 text-emerald-600" />
                 <Label className="text-sm font-semibold">Update Currency</Label>
               </div>
-              <Select value={currency} onValueChange={setCurrency}>
+              <Select value={currency} onValueChange={(c: Currency) => setCurrency(c)}>
                 <SelectTrigger className="h-12 border-slate-200 hover:border-emerald-300">
                   <SelectValue placeholder="Keep current currency" />
                 </SelectTrigger>
@@ -242,7 +243,7 @@ const BulkEditDrawer: React.FC<Props> = ({ open, onClose, selectedRows, onSubmit
                     {multiplier && (
                       <li className="flex items-center gap-2">
                         <HiCheck className="h-4 w-4 text-emerald-600" />
-                        Price multiplier: ×{multiplier}
+                        Price multiplier: {`x`}{multiplier}
                       </li>
                     )}
                   </ul>
@@ -252,7 +253,7 @@ const BulkEditDrawer: React.FC<Props> = ({ open, onClose, selectedRows, onSubmit
           </div>
 
           {/* Action Buttons */}
-          <div className="border-t p-6 bg-white">
+          <div className="border-t pb-8 bg-white">
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"

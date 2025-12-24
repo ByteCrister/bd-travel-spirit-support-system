@@ -33,10 +33,12 @@ import { showToast } from "@/components/global/showToast";
 import { PLACEMENT } from "@/constants/advertising.const";
 enableMapSet();
 
-const URL_AFTER_API = "/mock/site-settings/advertising";
+// const URL_AFTER_API = "/mock/site-settings/advertising";
+const URL_AFTER_API = "/site-settings/v1/advertising";
 
 const mapDtoToRow = (dto: AdvertisingPriceDTO): AdvertisingPriceRow => ({
   id: dto.id,
+  title: dto.title,
   placement: dto.placement,
   placementLabel: humanizePlacement(dto.placement),
   price: dto.price,
@@ -174,6 +176,7 @@ const storeCreator: Creator = (set, get) => ({
               const current = draft.pricingRows[idx];
               const patched: AdvertisingPriceRow = {
                 ...current,
+                title: payload.title ?? current.title,
                 placement: payload.placement ?? current.placement,
                 placementLabel: payload.placement
                   ? humanizePlacement(payload.placement)
@@ -350,6 +353,66 @@ const storeCreator: Creator = (set, get) => ({
     }
   },
 
+  toggleActive: async (id: ObjectId) => {
+    set((s) => ({ ...s, saving: true, lastError: null }));
+    const prevRows = get().pricingRows;
+
+    try {
+      // Optimistic update
+      set((s) =>
+        produce(s, (draft) => {
+          const idx = draft.pricingRows.findIndex((r) => r.id === id);
+          if (idx !== -1) {
+            draft.pricingRows[idx].active = !draft.pricingRows[idx].active;
+            draft.pricingRows[idx].updatedAt = new Date().toISOString();
+          }
+        })
+      );
+
+      // Call server API to toggle active status
+      const res = await api.put<UpdateAdvertisingPriceRes>(
+        `${URL_AFTER_API}/prices/${id}/toggle-active`
+      );
+
+      if (!res.data.data) throw new Error("Invalid response body");
+
+      // Sync updated DTO
+      const dto = res.data.data;
+      const row = mapDtoToRow(dto);
+
+      set((s) =>
+        produce(s, (draft) => {
+          const idx = draft.pricingRows.findIndex((r) => r.id === dto.id);
+          if (idx !== -1) draft.pricingRows[idx] = row;
+          if (draft.config) {
+            draft.config.pricing = draft.config.pricing.map((p) =>
+              p.id === dto.id ? dto : p
+            );
+          }
+          draft.saving = false;
+        })
+      );
+
+      showToast.success(
+        dto.active ? "Price activated" : "Price deactivated",
+        `Placement: ${row.placementLabel}`
+      );
+
+      return dto;
+    } catch (err) {
+      const message = extractErrorMessage(err);
+      // rollback optimistic change
+      set((s) => ({
+        ...s,
+        pricingRows: prevRows,
+        saving: false,
+        lastError: message,
+      }));
+      showToast.error("Failed to toggle active", message);
+      throw err;
+    }
+  },
+
   toggleSelect: (id: ObjectId) => {
     set((s) =>
       produce(s, (draft) => {
@@ -368,32 +431,6 @@ const storeCreator: Creator = (set, get) => ({
         draft.selectedIds = new Set<ObjectId>();
       })
     );
-  },
-
-  setNotes: async (notes?: string | null) => {
-    set((s) => ({ ...s, saving: true, lastError: null }));
-    try {
-      const res = await api.put<AdvertisingConfigDTO>(
-        `${URL_AFTER_API}/config/notes`,
-        { notes }
-      );
-      const config = res.data;
-      const rows = (config.pricing ?? []).map(mapDtoToRow);
-      set((s) =>
-        produce(s, (draft) => {
-          draft.config = config;
-          draft.pricingRows = rows;
-          draft.saving = false;
-        })
-      );
-      showToast.success("Notes updated");
-      return config;
-    } catch (err) {
-      const message = extractErrorMessage(err);
-      set((s) => ({ ...s, saving: false, lastError: message }));
-      showToast.error("Failed to update notes", message);
-      throw err;
-    }
   },
 
   setLastError: (err?: string | null) => {

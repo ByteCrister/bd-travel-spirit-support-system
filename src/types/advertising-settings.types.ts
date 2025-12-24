@@ -17,6 +17,7 @@ export type ObjectId = string;
 
 export interface AdvertisingPriceDTO {
     id: ObjectId;                 // server-generated id for the pricing entry
+    title: string;
     placement: PlacementType;
     price: number;                // canonical numeric price (non-negative)
     currency: Currency;
@@ -46,6 +47,7 @@ export type BulkUpdateRes = FetchAdvertisingConfigRes;
 ------------------------- */
 
 export interface CreateAdvertisingPricePayload {
+    title: string;
     placement: PlacementType;
     price: number;
     currency?: Currency;           // optional; server default applies
@@ -56,6 +58,7 @@ export interface CreateAdvertisingPricePayload {
 
 export interface UpdateAdvertisingPricePayload {
     id: ObjectId;
+    title: string;
     placement?: PlacementType;
     price?: number;
     currency?: Currency;
@@ -78,6 +81,7 @@ export interface BulkUpdateAdvertisingPricesPayload {
 
 export interface AdvertisingPriceForm {
     id?: ObjectId;                // undefined for new entries
+    title: string | "";
     placement: PlacementType | "";    // allow empty for validation UX
     price: number | "";           // number or blank during editing
     currency: Currency | "";
@@ -95,6 +99,7 @@ export type AdvertisingFormErrors = Partial<Record<keyof AdvertisingPriceForm, s
 
 export interface AdvertisingPriceRow {
     id: ObjectId;
+    title: string;
     placement: PlacementType;
     placementLabel: string;        // e.g., "Landing banner" for human display
     price: number;
@@ -130,9 +135,9 @@ export interface AdvertisingSettingsState {
     updatePrice: (payload: UpdateAdvertisingPricePayload) => Promise<AdvertisingPriceDTO>;
     bulkUpdate: (payload: BulkUpdateAdvertisingPricesPayload) => Promise<AdvertisingConfigDTO>;
     deletePrice: (id: ObjectId) => Promise<void>;
+    toggleActive: (id: string) => Promise<AdvertisingPriceDTO>;
     toggleSelect: (id: ObjectId) => void;
     clearSelection: () => void;
-    setNotes: (notes?: string | null) => Promise<AdvertisingConfigDTO>;
     setLastError: (err?: string | null) => void;
 }
 

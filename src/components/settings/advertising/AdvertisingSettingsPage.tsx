@@ -8,7 +8,6 @@ import AdsTable from "./AdsTable";
 import PriceFormModal from "./PriceFormModal";
 import BulkEditDrawer from "./BulkEditDrawer";
 import ConfirmDialog from "./ConfirmDialog";
-import NotesEditor from "./NotesEditor";
 import PageSkeleton from "./skeletons/PageSkeleton";
 import EmptyState from "./EmptyState";
 import ErrorState from "./ErrorState";
@@ -19,13 +18,11 @@ const AdvertisingSettingsPage: React.FC = () => {
     const {
         pricingRows: rows,
         loading,
-        saving,
         selectedIds,
         fetchConfig,
         deletePrice,
         toggleSelect,
         clearSelection,
-        config,
         lastError
     } = useAdvertisingSettingsStore();
 
@@ -42,8 +39,8 @@ const AdvertisingSettingsPage: React.FC = () => {
     );
 
     useEffect(() => {
-        fetchConfig().catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        fetchConfig().catch(() => { });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     if (loading && !rows.length) {
@@ -114,28 +111,7 @@ const AdvertisingSettingsPage: React.FC = () => {
                         onBulkEdit={() => setBulkOpen(true)}
                         onDelete={() => setConfirmOpen(true)}
                         onRefresh={() => fetchConfig().catch(() => { })}
-                        onOpenNotes={() => {}}
-                    />
-                </motion.div>
-
-                {/* Notes Editor */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                >
-                    <NotesEditor
-                        notes={config?.notes ?? null}
-                        saving={saving}
-                        onSave={(notes) =>
-                            useAdvertisingSettingsStore
-                                .getState()
-                                .setNotes(notes)
-                                .then(() => {})
-                                .catch(() => {
-                                    throw undefined;
-                                })
-                        }
+                        onOpenNotes={() => { }}
                     />
                 </motion.div>
 
@@ -161,10 +137,10 @@ const AdvertisingSettingsPage: React.FC = () => {
                                 setConfirmOpen(true);
                                 setEditing({ id });
                             }}
-                            onToggleActive={(id, active) =>
+                            onToggleActive={(id) =>
                                 useAdvertisingSettingsStore
                                     .getState()
-                                    .updatePrice({ id, active })
+                                    .toggleActive(id)
                                     .catch(() => { })
                             }
                         />

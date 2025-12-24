@@ -1,6 +1,13 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { HiPencil, HiTrash, HiCheckCircle, HiXCircle, HiCurrencyDollar, HiCalendar } from "react-icons/hi";
+import {
+  HiPencil,
+  HiTrash,
+  HiCheckCircle,
+  HiXCircle,
+  HiCurrencyDollar,
+  HiCalendar,
+} from "react-icons/hi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,7 +20,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import type { AdvertisingPriceRow, ObjectId } from "@/types/advertising-settings.types";
+import type {
+  AdvertisingPriceRow,
+  ObjectId,
+} from "@/types/advertising-settings.types";
 
 interface Props {
   rows: AdvertisingPriceRow[];
@@ -22,7 +32,7 @@ interface Props {
   onToggleSelect: (id: ObjectId) => void;
   onEdit: (row: AdvertisingPriceRow) => void;
   onDelete: (id: ObjectId) => void;
-  onToggleActive: (id: ObjectId, active: boolean) => void;
+  onToggleActive: (id: ObjectId) => void;
 }
 
 const AdsTable: React.FC<Props> = ({
@@ -35,17 +45,17 @@ const AdsTable: React.FC<Props> = ({
   onToggleActive,
 }) => {
   const formatCurrency = (price: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency || "USD",
     }).format(price);
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -59,7 +69,7 @@ const AdsTable: React.FC<Props> = ({
                 <Checkbox
                   checked={rows.length > 0 && selectedIds.size === rows.length}
                   onCheckedChange={(checked) => {
-                    rows.forEach(row => {
+                    rows.forEach((row) => {
                       if (checked && !selectedIds.has(row.id)) {
                         onToggleSelect(row.id);
                       } else if (!checked && selectedIds.has(row.id)) {
@@ -75,7 +85,9 @@ const AdsTable: React.FC<Props> = ({
               <TableHead className="font-semibold">Duration</TableHead>
               <TableHead className="font-semibold">Status</TableHead>
               <TableHead className="font-semibold">Updated</TableHead>
-              <TableHead className="text-right font-semibold">Actions</TableHead>
+              <TableHead className="text-right font-semibold">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -94,7 +106,7 @@ const AdsTable: React.FC<Props> = ({
                     aria-label={`Select ${row.placementLabel}`}
                   />
                 </TableCell>
-                
+
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
@@ -103,12 +115,16 @@ const AdsTable: React.FC<Props> = ({
                       </span>
                     </div>
                     <div>
-                      <div className="font-medium text-slate-900">{row.placementLabel}</div>
-                      <div className="text-xs text-slate-500">{row.placement}</div>
+                      <div className="font-medium text-slate-900">
+                        {row.placementLabel}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {row.placement}
+                      </div>
                     </div>
                   </div>
                 </TableCell>
-                
+
                 <TableCell>
                   <div className="flex items-center gap-1">
                     <HiCurrencyDollar className="h-4 w-4 text-emerald-600" />
@@ -118,13 +134,15 @@ const AdsTable: React.FC<Props> = ({
                   </div>
                   <div className="text-xs text-slate-500">{row.currency}</div>
                 </TableCell>
-                
+
                 <TableCell>
                   <div className="space-y-1">
                     {row.defaultDurationDays && (
                       <div className="flex items-center gap-1 text-sm">
                         <HiCalendar className="h-3 w-3 text-slate-400" />
-                        <span className="text-slate-700">{row.defaultDurationDays} days</span>
+                        <span className="text-slate-700">
+                          {row.defaultDurationDays} days
+                        </span>
                       </div>
                     )}
                     {row.allowedDurationsDays.length > 0 && (
@@ -139,7 +157,10 @@ const AdsTable: React.FC<Props> = ({
                           </Badge>
                         ))}
                         {row.allowedDurationsDays.length > 3 && (
-                          <Badge variant="outline" className="text-xs bg-slate-50">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-slate-50"
+                          >
                             +{row.allowedDurationsDays.length - 3}
                           </Badge>
                         )}
@@ -147,19 +168,20 @@ const AdsTable: React.FC<Props> = ({
                     )}
                   </div>
                 </TableCell>
-                
+
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={row.active}
-                      onCheckedChange={(checked) => onToggleActive(row.id, checked)}
+                      onCheckedChange={() => onToggleActive(row.id)}
                       className="data-[state=checked]:bg-emerald-600"
                     />
                     <Badge
                       variant={row.active ? "default" : "secondary"}
-                      className={row.active 
-                        ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" 
-                        : "bg-slate-100 text-slate-600"
+                      className={
+                        row.active
+                          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                          : "bg-slate-100 text-slate-600"
                       }
                     >
                       {row.active ? (
@@ -176,19 +198,19 @@ const AdsTable: React.FC<Props> = ({
                     </Badge>
                   </div>
                 </TableCell>
-                
+
                 <TableCell>
                   <div className="text-sm text-slate-600">
                     {formatDate(row.updatedAt)}
                   </div>
                   <div className="text-xs text-slate-400">
-                    {new Date(row.updatedAt).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
+                    {new Date(row.updatedAt).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </div>
                 </TableCell>
-                
+
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
@@ -214,7 +236,7 @@ const AdsTable: React.FC<Props> = ({
           </TableBody>
         </Table>
       </div>
-      
+
       {loading && (
         <div className="p-8 text-center">
           <motion.div
