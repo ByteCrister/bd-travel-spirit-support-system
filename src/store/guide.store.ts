@@ -1,11 +1,14 @@
+// guide.store.ts
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
-import { GUIDE_STATUS } from "@/constants/guide.const";
+import { GUIDE_STATUS, GuideStatus } from "@/constants/guide.const";
 import { PendingGuideDTO } from "@/types/pendingGuide.types";
+import { ApiResponse } from "@/types/api.types";
 
-const URL_AFTER_API = "/mock/users/guides";
+// const URL_AFTER_API = "/mock/users/guides";
+const URL_AFTER_API = "/users/v1/guides";
 const CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_CACHE_TTL ?? 60_000);
 
 /* ----------------------------- Types ----------------------------- */
@@ -39,6 +42,14 @@ export type PaginatedResponse<T> = {
     hasNext: boolean;
     hasPrev: boolean;
 };
+
+type GuideActionType = {
+    _id: string;
+    status: GuideStatus;
+    reviewedAt: string;
+    reviewer: string;
+    reviewComment: string;
+}
 
 type PageMeta = { ids: string[]; page: number; pageSize: number };
 type CacheEntry = {
@@ -115,6 +126,32 @@ function computeCounts(items: Record<string, PendingGuideDTO>, total: number) {
 // helper to merge two item maps (immutable)
 function mergeItems(a: Record<string, PendingGuideDTO>, b: Record<string, PendingGuideDTO>) {
     return { ...a, ...b };
+}
+
+
+function updateAllCachesById(
+    cache: Record<string, CacheEntry>,
+    id: string,
+    updater: (prev: PendingGuideDTO) => PendingGuideDTO
+): Record<string, CacheEntry> {
+    const nextCache: Record<string, CacheEntry> = {};
+
+    for (const [key, entry] of Object.entries(cache)) {
+        if (!entry.items[id]) {
+            nextCache[key] = entry;
+            continue;
+        }
+
+        nextCache[key] = {
+            ...entry,
+            items: {
+                ...entry.items,
+                [id]: updater(entry.items[id]),
+            },
+        };
+    }
+
+    return nextCache;
 }
 
 /* ----------------------------- Store ----------------------------- */
@@ -226,11 +263,17 @@ export const useGuideStore = create<GuideStoreState>()(
             const p = (async (): Promise<boolean> => {
                 set({ loading: true, error: null });
                 try {
-                    const res = await api.get<PaginatedResponse<PendingGuideDTO>>(URL_AFTER_API, {
+                    const res = await api.get<ApiResponse<PaginatedResponse<PendingGuideDTO>>>(URL_AFTER_API, {
                         params: query,
                     });
 
-                    const { items: newItems, ids } = normalizeList(res.data.data);
+                    if (!res.data.data) {
+                        throw new Error("Invalid response body");
+                    }
+
+                    const data = res.data.data
+
+                    const { items: newItems, ids } = normalizeList(data.data);
 
                     set((prev) => {
                         const prevCache = prev.cache[baseKey];
@@ -247,7 +290,7 @@ export const useGuideStore = create<GuideStoreState>()(
                         const newCacheEntry: CacheEntry = {
                             items: mergedItems,
                             pages: newPages,
-                            total: res.data.total,
+                            total: data.total,
                             ts: now,
                         };
 
@@ -256,9 +299,9 @@ export const useGuideStore = create<GuideStoreState>()(
                         return {
                             items: mergedItems,
                             ids: ids,
-                            total: res.data.total,
+                            total: data.total,
                             guides: ids.map((id) => mergedItems[id]),
-                            counts: computeCounts(mergedItems, res.data.total),
+                            counts: computeCounts(mergedItems, data.total),
                             loading: false,
                             error: null,
                             cache: newCache,
@@ -292,33 +335,32 @@ export const useGuideStore = create<GuideStoreState>()(
 
         approve: async (id) => {
             try {
-                await api.put(`${URL_AFTER_API}/${id}/status`, { status: "APPROVED" });
+                const res = await api.put<ApiResponse<GuideActionType>>(`${URL_AFTER_API}/${id}/status`, { status: GUIDE_STATUS.APPROVED });
+                if (!res.data.data) {
+                    throw new Error("Invalid response body")
+                }
+                const data = res.data.data;
                 // perform an optimistic, consistent update across store and cache
                 set((state) => {
                     const updatedItem: PendingGuideDTO = {
                         ...state.items[id],
-                        status: GUIDE_STATUS.APPROVED,
+                        status: data.status,
+                        reviewedAt: data.reviewedAt,
+                        reviewer: data.reviewer,
+                        reviewComment: data.reviewComment,
                         updatedAt: new Date().toISOString(),
                     };
 
-                    // update top-level items
-                    const newItems = { ...state.items, [id]: updatedItem };
+                    const newItems = {
+                        ...state.items,
+                        [id]: updatedItem,
+                    };
 
-                    // update cache entries: replace item where present immutably
-                    const newCache: Record<string, CacheEntry> = {};
-                    Object.entries(state.cache).forEach(([k, entry]) => {
-                        if (entry.items[id]) {
-                            const items = { ...entry.items, [id]: updatedItem };
-                            newCache[k] = { ...entry, items };
-                        } else {
-                            newCache[k] = entry;
-                        }
-                    });
-
-                    // recompute counts conservatively using newItems and existing total
-                    const counts = computeCounts(newItems, state.total);
-
-                    return { items: newItems, cache: newCache, counts };
+                    return {
+                        items: newItems,
+                        cache: updateAllCachesById(state.cache, id, () => updatedItem),
+                        counts: computeCounts(newItems, state.total),
+                    };
                 });
 
                 return true;
@@ -330,34 +372,37 @@ export const useGuideStore = create<GuideStoreState>()(
 
         reject: async (id, reason) => {
             try {
-                await api.put(`${URL_AFTER_API}/${id}/status`, {
-                    status: "REJECTED",
+                const res = await api.put<ApiResponse<GuideActionType>>(`${URL_AFTER_API}/${id}/status`, {
+                    status: GUIDE_STATUS.REJECTED,
                     reason,
                 });
+
+                if (!res.data.data) {
+                    throw new Error("Invalid response body")
+                }
+
+                const data = res.data.data
 
                 set((state) => {
                     const updatedItem: PendingGuideDTO = {
                         ...state.items[id],
-                        status: GUIDE_STATUS.REJECTED,
+                        reviewedAt: data.reviewedAt,
+                        reviewer: data.reviewer,
+                        status: data.status,
                         reviewComment: reason,
                         updatedAt: new Date().toISOString(),
                     };
 
-                    const newItems = { ...state.items, [id]: updatedItem };
+                    const newItems = {
+                        ...state.items,
+                        [id]: updatedItem,
+                    };
 
-                    const newCache: Record<string, CacheEntry> = {};
-                    Object.entries(state.cache).forEach(([k, entry]) => {
-                        if (entry.items[id]) {
-                            const items = { ...entry.items, [id]: updatedItem };
-                            newCache[k] = { ...entry, items };
-                        } else {
-                            newCache[k] = entry;
-                        }
-                    });
-
-                    const counts = computeCounts(newItems, state.total);
-
-                    return { items: newItems, cache: newCache, counts };
+                    return {
+                        items: newItems,
+                        cache: updateAllCachesById(state.cache, id, () => updatedItem),
+                        counts: computeCounts(newItems, state.total),
+                    };
                 });
 
                 return true;
@@ -378,22 +423,16 @@ export const useGuideStore = create<GuideStoreState>()(
                         updatedAt: new Date().toISOString(),
                     };
 
-                    const newItems = { ...state.items, [id]: updatedItem };
+                    const newItems = {
+                        ...state.items,
+                        [id]: updatedItem,
+                    };
 
-                    const newCache: Record<string, CacheEntry> = {};
-                    Object.entries(state.cache).forEach(([k, entry]) => {
-                        if (entry.items[id]) {
-                            const items = { ...entry.items, [id]: updatedItem };
-                            newCache[k] = { ...entry, items };
-                        } else {
-                            newCache[k] = entry;
-                        }
-                    });
-
-                    // counts do not change for reviewComment update, but keep recompute for consistency
-                    const counts = computeCounts(newItems, state.total);
-
-                    return { items: newItems, cache: newCache, counts };
+                    return {
+                        items: newItems,
+                        cache: updateAllCachesById(state.cache, id, () => updatedItem),
+                        counts: computeCounts(newItems, state.total),
+                    };
                 });
 
                 return true;

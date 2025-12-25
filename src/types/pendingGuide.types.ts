@@ -1,7 +1,6 @@
 // types/pendingGuide.types.ts
 
-import { GUIDE_DOCUMENT_CATEGORY, GUIDE_DOCUMENT_TYPE } from "@/constants/guide.const";
-import { GUIDE_STATUS } from "@/constants/guide.const";
+import { GuideDocumentCategory, GuideDocumentType, GuideStatus } from "@/constants/guide.const";
 
 /** Address DTO */
 export interface PendingGuideAddressDTO {
@@ -14,9 +13,9 @@ export interface PendingGuideAddressDTO {
 
 /** Document DTO */
 export interface PendingGuideDocumentDTO {
-    category: GUIDE_DOCUMENT_CATEGORY;
+    category: GuideDocumentCategory;
     base64Content: string; // ⚠️ Consider replacing with fileUrl in production
-    fileType: GUIDE_DOCUMENT_TYPE;
+    fileType: GuideDocumentType;
     fileName?: string;
     uploadedAt: string; // Dates should be serialized as ISO strings in JSON
 }
@@ -33,7 +32,7 @@ export interface PendingGuideDTO {
     bio?: string;
     social?: string;
     documents: PendingGuideDocumentDTO[];
-    status: GUIDE_STATUS;
+    status: GuideStatus;
     appliedAt: string;
     reviewComment?: string;
     reviewer?: string; // reviewer’s userId as string

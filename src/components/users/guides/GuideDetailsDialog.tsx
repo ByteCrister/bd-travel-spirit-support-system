@@ -83,7 +83,7 @@ export function GuideDetailsDialog({
         );
     }
 
-    const canAct = guide.status !== GUIDE_STATUS.PENDING;
+    const canAct = guide.status === GUIDE_STATUS.PENDING;
 
     return (
         <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -210,7 +210,7 @@ export function GuideDetailsDialog({
                                             </div>
                                         )}
 
-                                        <div className="max-h-[280px] overflow-y-auto space-y-2 pr-1">
+                                        <div className="max-h-[480px] overflow-y-auto space-y-2 pr-1">
                                             {(guide.documents || []).map((doc, idx) => (
                                                 <motion.button
                                                     key={`${idx}-${doc.fileName}`}

@@ -36,29 +36,29 @@ export default function GuidePage() {
     const mountedRef = useRef(false);
 
     const handleQueryChange = useCallback(
-        (partial: Partial<typeof query>) => {
-            fetch(false, partial);
+        async (partial: Partial<typeof query>) => {
+            await fetch(false, partial);
         },
         [fetch]
     );
 
     const handlePageChange = useCallback(
-        (page: number) => {
-            fetch(false, { page });
+        async (page: number) => {
+            await fetch(false, { page });
         },
         [fetch]
     );
 
     const handlePageSizeChange = useCallback(
-        (pageSize: number) => {
-            fetch(false, { pageSize, page: 1 });
+        async (pageSize: number) => {
+            await fetch(false, { pageSize, page: 1 });
         },
         [fetch]
     );
 
     const handleSortChange = useCallback(
-        (sortBy: SortByTypes, sortDir: SortDirTypes) => {
-            fetch(false, { sortBy: sortBy ?? "createdAt", sortDir, page: 1 });
+        async (sortBy: SortByTypes, sortDir: SortDirTypes) => {
+            await fetch(false, { sortBy: sortBy ?? "createdAt", sortDir, page: 1 });
         },
         [fetch]
     );
@@ -128,9 +128,9 @@ export default function GuidePage() {
                         sortBy={query.sortBy}
                         sortDir={query.sortDir}
                         onSortChange={handleSortChange}
-                        onApprove={(id) => approve(id)}
-                        onReject={(id, reason) => reject(id, reason)}
-                        onComment={(id, comment) => updateReviewComment(id, comment)}
+                        onApprove={async (id) => await approve(id)}
+                        onReject={async (id, reason) => await reject(id, reason)}
+                        onComment={async (id, comment) => await updateReviewComment(id, comment)}
                         onOpenDocument={(guide, doc) => setSelectedDoc({ guide, doc })}
                         page={query.page}
                         pageSize={query.pageSize}

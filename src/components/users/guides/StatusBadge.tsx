@@ -1,4 +1,6 @@
-import { GUIDE_STATUS } from "@/constants/guide.const";
+"use client";
+
+import { GUIDE_STATUS, GuideStatus } from "@/constants/guide.const";
 import { Badge } from "../../ui/badge";
 import { FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
 import { cn } from "@/lib/utils";
@@ -24,7 +26,7 @@ const statusConfig = {
     },
 };
 
-const StatusBadge = ({ status }: { status: GUIDE_STATUS }) => {
+const StatusBadge = ({ status }: { status: GuideStatus }) => {
     const config = statusConfig[status];
     const Icon = config.icon;
 

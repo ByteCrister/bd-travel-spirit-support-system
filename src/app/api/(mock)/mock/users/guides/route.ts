@@ -95,12 +95,14 @@ export async function GET(req: Request) {
         const total = 200; // mock total count
 
         return NextResponse.json({
-            data: guides,
-            total,
-            page,
-            pageSize,
-            hasNext: page * pageSize < total,
-            hasPrev: page > 1,
+            data: {
+                data: guides,
+                total,
+                page,
+                pageSize,
+                hasNext: page * pageSize < total,
+                hasPrev: page > 1,
+            }
         });
     } catch (err) {
         console.error("Error fetching guides:", err);

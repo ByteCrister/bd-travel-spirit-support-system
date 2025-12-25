@@ -70,7 +70,7 @@ const mockAdmin = {
 };
 
 export function ViewProfile({ isOpen, onClose, onEditProfile, admin = mockAdmin }: ViewProfileProps) {
-  console.log("ViewProfile rendered with isOpen:", isOpen);
+  // console.log("ViewProfile rendered with isOpen:", isOpen);
 
   const getInitials = (name: string) => {
     return name
