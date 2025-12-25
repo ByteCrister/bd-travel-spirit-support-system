@@ -1,8 +1,15 @@
 import { useState, useRef } from 'react'
 import imageCompression from 'browser-image-compression'
-import { DocumentFile, SegmentedDocuments, useRegisterGuideStore } from '@/store/guide-registration.store'
+import { useRegisterGuideStore } from '@/store/guide-registration.store'
 import { validateFile } from '@/utils/validators/registerAsGuide.validator'
 import { FileText, Image } from 'lucide-react'
+import { DocumentFile, SegmentedDocuments } from '@/types/register-as-guide.types'
+
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 10MB raw file limit
+
+const isValidDataUrl = (value: string): boolean => {
+    return /^data:[\w.+-]+\/[\w.+-]+;base64,[A-Za-z0-9+/=]+$/.test(value)
+}
 
 export const useStepDocumentsHandlers = (onNext: () => void) => {
     const { formData, addDocument, removeDocument, setError, clearError } = useRegisterGuideStore()
@@ -14,36 +21,53 @@ export const useStepDocumentsHandlers = (onNext: () => void) => {
         useState<keyof SegmentedDocuments>("governmentId")
 
     // Convert file to base64
-    const fileToBase64 = (file: File): Promise<string> => {
+    const fileToDataUrl = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
+            if (file.size > MAX_FILE_SIZE_BYTES) {
+                reject(new Error('File size exceeds 10MB limit'))
+                return
+            }
+
             const reader = new FileReader()
             reader.readAsDataURL(file)
+
             reader.onload = () => {
-                const result = reader.result as string
-                const base64 = result.split(',')[1]
-                resolve(base64)
+                const result = reader.result
+
+                if (typeof result !== 'string' || !isValidDataUrl(result)) {
+                    reject(new Error('Invalid base64 data URL'))
+                    return
+                }
+
+                resolve(result) // FULL data URL
             }
-            reader.onerror = error => reject(error)
+
+            reader.onerror = () => reject(new Error('Failed to read file'))
         })
     }
 
+
     // Compress image file
     const compressImage = async (file: File): Promise<File> => {
-        const options = {
-            maxSizeMB: 1,
-            maxWidthOrHeight: 1920,
-            useWebWorker: true,
-        }
+        if (!file.type.startsWith('image/')) return file
+
         try {
-            return await imageCompression(file, options)
-        } catch (error) {
-            console.error('Image compression failed:', error)
-            return file
+            return await imageCompression(file, {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1920,
+                useWebWorker: true,
+            })
+        } catch {
+            return file // fail-safe
         }
     }
 
+
     // Handle file upload
-    const handleFileUpload = async (files: FileList | null, segment: keyof SegmentedDocuments) => {
+    const handleFileUpload = async (
+        files: FileList | null,
+        segment: keyof SegmentedDocuments
+    ) => {
         if (!files || files.length === 0) return
 
         setIsUploading(true)
@@ -57,7 +81,6 @@ export const useStepDocumentsHandlers = (onNext: () => void) => {
                 const validation = validateFile(file)
                 if (!validation.isValid) {
                     setUploadError(validation.error || 'Invalid file')
-                    setIsUploading(false)
                     return
                 }
 
@@ -66,25 +89,27 @@ export const useStepDocumentsHandlers = (onNext: () => void) => {
                     processedFile = await compressImage(file)
                 }
 
-                const base64 = await fileToBase64(processedFile)
+                const dataUrl = await fileToDataUrl(processedFile)
 
                 const document: DocumentFile = {
                     name: processedFile.name,
-                    base64,
+                    base64: dataUrl, // FULL data URL
                     uploadedAt: new Date().toISOString(),
                     type: processedFile.type,
-                    size: processedFile.size
+                    size: processedFile.size,
                 }
 
                 addDocument(segment, document)
             }
-        } catch (error) {
-            console.error('File upload error:', error)
-            setUploadError('Failed to process file. Please try again.')
+        } catch (err) {
+            setUploadError(
+                err instanceof Error ? err.message : 'Failed to process file'
+            )
         } finally {
             setIsUploading(false)
         }
     }
+
 
     // Input change
     const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>, segment: keyof SegmentedDocuments) => {

@@ -238,7 +238,6 @@ const OwnerSchema = new Schema<GuideOwner>(
             ref: "User",
             required: true,
             unique: true,
-            index: true,
         },
         name: {
             type: String,
@@ -722,14 +721,8 @@ GuideSchema.statics.softDelete = async function (
 // Status filtering (most common query)
 GuideSchema.index({ status: 1 });
 
-// User lookup (for authentication)
-GuideSchema.index({ 'owner.user': 1 }, { unique: true, sparse: true });
-
 // Company name search
 GuideSchema.index({ companyName: 1 });
-
-// Email search (if added later)
-// GuideSchema.index({ email: 1 }, { unique: true, sparse: true });
 
 // ────────────────────────────────────────────────────────────────────────────
 // 2. COMPOUND INDEXES (Query Optimization)

@@ -7,12 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Search, Loader2, FileSearch, Mail, KeyRound, CheckCircle2, XCircle, AlertCircle, Sparkles } from 'lucide-react';
+import { Search, Loader2, FileSearch, Mail, KeyRound, CheckCircle2, XCircle, AlertCircle, Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SearchApplication: React.FC = () => {
     const {
         fetchAndFillApplication,
+        clearSearchedApplication,
+        hasSearchedApplication,
         isSearching,
         searchError,
     } = useRegisterGuideStore();
@@ -30,6 +32,13 @@ const SearchApplication: React.FC = () => {
         }
     };
 
+    const handleClearSearch = () => {
+        clearSearchedApplication();
+        setEmail('');
+        setAccessToken('');
+        setShowSuccess(false);
+    };
+
     const isFormValid = email.trim() !== '' && accessToken.trim() !== '';
 
     return (
@@ -43,7 +52,7 @@ const SearchApplication: React.FC = () => {
                 {/* Decorative top border */}
                 <div className="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
 
-                <CardHeader className="pb-4">
+                <CardHeader className="pb-4 relative">
                     <div className="flex items-start gap-4">
                         <div className="relative">
                             <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 ring-2 ring-blue-200/50">
@@ -62,6 +71,32 @@ const SearchApplication: React.FC = () => {
                             </CardDescription>
                         </div>
                     </div>
+
+                    {/* Clear Button - Appears when hasSearchedApplication is true */}
+                    <AnimatePresence>
+                        {hasSearchedApplication && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute top-6 right-6"
+                            >
+                                <Button
+                                    onClick={handleClearSearch}
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-10 w-10 rounded-full bg-gradient-to-br from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 border border-gray-200/60 shadow-sm hover:shadow-md transition-all group"
+                                    aria-label="Clear search and start new"
+                                >
+                                    <div className="relative">
+                                        <X className="h-5 w-5 text-gray-500 group-hover:text-red-500 transition-colors" strokeWidth={2.5} />
+                                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/0 to-pink-500/0 group-hover:from-red-500/10 group-hover:to-pink-500/10 rounded-full transition-all" />
+                                    </div>
+                                </Button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </CardHeader>
 
                 <CardContent className="space-y-5">

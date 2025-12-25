@@ -37,7 +37,7 @@ interface StepReviewSubmitProps {
 }
 
 export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, onSuccess }) => {
-  const { formData, isSubmitting, setSubmitting, resetForm } = useRegisterGuideStore()
+  const { formData, isSubmitting, hasSearchedApplication, setSubmitting, resetForm } = useRegisterGuideStore()
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const totalDocuments = Object.values(formData.documents || {}).flat().length
@@ -494,8 +494,8 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
             </div>
             <Button
               onClick={() => setShowConfirmDialog(true)}
-              disabled={isSubmitting || totalDocuments === 0}
-              className="flex items-center space-x-2 px-8 py-3 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
+              disabled={hasSearchedApplication || isSubmitting || totalDocuments === 0}
+              className="flex items-center space-x-2 px-8 py-3 h-12 bg-gradient-to-r from-blue-500 to-blue-600 disabled:cursor-not-allowed disabled:opacity-60 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
               style={{ boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' }}
             >
               {isSubmitting ? (
@@ -513,17 +513,20 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           </div>
         </motion.div>
       </motion.div>
-      {/* Confirmation Dialog */}
-      <ConfirmationRegisterDialog
-        open={showConfirmDialog}
-        onOpenChange={setShowConfirmDialog}
-        onConfirm={handleSubmit}
-        title="Final Confirmation Required"
-        description="Please review everything before submitting"
-        confirmText="Yes, Submit Application"
-        cancelText="Review Again"
-        isLoading={isSubmitting}
-      />
+      {
+        /* Confirmation Dialog */
+        !hasSearchedApplication && <ConfirmationRegisterDialog
+          open={showConfirmDialog}
+          onOpenChange={setShowConfirmDialog}
+          onConfirm={handleSubmit}
+          title="Final Confirmation Required"
+          description="Please review everything before submitting"
+          confirmText="Yes, Submit Application"
+          cancelText="Review Again"
+          isLoading={isSubmitting}
+        />
+      }
+
     </>
   )
 }

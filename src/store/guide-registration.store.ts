@@ -6,6 +6,15 @@ import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { ApiResponse } from "@/types/api.types";
 import { CompanyDetails, DocumentFile, FormData, PersonalInfo, SegmentedDocuments } from "@/types/register-as-guide.types";
 
+function createChecksum(data: unknown): string {
+  return btoa(
+    JSON.stringify(data)
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0)
+      .toString()
+  );
+}
+
 export interface RegisterGuideState {
   currentStep: number;
   formData: FormData;
@@ -13,6 +22,8 @@ export interface RegisterGuideState {
   errors: Record<string, string>;
   isSearching: boolean;
   searchError: string | null;
+  hasSearchedApplication: boolean;
+
 
   // Actions
   setCurrentStep: (step: number) => void;
@@ -33,6 +44,7 @@ export interface RegisterGuideState {
   fetchAndFillApplication: (email: string, accessToken: string) => Promise<boolean>;
   setSearching: (isSearching: boolean) => void;
   setSearchError: (error: string | null) => void;
+  clearSearchedApplication: () => void;
 }
 
 const initialFormData: FormData = {
@@ -78,6 +90,7 @@ export const useRegisterGuideStore = create<RegisterGuideState>()(
       errors: {},
       isSearching: false,
       searchError: null,
+      hasSearchedApplication: false,
 
       setCurrentStep: (step: number) => {
         set({ currentStep: step });
@@ -199,9 +212,9 @@ export const useRegisterGuideStore = create<RegisterGuideState>()(
 
         try {
           // Make GET request with email and accessToken in the body
-          const response = await api.get<ApiResponse<FormData>>('/guide-applications/v1/application', {
-            data: { email, accessToken }
-          });
+          const response = await api.post<ApiResponse<FormData>>('/guide-applications/v1/application',
+            { email, accessToken }
+          );
 
           // Assuming the API returns the formData structure
           const formDataResponse: FormData | undefined = response.data?.data;
@@ -240,6 +253,7 @@ export const useRegisterGuideStore = create<RegisterGuideState>()(
               },
             },
             isSearching: false,
+            hasSearchedApplication: true,
             // Optionally set to step 4 (review) if you want to jump to review
             // currentStep: 4
           });
@@ -262,13 +276,70 @@ export const useRegisterGuideStore = create<RegisterGuideState>()(
           return false;
         }
       },
+
+      clearSearchedApplication: () => {
+        set({
+          currentStep: 1,
+          formData: initialFormData,
+          hasSearchedApplication: false,
+          isSearching: false,
+          searchError: null,
+          errors: {},
+        });
+      },
+
     }),
     {
       name: "guide-registration.store",
-      partialize: (state) => ({
-        formData: state.formData,
-        currentStep: state.currentStep,
-      }),
+
+      partialize: (state) => {
+        const data = {
+          formData: state.formData,
+          hasSearchedApplication: state.hasSearchedApplication,
+          currentStep: state.currentStep,
+        };
+
+        return {
+          ...data,
+          __checksum: createChecksum(data),
+        };
+      },
+
+      onRehydrateStorage: () => (state) => {
+        try {
+          const stored = localStorage.getItem("guide-registration.store");
+          if (!stored) return;
+
+          const parsed = JSON.parse(stored)?.state;
+          if (!parsed) return;
+
+          const { __checksum, ...data } = parsed;
+
+          const expectedChecksum = createChecksum({
+            formData: data.formData,
+            hasSearchedApplication: data.hasSearchedApplication,
+            currentStep: data.currentStep,
+          });
+
+          if (__checksum !== expectedChecksum) {
+            console.warn("⚠️ LocalStorage tampering detected. Resetting store.");
+
+            state?.resetForm();
+            localStorage.removeItem("guide-registration.store");
+          }
+        } catch (err) {
+          console.warn("⚠️ Corrupted localStorage. Resetting store.", err);
+
+          if (err instanceof Error) {
+            console.warn("Error name:", err.name);
+            console.warn("Error message:", err.message);
+            console.warn("Stack trace:", err.stack);
+          }
+
+          state?.resetForm();
+          localStorage.removeItem("guide-registration.store");
+        }
+      },
     }
   )
 );

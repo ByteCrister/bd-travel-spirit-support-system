@@ -64,14 +64,12 @@ function buildDocumentFileFromGuideDoc(doc: Lean<IGuideDocument>): DocumentFile 
 }
 
 /**
- * GET handler for Next.js App Router
- * Example: GET /api/guide-applications?email=foo@bar.com&accessToken=xxxxxxxxxxxxxxxxxxxx
+ * POST handler for Next.js App Router
+ * Example: POST /api/guide-applications?email=foo@bar.com&accessToken=xxxxxxxxxxxxxxxxxxxx
  */
-export const GET = withErrorHandler(async (request: NextRequest) => {
+export const POST = withErrorHandler(async (request: NextRequest) => {
 
-    const url = new URL(request.url);
-    const email = String(url.searchParams.get("email") ?? "").trim();
-    const accessToken = String(url.searchParams.get("accessToken") ?? "").trim();
+    const { email, accessToken } = await request.json();
 
     if (!email || !isValidEmail(email)) {
         throw new ApiError("Please enter a valid email address", 400)
