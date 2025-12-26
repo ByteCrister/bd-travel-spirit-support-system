@@ -6,6 +6,7 @@ import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { GUIDE_STATUS, GuideStatus } from "@/constants/guide.const";
 import { PendingGuideDTO } from "@/types/pendingGuide.types";
 import { ApiResponse } from "@/types/api.types";
+import { showToast } from "@/components/global/showToast";
 
 // const URL_AFTER_API = "/mock/users/guides";
 const URL_AFTER_API = "/users/v1/guides";
@@ -87,7 +88,7 @@ function getBaseQueryKey(query: Partial<QueryParams>) {
         query.sortBy ?? "createdAt",
         query.sortDir ?? "desc",
         query.status ?? "",
-        (query.search ?? "").trim().toLowerCase(),
+        encodeURIComponent((query.search ?? "").trim().toLowerCase()),
     ].join("|");
 }
 
@@ -356,12 +357,20 @@ export const useGuideStore = create<GuideStoreState>()(
                         [id]: updatedItem,
                     };
 
+                    // Update the guides array
+                    const newGuides = state.guides.map(guide =>
+                        guide._id === id ? updatedItem : guide
+                    );
+
                     return {
                         items: newItems,
+                        guides: newGuides,
                         cache: updateAllCachesById(state.cache, id, () => updatedItem),
                         counts: computeCounts(newItems, state.total),
                     };
                 });
+
+                showToast.success("Application approved", "The application is successfully approved.")
 
                 return true;
             } catch (err) {
@@ -398,12 +407,20 @@ export const useGuideStore = create<GuideStoreState>()(
                         [id]: updatedItem,
                     };
 
+                    // Update the guides array
+                    const newGuides = state.guides.map(guide =>
+                        guide._id === id ? updatedItem : guide
+                    );
+
                     return {
                         items: newItems,
+                        guides: newGuides,
                         cache: updateAllCachesById(state.cache, id, () => updatedItem),
                         counts: computeCounts(newItems, state.total),
                     };
                 });
+
+                showToast.success("Application reject", "The application is successfully rejected.")
 
                 return true;
             } catch (err) {
@@ -428,12 +445,20 @@ export const useGuideStore = create<GuideStoreState>()(
                         [id]: updatedItem,
                     };
 
+                    // Update the guides array
+                    const newGuides = state.guides.map(guide =>
+                        guide._id === id ? updatedItem : guide
+                    );
+
                     return {
                         items: newItems,
+                        guides: newGuides,
                         cache: updateAllCachesById(state.cache, id, () => updatedItem),
                         counts: computeCounts(newItems, state.total),
                     };
                 });
+
+                showToast.success("Application Comment", "The comment of the applications is successfully updated.")
 
                 return true;
             } catch (err) {

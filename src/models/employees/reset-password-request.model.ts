@@ -2,8 +2,10 @@
 import { REQUEST_STATUS, RequestStatus } from "@/constants/reset-password-request.const";
 import { USER_ROLE } from "@/constants/user.const";
 import { defineModel } from "@/lib/helpers/defineModel";
+import { Model } from "mongoose";
 import { Schema, Document } from "mongoose";
 const ALLOWED_REQUESTER_ROLES = [USER_ROLE.ASSISTANT, USER_ROLE.SUPPORT] as const;
+
 
 export interface IResetPasswordRequest extends Document {
     requesterEmail: string;
@@ -40,6 +42,22 @@ export interface IResetPasswordRequest extends Document {
         description?: string;
         reason?: string | undefined;
     };
+}
+
+export interface ResetPasswordRequestModelStatics
+    extends Model<IResetPasswordRequest> {
+
+    createRequest(payload: {
+        email: string;
+        mobile?: string;
+        name?: string;
+        role: USER_ROLE;
+        description?: string;
+        requestedFromIP?: string;
+        requestedAgent?: string;
+    }): Promise<IResetPasswordRequest>;
+
+    findPending(limit?: number): Promise<IResetPasswordRequest[]>;
 }
 
 const ResetPasswordRequestSchema = new Schema<IResetPasswordRequest>(
@@ -162,6 +180,10 @@ ResetPasswordRequestSchema.methods.toEmailPayload = function (this: IResetPasswo
     };
 };
 
-export const ResetPasswordRequestModel = defineModel("ResetPasswordRequest", ResetPasswordRequestSchema);
+const ResetPasswordRequestModel =
+    defineModel<IResetPasswordRequest, ResetPasswordRequestModelStatics>(
+        "ResetPasswordRequest",
+        ResetPasswordRequestSchema
+    );
 
 export default ResetPasswordRequestModel;

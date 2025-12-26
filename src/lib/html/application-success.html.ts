@@ -1,3 +1,56 @@
+/**
+ * Escape HTML special characters in a string.
+ *
+ * Replaces characters that have special meaning in HTML with their
+ * corresponding HTML entities to prevent injection when inserting
+ * untrusted text into HTML content.
+ *
+ * This function converts:
+ * - `&` to `&amp;`
+ * - `<` to `&lt;`
+ * - `>` to `&gt;`
+ * - `"` to `&quot;`
+ * - `'` to `&#039;`
+ *
+ * @param {string} str - Input string that may contain characters needing HTML escaping.
+ * @returns {string} The escaped string safe for insertion into HTML text nodes or attribute values.
+ *
+ * Security notes:
+ * - This is a simple, fast escaping utility suitable for most UI text contexts.
+ * - It does not perform HTML sanitization (removing tags or attributes). For user-supplied HTML or rich content,
+ *   use a dedicated sanitizer library (e.g., DOMPurify) or server-side sanitization.
+ * - If you need cryptographically secure handling or to avoid double-escaping existing entities,
+ *   consider using DOM APIs (e.g., `textContent` on a temporary element) or a well-tested library.
+ */
+export function escapeHtml(str: string) {
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+/**
+ * Notify a user that their application was successful and provide credentials.
+ *
+ * Sends or prepares the information a newly approved user needs to access the application,
+ * including an access token and an initial password. Treats credentials as sensitive and
+ * does not imply any specific delivery mechanism (email, SMS, in-app).
+ *
+ * @param {string} email - Recipient email address for the success notification.
+ * @param {string} accessToken - Short‑lived access token or session token issued to the user; must be treated as sensitive.
+ * @param {string} password - Initial or temporary password for first sign-in; should require immediate change.
+ *
+ * @returns {void} No return value. If the function performs I/O (email, DB writes), make it async and return Promise<void>.
+ *
+ * @example
+ * applicationSuccess(
+ *   "applicant@example.com",
+ *   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+ *   "TempP@ssw0rd123"
+ * );
+ */
 export default function applicationSuccess(email: string, accessToken: string, password: string) {
     return `
 <!DOCTYPE html>
@@ -11,7 +64,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
             display: inline-block;
             text-decoration: none;
             color: inherit;
-            transition: all 0.3s ease;
+            /* Removed transition */
         }
         
         .logo-wrapper {
@@ -19,7 +72,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
             align-items: center;
             gap: 15px;
             padding: 20px;
-            transition: all 0.3s ease;
+            /* Removed transition */
         }
         
         /* --- Icon Design --- */
@@ -33,21 +86,12 @@ export default function applicationSuccess(email: string, accessToken: string, p
             align-items: center;
             justify-content: center;
             box-shadow: 0 10px 15px rgba(16, 185, 129, 0.3);
-            transition: all 0.3s ease;
+            /* Removed transition */
             overflow: hidden;
             flex-shrink: 0;
         }
         
-        .logo-icon::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-            transition: 0.5s;
-        }
+        /* Removed .logo-icon::before shine effect */
         
         .logo-icon-text {
             color: white;
@@ -93,35 +137,10 @@ export default function applicationSuccess(email: string, accessToken: string, p
             background: linear-gradient(90deg, #10b981 0%, #0d9488 100%);
             border-radius: 2px;
             margin-top: 2px;
-            transition: width 0.3s ease;
+            /* Removed transition */
         }
         
-        /* --- Hover Effects --- */
-        .logo-container:hover .logo-wrapper {
-            transform: translateY(-2px);
-        }
-        
-        .logo-container:hover .logo-icon {
-            transform: scale(1.1);
-            box-shadow: 0 15px 20px rgba(16, 185, 129, 0.4);
-        }
-        
-        .logo-container:hover .logo-icon::before {
-            left: 100%;
-        }
-        
-        .logo-container:hover .logo-main-title {
-            background: linear-gradient(135deg, #10b981 0%, #0891b2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
-        }
-        
-        .logo-container:hover .logo-underline {
-            width: 60px;
-            background: linear-gradient(90deg, #10b981 0%, #0891b2 100%);
-        }
+        /* --- REMOVED ALL HOVER EFFECTS --- */
         
         /* --- Responsive Design --- */
         @media (max-width: 768px) {
@@ -221,16 +240,18 @@ export default function applicationSuccess(email: string, accessToken: string, p
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
+        /* Changed header background from blue gradient to white */
         .header {
-            background: linear-gradient(135deg, #4f6df5 0%, #3a56e8 100%);
-            color: white;
+            background: #ffffff; /* Changed to white */
             padding: 20px;
             text-align: center;
         }
+        /* Adjusted header h1 color for better contrast on white background */
         .header h1 {
             margin: 15px 0 0 0;
             font-size: 24px;
             font-weight: 600;
+            color: #2d3a8c; /* Added dark blue color for better visibility on white */
         }
         .content {
             padding: 40px 30px;
@@ -374,7 +395,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
                 
                 <div class="info-box">
                     <div class="info-label">Access Token</div>
-                    <div class="token">${accessToken}</div>
+                    <div class="token">${escapeHtml(accessToken)}</div>
                 </div>
                 
                 <p>Keep this token safe as it provides access to your application details.</p>
@@ -387,7 +408,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
                 
                 <div class="info-box">
                     <div class="info-label">Temporary Password</div>
-                    <div class="password">${password}</div>
+                    <div class="password">${escapeHtml(password)}</div>
                 </div>
                 
                 <div class="warning-note">

@@ -1,5 +1,6 @@
 // src/lib/helpers/convert.ts
 import crypto from "crypto";
+import { ApiError } from "./withErrorHandler";
 
 /**
  * Convert a base64-encoded data URL or plain base64 string into a Buffer.
@@ -57,4 +58,59 @@ export function base64ToBuffer(base64: string): Buffer {
  */
 export function sha256(buffer: Buffer): string {
   return crypto.createHash("sha256").update(buffer).digest("hex");
+}
+
+/**
+ * Validate and normalize a base64-encoded data URL.
+ *
+ * Ensures the input is a well-formed data URL with a valid MIME type and base64 payload,
+ * and returns a normalized data URL string suitable for safe use (for example, in `src`
+ * attributes or server-side processing). Throws a descriptive error when validation fails.
+ *
+ * @param {string} base64 - The input data URL or raw base64 string to validate. Accepts:
+ *   - a full data URL like "data:image/png;base64,iVBORw0KGgo..."
+ *   - or a raw base64 payload with an implied MIME type (caller should prefer full data URLs).
+ *
+ * @returns {string} A validated, normalized data URL (e.g., "data:image/png;base64,<payload>").
+ *
+ * @throws {TypeError} If `base64` is not a string or is empty.
+ * @throws {Error} If the value is not a valid data URL, has an unsupported MIME type,
+ *   or the base64 payload is malformed.
+ *
+ * @example
+ * const imgDataUrl = assertValidDataUrl("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...");
+ */
+export function assertValidDataUrl(base64: string): string {
+  if (typeof base64 !== "string") {
+    throw new ApiError("Invalid file format", 400);
+  }
+
+  const match = base64.match(
+    /^data:([\w.+-\/]+);base64,([A-Za-z0-9+/=]+)$/
+  );
+
+  if (!match) {
+    throw new ApiError("Malformed base64 data URL", 400);
+  }
+
+  const [, mimeType, data] = match;
+
+  // Allow all images, PDF, and DOCX
+  const isImage = mimeType.startsWith("image/");
+  const isPdf = mimeType === "application/pdf";
+  const isDocx =
+    mimeType ===
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+  if (!isImage && !isPdf && !isDocx) {
+    throw new ApiError("Unsupported file type", 400);
+  }
+
+  // Basic base64 sanity check
+  if (data.length < 10) {
+    throw new ApiError("Invalid base64 payload", 400);
+  }
+
+  // Return normalized data URL (Cloudinary safe)
+  return `data:${mimeType};base64,${data}`;
 }

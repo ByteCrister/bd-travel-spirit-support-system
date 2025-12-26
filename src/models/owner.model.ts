@@ -17,7 +17,6 @@ export interface IOwnerDoc extends Document {
 const OwnerSchema = new Schema<IOwnerDoc>(
     {
         user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-        name: { type: String, required: true },
     },
     {
         timestamps: true,
@@ -28,7 +27,7 @@ const OwnerSchema = new Schema<IOwnerDoc>(
 
 /** Auto-populate user */
 OwnerSchema.pre<Query<IOwnerDoc[], IOwnerDoc>>(/^find/, function (next) {
-    this.populate({ path: "user", select: "email role createdAt updatedAt" });
+    this.populate({ path: "user", select: "name email role createdAt updatedAt" });
     next();
 });
 

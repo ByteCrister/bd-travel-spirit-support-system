@@ -53,7 +53,6 @@ export interface IGuideDocument {
 /** Owner account information */
 export interface GuideOwner {
     user: Types.ObjectId;      // Reference to User model for authentication
-    name: string;              // Display name
     phone?: string;            // Contact number
     oauthProvider?: string;    // "google", "facebook", etc.
 }
@@ -238,11 +237,6 @@ const OwnerSchema = new Schema<GuideOwner>(
             ref: "User",
             required: true,
             unique: true,
-        },
-        name: {
-            type: String,
-            required: true,
-            trim: true
         },
         phone: {
             type: String,
@@ -773,7 +767,6 @@ GuideSchema.index({
     'address.city': 'text',
     'address.country': 'text',
 }, {
-    name: 'guide_text_search',
     weights: {
         companyName: 10,
         bio: 5,

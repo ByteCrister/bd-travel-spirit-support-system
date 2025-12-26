@@ -105,7 +105,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     // Build base FormData
     const formData: FormData = {
         personalInfo: {
-            name: guide.owner?.name ?? "",
+            name: user?.name ?? "",
             email,
             phone: guide.owner?.phone ?? "",
             street: guide.address?.street ?? "",

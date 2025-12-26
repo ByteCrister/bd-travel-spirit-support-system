@@ -120,49 +120,36 @@ export class CloudinaryAssetProvider implements AssetStorageProvider {
      *  4. Return normalized metadata for persistence
      */
     async create(base64: string): Promise<UploadedAsset> {
-        // Generate a unique name if not provided
         const uniqueName = uuidv4();
-        // Initial upload (temporary location)
+
+        // Upload ONCE, directly to final folder
         const res = await cloudinary.uploader.upload(base64, {
-            folder: this.folder,
+            folder: "assets", // temporary, overridden by public_id
             public_id: uniqueName,
             resource_type: "auto",
+            overwrite: false, // DB controls duplicates
         });
 
-        // Determine internal asset type
         const assetType = mapCloudinaryAssetType(
             res.resource_type,
             res.format
         );
 
-        // Resolve final folder based on asset type
         const targetFolder = getCloudinaryFolder(assetType);
+        const finalPublicId = `${targetFolder}/${uniqueName}`;
 
-        // Build new public_id (used as objectKey in DB)
-        const fileBaseName = res.public_id.split("/").pop();
-        const newPublicId = `${targetFolder}/${fileBaseName}`;
-
-        // Move asset into its final folder
-        await cloudinary.uploader.rename(res.public_id, newPublicId);
+        // MOVE (rename) — this is metadata-only, no re-upload
+        await cloudinary.uploader.rename(res.public_id, finalPublicId);
 
         return {
-            // Generate final secure URL for the moved asset
-            url: cloudinary.url(newPublicId, {
+            url: cloudinary.url(finalPublicId, {
                 secure: true,
                 resource_type: res.resource_type,
             }),
-
-            // Stored as objectKey / providerId in AssetModel
-            providerId: newPublicId,
-
-            // Internal content classification
+            providerId: finalPublicId,
             contentType: assetType,
-
-            // Original file metadata
             fileName: res.original_filename,
             fileSize: res.bytes,
-
-            // checksum should be computed before upload if required
         };
     }
 

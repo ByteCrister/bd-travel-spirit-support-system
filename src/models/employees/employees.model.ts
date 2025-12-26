@@ -94,8 +94,6 @@ export interface IContactInfo {
     phone: string;
     email?: string;
     emergencyContact?: IEmergencyContact;
-    firstName?: string;
-    lastName?: string;
 }
 
 const ContactInfoSchema = new Schema<IContactInfo>(
@@ -110,9 +108,6 @@ const ContactInfoSchema = new Schema<IContactInfo>(
         email: { type: String, trim: true, lowercase: true },
 
         emergencyContact: EmergencyContactSchema,
-
-        firstName: { type: String, trim: true },
-        lastName: { type: String, trim: true },
     },
     { _id: false }
 );
@@ -206,7 +201,6 @@ export interface IEmployee extends Document {
     employmentType?: EmploymentType;
 
     avatar?: Types.ObjectId;
-    fullName?: string;
 
     salary: number;
     currency: string;
@@ -250,8 +244,6 @@ const EmployeeSchema = new Schema<IEmployee>(
 
         avatar: { type: Schema.Types.ObjectId, ref: "Asset" },
 
-        fullName: { type: String, trim: true, index: true },
-
         /* FINANCIAL CORE */
         salary: { type: Number, required: true, min: 0 },
         currency: { type: String, required: true, uppercase: true },
@@ -287,12 +279,6 @@ const EmployeeSchema = new Schema<IEmployee>(
 
 // Maintain fullName automatically
 EmployeeSchema.pre("save", function (next) {
-    const first = this.contactInfo?.firstName?.trim();
-    const last = this.contactInfo?.lastName?.trim();
-
-    if (first || last) {
-        this.fullName = [first, last].filter(Boolean).join(" ");
-    }
 
     if (this.dateOfLeaving && this.dateOfLeaving < this.dateOfJoining) {
         return next(new Error("dateOfLeaving must be after joining date"));

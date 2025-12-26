@@ -36,6 +36,7 @@ import { SortByTypes, SortDirTypes } from "@/store/guide.store";
 import { GuideDetailsDialog } from "./GuideDetailsDialog";
 import StatusBadge from "./StatusBadge";
 import DocumentsPopover from "./DocumentsPopover";
+import { ApproveConfirmDialog } from "./ApproveConfirmDialog";
 
 type Props = {
     guides: PendingGuideDTO[];
@@ -72,6 +73,7 @@ export function GuideTable({
     total,
     onPageChange,
 }: Props) {
+    const [approveId, setApproveId] = useState<string | null>(null);
     const [rejectId, setRejectId] = useState<string | null>(null);
     const [commentId, setCommentId] = useState<string | null>(null);
     const [detailGuide, setDetailGuide] = useState<PendingGuideDTO | undefined>(undefined);
@@ -272,7 +274,7 @@ export function GuideTable({
                                                 <div className="flex items-center gap-2">
                                                     {/* Approve */}
                                                     <Button
-                                                        onClick={() => onApprove(g._id)}
+                                                        onClick={() => setApproveId(g._id)}
                                                         disabled={g.status !== GUIDE_STATUS.PENDING}
                                                         title="Approve request"
                                                         variant="outline"
@@ -379,6 +381,14 @@ export function GuideTable({
             )}
 
             {/* Modals */}
+            <ApproveConfirmDialog
+                open={approveId !== null}
+                onClose={() => setApproveId(null)}
+                onConfirm={() => {
+                    if (approveId) onApprove(approveId);
+                    setApproveId(null);
+                }}
+            />
             <RejectReasonModal
                 open={rejectId !== null}
                 onClose={() => setRejectId(null)}

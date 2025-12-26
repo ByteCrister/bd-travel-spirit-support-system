@@ -17,10 +17,10 @@ import { PaginatedResponse } from "@/store/guide.store";
 
 type LeanGuideWithOwnerEmail = Omit<IGuide, "owner"> & {
     owner?: {
-        name?: string;
         phone?: string;
         user?: {
             email?: string;
+            name?: string;
         };
     };
 };
@@ -66,7 +66,7 @@ function mapGuideToDTO(
     return {
         _id: String(guide._id),
 
-        name: guide.owner?.name ?? guide.companyName,
+        name: guide.owner?.user?.name ?? guide.companyName,
         email: guide.owner?.user?.email ?? 'Undefined', // not stored on Guide
         phone: guide.owner?.phone,
 
@@ -127,7 +127,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     const sortBy = searchParams.get("sortBy") ?? "createdAt";
     const sortDir = searchParams.get("sortDir") === "asc" ? 1 : -1;
     const status = searchParams.get("status");
-    const search = searchParams.get("search")?.trim();
+    const search = decodeURIComponent(searchParams.get("search")?.trim() ?? "");
 
     const filter: FilterQuery<IGuide> = {};
 
@@ -138,7 +138,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     if (search) {
         filter.$or = [
             { companyName: { $regex: search, $options: "i" } },
-            { "owner.name": { $regex: search, $options: "i" } },
+            { "owner.user.name": { $regex: search, $options: "i" } },
             { "owner.user.email": { $regex: search, $options: "i" } },
         ];
     }
@@ -157,7 +157,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
                 .limit(pageSize)
                 .populate({
                     path: "owner.user",
-                    select: "email",
+                    select: "email name",
                 })
                 .session(session)
                 .lean<LeanGuideWithOwnerEmail[]>(),

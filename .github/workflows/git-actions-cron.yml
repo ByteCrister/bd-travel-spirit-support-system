@@ -1,0 +1,20 @@
+name: Git Actions Cron
+
+# Run every day at 2:00 AM UTC
+on:
+  schedule:
+    - cron: "0 2 * * *"
+
+jobs:
+  call-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make HTTP request to API
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: ${{ secrets.API_URL }}
+          method: POST
+          headers: |
+            Authorization: Bearer ${{ secrets.API_TOKEN }}
+          # optional payload
+          body: '{"action":"cleanup"}'

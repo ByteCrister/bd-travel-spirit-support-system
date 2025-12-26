@@ -1,7 +1,7 @@
 // components/guide/GuideFilters.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,6 +23,7 @@ import { AiOutlineSortAscending, AiOutlineSortDescending } from "react-icons/ai"
 import { MdClear } from "react-icons/md";
 import { FiClock, FiCheckCircle, FiXCircle, FiList } from "react-icons/fi";
 import { BsCircleFill } from "react-icons/bs";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
 type Props = {
   query: QueryParams;
@@ -33,14 +34,15 @@ type Props = {
 
 export function GuideFilters({ query, onChange, onPageSizeChange, loading }: Props) {
   const [search, setSearch] = useState(query.search ?? "");
-
-  // Debounce search updates
-  useEffect(() => {
-    const t = setTimeout(() => {
-      onChange({ search: search || undefined, page: 1 });
-    }, 300);
-    return () => clearTimeout(t);
-  }, [onChange, search]);
+  const debouncedSearch = useDebouncedCallback(
+    (value: string) => {
+      onChange({
+        search: value || undefined,
+        page: 1,
+      });
+    },
+    1000
+  );
 
   const hasActiveFilters = query.status || query.search;
 
@@ -51,6 +53,11 @@ export function GuideFilters({ query, onChange, onPageSizeChange, loading }: Pro
       status: undefined,
       page: 1
     });
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);       // instant UI update
+    debouncedSearch(value); // debounced API update
   };
 
   return (
@@ -111,14 +118,14 @@ export function GuideFilters({ query, onChange, onPageSizeChange, loading }: Pro
                 id="search"
                 placeholder="Search by name, email, company..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10 pr-10 h-11 w-full border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
                 aria-label="Search guides"
                 disabled={loading}
               />
               {search && (
                 <button
-                  onClick={() => setSearch("")}
+                  onClick={() => handleSearchChange("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-1 transition-all duration-200"
                   aria-label="Clear search"
                 >

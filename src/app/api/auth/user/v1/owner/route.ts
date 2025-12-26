@@ -1,10 +1,10 @@
 // app/api/auth/user/owner/route.ts
 import { NextResponse } from "next/server";
-import OwnerModel from "@/models/owner.model";
-import { IOwnerInfo } from "@/types/current-user.types";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
-import { USER_ROLE } from "@/constants/user.const";
 import ConnectDB from "@/config/db";
+import UserModel from "@/models/user.model";
+import { IOwnerInfo } from "@/types/current-user.types";
+import { USER_ROLE } from "@/constants/user.const";
 
 /**
  * GET /api/auth/user/owner
@@ -12,10 +12,10 @@ import ConnectDB from "@/config/db";
  */
 export async function GET() {
     try {
-        await ConnectDB()
+        await ConnectDB();
+
         // Get user ID from session
         const userId = await getUserIdFromSession();
-
         if (!userId) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
@@ -23,21 +23,27 @@ export async function GET() {
             );
         }
 
-        // Find Owner by user ID
-        const owner = await OwnerModel.findOne({ user: userId });
-        if (!owner) {
+        // Fetch user directly
+        const user = await UserModel.findById(userId).select("name role");
+        if (!user) {
             return NextResponse.json(
-                { success: false, message: "Owner not found" },
+                { success: false, message: "User not found" },
                 { status: 404 }
             );
         }
 
-        // Populate user info (already auto-populated by pre-hook)
+        // Ensure the user is actually an Admin / Owner
+        if (user.role !== USER_ROLE.ADMIN) {
+            return NextResponse.json(
+                { success: false, message: "Unauthorized" },
+                { status: 403 }
+            );
+        }
 
         // Map to IOwnerInfo
         const ownerInfo: IOwnerInfo = {
-            role: USER_ROLE.ADMIN,
-            fullName: owner.name,
+            role: user.role as USER_ROLE.ADMIN,
+            fullName: user.name ?? "Admin",
         };
 
         return NextResponse.json({ success: true, data: ownerInfo });

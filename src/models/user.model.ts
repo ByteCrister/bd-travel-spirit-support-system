@@ -8,6 +8,7 @@ import { defineModel } from "@/lib/helpers/defineModel";
 const passwordRegex = /^(?=.{6,}$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).+$/
 
 export interface IUser {
+    name: string;
     email: string;
     password: string;
     role: UserRole;
@@ -27,6 +28,11 @@ export interface IUserModel extends mongoose.Model<IUserDoc> {
 
 const UserSchema = new Schema<IUserDoc, IUserModel>(
     {
+        name: {
+            type: String,
+            required: true,
+            trim: true
+        },
         email: {
             type: String,
             required: true,

@@ -1,3 +1,4 @@
+// src/app/api/guide-applications/v1/route.ts
 import { NextRequest } from "next/server";
 import mongoose, { Types } from "mongoose";
 
@@ -10,11 +11,15 @@ import GuideModel, { IGuideDocument } from "@/models/guide/guide.model";
 import { AssetModel } from "@/models/asset.model";
 
 import { mailer } from "@/config/node-mailer";
-import applicationSuccess from "@/utils/html/application-success.html";
+import applicationSuccess from "@/lib/html/application-success.html";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 
 import { getDocumentStorageProvider } from "@/lib/storage-providers";
-import { STORAGE_PROVIDER, VISIBILITY, ASSET_TYPE } from "@/constants/asset.const";
+import {
+    STORAGE_PROVIDER,
+    VISIBILITY,
+    ASSET_TYPE,
+} from "@/constants/asset.const";
 import { GUIDE_DOCUMENT_CATEGORY, GUIDE_STATUS } from "@/constants/guide.const";
 import { USER_ROLE } from "@/constants/user.const";
 
@@ -23,7 +28,15 @@ import {
     SegmentedDocuments,
     DocumentFile,
 } from "@/types/register-as-guide.types";
-import { base64ToBuffer, sha256 } from "@/lib/helpers/convert";
+import {
+    assertValidDataUrl,
+    base64ToBuffer,
+    sha256,
+} from "@/lib/helpers/convert";
+import {
+    DuplicateAssetChecksumError,
+    isMongoDuplicateKeyError,
+} from "@/lib/helpers/asset-checksum-error";
 
 /**
  * 
@@ -83,51 +96,13 @@ function validateFormData(body: unknown): asserts body is FormData {
     const hasBiz = (documents?.businessLicense?.length ?? 0) > 0;
 
     if (!hasGovId || !hasBiz) {
-        throw new ApiError(
-            "Government ID and Business License are required",
-            400
-        );
+        throw new ApiError("Government ID and Business License are required", 400);
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(personalInfo.email)) {
         throw new ApiError("Invalid email format", 400);
     }
-}
-
-function assertValidDataUrl(base64: string): string {
-    if (typeof base64 !== "string") {
-        throw new ApiError("Invalid file format", 400);
-    }
-
-    const match = base64.match(
-        /^data:([\w.+-\/]+);base64,([A-Za-z0-9+/=]+)$/
-    );
-
-    if (!match) {
-        throw new ApiError("Malformed base64 data URL", 400);
-    }
-
-    const [, mimeType, data] = match;
-
-    // Allow all images, PDF, and DOCX
-    const isImage = mimeType.startsWith("image/");
-    const isPdf = mimeType === "application/pdf";
-    const isDocx =
-        mimeType ===
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-
-    if (!isImage && !isPdf && !isDocx) {
-        throw new ApiError("Unsupported file type", 400);
-    }
-
-    // Basic base64 sanity check
-    if (data.length < 10) {
-        throw new ApiError("Invalid base64 payload", 400);
-    }
-
-    // Return normalized data URL (Cloudinary safe)
-    return `data:${mimeType};base64,${data}`;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -139,7 +114,10 @@ async function uploadDocuments(
     session: mongoose.ClientSession
 ): Promise<{ category: GUIDE_DOCUMENT_CATEGORY; assetId: Types.ObjectId }[]> {
     const storage = getDocumentStorageProvider(STORAGE_PROVIDER.CLOUDINARY);
-    const assets: { category: GUIDE_DOCUMENT_CATEGORY; assetId: Types.ObjectId }[] = [];
+    const assets: {
+        category: GUIDE_DOCUMENT_CATEGORY;
+        assetId: Types.ObjectId;
+    }[] = [];
 
     for (const [segment, files] of Object.entries(documents || {})) {
         if (!files?.length) continue;
@@ -152,26 +130,46 @@ async function uploadDocuments(
             const buffer = base64ToBuffer(dataUrl);
             const checksum = sha256(buffer);
 
-            // 3 Upload to Cloudinary
+            // 2.1 CHECK IF CHECKSUM ALREADY EXISTS
+            const existingAsset = await AssetModel.findOne({
+                checksum,
+                deletedAt: null,
+            }).session(session);
+
+            if (existingAsset) {
+                throw new DuplicateAssetChecksumError(file.name);
+            }
+
+            // 3 Upload to Cloudinary (only if checksum is unique)
             const uploaded = await storage.create(dataUrl);
 
             // 4 Save in AssetModel with checksum
-            const asset = await AssetModel.create(
-                [
-                    {
-                        storageProvider: STORAGE_PROVIDER.CLOUDINARY,
-                        objectKey: uploaded.providerId,
-                        publicUrl: uploaded.url,
-                        contentType: uploaded.contentType ?? file.type,
-                        fileSize: uploaded.fileSize ?? file.size,
-                        checksum,
-                        assetType: ASSET_TYPE.DOCUMENT,
-                        title: file.name,
-                        visibility: VISIBILITY.PRIVATE,
-                    },
-                ],
-                { session }
-            ).then(d => d[0]);
+            let asset;
+            try {
+                asset = await AssetModel.create(
+                    [
+                        {
+                            storageProvider: STORAGE_PROVIDER.CLOUDINARY,
+                            objectKey: uploaded.providerId,
+                            publicUrl: uploaded.url,
+                            contentType: uploaded.contentType ?? file.type,
+                            fileSize: uploaded.fileSize ?? file.size,
+                            checksum,
+                            assetType: ASSET_TYPE.DOCUMENT,
+                            title: file.name,
+                            visibility: VISIBILITY.PRIVATE,
+                        },
+                    ],
+                    { session }
+                ).then((d) => d[0]);
+            } catch (err: unknown) {
+                // Safety net for race conditions
+                if (isMongoDuplicateKeyError(err) && err.keyPattern?.checksum) {
+                    throw new DuplicateAssetChecksumError(file.name);
+                }
+
+                throw err;
+            }
 
             if (!asset?._id) {
                 throw new ApiError("Failed to create asset", 500);
@@ -214,12 +212,14 @@ async function cleanupGuideAssets(
     }
 
     // 3. Soft-delete in DB (transaction-safe)
-    await AssetModel.softDeleteMany({
-        _id: { $in: assetIds },
-    });
+    await AssetModel.softDeleteMany(
+        {
+            _id: { $in: assetIds },
+        },
+        session
+    );
     //! ------------ I will put cron actions to delete asset document permanently --------------
 }
-
 
 /* -------------------------------------------------------------------------- */
 /*                              MAIN POST HANDLER                              */
@@ -239,12 +239,13 @@ async function handlePost(req: NextRequest) {
         /* STEP 1: USER LOOKUP + ROLE CONFLICT CHECK                                */
         /* ---------------------------------------------------------------------- */
 
-        let user = await UserModel.findOne({ email }).select("+password").session(session);
+        let user = await UserModel.findOne({ email })
+            .select("+password")
+            .session(session);
 
         if (user && DISALLOWED_ROLES.includes(user.role as USER_ROLE)) {
             throw new ApiError(
-                ROLE_FRIENDLY_MESSAGE[user.role] ??
-                "Account exists with this email.",
+                ROLE_FRIENDLY_MESSAGE[user.role] ?? "Account exists with this email.",
                 409
             );
         }
@@ -254,7 +255,7 @@ async function handlePost(req: NextRequest) {
         /* ---------------------------------------------------------------------- */
 
         if (!user) {
-            plainPasswordForMail = generateStrongPassword(12);
+            plainPasswordForMail = generateStrongPassword(10);
 
             user = await UserModel.create(
                 [
@@ -266,9 +267,7 @@ async function handlePost(req: NextRequest) {
                     },
                 ],
                 { session }
-            ).then(d => d[0]);
-        } else {
-            plainPasswordForMail = user.password
+            ).then((d) => d[0]);
         }
 
         if (!user) {
@@ -281,7 +280,9 @@ async function handlePost(req: NextRequest) {
 
         const existingGuide = await GuideModel.findOne({
             "owner.user": user._id,
-        }).session(session);
+        })
+            .select("+accessToken")
+            .session(session);
 
         if (existingGuide?.status === GUIDE_STATUS.PENDING) {
             throw new ApiError("Guide application already pending", 409);
@@ -303,7 +304,7 @@ async function handlePost(req: NextRequest) {
 
         const uploadedAssets = await uploadDocuments(form.documents, session);
 
-        const documents = uploadedAssets.map(a => ({
+        const documents = uploadedAssets.map((a) => ({
             category: a.category,
             AssetUrl: a.assetId,
             uploadedAt: new Date(),
@@ -311,7 +312,7 @@ async function handlePost(req: NextRequest) {
 
         const logo =
             uploadedAssets.find(
-                a => a.category === GUIDE_DOCUMENT_CATEGORY.PROFESSIONAL_PHOTO
+                (a) => a.category === GUIDE_DOCUMENT_CATEGORY.PROFESSIONAL_PHOTO
             )?.assetId ?? undefined;
 
         /* ---------------------------------------------------------------------- */
@@ -325,7 +326,6 @@ async function handlePost(req: NextRequest) {
             documents,
             owner: {
                 user: user._id,
-                name: form.personalInfo.name,
                 phone: form.personalInfo.phone,
             },
             address: {
@@ -336,7 +336,7 @@ async function handlePost(req: NextRequest) {
                 street: form.personalInfo.street,
             },
             status: GUIDE_STATUS.PENDING,
-            accessToken: existingGuide?.accessToken || generateStrongPassword(20),
+            accessToken: existingGuide?.accessToken ?? generateStrongPassword(20),
         };
 
         /* ---------------------------------------------------------------------- */
@@ -348,9 +348,11 @@ async function handlePost(req: NextRequest) {
                 ? await GuideModel.findByIdAndUpdate(
                     existingGuide._id,
                     { $set: guidePayload },
-                    { new: true, session }
+                    { new: true, session, select: "+accessToken" }
                 )
-                : await GuideModel.create([guidePayload], { session }).then(d => d[0]);
+                : await GuideModel.create([guidePayload], { session }).then(
+                    (d) => d[0]
+                );
 
         if (!user) {
             throw new ApiError("Invariant violation: user missing", 500);
@@ -378,7 +380,8 @@ async function handlePost(req: NextRequest) {
         applicationSuccess(
             result.user.email,
             result.guide.accessToken,
-            plainPasswordForMail ?? "You'r current password will be your next temporary password."
+            plainPasswordForMail ??
+            "You'r current password will be your next temporary password."
         )
     );
 

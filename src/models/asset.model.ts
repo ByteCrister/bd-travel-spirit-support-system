@@ -8,7 +8,7 @@ import {
     Visibility,
 } from "@/constants/asset.const";
 import { defineModel } from "@/lib/helpers/defineModel";
-import { Types, Schema, Document, Model, Query } from "mongoose";
+import { Types, Schema, Document, Model, Query, ClientSession } from "mongoose";
 import type { UpdateResult } from "mongodb";
 
 /**
@@ -50,10 +50,10 @@ export interface IAsset extends Document {
  * Extended model interface (statics)
  */
 export interface IAssetModel extends Model<IAsset, AssetQueryHelpers> {
-    softDeleteById(id: Types.ObjectId | string): Promise<IAsset | null>;
-    restoreById(id: Types.ObjectId | string): Promise<IAsset | null>;
-    softDeleteMany(filter: Record<string, unknown>): Promise<{ matchedCount: number; modifiedCount: number }>;
-    restoreMany(filter: Record<string, unknown>): Promise<{ matchedCount: number; modifiedCount: number }>;
+    softDeleteById(id: Types.ObjectId | string, session?: ClientSession): Promise<IAsset | null>;
+    restoreById(id: Types.ObjectId | string, session?: ClientSession): Promise<IAsset | null>;
+    softDeleteMany(filter: Record<string, unknown>, session?: ClientSession): Promise<{ matchedCount: number; modifiedCount: number }>;
+    restoreMany(filter: Record<string, unknown>, session?: ClientSession): Promise<{ matchedCount: number; modifiedCount: number }>;
     findNotDeleted(filter?: Record<string, unknown>): Query<IAsset[], IAsset, AssetQueryHelpers>;
     findDeleted(filter?: Record<string, unknown>): Query<IAsset[], IAsset, AssetQueryHelpers>;
 }
@@ -133,35 +133,38 @@ AssetSchema.methods.restore = async function (this: IAsset): Promise<IAsset> {
 /**
  * Static methods
  */
-AssetSchema.statics.softDeleteById = async function (this: IAssetModel, id: Types.ObjectId | string) {
+AssetSchema.statics.softDeleteById = async function (this: IAssetModel, id: Types.ObjectId | string, session?: ClientSession) {
     const now = new Date();
     const res = await this.findOneAndUpdate(
         { _id: id, deletedAt: { $eq: null } },
         { $set: { deletedAt: now } },
-        { new: true }
+        { new: true, session }
     ).exec();
     return res;
 };
 
-AssetSchema.statics.restoreById = async function (this: IAssetModel, id: Types.ObjectId | string) {
+AssetSchema.statics.restoreById = async function (this: IAssetModel, id: Types.ObjectId | string, session?: ClientSession) {
     const res = await this.findOneAndUpdate(
         { _id: id, deletedAt: { $ne: null } },
         { $set: { deletedAt: null } },
-        { new: true }
+        { new: true, session }
     ).exec();
     return res;
 };
 
-AssetSchema.statics.softDeleteMany = async function (this: IAssetModel, filter: Record<string, unknown>) {
+AssetSchema.statics.softDeleteMany = async function (this: IAssetModel, filter: Record<string, unknown>, session?: ClientSession) {
     const now = new Date();
-    const res: UpdateResult = await this.updateMany({ ...filter, deletedAt: { $eq: null } }, { $set: { deletedAt: now } }).exec();
-    const matchedCount = res.matchedCount ?? 0;
-    const modifiedCount = res.modifiedCount ?? 0;
-    return { matchedCount, modifiedCount };
+    const res: UpdateResult = await this.updateMany(
+        { ...filter, deletedAt: { $eq: null } },
+        { $set: { deletedAt: now } },
+        { session }
+    ).exec();
+
+    return { matchedCount: res.matchedCount ?? 0, modifiedCount: res.modifiedCount ?? 0 };
 };
 
-AssetSchema.statics.restoreMany = async function (this: IAssetModel, filter: Record<string, unknown>) {
-    const res: UpdateResult = await this.updateMany({ ...filter, deletedAt: { $ne: null } }, { $set: { deletedAt: null } }).exec();
+AssetSchema.statics.restoreMany = async function (this: IAssetModel, filter: Record<string, unknown>, session?: ClientSession) {
+    const res: UpdateResult = await this.updateMany({ ...filter, deletedAt: { $ne: null } }, { $set: { deletedAt: null } }, { session }).exec();
     const matchedCount = res.matchedCount ?? 0;
     const modifiedCount = res.modifiedCount ?? 0;
     return { matchedCount, modifiedCount };

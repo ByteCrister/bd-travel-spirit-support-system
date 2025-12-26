@@ -63,7 +63,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
       setTimeout(() => {
         resetForm();
         onSuccess?.();
-      }, 2000);
+      }, 5000);
 
     } catch (error: unknown) {
       const message = extractErrorMessage(error);
