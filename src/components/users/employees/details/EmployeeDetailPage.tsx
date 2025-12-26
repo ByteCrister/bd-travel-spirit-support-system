@@ -60,6 +60,7 @@ import {
 } from "@/utils/helpers/file-conversion";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
+import { Currency, CURRENCY } from "@/constants/tour.const";
 
 /* --------------------------------------------
   Form type: lightweight and focused on fields edited in UI
@@ -946,8 +947,8 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                                 <FormRow label="Currency" icon={DollarSign}>
                                     <Input
                                         type="text"
-                                        value={(form?.currency ?? detail.currency) ?? ""}
-                                        onChange={(e) => setField("currency", e.target.value ?? undefined)}
+                                        value={(form?.currency ?? detail.currency) ?? CURRENCY.BDT}
+                                        onChange={(e) => setField("currency", e.target.value as Currency ?? CURRENCY.BDT)}
                                     />
                                 </FormRow>
 

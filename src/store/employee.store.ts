@@ -4,7 +4,6 @@ import { devtools, persist } from "zustand/middleware";
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import {
-    ApiResult,
     CreateEmployeePayload,
     EmployeeDetailDTO,
     EmployeeListItemDTO,
@@ -16,6 +15,7 @@ import {
     UpdateEmployeePayload,
     ObjectIdString,
 } from "@/types/employee.types";
+import { ApiResponse } from "@/types/api.types";
 
 const URL_AFTER_API = `/mock/users/employees`;
 
@@ -258,12 +258,12 @@ export const useEmployeeStore = create<EmployeeStore>()(
                         const promise = (async () => {
                             try {
                                 // hit API with provided page+limit so backend returns the exact page requested
-                                const res = await api.get<ApiResult<EmployeesListResponse>>(EMP_API.LIST, {
+                                const res = await api.get<ApiResponse<EmployeesListResponse>>(EMP_API.LIST, {
                                     params: query,
                                 });
                                 const payload = res.data;
-                                if (!payload.ok || !payload.data) {
-                                    throw new Error(payload.error?.message || "Failed to fetch employees list");
+                                if (!payload.data) {
+                                    throw new Error("Failed to fetch employees list");
                                 }
 
                                 // merge into canonical buffer:
@@ -374,10 +374,10 @@ export const useEmployeeStore = create<EmployeeStore>()(
 
                         const promise = (async () => {
                             try {
-                                const res = await api.get<ApiResult<EmployeeDetailDTO>>(EMP_API.DETAIL(id));
+                                const res = await api.get<ApiResponse<EmployeeDetailDTO>>(EMP_API.DETAIL(id));
                                 const payload = res.data;
-                                if (!payload.ok || !payload.data) {
-                                    throw new Error(payload.error?.message || "Failed to fetch employee detail");
+                                if (!payload.data) {
+                                    throw new Error("Failed to fetch employee detail");
                                 }
                                 get().cache.set(detailKey, {
                                     ts: nowMs(),
@@ -416,10 +416,10 @@ export const useEmployeeStore = create<EmployeeStore>()(
                     async createEmployee(payload) {
                         set({ lastError: null }, false, "employees/create:start");
                         try {
-                            const res = await api.post<ApiResult<EmployeeDetailDTO>>(EMP_API.CREATE, payload);
+                            const res = await api.post<ApiResponse<EmployeeDetailDTO>>(EMP_API.CREATE, payload);
                             const body = res.data;
-                            if (!body.ok || !body.data) {
-                                throw new Error(body.error?.message || "Failed to create employee");
+                            if (!body.data) {
+                                throw new Error("Failed to create employee");
                             }
                             // Invalidate canonical lists (they will be refetched or merged on next request)
                             get().invalidateCacheKeyPrefix("employees:list:canonical:");
@@ -438,10 +438,10 @@ export const useEmployeeStore = create<EmployeeStore>()(
                     async updateEmployee(payload) {
                         set({ lastError: null }, false, "employees/update:start");
                         try {
-                            const res = await api.put<ApiResult<EmployeeDetailDTO>>(EMP_API.UPDATE(payload.id), payload);
+                            const res = await api.put<ApiResponse<EmployeeDetailDTO>>(EMP_API.UPDATE(payload.id), payload);
                             const body = res.data;
-                            if (!body.ok || !body.data) {
-                                throw new Error(body.error?.message || "Failed to update employee");
+                            if (!body.data) {
+                                throw new Error("Failed to update employee");
                             }
                             // Overwrite detail cache
                             const detailKey = EMPLOYEES_CACHE_KEYS.detail(body.data.id);
@@ -467,11 +467,8 @@ export const useEmployeeStore = create<EmployeeStore>()(
                             "employees/softDelete:start"
                         );
                         try {
-                            const res = await api.patch<ApiResult<null>>(EMP_API.SOFT_DELETE(id));
-                            const body = res.data;
-                            if (!body.ok) {
-                                throw new Error(body.error?.message || "Failed to soft-delete employee");
-                            }
+                            await api.patch<ApiResponse<null>>(EMP_API.SOFT_DELETE(id));
+
                             get().invalidateCacheKeyPrefix("employees:list:canonical:");
                             get().invalidateCacheKey(EMPLOYEES_CACHE_KEYS.detail(id));
                             set((s) => ({ loadingById: { ...s.loadingById, [id]: false } }), false, "employees/softDelete:done");
@@ -499,11 +496,8 @@ export const useEmployeeStore = create<EmployeeStore>()(
                             "employees/restore:start"
                         );
                         try {
-                            const res = await api.patch<ApiResult<null>>(EMP_API.RESTORE(id));
-                            const body = res.data;
-                            if (!body.ok) {
-                                throw new Error(body.error?.message || "Failed to restore employee");
-                            }
+                            await api.patch<ApiResponse<null>>(EMP_API.RESTORE(id));
+
                             get().invalidateCacheKeyPrefix("employees:list:canonical:");
                             get().invalidateCacheKey(EMPLOYEES_CACHE_KEYS.detail(id));
                             set((s) => ({ loadingById: { ...s.loadingById, [id]: false } }), false, "employees/restore:done");
@@ -526,9 +520,9 @@ export const useEmployeeStore = create<EmployeeStore>()(
                         const cached = get().cache.get(key);
                         if (!force && cached && !isExpired(cached)) return cached.data;
                         try {
-                            const res = await api.get<ApiResult<unknown>>(EMP_API.ENUMS);
+                            const res = await api.get<ApiResponse<unknown>>(EMP_API.ENUMS);
                             const body = res.data;
-                            if (!body.ok) throw new Error(body.error?.message || "Failed to fetch enums");
+                            if (!body.data) throw new Error("Failed to fetch enums");
                             get().cache.set(key, { ts: nowMs(), ttl: DEFAULT_TTL_SECONDS, data: body.data });
                             pruneGlobalCache(get().cache, DEFAULT_GLOBAL_CACHE_ENTRIES);
                             return body.data;

@@ -42,6 +42,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import NextImage from "next/image";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 import { filesToDocumentDTOs, fileToAvatarBase64 } from "@/utils/helpers/file-conversion";
+import { CURRENCY } from "@/constants/tour.const";
+import { USER_ROLE } from "@/constants/user.const";
 
 /* -------------------------
    Helpers & constants
@@ -50,6 +52,10 @@ import { filesToDocumentDTOs, fileToAvatarBase64 } from "@/utils/helpers/file-co
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "pdf"];
 const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif"];
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+// Bangladeshi phone number regex (supports +880 or 01 formats)
+const BANGLADESHI_PHONE_REGEX = /^(\+8801[3-9]\d{8}|01[3-9]\d{8})$/;
+type FormErrors = Record<string, string>;
 
 /* -------------------------
    Component
@@ -83,11 +89,11 @@ export function AddEmployeeDialog({
 
     const [form, setForm] = useState<CreateEmployeePayload>({
         password: "",
-        role: (Object.values(EMPLOYEE_ROLE)[0] as EmployeeRole) ?? ("" as EmployeeRole),
+        role: USER_ROLE.SUPPORT,
         employmentType: undefined,
         avatar: undefined,
         salary: 0,
-        currency: "BDT",
+        currency: CURRENCY.BDT,
         dateOfJoining: undefined,
         contactInfo: { phone: "" } as ContactInfoDTO,
         shifts: undefined,
@@ -127,11 +133,11 @@ export function AddEmployeeDialog({
         if (!open) {
             setForm({
                 password: "",
-                role: (Object.values(EMPLOYEE_ROLE)[0] as EmployeeRole) ?? ("" as EmployeeRole),
+                role: EMPLOYEE_ROLE.SUPPORT,
                 employmentType: undefined,
                 avatar: undefined,
                 salary: 0,
-                currency: "BDT",
+                currency: CURRENCY.BDT,
                 dateOfJoining: undefined,
                 contactInfo: { phone: "" } as ContactInfoDTO,
                 shifts: undefined,
@@ -146,15 +152,39 @@ export function AddEmployeeDialog({
 
     const validateForm = (): boolean => {
         try {
-            const newErrors: Record<string, string> = {};
-            if (!form.role) newErrors.role = "Role is required";
-            if (!form.contactInfo || !form.contactInfo.phone) newErrors["contactInfo.phone"] = "Contact phone is required";
-            if (typeof form.salary !== "number" || form.salary < 0) newErrors.salary = "Salary must be a non-negative number";
-            if (!form.currency) newErrors.currency = "Currency is required";
+            const newErrors: FormErrors = {};
+
+            // Validate role
+            if (!form.role) {
+                newErrors.role = "Role is required";
+            } else if (![USER_ROLE.SUPPORT, USER_ROLE.ASSISTANT, USER_ROLE.ADMIN].includes(form.role as USER_ROLE)) {
+                newErrors.role = "Role must be SUPPORT, ASSISTANT, or ADMIN";
+            }
+
+            // Validate contact phone
+            if (!form.contactInfo?.phone) {
+                newErrors["contactInfo.phone"] = "Contact phone is required";
+            } else if (!BANGLADESHI_PHONE_REGEX.test(form.contactInfo.phone)) {
+                newErrors["contactInfo.phone"] = "Invalid Bangladeshi phone number";
+            }
+
+            // Validate salary
+            if (typeof form.salary !== "number" || form.salary < 0) {
+                newErrors.salary = "Salary must be a non-negative number";
+            }
+
+            // Validate currency
+            if (!form.currency || !Object.values(CURRENCY).includes(form.currency as CURRENCY)) {
+                newErrors.currency = "Currency is required";
+            }
+
+            // Set errors
             setErrors(newErrors);
+
+            // Return true if no errors
             return Object.keys(newErrors).length === 0;
         } catch (err) {
-            console.error(err);
+            console.error("Validation error:", err);
             setErrors({ form: "Validation failed" });
             return false;
         }
@@ -387,18 +417,11 @@ export function AddEmployeeDialog({
                                 </div>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <Field label="Role" error={errors.role}>
-                                        <select
-                                            value={form.role ?? ""}
-                                            onChange={(e) => setForm((s) => ({ ...s, role: e.target.value as EmployeeRole }))}
+                                        <Input
+                                            value={USER_ROLE.SUPPORT}
+                                            disabled
                                             className="h-11 w-full rounded-lg border bg-background px-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all"
-                                        >
-                                            <option value="">Select role</option>
-                                            {enums.roles.map((r) => (
-                                                <option key={r} value={r}>
-                                                    {r}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        />
                                     </Field>
 
                                     <Field label="Employment Type" error={errors.employmentType}>
@@ -535,12 +558,22 @@ export function AddEmployeeDialog({
                                     </Field>
 
                                     <Field label="Currency" error={errors.currency}>
-                                        <Input
-                                            value={form.currency ?? ""}
-                                            onChange={(e) => setForm((s) => ({ ...s, currency: e.target.value }))}
-                                            className="h-11 rounded-lg"
-                                            placeholder="BDT"
-                                        />
+                                        <select
+                                            value={form.currency}
+                                            onChange={(e) =>
+                                                setForm((s) => ({
+                                                    ...s,
+                                                    currency: e.target.value as CURRENCY,
+                                                }))
+                                            }
+                                            className="h-11 w-full rounded-lg border bg-background px-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all"
+                                        >
+                                            {Object.values(CURRENCY).map((currency) => (
+                                                <option key={currency} value={currency}>
+                                                    {currency}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </Field>
 
                                     <Field label="Joining Date" error={errors.dateOfJoining}>

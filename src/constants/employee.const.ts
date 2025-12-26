@@ -31,6 +31,15 @@ export const EMPLOYMENT_TYPE = {
   INTERN: "intern",
 } as const;
 
+
+export enum PAYROLL_STATUS {
+  PENDING = "pending",
+  PAID = "paid",
+  FAILED = "failed",
+}
+
+export type PayrollStatus = `${PAYROLL_STATUS}`;
+
 /* ------------------------------------------------------------------
    TYPE DERIVATIONS — Always in sync with constants
 ------------------------------------------------------------------- */

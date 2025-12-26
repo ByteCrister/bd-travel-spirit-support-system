@@ -5,10 +5,12 @@ import {
   EMPLOYEE_ROLE,
   EMPLOYEE_STATUS,
   EMPLOYMENT_TYPE,
+  PayrollStatus,
 } from "@/constants/employee.const";
 
 import { AccountStatus } from "@/constants/user.const";
 import { AuditLog } from "./current-user.types";
+import { Currency } from "@/constants/tour.const";
 
 /* ---------------------------------------------------------------------
   Primitive / utility types
@@ -34,18 +36,13 @@ export type DayOfWeek = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
   Payroll types (mirror IPayrollRecord & PAYROLL_STATUS)
 --------------------------------------------------------------------- */
 
-export enum PAYROLL_STATUS {
-  PENDING = "pending",
-  PAID = "paid",
-  FAILED = "failed",
-}
 
 export interface PayrollRecordDTO {
   year: number; // 2025
   month: number; // 1–12
   amount: number;
   currency: string; // ISO currency code, uppercase
-  status: PAYROLL_STATUS;
+  status: PayrollStatus;
   attemptedAt?: ISODateString;
   paidAt?: ISODateString;
   failureReason?: string;
@@ -229,7 +226,7 @@ export interface CreateEmployeePayload {
   employmentType?: EmploymentType;
   avatar?: ObjectIdString; // Asset id
   salary: number;
-  currency: string;
+  currency: Currency;
   dateOfJoining?: ISODateString;
   contactInfo: ContactInfoDTO; // phone is required by schema
   shifts?: ShiftDTO[];
@@ -245,7 +242,7 @@ export interface UpdateEmployeePayload {
   avatar?: ObjectIdString;
   status?: EmployeeStatus;
   salary: number;
-  currency: string;
+  currency: Currency;
   dateOfJoining?: ISODateString;
   dateOfLeaving?: ISODateString;
   contactInfo?: ContactInfoDTO;
@@ -332,12 +329,6 @@ export interface ApiError {
   code: string; // machine-readable code (e.g., "VALIDATION_ERROR")
   message: string; // human-readable
   details?: Record<string, unknown>;
-}
-
-export interface ApiResult<T> {
-  ok: boolean;
-  data?: T;
-  error?: ApiError;
 }
 
 /* ---------------------------------------------------------------------

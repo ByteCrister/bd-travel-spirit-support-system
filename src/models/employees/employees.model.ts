@@ -6,6 +6,7 @@ import {
     EmployeeStatus,
     EmploymentType,
 } from "@/constants/employee.const";
+import { Currency } from "@/constants/tour.const";
 import { defineModel } from "@/lib/helpers/defineModel";
 
 import { DayOfWeek } from "@/types/employee.types";
@@ -203,7 +204,7 @@ export interface IEmployee extends Document {
     avatar?: Types.ObjectId;
 
     salary: number;
-    currency: string;
+    currency: Currency;
     salaryHistory: ISalaryHistory[];
 
     payroll: IPayrollRecord[];
