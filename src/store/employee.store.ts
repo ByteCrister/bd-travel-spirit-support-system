@@ -17,7 +17,8 @@ import {
 } from "@/types/employee.types";
 import { ApiResponse } from "@/types/api.types";
 
-const URL_AFTER_API = `/mock/users/employees`;
+// const URL_AFTER_API = `/mock/users/employees`;
+const URL_AFTER_API = `/users/v1/employees`;
 
 const DEFAULT_TTL_SECONDS =
     Number.parseInt(process.env.NEXT_PUBLIC_CACHE_TTL || "300", 10) || 300;
@@ -81,7 +82,7 @@ interface EmployeeStore {
 const EMP_API = {
     LIST: URL_AFTER_API,
     DETAIL: (id: string) => `${URL_AFTER_API}/${id}`,
-    CREATE: URL_AFTER_API,
+    CREATE: `${URL_AFTER_API}/add`,
     UPDATE: (id: string) => `${URL_AFTER_API}/${id}`,
     SOFT_DELETE: (id: string) => `${URL_AFTER_API}/${id}/soft-delete`,
     RESTORE: (id: string) => `${URL_AFTER_API}/${id}/restore`,

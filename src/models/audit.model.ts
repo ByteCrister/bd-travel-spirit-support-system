@@ -174,6 +174,9 @@ AuditSchema.statics.getRecentForActor = function (
 };
 
 /** Export */
-export const AuditModel = defineModel("Audit", AuditSchema);
+const AuditModel = defineModel<IAuditDoc, IAuditModel>(
+    "Audit",
+    AuditSchema
+);
 
 export default AuditModel;

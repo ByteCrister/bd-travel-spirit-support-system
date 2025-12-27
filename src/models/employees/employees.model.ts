@@ -1,3 +1,5 @@
+import { Schema, Document, Types, Model, FilterQuery, Query } from "mongoose";
+
 import {
     EMPLOYEE_ROLE,
     EMPLOYEE_STATUS,
@@ -6,36 +8,38 @@ import {
     EmployeeStatus,
     EmploymentType,
 } from "@/constants/employee.const";
-import { Currency } from "@/constants/tour.const";
-import { defineModel } from "@/lib/helpers/defineModel";
 
+import { Currency } from "@/constants/tour.const";
 import { DayOfWeek } from "@/types/employee.types";
-import { Schema, Document, Types } from "mongoose";
+import { defineModel } from "@/lib/helpers/defineModel";
+import { ClientSession } from "mongoose";
 
 /* =========================================================
-   PAYROLL SYSTEM (AUTO + MANUAL + FAILURE TRACKING)
+   PAYROLL
 ========================================================= */
 
-export enum PAYROLL_STATUS {
+enum PAYROLL_STATUS {
     PENDING = "pending",
     PAID = "paid",
     FAILED = "failed",
 }
 
+type PayrollStatus = `${PAYROLL_STATUS}`
+
 export interface IPayrollRecord {
-    year: number;              // 2025
-    month: number;             // 1–12
+    year: number;                  // e.g. 2025
+    month: number;                 // 1 - 12
     amount: number;
-    currency: string;
+    currency: Currency;
 
-    status: PAYROLL_STATUS;
+    status: PayrollStatus;
 
-    attemptedAt?: Date;        // Cron or manual attempt time
-    paidAt?: Date;             // When payment actually succeeded
+    attemptedAt?: Date;
+    paidAt?: Date;
 
-    failureReason?: string;   // If failed
-    transactionRef?: string;  // Bank / Stripe / Mobile Wallet reference
-    paidBy?: Types.ObjectId;  // Owner/Admin user ID (manual payment)
+    failureReason?: string;
+    transactionRef?: string;
+    paidBy?: Types.ObjectId;        // Admin / Owner
 }
 
 const PayrollSchema = new Schema<IPayrollRecord>(
@@ -44,7 +48,7 @@ const PayrollSchema = new Schema<IPayrollRecord>(
         month: { type: Number, required: true, min: 1, max: 12 },
 
         amount: { type: Number, required: true, min: 0 },
-        currency: { type: String, required: true, maxlength: 3, uppercase: true },
+        currency: { type: String, required: true, uppercase: true },
 
         status: {
             type: String,
@@ -65,7 +69,7 @@ const PayrollSchema = new Schema<IPayrollRecord>(
 );
 
 /* =========================================================
-    EMERGENCY & CONTACT SUB-SCHEMAS
+   CONTACT & EMERGENCY
 ========================================================= */
 
 export interface IEmergencyContact {
@@ -76,17 +80,16 @@ export interface IEmergencyContact {
 
 const EmergencyContactSchema = new Schema<IEmergencyContact>(
     {
-        name: { type: String, trim: true, required: true },
+        name: { type: String, required: true, trim: true },
 
         phone: {
             type: String,
-            trim: true,
-            maxlength: 20,
             required: true,
+            trim: true,
             match: [/^(?:\+?88)?01[3-9]\d{8}$/, "Invalid Bangladesh phone"],
         },
 
-        relation: { type: String, trim: true, required: true },
+        relation: { type: String, required: true, trim: true },
     },
     { _id: false }
 );
@@ -101,12 +104,16 @@ const ContactInfoSchema = new Schema<IContactInfo>(
     {
         phone: {
             type: String,
-            trim: true,
             required: true,
+            trim: true,
             match: [/^(?:\+?88)?01[3-9]\d{8}$/, "Invalid Bangladesh phone"],
         },
 
-        email: { type: String, trim: true, lowercase: true },
+        email: {
+            type: String,
+            trim: true,
+            lowercase: true,
+        },
 
         emergencyContact: EmergencyContactSchema,
     },
@@ -118,8 +125,8 @@ const ContactInfoSchema = new Schema<IContactInfo>(
 ========================================================= */
 
 export interface IShift {
-    startTime: string; // HH:mm
-    endTime: string;
+    startTime: string;      // HH:mm
+    endTime: string;        // HH:mm
     days: DayOfWeek[];
 }
 
@@ -147,31 +154,31 @@ const ShiftSchema = new Schema<IShift>(
 );
 
 /* =========================================================
-   DOCUMENT STORAGE (NID, CONTRACT, ETC.)
+   DOCUMENTS
 ========================================================= */
 
-export interface IDocument {
-    type: string;
-    url: Types.ObjectId;
+export interface IEmployeeDocument {
+    type: string;                   // NID, CONTRACT, CERTIFICATE
+    asset: Types.ObjectId;          // Asset reference
     uploadedAt: Date;
 }
 
-const DocumentSchema = new Schema<IDocument>(
+const EmployeeDocumentSchema = new Schema<IEmployeeDocument>(
     {
         type: { type: String, required: true },
-        url: { type: Schema.Types.ObjectId, ref: "Asset", required: true },
+        asset: { type: Schema.Types.ObjectId, ref: "Asset", required: true },
         uploadedAt: { type: Date, default: Date.now },
     },
     { _id: false }
 );
 
 /* =========================================================
-   SALARY
+   SALARY HISTORY
 ========================================================= */
 
 export interface ISalaryHistory {
     amount: number;
-    currency: string;
+    currency: Currency;
     effectiveFrom: Date;
     effectiveTo?: Date;
     reason?: string;
@@ -181,12 +188,51 @@ const SalaryHistorySchema = new Schema<ISalaryHistory>(
     {
         amount: { type: Number, required: true, min: 0 },
         currency: { type: String, required: true, uppercase: true },
+
         effectiveFrom: { type: Date, required: true },
         effectiveTo: Date,
-        reason: String,
+
+        reason: { type: String, trim: true },
     },
     { _id: false }
 );
+
+/* =========================================================
+   EMPLOYEE (ROOT) - Instance Methods Interface
+========================================================= */
+
+export interface IEmployeeMethods {
+    isDeleted(): boolean;
+}
+
+/* =========================================================
+   STATIC METHODS INTERFACE
+========================================================= */
+
+export interface IEmployeeModel
+    extends Model<IEmployee, unknown, IEmployeeMethods> {
+
+    softDeleteById(
+        id: Types.ObjectId,
+        session: ClientSession,
+        reason?: string,
+        deletedBy?: Types.ObjectId
+    ): Promise<HydratedEmployeeDocument | null>;
+
+    restoreById(
+        id: Types.ObjectId,
+        session: ClientSession,
+    ): Promise<HydratedEmployeeDocument | null>;
+
+    findDeleted(
+        session?: ClientSession
+    ): Promise<HydratedEmployeeDocument[]>;
+
+    findOneWithDeleted(
+        query: FilterQuery<IEmployee>,
+        session?: ClientSession
+    ): Promise<HydratedEmployeeDocument | null>;
+}
 
 /* =========================================================
    MAIN EMPLOYEE INTERFACE
@@ -197,7 +243,6 @@ export interface IEmployee extends Document {
     companyId?: Types.ObjectId;
 
     role: EmployeeRole;
-
     status: EmployeeStatus;
     employmentType?: EmploymentType;
 
@@ -214,25 +259,52 @@ export interface IEmployee extends Document {
 
     contactInfo: IContactInfo;
 
-    shifts?: IShift[];
-    documents?: IDocument[];
+    shifts: IShift[];
+    documents: IEmployeeDocument[];
 
     notes?: string;
-    isDeleted: boolean;
-    lastLogin: Date;
+
+    // Soft delete fields
+    deletedAt?: Date;
+    deletedBy?: Types.ObjectId;
+    deleteReason?: string;
+
+    lastLogin?: Date;
 
     createdAt: Date;
     updatedAt: Date;
 }
 
+/* =========================================================
+   HELPER TYPES
+========================================================= */
 
-const EmployeeSchema = new Schema<IEmployee>(
+export type HydratedEmployeeDocument = IEmployee & IEmployeeMethods;
+
+/* =========================================================
+   EMPLOYEE SCHEMA
+========================================================= */
+
+const EmployeeSchema = new Schema<IEmployee, IEmployeeModel, IEmployeeMethods>(
     {
-        user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+        user: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            unique: true,
+        },
 
-        companyId: { type: Schema.Types.ObjectId, ref: "Guide", index: true },
+        companyId: {
+            type: Schema.Types.ObjectId,
+            ref: "Guide",
+            index: true,
+        },
 
-        role: { type: String, enum: Object.values(EMPLOYEE_ROLE), required: true },
+        role: {
+            type: String,
+            enum: Object.values(EMPLOYEE_ROLE),
+            required: true,
+        },
 
         status: {
             type: String,
@@ -241,30 +313,66 @@ const EmployeeSchema = new Schema<IEmployee>(
             index: true,
         },
 
-        employmentType: { type: String, enum: Object.values(EMPLOYMENT_TYPE) },
+        employmentType: {
+            type: String,
+            enum: Object.values(EMPLOYMENT_TYPE),
+        },
 
         avatar: { type: Schema.Types.ObjectId, ref: "Asset" },
 
-        /* FINANCIAL CORE */
+        /* FINANCIAL */
         salary: { type: Number, required: true, min: 0 },
         currency: { type: String, required: true, uppercase: true },
 
-        salaryHistory: { type: [SalaryHistorySchema], default: [] },
+        salaryHistory: {
+            type: [SalaryHistorySchema],
+            default: [],
+        },
 
-        payroll: { type: [PayrollSchema], default: [] },
+        payroll: {
+            type: [PayrollSchema],
+            default: [],
+        },
 
         dateOfJoining: { type: Date, default: Date.now },
         dateOfLeaving: Date,
 
-        contactInfo: { type: ContactInfoSchema, required: true },
+        contactInfo: {
+            type: ContactInfoSchema,
+            required: true,
+        },
 
-        shifts: { type: [ShiftSchema], default: [] },
+        shifts: {
+            type: [ShiftSchema],
+            default: [],
+        },
 
-        documents: { type: [DocumentSchema], default: [] },
+        documents: {
+            type: [EmployeeDocumentSchema],
+            default: [],
+        },
 
-        notes: { type: String, trim: true, maxlength: 2000 },
+        notes: {
+            type: String,
+            trim: true,
+            maxlength: 2000,
+        },
 
-        isDeleted: { type: Boolean, default: false, index: true },
+        // Soft delete fields
+        deletedAt: {
+            type: Date,
+        },
+
+        deletedBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+        },
+
+        deleteReason: {
+            type: String,
+            trim: true,
+            maxlength: 500,
+        },
 
         lastLogin: Date,
     },
@@ -277,37 +385,155 @@ const EmployeeSchema = new Schema<IEmployee>(
     }
 );
 
+/* =========================================================
+   PRE-FIND MIDDLEWARE TO EXCLUDE DELETED DOCUMENTS
+========================================================= */
 
-// Maintain fullName automatically
+// Apply to all find queries (find, findOne, findById, etc.)
+EmployeeSchema.pre(/^find/, function (
+    this: Query<unknown, IEmployee>,
+    next
+) {
+    const query = this.getQuery() as { deletedAt?: unknown };
+
+    // If deletedAt is explicitly specified, do nothing
+    if (query.deletedAt !== undefined) {
+        return next();
+    }
+
+    // Otherwise exclude soft-deleted docs
+    this.where({ deletedAt: null });
+
+    next();
+});
+
+EmployeeSchema.methods.isDeleted = function (): boolean {
+    return Boolean(this.deletedAt);
+};
+
+/* =========================================================
+   STATIC METHODS (ONLY SOFT DELETE & RESTORE RELATED)
+========================================================= */
+
+// Soft Delete & Restore static methods
+EmployeeSchema.statics.softDeleteById = async function (
+    id: Types.ObjectId,
+    session: ClientSession,
+    reason?: string,
+    deletedBy?: Types.ObjectId
+): Promise<HydratedEmployeeDocument | null> {
+
+    return this.findOneAndUpdate(
+        {
+            _id: id,
+            deletedAt: null, // ensure not already deleted
+        },
+        {
+            $set: {
+                deletedAt: new Date(),
+                deleteReason: reason,
+                deletedBy,
+                status: EMPLOYEE_STATUS.TERMINATED,
+            },
+        },
+        {
+            new: true,          // return updated document
+            session,            // attach transaction
+        }
+    ).exec();
+};
+
+EmployeeSchema.statics.restoreById = async function (
+    id: Types.ObjectId,
+    session: ClientSession,
+): Promise<HydratedEmployeeDocument | null> {
+
+    return this.findOneAndUpdate(
+        {
+            _id: id,
+            deletedAt: { $ne: null }, // only restore deleted docs
+        },
+        {
+            $unset: {
+                deletedAt: 1,
+                deleteReason: 1,
+                deletedBy: 1,
+            },
+            $set: {
+                status: EMPLOYEE_STATUS.ACTIVE,
+            },
+        },
+        {
+            new: true,   // return restored document
+            session,     // transaction-safe
+        }
+    ).exec();
+};
+
+EmployeeSchema.statics.findDeleted = function (
+    session?: ClientSession
+): Promise<HydratedEmployeeDocument[]> {
+
+    return this
+        .find({ deletedAt: { $ne: null } })
+        .session(session ?? null)
+        .exec();
+};
+
+EmployeeSchema.statics.findOneWithDeleted = function (
+    query: FilterQuery<IEmployee>,
+    session?: ClientSession
+): Promise<HydratedEmployeeDocument | null> {
+
+    return this
+        .findOne(query)
+        .where({}) // disables pre-find filter
+        .session(session ?? null)
+        .exec();
+};
+
+/* =========================================================
+   VALIDATIONS
+========================================================= */
+
 EmployeeSchema.pre("save", function (next) {
-
     if (this.dateOfLeaving && this.dateOfLeaving < this.dateOfJoining) {
-        return next(new Error("dateOfLeaving must be after joining date"));
+        return next(
+            new Error("dateOfLeaving must be after dateOfJoining")
+        );
+    }
+
+    // Prevent modifying soft-deleted documents
+    if (this.isDeleted && this.isDeleted() && this.isModified() && !this.isModified('deletedAt')) {
+        return next(
+            new Error("Cannot modify a soft-deleted employee. Restore it first.")
+        );
     }
 
     next();
 });
 
 /* =========================================================
-   INDEXES FOR SPEED
+   INDEXES
 ========================================================= */
 
-EmployeeSchema.index({ isDeleted: 1 });
 EmployeeSchema.index({ createdAt: -1 });
-
-EmployeeSchema.index(
-    { fullName: "text", "contactInfo.email": "text" },
-    { weights: { fullName: 5, "contactInfo.email": 3, } }
-);
-
-// Payroll query optimization
+EmployeeSchema.index({ "contactInfo.email": "text" }, {
+    weights: { "contactInfo.email": 3 }
+});
 EmployeeSchema.index({
     "payroll.year": 1,
     "payroll.month": 1,
     "payroll.status": 1,
 });
+EmployeeSchema.index({ status: 1, role: 1 });
+EmployeeSchema.index({ companyId: 1, status: 1 });
+EmployeeSchema.index({ deletedAt: 1 });
 
+/* =========================================================
+   MODEL EXPORT
+========================================================= */
 
-const EmployeeModel = defineModel("Employees", EmployeeSchema);
+const EmployeeModel = defineModel<IEmployee, IEmployeeModel>("Employee", EmployeeSchema);
 
 export default EmployeeModel;

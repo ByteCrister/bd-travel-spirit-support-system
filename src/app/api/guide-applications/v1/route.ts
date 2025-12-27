@@ -8,18 +8,11 @@ import { withTransaction } from "@/lib/helpers/withTransaction";
 
 import UserModel from "@/models/user.model";
 import GuideModel, { IGuideDocument } from "@/models/guide/guide.model";
-import { AssetModel } from "@/models/asset.model";
 
 import { mailer } from "@/config/node-mailer";
 import applicationSuccess from "@/lib/html/application-success.html";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 
-import { getDocumentStorageProvider } from "@/lib/storage-providers";
-import {
-    STORAGE_PROVIDER,
-    VISIBILITY,
-    ASSET_TYPE,
-} from "@/constants/asset.const";
 import { GUIDE_DOCUMENT_CATEGORY, GUIDE_STATUS } from "@/constants/guide.const";
 import { USER_ROLE } from "@/constants/user.const";
 
@@ -28,15 +21,8 @@ import {
     SegmentedDocuments,
     DocumentFile,
 } from "@/types/register-as-guide.types";
-import {
-    assertValidDataUrl,
-    base64ToBuffer,
-    sha256,
-} from "@/lib/helpers/convert";
-import {
-    DuplicateAssetChecksumError,
-    isMongoDuplicateKeyError,
-} from "@/lib/helpers/asset-checksum-error";
+import { cleanupAssets } from "@/lib/cloudinary/delete.cloudinary";
+import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
 
 /**
  * 
@@ -113,7 +99,7 @@ async function uploadDocuments(
     documents: SegmentedDocuments,
     session: mongoose.ClientSession
 ): Promise<{ category: GUIDE_DOCUMENT_CATEGORY; assetId: Types.ObjectId }[]> {
-    const storage = getDocumentStorageProvider(STORAGE_PROVIDER.CLOUDINARY);
+
     const assets: {
         category: GUIDE_DOCUMENT_CATEGORY;
         assetId: Types.ObjectId;
@@ -123,102 +109,24 @@ async function uploadDocuments(
         if (!files?.length) continue;
 
         for (const file of files as DocumentFile[]) {
-            // 1 Validate and normalize base64
-            const dataUrl = assertValidDataUrl(file.base64);
 
-            // 2 Compute checksum BEFORE sending to Cloudinary
-            const buffer = base64ToBuffer(dataUrl);
-            const checksum = sha256(buffer);
+            // First await the uploadAssets promise
+            const uploadedIds = await uploadAssets([{ base64: file.base64, name: file.name }], session);
 
-            // 2.1 CHECK IF CHECKSUM ALREADY EXISTS
-            const existingAsset = await AssetModel.findOne({
-                checksum,
-                deletedAt: null,
-            }).session(session);
 
-            if (existingAsset) {
-                throw new DuplicateAssetChecksumError(file.name);
-            }
-
-            // 3 Upload to Cloudinary (only if checksum is unique)
-            const uploaded = await storage.create(dataUrl);
-
-            // 4 Save in AssetModel with checksum
-            let asset;
-            try {
-                asset = await AssetModel.create(
-                    [
-                        {
-                            storageProvider: STORAGE_PROVIDER.CLOUDINARY,
-                            objectKey: uploaded.providerId,
-                            publicUrl: uploaded.url,
-                            contentType: uploaded.contentType ?? file.type,
-                            fileSize: uploaded.fileSize ?? file.size,
-                            checksum,
-                            assetType: ASSET_TYPE.DOCUMENT,
-                            title: file.name,
-                            visibility: VISIBILITY.PRIVATE,
-                        },
-                    ],
-                    { session }
-                ).then((d) => d[0]);
-            } catch (err: unknown) {
-                // Safety net for race conditions
-                if (isMongoDuplicateKeyError(err) && err.keyPattern?.checksum) {
-                    throw new DuplicateAssetChecksumError(file.name);
-                }
-
-                throw err;
-            }
-
-            if (!asset?._id) {
+            const assetId = uploadedIds[0]; // now this is safe
+            if (!assetId) {
                 throw new ApiError("Failed to create asset", 500);
             }
 
             assets.push({
                 category: DOC_CATEGORY_MAP[segment],
-                assetId: asset._id as Types.ObjectId,
+                assetId
             });
         }
     }
 
     return assets;
-}
-
-async function cleanupGuideAssets(
-    guide: typeof GuideModel.prototype,
-    session: mongoose.ClientSession
-) {
-    if (!guide.documents?.length) return;
-
-    // 1. Load assets
-    const assetIds = guide.documents.map((d: IGuideDocument) => d.AssetUrl);
-
-    const assets = await AssetModel.find({
-        _id: { $in: assetIds },
-        deletedAt: null,
-    }).session(session);
-
-    const storage = getDocumentStorageProvider(STORAGE_PROVIDER.CLOUDINARY);
-
-    // 2. Delete from Cloudinary (outside DB concerns)
-    for (const asset of assets) {
-        try {
-            await storage.delete(asset.objectKey);
-        } catch (err) {
-            // Log but do not crash — Cloudinary delete should be idempotent
-            console.error("Cloudinary delete failed:", asset.objectKey, err);
-        }
-    }
-
-    // 3. Soft-delete in DB (transaction-safe)
-    await AssetModel.softDeleteMany(
-        {
-            _id: { $in: assetIds },
-        },
-        session
-    );
-    //! ------------ I will put cron actions to delete asset document permanently --------------
 }
 
 /* -------------------------------------------------------------------------- */
@@ -295,7 +203,8 @@ async function handlePost(req: NextRequest) {
         /* STEP 3.1: CLEAN OLD ASSETS IF REJECTED */
 
         if (existingGuide?.status === GUIDE_STATUS.REJECTED) {
-            await cleanupGuideAssets(existingGuide, session);
+            const assetIds = existingGuide.documents.map((d: IGuideDocument) => d.AssetUrl);
+            await cleanupAssets(assetIds, session);
         }
 
         /* ---------------------------------------------------------------------- */

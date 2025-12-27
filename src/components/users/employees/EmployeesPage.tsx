@@ -13,7 +13,6 @@ import { EmployeeSummary } from "./EmployeeSummary";
 import { EmployeeFilters } from "./EmployeeFilters";
 import { EmployeeTable } from "./EmployeeTable";
 import { PaginationControls } from "./PaginationControls";
-import { AddEmployeeDialog } from "./AddEmployeeDialog";
 import { Breadcrumbs } from "../../global/Breadcrumbs";
 import { useRouter } from "next/navigation";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
@@ -30,7 +29,6 @@ export default function EmployeesPage() {
         filters: {},
     });
     const [list, setList] = useState<EmployeesListResponse | null>(null);
-    const [openAdd, setOpenAdd] = useState(false);
     const breadcrumbItems = [
         { label: "Home", href: '/' },
         { label: "Employees", href: "/users/employees" },
@@ -80,7 +78,7 @@ export default function EmployeesPage() {
                     Employees
                 </h1>
                 <Button
-                    onClick={() => setOpenAdd(true)}
+                    onClick={() => router.push(`/users/employees/add-employee`) }
                     className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium btn-elevated bg-[#2563EB] text-white shadow-sm hover:bg-[#1D4ED8] hover:shadow-md active:translate-y-[1px] focus:outline-none focus:ring-2 focus:ring-[#93C5FD] focus:ring-offset-1"
                     aria-label="Add new employee"
                 >
@@ -114,13 +112,6 @@ export default function EmployeesPage() {
                 onPageChange={onPageChange}
                 onLimitChange={onLimitChange}
                 loading={store.loadingList}
-            />
-
-            <AddEmployeeDialog
-                open={openAdd}
-                onOpenChange={setOpenAdd}
-                onCreate={store.createEmployee}
-                fetchEnums={store.fetchEnums}
             />
         </div>
     );
