@@ -22,36 +22,6 @@ import { ASSET_TYPE } from "@/constants/asset.const";
 
 type ObjectId = Types.ObjectId;
 
-export interface IUserLean {
-    _id: Types.ObjectId;
-    name: string;
-    email: string;
-}
-
-export interface IAssetLean {
-    _id: Types.ObjectId;
-    publicUrl: string;
-}
-
-export interface IEmployeeDocumentLean {
-    type: string;
-    asset: IAssetLean;
-    uploadedAt: Date;
-}
-
-export type EmployeeLeanPopulated =
-    Omit<IEmployee,
-        | "user"
-        | "avatar"
-        | "documents"
-    > & {
-        _id: Types.ObjectId;
-        user: IUserLean;
-        avatar?: IAssetLean;
-        documents: IEmployeeDocumentLean[];
-    };
-
-
 // Type for our validated request body
 interface CreateEmployeeRequest extends Omit<CreateEmployeePayload, 'avatar' | 'documents'> {
     avatar: string; // base64 string
@@ -154,7 +124,6 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         // 4 Prepare employee data
         const employeeData: Partial<IEmployee> = {
             user: userId,
-            role: USER_ROLE.SUPPORT,
             status: EMPLOYEE_STATUS.ACTIVE,
             employmentType: body.employmentType || EMPLOYMENT_TYPE.FULL_TIME,
             avatar: avatarAssetId,
@@ -174,7 +143,11 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         // 5 Restore & update terminated employee
         if (existingEmployee) {
             // Clean previous documents from DB + Cloudinary
-            const previousAssetIds = existingEmployee.documents.map((d) => d.asset);
+            const previousAssetIds = [
+                ...existingEmployee.documents.map(d => d.asset),
+                ...(existingEmployee.avatar ? [existingEmployee.avatar] : [])
+            ];
+
             await cleanupAssets(previousAssetIds, session);
 
             // Restore terminated employee
@@ -192,10 +165,11 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         const newEmployee = new EmployeeModel(employeeData);
         await newEmployee.save({ session });
 
+
         return { employeeId: newEmployee._id, userId };
     });
 
-
+    const employeeDTO = await buildEmployeeDTO(result.employeeId as ObjectId);
 
     const { subject, html } = EmployeeWelcome(body)
 
@@ -206,7 +180,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     )
 
     return {
-        data: buildEmployeeDTO(result.employeeId as ObjectId),
+        data: employeeDTO,
         status: 201
     }
 

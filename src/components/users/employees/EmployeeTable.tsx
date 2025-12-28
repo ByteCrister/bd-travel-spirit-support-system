@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 
 type SortOrder = "asc" | "desc";
 
@@ -201,10 +202,11 @@ function EmployeeTableRow({ row, onClick }: { row: EmployeeListItemDTO; onClick:
         >
             <TableCell className="w-14 px-3 py-3">
                 {row.user.avatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                         src={row.user.avatar}
                         alt={`${row.user.name} avatar`}
+                        width={36}
+                        height={36}
                         className="h-9 w-9 rounded-full object-cover ring-2 ring-border/50 transition-all duration-200 group-hover:ring-border"
                     />
                 ) : (

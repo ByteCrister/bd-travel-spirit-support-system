@@ -166,6 +166,7 @@ export interface EmployeeDetailDTO {
 --------------------------------------------------------------------- */
 
 export interface CreateEmployeePayload {
+  id?:string;
   name: string;
   password: string;
   employmentType: EmploymentType;
@@ -181,22 +182,18 @@ export interface CreateEmployeePayload {
 
 export interface UpdateEmployeePayload {
   id: ObjectIdString;
-  password?: string;
+  name: string;
   employmentType?: EmploymentType;
-  avatar?: ObjectIdString;
-  status?: EmployeeStatus;
-  salary?: number;
-  currency?: Currency;
+  avatar: ObjectIdString;
+  status: EmployeeStatus;
+  salary: number;
+  currency: Currency;
   dateOfJoining?: ISODateString;
   dateOfLeaving?: ISODateString;
-  contactInfo?: ContactInfoDTO;
-  shifts?: ShiftDTO[];
+  contactInfo: ContactInfoDTO;
+  shifts: ShiftDTO[];
   documents?: DocumentDTO[];
   notes?: string;
-}
-
-export interface SoftDeleteEmployeePayload {
-  id: ObjectIdString;
 }
 
 export interface RestoreEmployeePayload {

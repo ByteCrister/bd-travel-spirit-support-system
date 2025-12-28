@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Formik, Form, Field, FieldArray, FieldProps, FormikErrors } from "formik";
+import { Formik, Form, Field, FieldArray, FieldProps, FormikErrors, FormikHelpers } from "formik";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ import { useEmployeeStore } from "@/store/employee.store";
 import { useRouter } from "next/navigation";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
+import { showToast } from "@/components/global/showToast";
 
 // Constants
 const DAYS_OF_WEEK: DayOfWeek[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -174,7 +175,10 @@ export default function AddEmployeePage() {
         if (avatarInputRef.current) avatarInputRef.current.value = "";
     };
 
-    const handleSubmit = async (values: CreateEmployeeFormValues) => {
+    const handleSubmit = async (
+        values: CreateEmployeeFormValues,
+        { resetForm }: FormikHelpers<CreateEmployeeFormValues>
+    ) => {
         try {
             const payload: CreateEmployeePayload = {
                 name: values.name,
@@ -190,6 +194,15 @@ export default function AddEmployeePage() {
                 notes: values.notes || undefined,
             };
             await createEmployee(payload);
+
+            // Reset the form to initial values
+            resetForm({
+                values: getInitialValues(),
+                // Also reset the touched status and errors
+            });
+
+            showToast.success("Successfully added new employee.")
+
         } catch (err) { console.error(err); }
     };
 

@@ -4,9 +4,7 @@ import {
     EmployeeDetailDTO,
 } from "@/types/employee.types";
 import { AuditLog } from "@/types/current-user.types";
-import { ACCOUNT_STATUS } from "@/constants/user.const";
 import {
-    EMPLOYEE_ROLE,
     EMPLOYEE_STATUS,
     EMPLOYMENT_TYPE,
 } from "@/constants/employee.const";
@@ -50,18 +48,7 @@ export async function GET(
             email: faker.internet.email(),
             phone: faker.phone.number(),
             avatar: faker.image.avatar(),
-            isVerified: faker.datatype.boolean(),
-            accountStatus: faker.helpers.arrayElement([
-                ACCOUNT_STATUS.PENDING,
-                ACCOUNT_STATUS.ACTIVE,
-                ACCOUNT_STATUS.SUSPENDED,
-                ACCOUNT_STATUS.BANNED,
-            ]),
         },
-
-        role: faker.helpers.arrayElement(
-            Object.values(EMPLOYEE_ROLE)
-        ) as EmployeeDetailDTO["role"],
 
         status: faker.helpers.arrayElement(
             Object.values(EMPLOYEE_STATUS)

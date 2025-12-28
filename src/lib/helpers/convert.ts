@@ -114,3 +114,21 @@ export function assertValidDataUrl(base64: string): string {
   // Return normalized data URL (Cloudinary safe)
   return `data:${mimeType};base64,${data}`;
 }
+
+
+export const isCloudinaryUrl = (value?: string) => {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    // adjust domain check if you use a custom Cloudinary domain
+    return url.hostname.includes("res.cloudinary.com") || url.hostname.includes("cloudinary.com");
+  } catch {
+    return false;
+  }
+};
+
+export function isBase64DataUrl(value?: string): boolean {
+  if (!value || typeof value !== "string") return false;
+
+  return value.startsWith("data:");
+}

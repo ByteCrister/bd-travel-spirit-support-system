@@ -1,8 +1,11 @@
 import { Types } from "mongoose";
 import AuditModel from "@/models/audit.model";
+import "@/models/asset.model"; // for populate and 
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
 import { AuditLog } from "@/types/current-user.types";
 import { ContactInfoDTO, DocumentDTO, EmployeeDetailDTO, PayrollRecordDTO, SalaryHistoryDTO, UserSummaryDTO } from "@/types/employee.types";
+import { UserRole } from "@/constants/user.const";
+import { ClientSession } from "mongoose";
 
 
 type ObjectId = Types.ObjectId;
@@ -11,6 +14,7 @@ export interface IUserLean {
     _id: ObjectId;
     name: string;
     email: string;
+    role: UserRole
 }
 
 export interface IAssetLean {
@@ -37,20 +41,33 @@ export type EmployeeLeanPopulated =
     };
 
 
-
 /**
  * Build EmployeeDetailDTO array from multiple employeeIds
  */
 export async function buildEmployeeDTO(
-    employeeId: ObjectId
+    employeeId: ObjectId,
+    withDeleted = false,
+    session?: ClientSession,
 ): Promise<EmployeeDetailDTO | null> {
     if (!employeeId) throw new Error("employeeId is required");
 
-    // 1. Fetch employee with populated user and avatar + document asset IDs
-    const rawEmployee = await EmployeeModel.findById(employeeId)
-        .populate({ path: "user", select: "name email" })
-        .populate("avatar")
-        .populate("documents.asset")
+    const baseQuery = withDeleted
+        ? EmployeeModel.findOneWithDeleted({ _id: employeeId }).session(session ?? null)
+        : EmployeeModel.findById(employeeId).session(session ?? null);
+
+    const rawEmployee = await baseQuery
+        .slice("salaryHistory", -10)
+        .populate({ path: "user", select: "name email role" })
+        .populate({
+            path: "avatar",
+            select: "publicUrl deletedAt",
+            ...(withDeleted ? {} : { match: { deletedAt: null } }),
+        })
+        .populate({
+            path: "documents.asset",
+            select: "publicUrl deletedAt",
+            ...(withDeleted ? {} : { match: { deletedAt: null } }),
+        })
         .lean()
         .exec();
 
@@ -59,21 +76,35 @@ export async function buildEmployeeDTO(
     const employee = rawEmployee as unknown as EmployeeLeanPopulated;
     const user = employee.user;
 
-    // 2. Map asset URLs
+    /* ---------------------------------- */
+    /* Asset map (safe)                    */
+    /* ---------------------------------- */
     const assetMap = new Map<string, string>();
-    if (employee.avatar?._id) assetMap.set(employee.avatar._id.toString(), employee.avatar.publicUrl);
-    (employee.documents || []).forEach((doc) => {
-        if (doc.asset?._id) assetMap.set(doc.asset._id.toString(), doc.asset.publicUrl);
-    });
 
-    // 3. Map documents
-    const documents: DocumentDTO[] = (employee.documents || []).map((doc) => ({
-        type: doc.type,
-        url: doc.asset ? assetMap.get(doc.asset._id.toString()) || "" : "",
-        uploadedAt: doc.uploadedAt.toISOString(),
-    }));
+    if (employee.avatar?._id && employee.avatar.publicUrl) {
+        assetMap.set(employee.avatar._id.toString(), employee.avatar.publicUrl);
+    }
 
-    // 4. Map salary history to DTO
+    for (const doc of employee.documents || []) {
+        if (doc.asset?._id && doc.asset.publicUrl) {
+            assetMap.set(doc.asset._id.toString(), doc.asset.publicUrl);
+        }
+    }
+
+    /* ---------------------------------- */
+    /* Documents DTO (skip missing asset) */
+    /* ---------------------------------- */
+    const documents: DocumentDTO[] = (employee.documents || [])
+        .filter((d) => d.asset?._id && assetMap.has(d.asset._id.toString()))
+        .map((doc) => ({
+            type: doc.type,
+            url: assetMap.get(doc.asset._id.toString())!,
+            uploadedAt: doc.uploadedAt.toISOString(),
+        }));
+
+    /* ---------------------------------- */
+    /* Salary history                     */
+    /* ---------------------------------- */
     const salaryHistory: SalaryHistoryDTO[] = (employee.salaryHistory || []).map((s) => ({
         amount: s.amount,
         currency: s.currency,
@@ -82,7 +113,9 @@ export async function buildEmployeeDTO(
         reason: s.reason,
     }));
 
-    // 5. Map payroll to DTO
+    /* ---------------------------------- */
+    /* Payroll                            */
+    /* ---------------------------------- */
     const payroll: PayrollRecordDTO[] = (employee.payroll || []).map((p) => ({
         year: p.year,
         month: p.month,
@@ -96,23 +129,27 @@ export async function buildEmployeeDTO(
         paidBy: p.paidBy?.toString(),
     }));
 
-    // 6. Map contact info to DTO
+    /* ---------------------------------- */
+    /* Contact info                       */
+    /* ---------------------------------- */
     const contactInfo: ContactInfoDTO = {
         phone: employee.contactInfo.phone,
-        email: employee.contactInfo.email || "", // ensure string
+        email: employee.contactInfo.email ?? "",
         emergencyContact: employee.contactInfo.emergencyContact
             ? {
                 name: employee.contactInfo.emergencyContact.name,
                 phone: employee.contactInfo.emergencyContact.phone,
                 relation: employee.contactInfo.emergencyContact.relation,
             }
-            : { name: "", phone: "", relation: "" }, // provide defaults if missing
+            : { name: "", phone: "", relation: "" },
     };
 
-    // 7. Map audits
-    const auditsRaw = await AuditModel.getRecentForTarget("Employee", employee._id);
+    /* ---------------------------------- */
+    /* Audit logs                         */
+    /* ---------------------------------- */
+    const auditsRaw = await AuditModel.getRecentForTarget("Employee", employee._id, 10);
     const audit: AuditLog[] = (auditsRaw || []).map((a) => ({
-        _id: (a._id as ObjectId).toString(),
+        _id: (a._id as Types.ObjectId).toString(),
         target: a.target.toString(),
         targetModel: a.targetModel,
         actor: a.actor?.toString(),
@@ -125,16 +162,24 @@ export async function buildEmployeeDTO(
         createdAt: a.createdAt.toISOString(),
     }));
 
-    // 8. Build user summary
+    /* ---------------------------------- */
+    /* User summary                       */
+    /* ---------------------------------- */
+    const avatarUrl = employee.avatar?._id
+        ? assetMap.get(employee.avatar._id.toString())
+        : undefined;
+
     const userSummary: UserSummaryDTO = {
         name: user?.name ?? "",
         email: user?.email ?? "",
-        phone: employee?.contactInfo.phone,
-        avatar: employee.avatar ? assetMap.get(employee.avatar._id.toString()) : undefined,
+        phone: employee.contactInfo.phone,
+        avatar: avatarUrl,
     };
 
-    // 9. Construct final DTO
-    const dto: EmployeeDetailDTO = {
+    /* ---------------------------------- */
+    /* Final DTO                          */
+    /* ---------------------------------- */
+    return {
         id: employee._id.toString(),
         userId: user?._id?.toString(),
         companyId: employee.companyId?.toString(),
@@ -152,12 +197,10 @@ export async function buildEmployeeDTO(
         shifts: employee.shifts,
         documents,
         audit,
-        avatar: employee.avatar?._id.toString(),
+        avatar: avatarUrl, // URL, not ID
         notes: employee.notes,
         isDeleted: !!employee.deletedAt,
         createdAt: employee.createdAt.toISOString(),
         updatedAt: employee.updatedAt.toISOString(),
     };
-
-    return dto;
 }

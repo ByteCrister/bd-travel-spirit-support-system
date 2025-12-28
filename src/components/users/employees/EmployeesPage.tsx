@@ -17,7 +17,6 @@ import { Breadcrumbs } from "../../global/Breadcrumbs";
 import { useRouter } from "next/navigation";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 
-
 export default function EmployeesPage() {
     const router = useRouter();
     const store = useEmployeeStore();
@@ -30,7 +29,7 @@ export default function EmployeesPage() {
     });
     const [list, setList] = useState<EmployeesListResponse | null>(null);
     const breadcrumbItems = [
-        { label: "Home", href: '/' },
+        { label: "Home", href: "/" },
         { label: "Employees", href: "/users/employees" },
     ];
 
@@ -67,7 +66,8 @@ export default function EmployeesPage() {
 
     const onPageChange = (page: number) => setQuery((q) => ({ ...q, page }));
 
-    const onLimitChange = (limit: number) => setQuery((q) => ({ ...q, limit, page: 1 }));
+    const onLimitChange = (limit: number) =>
+        setQuery((q) => ({ ...q, limit, page: 1 }));
 
     return (
         <div className="space-y-6">
@@ -78,7 +78,7 @@ export default function EmployeesPage() {
                     Employees
                 </h1>
                 <Button
-                    onClick={() => router.push(`/users/employees/add-employee`) }
+                    onClick={() => router.push(`/users/employees/add-employee`)}
                     className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium btn-elevated bg-[#2563EB] text-white shadow-sm hover:bg-[#1D4ED8] hover:shadow-md active:translate-y-[1px] focus:outline-none focus:ring-2 focus:ring-[#93C5FD] focus:ring-offset-1"
                     aria-label="Add new employee"
                 >

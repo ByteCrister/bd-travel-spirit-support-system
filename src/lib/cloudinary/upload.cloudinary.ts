@@ -65,44 +65,54 @@ export async function uploadAssets(
         const dataUrl = assertValidDataUrl(base64);
         const buffer = base64ToBuffer(dataUrl);
         const checksum = sha256(buffer);
-
-        // Determine the asset title for DB and error messages
         const assetTitle = name?.trim() || "Uploaded Asset";
 
-        // Check for duplicate
-        const existing = await AssetModel.findOne({ checksum, deletedAt: null }).session(session);
+        const existing = await AssetModel
+            .findOne({ checksum, deletedAt: null })
+            .session(session);
+
         if (existing) throw new DuplicateAssetChecksumError(assetTitle);
 
-        // Upload to Cloudinary
+        // 1 Upload first
         const uploaded = await storage.create(dataUrl);
 
-        // Save in DB
-        let asset;
         try {
-            asset = await AssetModel.create(
-                [
-                    {
-                        storageProvider: STORAGE_PROVIDER.CLOUDINARY,
-                        objectKey: uploaded.providerId,
-                        publicUrl: uploaded.url,
-                        contentType: uploaded.contentType,
-                        fileSize: uploaded.fileSize,
-                        checksum,
-                        assetType: assetType ?? ASSET_TYPE.DOCUMENT,
-                        title: assetTitle,
-                        visibility: VISIBILITY.PRIVATE,
-                    },
-                ],
+            // 2 Save DB record
+            const asset = await AssetModel.create(
+                [{
+                    storageProvider: STORAGE_PROVIDER.CLOUDINARY,
+                    objectKey: uploaded.providerId,
+                    publicUrl: uploaded.url,
+                    contentType: uploaded.contentType,
+                    fileSize: uploaded.fileSize,
+                    checksum,
+                    assetType: assetType ?? ASSET_TYPE.DOCUMENT,
+                    title: assetTitle,
+                    visibility: VISIBILITY.PRIVATE,
+                }],
                 { session }
             ).then(d => d[0]);
+
+            assetIds.push(asset._id as mongoose.Types.ObjectId);
+
         } catch (err: unknown) {
+            // COMPENSATION: delete uploaded Cloudinary asset
+            try {
+                await storage.delete(uploaded.providerId);
+            } catch (cleanupErr) {
+                console.error(
+                    "Failed to cleanup orphaned Cloudinary asset:",
+                    uploaded.providerId,
+                    cleanupErr
+                );
+            }
+
             if (isMongoDuplicateKeyError(err) && err.keyPattern?.checksum) {
                 throw new DuplicateAssetChecksumError(assetTitle);
             }
+
             throw err;
         }
-
-        assetIds.push(asset._id as mongoose.Types.ObjectId);
     }
 
     return assetIds;

@@ -11,11 +11,11 @@ import {
     EmployeesListResponse,
     EmployeesQuery,
     RestoreEmployeePayload,
-    SoftDeleteEmployeePayload,
     UpdateEmployeePayload,
     ObjectIdString,
 } from "@/types/employee.types";
 import { ApiResponse } from "@/types/api.types";
+import { showToast } from "@/components/global/showToast";
 
 // const URL_AFTER_API = `/mock/users/employees`;
 const URL_AFTER_API = `/users/v1/employees`;
@@ -67,8 +67,8 @@ interface EmployeeStore {
     fetchEmployeeDetail: (id: string, force?: boolean) => Promise<EmployeeDetailDTO>;
     createEmployee: (payload: CreateEmployeePayload) => Promise<EmployeeDetailDTO>;
     updateEmployee: (payload: UpdateEmployeePayload) => Promise<EmployeeDetailDTO>;
-    softDeleteEmployee: (payload: SoftDeleteEmployeePayload) => Promise<void>;
-    restoreEmployee: (payload: RestoreEmployeePayload) => Promise<void>;
+    softDeleteEmployee: (id: string, reason: string) => Promise<void>;
+    restoreEmployee: (payload: RestoreEmployeePayload) => Promise<EmployeeDetailDTO>;
 
     // Meta endpoints
     fetchEnums: (force?: boolean) => Promise<unknown>;
@@ -458,7 +458,7 @@ export const useEmployeeStore = create<EmployeeStore>()(
                         }
                     },
 
-                    async softDeleteEmployee({ id }) {
+                    async softDeleteEmployee(id, reason) {
                         set(
                             (s) => ({
                                 lastError: null,
@@ -468,11 +468,12 @@ export const useEmployeeStore = create<EmployeeStore>()(
                             "employees/softDelete:start"
                         );
                         try {
-                            await api.patch<ApiResponse<null>>(EMP_API.SOFT_DELETE(id));
+                            await api.patch<ApiResponse<null>>(EMP_API.SOFT_DELETE(id), { reason });
 
                             get().invalidateCacheKeyPrefix("employees:list:canonical:");
                             get().invalidateCacheKey(EMPLOYEES_CACHE_KEYS.detail(id));
                             set((s) => ({ loadingById: { ...s.loadingById, [id]: false } }), false, "employees/softDelete:done");
+                            showToast.success("Employee deleted successfully.")
                         } catch (err) {
                             const message = extractErrorMessage(err);
                             set(
@@ -483,11 +484,12 @@ export const useEmployeeStore = create<EmployeeStore>()(
                                 false,
                                 "employees/softDelete:error"
                             );
+                            showToast.error("Employee did not deleted", message)
                             throw new Error(message);
                         }
                     },
 
-                    async restoreEmployee({ id }) {
+                    async restoreEmployee({ id }: RestoreEmployeePayload) {
                         set(
                             (s) => ({
                                 lastError: null,
@@ -496,12 +498,80 @@ export const useEmployeeStore = create<EmployeeStore>()(
                             false,
                             "employees/restore:start"
                         );
-                        try {
-                            await api.patch<ApiResponse<null>>(EMP_API.RESTORE(id));
 
+                        try {
+                            const res = await api.patch<ApiResponse<EmployeeDetailDTO>>(EMP_API.RESTORE(id));
+                            const body = res.data;
+
+                            if (!body?.data) {
+                                throw new Error("Failed to restore employee");
+                            }
+
+                            const restored = body.data;
+
+                            // Cache the restored employee detail
+                            const detailKey = EMPLOYEES_CACHE_KEYS.detail(id as ObjectIdString);
+                            get().cache.set(detailKey, {
+                                ts: nowMs(),
+                                ttl: DEFAULT_TTL_SECONDS,
+                                data: restored,
+                            });
+
+                            // Update canonical list cache if employee exists there
+                            const cacheEntries = Array.from(get().cache.entries());
+
+                            cacheEntries.forEach(([key, entry]) => {
+                                if (key.startsWith("employees:list:canonical:")) {
+                                    const canonical = entry.data as CanonicalListCache;
+
+                                    const employeeIndex = canonical.items.findIndex(item => item?.id === id);
+                                    if (employeeIndex !== -1) {
+                                        // Safely map the restored data to minimal EmployeeListItemDTO
+                                        const user = {
+                                            name: restored.user.name ?? "Restored Employee",
+                                            email: restored.user.email ?? "",
+                                            phone: restored.user.phone ?? "",
+                                            avatar: restored.user.avatar ?? undefined,
+                                        };
+
+                                        canonical.items[employeeIndex] = {
+                                            ...canonical.items[employeeIndex],
+                                            id: restored.id,
+                                            user,
+                                            avatar: restored.avatar,
+                                            status: restored.status,
+                                            salary: restored.salary,
+                                            currency: restored.currency,
+                                            employmentType: restored.employmentType,
+                                            dateOfJoining: restored.dateOfJoining,
+                                            dateOfLeaving: restored.dateOfLeaving,
+                                            isDeleted: restored.isDeleted,
+                                            createdAt: restored.createdAt,
+                                            updatedAt: restored.updatedAt,
+                                        };
+
+                                        // Update the cache entry
+                                        get().cache.set(key, {
+                                            ...entry,
+                                            data: canonical,
+                                        });
+                                    }
+                                }
+                            });
+
+                            // Invalidate list cache to be safe
                             get().invalidateCacheKeyPrefix("employees:list:canonical:");
-                            get().invalidateCacheKey(EMPLOYEES_CACHE_KEYS.detail(id));
-                            set((s) => ({ loadingById: { ...s.loadingById, [id]: false } }), false, "employees/restore:done");
+
+                            set(
+                                (s) => ({
+                                    loadingById: { ...s.loadingById, [id]: false },
+                                }),
+                                false,
+                                "employees/restore:done"
+                            );
+
+                            showToast.success("Employee successfully restored", `${restored.user.name} has been successfully restored.`)
+                            return restored;
                         } catch (err) {
                             const message = extractErrorMessage(err);
                             set(
@@ -512,6 +582,7 @@ export const useEmployeeStore = create<EmployeeStore>()(
                                 false,
                                 "employees/restore:error"
                             );
+                            showToast.error("Employee did not restored", message)
                             throw new Error(message);
                         }
                     },

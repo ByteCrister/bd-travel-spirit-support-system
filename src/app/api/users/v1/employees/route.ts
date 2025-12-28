@@ -17,12 +17,54 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
+/**
+ * Parse `filters[...]` style URL query params into a nested object
+ */
+function parseFilters(searchParams: URLSearchParams): EmployeesQuery['filters'] {
+    const filters: EmployeesQuery['filters'] = {};
+
+    for (const [key, value] of searchParams.entries()) {
+        if (!key.startsWith('filters[')) continue;
+
+        // Extract path segments for nested keys
+        const path = key
+            .replace(/^filters\[/, '')
+            .replace(/\]$/g, '')
+            .split('][') as Array<keyof EmployeesQuery['filters'] | string>;
+
+        // Recursive target to assign value
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let target: any = filters;
+
+        for (let i = 0; i < path.length - 1; i++) {
+            const segment = path[i];
+            if (!(segment in target)) target[segment] = {};
+            target = target[segment];
+        }
+
+        const lastSegment = path[path.length - 1];
+
+        // Convert "true"/"false" and numeric strings
+        let finalValue: string | number | boolean = value;
+        if (value === 'true') finalValue = true;
+        else if (value === 'false') finalValue = false;
+        else if (!isNaN(Number(value))) finalValue = Number(value);
+
+        target[lastSegment] = finalValue;
+    }
+
+    return filters;
+}
+
 // Helper to build Mongoose filter and sort
+/**
+ * Build Mongoose filter and sort objects from query
+ */
 function buildMongooseQuery(query: EmployeesQuery) {
     const filter: mongoose.FilterQuery<unknown> = {};
     const sort: Record<string, 1 | -1> = {};
 
-    // Soft delete filter
+    // Soft delete
     if (!query.filters?.includeDeleted) filter.deletedAt = null;
 
     // Status filter
@@ -31,7 +73,7 @@ function buildMongooseQuery(query: EmployeesQuery) {
     // Employment type filter
     if (query.filters?.employmentTypes?.length) filter.employmentType = { $in: query.filters.employmentTypes };
 
-    // Salary range filter
+    // Salary range
     if (query.filters?.salaryMin !== undefined || query.filters?.salaryMax !== undefined) {
         filter.salary = {};
         if (query.filters.salaryMin !== undefined) filter.salary.$gte = query.filters.salaryMin;
@@ -44,6 +86,7 @@ function buildMongooseQuery(query: EmployeesQuery) {
         if (query.filters.joinedAfter) filter.dateOfJoining.$gte = new Date(query.filters.joinedAfter);
         if (query.filters.joinedBefore) filter.dateOfJoining.$lte = new Date(query.filters.joinedBefore);
     }
+
     if (query.filters?.leftAfter || query.filters?.leftBefore) {
         filter.dateOfLeaving = {};
         if (query.filters.leftAfter) filter.dateOfLeaving.$gte = new Date(query.filters.leftAfter);
@@ -101,13 +144,14 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
         sortOrder: (searchParams.get('sortOrder') as SortOrder) || 'desc',
     };
 
-    const filtersParam = searchParams.get('filters');
-    if (filtersParam) {
-        try {
-            query.filters = JSON.parse(filtersParam) as EmployeesQuery['filters'];
-        } catch (err) {
-            console.warn('Failed to parse filters:', err);
-        }
+    query.filters = parseFilters(searchParams);
+
+    // Ensure array types
+    if (query.filters?.employmentTypes && !Array.isArray(query.filters.employmentTypes)) {
+        query.filters.employmentTypes = [query.filters.employmentTypes];
+    }
+    if (query.filters?.statuses && !Array.isArray(query.filters.statuses)) {
+        query.filters.statuses = [query.filters.statuses];
     }
 
     // Connect to DB

@@ -1,10 +1,8 @@
 import { Schema, Document, Types, Model, FilterQuery, Query } from "mongoose";
 
 import {
-    EMPLOYEE_ROLE,
     EMPLOYEE_STATUS,
     EMPLOYMENT_TYPE,
-    EmployeeRole,
     EmployeeStatus,
     EmploymentType,
 } from "@/constants/employee.const";
@@ -231,7 +229,7 @@ export interface IEmployeeModel
     findOneWithDeleted(
         query: FilterQuery<IEmployee>,
         session?: ClientSession
-    ): Promise<HydratedEmployeeDocument | null>;
+    ): Query<HydratedEmployeeDocument | null, IEmployee>;
 }
 
 /* =========================================================
@@ -242,7 +240,6 @@ export interface IEmployee extends Document {
     user: Types.ObjectId;
     companyId?: Types.ObjectId;
 
-    role: EmployeeRole;
     status: EmployeeStatus;
     employmentType?: EmploymentType;
 
@@ -298,12 +295,6 @@ const EmployeeSchema = new Schema<IEmployee, IEmployeeModel, IEmployeeMethods>(
             type: Schema.Types.ObjectId,
             ref: "Guide",
             index: true,
-        },
-
-        role: {
-            type: String,
-            enum: Object.values(EMPLOYEE_ROLE),
-            required: true,
         },
 
         status: {
@@ -483,13 +474,8 @@ EmployeeSchema.statics.findDeleted = function (
 EmployeeSchema.statics.findOneWithDeleted = function (
     query: FilterQuery<IEmployee>,
     session?: ClientSession
-): Promise<HydratedEmployeeDocument | null> {
-
-    return this
-        .findOne(query)
-        .where({}) // disables pre-find filter
-        .session(session ?? null)
-        .exec();
+) {
+    return this.findOne({ ...query, deletedAt: { $exists: true } }).session(session ?? null);
 };
 
 /* =========================================================
@@ -526,7 +512,6 @@ EmployeeSchema.index({
     "payroll.month": 1,
     "payroll.status": 1,
 });
-EmployeeSchema.index({ status: 1, role: 1 });
 EmployeeSchema.index({ companyId: 1, status: 1 });
 EmployeeSchema.index({ deletedAt: 1 });
 
