@@ -35,7 +35,6 @@ export default function RequestList() {
         entities,
         isFetching,
         revalidating,
-        error,
     } = useResetRequestsStore();
 
     const [searchTerm, setSearchTerm] = useState(currentQuery.search ?? "");
@@ -102,19 +101,6 @@ export default function RequestList() {
         const limit = parseInt(value, 10);
         void onLimitChange(limit);
     };
-
-    if (error) {
-        return (
-            <div className="p-8 text-center">
-                <div className="text-red-600 dark:text-red-400 font-medium">
-                    Failed to load requests
-                </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    {error.message}
-                </div>
-            </div>
-        );
-    }
 
     return (
         <section className="space-y-6 p-6">

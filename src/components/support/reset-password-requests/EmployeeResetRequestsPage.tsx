@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -32,11 +32,23 @@ const itemVariants: Variants = {
 export default function EmployeeResetRequestsPage() {
   const { fetchList, currentQuery, loading, error } = useResetRequestsStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    fetchList(currentQuery).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Skip if already fetched or component is being remounted by Strict Mode
+    if (hasFetched.current) return;
+
+    hasFetched.current = true;
+    fetchList(currentQuery).catch(() => { });
+
+    return () => {
+      // Reset when component truly unmounts (not in Strict Mode)
+      // This ensures refetching on actual navigation
+      hasFetched.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

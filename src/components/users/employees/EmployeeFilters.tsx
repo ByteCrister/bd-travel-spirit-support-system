@@ -7,9 +7,6 @@ import { Skeleton } from "./primitives/Skeleton";
 
 import {
     EmployeesQuery,
-    EmployeeRole,
-    EmployeeStatus,
-    EmploymentType,
 } from "@/types/employee.types";
 
 import { Input } from "@/components/ui/input";
@@ -37,7 +34,10 @@ import {
 import {
     EMPLOYEE_ROLE,
     EMPLOYEE_STATUS,
+    EmployeeRole,
+    EmployeeStatus,
     EMPLOYMENT_TYPE,
+    EmploymentType,
 } from "@/constants/employee.const";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -53,6 +53,7 @@ import {
     Loader2,
     Sparkles,
 } from "lucide-react";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
 type EnumsShape = {
     roles?: EmployeeRole[];
@@ -95,6 +96,14 @@ export function EmployeeFilters({
 }) {
     const [enums, setEnums] = useState<EnumsShape | null>(null);
     const [isExpanded, setIsExpanded] = useState(true);
+    const [searchValue, setSearchValue] = useState(query.filters?.search ?? "");
+    // Create debounced function to update filters with search value
+    const debouncedUpdateSearch = useDebouncedCallback(
+        (searchTerm: string) => {
+            setFilters({ search: searchTerm || undefined });
+        },
+        1000 // 1000ms delay
+    );
 
     useEffect(() => {
         let mounted = true;
@@ -139,7 +148,12 @@ export function EmployeeFilters({
         [onChange, query]
     );
 
-    const clearFilters = () => onChange({ ...query, page: 1, filters: {} });
+    const clearFilters = () => {
+        // Cancel any pending debounced calls
+        debouncedUpdateSearch.cancel?.();
+        setSearchValue("");
+        onChange({ ...query, page: 1, filters: {} });
+    };
 
     const activeFilterCount = useMemo(() => {
         return Object.values(filters).filter(
@@ -181,7 +195,12 @@ export function EmployeeFilters({
             chips.push({
                 key: `search:${filters.search}`,
                 label: `"${filters.search}"`,
-                onRemove: () => setFilters({ search: undefined }),
+                onRemove: () => {
+                    // Cancel pending debounced calls
+                    debouncedUpdateSearch.cancel?.();
+                    setSearchValue("");
+                    setFilters({ search: undefined });
+                },
             });
         }
 
@@ -195,7 +214,14 @@ export function EmployeeFilters({
         }
 
         return chips;
-    }, [filters, setFilters]);
+    }, [debouncedUpdateSearch, filters.employmentTypes, filters.includeDeleted, filters.search, filters.statuses, setFilters]);
+
+    // Handle search input change
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSearchValue(value);
+        debouncedUpdateSearch(value);
+    };
 
     return (
         <motion.div
@@ -337,8 +363,8 @@ export function EmployeeFilters({
                                         ) : (
                                             <Input
                                                 placeholder="Start typing to search..."
-                                                value={filters.search ?? ""}
-                                                onChange={(e) => setFilters({ search: e.target.value || undefined })}
+                                                value={searchValue}
+                                                onChange={handleSearchChange}
                                                 className="relative h-12 rounded-2xl border border-border/40 bg-background/80 pl-12 pr-4 text-sm font-medium shadow-sm backdrop-blur-sm transition-all duration-300 placeholder:text-muted-foreground/50 hover:border-border/60 hover:shadow-md focus-visible:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10"
                                                 aria-label="Search employees"
                                             />

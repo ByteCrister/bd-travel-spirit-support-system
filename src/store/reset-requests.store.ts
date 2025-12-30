@@ -17,12 +17,14 @@ import {
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
+import { ApiResponse } from "@/types/api.types";
 
 enableMapSet();
 
 /* ---------------------- Constants & Defaults ----------------------------- */
 
-const URL_AFTER_API = "/mock/reset-password-requests"
+// const URL_AFTER_API = "/mock/reset-password-requests"
+const URL_AFTER_API = "/support/v1/employees-password-requests"
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -144,8 +146,12 @@ export const useResetRequestsStore = create<ResetRequestsStoreState>((set, get) 
                     limit: effectiveQuery.limit,
                 };
 
-                const resp = await api.get<ResetRequestListResponse>(URL_AFTER_API, { params });
-                const { entities, pageEntry } = normalizeListResponse(resp.data, effectiveQuery);
+                const resp = await api.get<ApiResponse<ResetRequestListResponse>>(URL_AFTER_API, { params });
+                if (!resp.data || !resp.data.data) {
+                    throw new Error("Invalid response body")
+                }
+                const responseBody = resp.data.data
+                const { entities, pageEntry } = normalizeListResponse(responseBody, effectiveQuery);
 
                 set(
                     produce((s: ResetRequestsStoreState & { revalidating?: boolean }) => {
@@ -190,7 +196,12 @@ export const useResetRequestsStore = create<ResetRequestsStoreState>((set, get) 
             );
 
             try {
-                const resp = await api.get<{ data: ResetPasswordRequestDTO }>(`${URL_AFTER_API}/${id}`);
+                const resp = await api.get<ApiResponse<ResetPasswordRequestDTO>>(`${URL_AFTER_API}/${id}`);
+
+                if (!resp.data || !resp.data.data) {
+                    throw new Error("Invalid response body")
+                }
+
                 const dto = resp.data.data;
 
                 set(
@@ -231,10 +242,15 @@ export const useResetRequestsStore = create<ResetRequestsStoreState>((set, get) 
             );
 
             try {
-                const resp = await api.post<{ data: ResetPasswordRequestDTO }>(
+                const resp = await api.post<ApiResponse<ResetPasswordRequestDTO>>(
                     `${URL_AFTER_API}/${payload.requestId}/deny`,
                     { reason: payload.reason }
                 );
+
+                if (!resp.data || !resp.data.data) {
+                    throw new Error("Invalid response body")
+                }
+
                 const dto = resp.data.data;
 
                 set(
@@ -282,10 +298,14 @@ export const useResetRequestsStore = create<ResetRequestsStoreState>((set, get) 
                     notifyRequester: payload.notifyRequester ?? false,
                 };
 
-                const resp = await api.post<{ data: ResetPasswordRequestDTO }>(
+                const resp = await api.post<ApiResponse<ResetPasswordRequestDTO>>(
                     `${URL_AFTER_API}/${payload.requestId}/update-password`,
                     body
                 );
+
+                if (!resp.data || !resp.data.data) {
+                    throw new Error("Invalid response body")
+                }
 
                 const dto = resp.data.data;
 

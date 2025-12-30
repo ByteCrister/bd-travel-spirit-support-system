@@ -8,6 +8,7 @@ type State = {
     openLogin: () => void;
     closeLogin: () => void;
     openForgotPassword: () => void;
+    closeForgotPassword: () => void;
     backToLogin: () => void;
 };
 
@@ -17,6 +18,7 @@ const useJoinAsGuideStore = create<State>((set) => ({
     openLogin: () => set({ isLoginOpen: true }),
     closeLogin: () => set({ isLoginOpen: false }),
     openForgotPassword: () => set({ showForgotPassword: true, isLoginOpen: false }),
+    closeForgotPassword: () => set({ showForgotPassword: false, isLoginOpen: false }),
     backToLogin: () => set({ showForgotPassword: false, isLoginOpen: true }),
 }));
 

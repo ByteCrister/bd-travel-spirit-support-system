@@ -12,7 +12,6 @@ import {
     FiArrowRight,
     FiX
 } from "react-icons/fi";
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 
 import {
     Dialog,
@@ -35,16 +34,7 @@ import { ForgotPasswordFormValues, forgotPasswordValidator } from "@/utils/valid
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "../global/showToast";
-
-const jakarta = Plus_Jakarta_Sans({
-    subsets: ["latin"],
-    weight: ["300", "400", "500", "600", "700", "800"],
-});
-
-const inter = Inter({
-    subsets: ["latin"],
-    weight: ["400", "500", "600", "700", "800"],
-});
+import { inter, jakarta } from "@/styles/fonts";
 
 interface ForgotPasswordDialogProps {
     isOpen: boolean;
@@ -72,19 +62,14 @@ export default function ForgotPasswordDialog({
 
         try {
             // Make API call using your axios instance
-            const response = await api.post("/auth/user/employee/request-password", {
+            await api.post("/support/v1/employees-password-requests", {
                 email: values.email,
                 description: values.description,
             });
 
-            if (response.data?.success) {
-                console.log("Password reset request submitted successfully");
-                onClose();
-                form.reset();
-            } else {
-                console.error("Failed:", response.data?.message);
-                alert(response.data?.message || "Something went wrong");
-            }
+            showToast.success("Password reset request submitted successfully")
+            onClose();
+            form.reset();
         } catch (err: unknown) {
             console.error("Unexpected error:", err);
             const message = extractErrorMessage(err)
@@ -99,11 +84,6 @@ export default function ForgotPasswordDialog({
             onClose();
             form.reset();
         }
-    };
-
-    const handleBackToLogin = () => {
-        onClose();
-        onBackToLogin();
     };
 
     return (
@@ -248,7 +228,7 @@ export default function ForgotPasswordDialog({
                                             <Button
                                                 type="button"
                                                 variant="link"
-                                                onClick={handleBackToLogin}
+                                                onClick={onBackToLogin}
                                                 className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 p-0 h-auto font-normal"
                                             >
                                                 ← Back to Login

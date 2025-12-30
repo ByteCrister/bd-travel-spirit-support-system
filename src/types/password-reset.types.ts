@@ -177,23 +177,3 @@ export interface ResetRequestsStoreState {
     updatePassword(payload: UpdatePasswordPayload): Promise<ResetPasswordRequestDTO>;
     clearAll(): void;
 }
-
-/* -------------------------------------------------------------------------- */
-/*  Helper utility types                                                       */
-/* -------------------------------------------------------------------------- */
-
-export type ApiResult<T> =
-    | { ok: true; data: T }
-    | { ok: false; error: ApiErrorShape };
-
-/* -------------------------------------------------------------------------- */
-/*  Short guidance                                                              */
-/* -------------------------------------------------------------------------- */
-
-/*
- - Use ResetRequestListQuery.page and .limit for button-based pagination; do not implement cursor logic.
- - Derive stable cache keys from a canonical serialization of ResetRequestListQuery (sort keys before stringify).
- - Ensure server validates CreateResetRequestPayload.role to assistant|support.
- - Dates returned from server should be ISO strings.
- - Never persist tempPassword client-side; deliver and discard immediately.
-*/

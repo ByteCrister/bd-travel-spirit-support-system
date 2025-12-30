@@ -58,6 +58,7 @@ export default function LoginDialog() {
     closeLogin: onClose,
     showForgotPassword,
     openForgotPassword,
+    closeForgotPassword,
     backToLogin
   } = useJoinAsGuideStore();
 
@@ -79,7 +80,7 @@ export default function LoginDialog() {
 
     try {
 
-      await api.post("/auth/user/v1/credentials", {
+      await api.post("/auth/user/v1/validate", {
         email: values.email,
         password: values.password,
       });
@@ -334,7 +335,7 @@ export default function LoginDialog() {
       {/* Forgot Password Dialog */}
       <ForgotPasswordDialog
         isOpen={showForgotPassword}
-        onClose={() => openForgotPassword()}
+        onClose={() => closeForgotPassword()}
         onBackToLogin={backToLogin}
       />
     </Dialog>
