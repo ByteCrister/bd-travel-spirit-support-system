@@ -1,7 +1,8 @@
 // types/current-user.types.ts
 
 import { USER_ROLE } from "@/constants/user.const";
-import { ContactInfoDTO, DocumentDTO, EmployeeRole, EmploymentType, ISODateString, ObjectIdString, SalaryHistoryDTO, ShiftDTO } from "./employee.types";
+import { ContactInfoDTO, DocumentDTO, ISODateString, ObjectIdString, SalaryHistoryDTO, ShiftDTO } from "./employee.types";
+import { EmployeeRole, EmploymentType } from "@/constants/employee.const";
 
 /**
  * Roles allowed in the admin dashboard

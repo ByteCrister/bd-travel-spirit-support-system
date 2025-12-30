@@ -1,4 +1,4 @@
-import { sha256, base64ToBuffer, assertValidDataUrl, isCloudinaryUrl, isBase64DataUrl } from "@/lib/helpers/convert";
+import { sha256, base64ToBuffer, assertValidDataUrl, isCloudinaryUrl, isBase64DataUrl } from "@/lib/helpers/document-conversions";
 import AssetModel from "@/models/asset.model";
 import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
 import { cleanupAssets } from "@/lib/cloudinary/delete.cloudinary";

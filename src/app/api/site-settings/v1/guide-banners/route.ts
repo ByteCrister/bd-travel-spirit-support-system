@@ -11,7 +11,7 @@ import { Lean } from "@/types/mongoose-lean.types";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { GuideBanner } from "@/models/site-settings.model";
 import { ASSET_TYPE, AssetType, STORAGE_PROVIDER, VISIBILITY } from "@/constants/asset.const";
-import { base64ToBuffer, sha256 } from "@/lib/helpers/convert";
+import { base64ToBuffer, sha256 } from "@/lib/helpers/document-conversions";
 import { getDocumentStorageProvider } from "@/lib/storage-providers";
 import { resolveGuideBannersOrder } from "@/lib/helpers/resolve-guideBanner-order";
 import { Types } from "mongoose";

@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import AssetModel from "@/models/asset.model";
 import { getDocumentStorageProvider } from "@/lib/storage-providers";
 import { STORAGE_PROVIDER, ASSET_TYPE, VISIBILITY } from "@/constants/asset.const";
-import { assertValidDataUrl, base64ToBuffer, sha256 } from "@/lib/helpers/convert";
+import { assertValidDataUrl, base64ToBuffer, sha256 } from "@/lib/helpers/document-conversions";
 import { DuplicateAssetChecksumError, isMongoDuplicateKeyError } from "@/lib/helpers/asset-checksum-error";
 
 /**

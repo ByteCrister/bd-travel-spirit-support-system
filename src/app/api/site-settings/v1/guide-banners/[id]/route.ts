@@ -10,7 +10,7 @@ import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { getDocumentStorageProvider } from "@/lib/storage-providers";
 import { STORAGE_PROVIDER, VISIBILITY, ASSET_TYPE } from "@/constants/asset.const";
 import { GuideBannerUpdateDTO } from "@/types/guide-banner-settings.types";
-import { base64ToBuffer, sha256 } from "@/lib/helpers/convert";
+import { base64ToBuffer, sha256 } from "@/lib/helpers/document-conversions";
 import { resolveGuideBannersOrder } from "@/lib/helpers/resolve-guideBanner-order";
 
 /**

@@ -7,7 +7,7 @@ import { ASSET_TYPE } from "@/constants/asset.const";
 import { cleanupAssets } from "@/lib/cloudinary/delete.cloudinary";
 import { resolveDocuments } from "@/lib/cloudinary/resolve.cloudinary";
 import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
-import { isCloudinaryUrl } from "@/lib/helpers/convert";
+import { isCloudinaryUrl } from "@/lib/helpers/document-conversions";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
 import UserModel from "@/models/user.model";

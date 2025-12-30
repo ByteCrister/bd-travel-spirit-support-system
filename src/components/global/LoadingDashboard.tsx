@@ -1,5 +1,4 @@
 // components/global/LoadingDashboard.tsx
-import React from "react";
 import { MotionDiv, MotionSpan } from "./motion-elements";
 
 type Size = "sm" | "md" | "lg";

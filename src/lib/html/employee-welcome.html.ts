@@ -1,7 +1,7 @@
 // utils/email/templates/employee-welcome.ts
 import { CreateEmployeePayload } from "@/types/employee.types";
 import { ShiftDTO } from "@/types/employee.types";
-import { escapeHtml } from "./application-success.html";
+import { escapeHtml } from "../helpers/escape-html";
 
 /**
  * Helper function to generate HTML email template for new employee welcome email
