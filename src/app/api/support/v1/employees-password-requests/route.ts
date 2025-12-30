@@ -110,6 +110,10 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
                 path: "user",
                 select: "email name role",
                 model: UserModel,
+                // this is for main admin dashboard so I have to get only "support" employees 
+                match: {
+                    role: USER_ROLE.SUPPORT,
+                },
             })
             .populate({
                 path: "employee",
@@ -207,7 +211,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
            USER LOOKUP
         ----------------------------------------- */
 
-        const user = await UserModel.findOne({ email, role: [USER_ROLE.SUPPORT, USER_ROLE.ASSISTANT] })
+        const user = await UserModel.findOne({ email, role: { $in: [USER_ROLE.SUPPORT] } }) // only for "support" members
             .select("_id role")
             .session(session);
 

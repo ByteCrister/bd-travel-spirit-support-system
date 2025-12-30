@@ -17,7 +17,10 @@ import { ResetPasswordRequestPopulated } from "@/types/employee-password-request
 import { validatePassword } from "@/lib/helpers/validatePassword";
 import { employeePasswordUpdateEmail } from "@/lib/html/employee-password-update.html";
 import { mailer } from "@/config/node-mailer";
-
+import { USER_ROLE } from "@/constants/user.const";
+/**
+ * Update password that has been requested by an employee with "support" role
+ */
 export const POST = withErrorHandler(async (
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -51,7 +54,10 @@ export const POST = withErrorHandler(async (
                     .populate({
                         path: "user",
                         select: "email name role",
-                        model: UserModel
+                        model: UserModel,
+                        match: {
+                            role: USER_ROLE.SUPPORT, // get only "support" members
+                        },
                     })
                     .populate({
                         path: "employee",

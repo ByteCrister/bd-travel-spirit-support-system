@@ -12,6 +12,7 @@ import { ApiError } from "@/lib/helpers/withErrorHandler";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import ConnectDB from "@/config/db";
 import { withTransaction } from "@/lib/helpers/withTransaction";
+import { USER_ROLE } from "@/constants/user.const";
 
 /**
  * Post deny action for employee's password update request
@@ -45,8 +46,21 @@ export const POST = async (
             const resetRequest =
                 await ResetPasswordRequestModel
                     .findById(requestId)
+                    .populate({
+                        path: "user",
+                        select: "email name role",
+                        model: UserModel,
+                        match: {
+                            role: USER_ROLE.SUPPORT, // get only "support" members
+                        },
+                    })
+                    .populate({
+                        path: "employee",
+                        select: "contactInfo",
+                        model: EmployeeModel
+                    })
                     .session(session)
-                    .lean<{ status: string }>();
+                    .lean<ResetPasswordRequestPopulated>();
 
             if (!resetRequest) {
                 throw new ApiError("Reset password request not found", 404);
