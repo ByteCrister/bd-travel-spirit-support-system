@@ -8,6 +8,9 @@ import { Types } from "mongoose";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { USER_ROLE } from "@/constants/user.const";
 
+/**
+ * Validate users email and password before logged in with next auth
+ */
 export const POST = withErrorHandler(async (req: NextRequest) => {
 
     const { email, password } = await req.json();
@@ -45,6 +48,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
 
     await ConnectDB();
 
+    // This is main admin dashboard so only "Admin" and "Support" only allowed
     const user = await UserModel.findOne({ email, role: [USER_ROLE.ADMIN, USER_ROLE.SUPPORT] }).select("+password");
 
     if (!user) {

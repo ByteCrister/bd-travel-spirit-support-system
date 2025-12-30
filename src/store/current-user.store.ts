@@ -12,6 +12,7 @@ import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
 import { USER_ROLE } from "@/constants/user.const";
+import { ApiResponse } from "@/types/api.types";
 
 const URL_AFTER_API = "/auth/user/v1";
 
@@ -83,7 +84,14 @@ export const useCurrentUserStore = create<CurrentUserState>((set, get) => ({
         set({ _abortBase: controller, baseMeta: { ...baseMeta, loading: true, inFlight: true, error: null } });
 
         try {
-            const { data } = await api.get<IBaseUser>(URL_AFTER_API, { signal: controller.signal });
+            const res = await api.get<ApiResponse<IBaseUser>>(URL_AFTER_API, { signal: controller.signal });
+
+            if (!res.data || !res.data.data) {
+                throw new Error("Invalid response body")
+            }
+
+            const data = res.data.data;
+
             set({
                 baseUser: data,
                 baseMeta: { loading: false, inFlight: false, error: null, lastFetchedAt: Date.now(), stale: false },
@@ -127,7 +135,13 @@ export const useCurrentUserStore = create<CurrentUserState>((set, get) => ({
 
         try {
             const endpoint = normalized === USER_ROLE.ADMIN ? `${URL_AFTER_API}/owner` : `${URL_AFTER_API}/employee`;
-            const { data } = await api.get<CurrentUser>(endpoint, { signal: controller.signal });
+            const res = await api.get<ApiResponse<CurrentUser>>(endpoint, { signal: controller.signal });
+
+            if (!res.data || !res.data.data) {
+                throw new Error("Invalid response body")
+            }
+
+            const data = res.data.data;
 
             set({
                 fullUser: data,
@@ -187,13 +201,19 @@ export const useCurrentUserStore = create<CurrentUserState>((set, get) => ({
         });
 
         try {
-            const { data } = await api.get<AuditListApiResponse>(
+            const res = await api.get<ApiResponse<AuditListApiResponse>>(
                 `${URL_AFTER_API}/audits`,
                 {
                     params: { page, pageSize },
                     signal: controller.signal,
                 }
             );
+
+            if (!res.data || !res.data.data) {
+                throw new Error("Invalid response body")
+            }
+
+            const data = res.data.data;
 
             const mergedAudits = append ? [...audits, ...data.audits] : data.audits;
 

@@ -7,7 +7,7 @@ import { EmployeeRole, EmploymentType } from "@/constants/employee.const";
 /**
  * Roles allowed in the admin dashboard
  */
-export type AdminRole = USER_ROLE.ADMIN | USER_ROLE.SUPPORT | USER_ROLE.ASSISTANT;
+export type AdminRole = `${USER_ROLE.ADMIN}` | `${USER_ROLE.SUPPORT}`;
 
 /**
  * Base information for the currently logged-in user

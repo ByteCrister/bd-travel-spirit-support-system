@@ -114,8 +114,6 @@ export function Sidebar({
   // ? matching is the current user is admin or not
   const { baseUser } = useCurrentUserStore();
   const isAdmin = baseUser?.role === USER_ROLE.ADMIN
-  // console.log(baseUser);
-  // console.log(isAdmin);
 
   useEffect(() => {
     // find the group that matches the current route
