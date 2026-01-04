@@ -1,17 +1,25 @@
 // app/api/site-settings/guide-banners/[id]/route.ts
 export const runtime = "nodejs";
-
+import "@/models/assets/asset.model";
+import "@/models/assets/asset-file.model";
 import { NextRequest } from "next/server";
 import { Types } from "mongoose";
 import ConnectDB from "@/config/db";
-import GuideBannerSetting from "@/models/site-settings/guideBanner.model";
-import { AssetModel } from "@/models/asset.model";
+import GuideBannerSetting, { IGuideBanner } from "@/models/site-settings/guideBanner.model";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
-import { getDocumentStorageProvider } from "@/lib/storage-providers";
-import { STORAGE_PROVIDER, VISIBILITY, ASSET_TYPE } from "@/constants/asset.const";
+import { ASSET_TYPE } from "@/constants/asset.const";
 import { GuideBannerUpdateDTO } from "@/types/guide-banner-settings.types";
-import { base64ToBuffer, sha256 } from "@/lib/helpers/document-conversions";
 import { resolveGuideBannersOrder } from "@/lib/helpers/resolve-guideBanner-order";
+import { PopulatedAsset } from "@/types/populated-asset.types";
+import { withTransaction } from "@/lib/helpers/withTransaction";
+import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
+import AssetModel from "@/models/assets/asset.model";
+import { cleanupAssets } from "@/lib/cloudinary/delete.cloudinary";
+import AssetFileModel from "@/models/assets/asset-file.model";
+
+type PopulatedGuideBannerSetting = Omit<IGuideBanner, "asset"> & {
+    asset: PopulatedAsset;
+}
 
 /**
  * GET Banner by ID
@@ -24,16 +32,20 @@ export const GET = withErrorHandler(async (req: NextRequest, { params }: { param
     await ConnectDB();
 
     // Find and ensure not soft-deleted
-    const banner = await GuideBannerSetting.findById(id).populate("asset", "publicUrl").lean();
+    const populatedBanner = await GuideBannerSetting.findById(id)
+        .populate({
+            path: "asset",
+            select: "file",
+            populate: { path: "file", select: "publicUrl" }
+        })
+        .lean();
+
+    const banner = populatedBanner as unknown as PopulatedGuideBannerSetting;
+
     if (!banner || banner.deleteAt) throw new ApiError("Guide banner not found", 404);
 
     // Narrow the populated union properly
-    const asset =
-        banner.asset &&
-            typeof banner.asset === "object" &&
-            "publicUrl" in banner.asset
-            ? banner.asset.publicUrl
-            : null;
+    const asset = banner.asset.file.publicUrl;
 
     return {
         data: {
@@ -46,8 +58,7 @@ export const GET = withErrorHandler(async (req: NextRequest, { params }: { param
 
 /**
  * PUT / Update Banner
- * - Respect soft-delete semantics when reordering (exclude deleted banners)
- * - Update asset handling to work with base64, URL, or ObjectId references
+ * - Updated to use new Asset/AssetFile models with Cloudinary
  */
 export const PUT = withErrorHandler(async (req: NextRequest, { params }: { params: Promise<{ id?: string }> }) => {
     const id = (await params)?.id;
@@ -55,137 +66,164 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: { param
 
     const body = (await req.json()) as GuideBannerUpdateDTO;
     await ConnectDB();
+    const assetsToCleanup: Types.ObjectId[] = [];
 
-    const banner = await GuideBannerSetting.findById(id);
-    if (!banner || banner.deleteAt) throw new ApiError("Guide banner not found", 404);
+    return withTransaction(async (session) => {
+        const banner = await GuideBannerSetting.findById(id).session(session);
+        if (!banner || banner.deleteAt) throw new ApiError("Guide banner not found", 404);
 
-    let assetDoc = null;
+        let newAssetId: Types.ObjectId | null = null;
 
-    // Handle asset update
-    if (body.asset) {
-        const assetStr = body.asset;
-        const isBase64 = assetStr.startsWith("data:") || assetStr.length > 1000;
+        // Handle asset update
+        if (body.asset) {
+            const assetStr = body.asset;
+            const isBase64 = assetStr.startsWith("data:");
 
-        if (isBase64 && assetStr.length > 10_000_000) throw new ApiError("Asset too large", 413);
+            if (isBase64 && assetStr.length > 10_000_000) {
+                throw new ApiError("Asset too large", 413);
+            }
 
-        const provider = getDocumentStorageProvider(STORAGE_PROVIDER.CLOUDINARY);
+            if (isBase64) {
+                const [assetId] = await uploadAssets(
+                    [
+                        {
+                            base64: assetStr,
+                            name: body.alt ?? "Guide Banner",
+                            assetType: ASSET_TYPE.IMAGE,
+                        },
+                    ],
+                    session
+                );
 
-        if (isBase64) {
-            const buffer = base64ToBuffer(assetStr);
-            const checksum = sha256(buffer);
+                newAssetId = assetId;
 
-            if (banner.asset) {
-                assetDoc = await AssetModel.findById(banner.asset);
-                // If asset exists but checksum differs, update provider and asset doc
-                if (assetDoc && assetDoc.checksum !== checksum) {
-                    const uploaded = await provider.update(assetDoc.objectKey, assetStr);
-                    assetDoc.publicUrl = uploaded.url;
-                    assetDoc.contentType = uploaded.contentType ?? assetDoc.contentType;
-                    assetDoc.fileSize = uploaded.fileSize ?? buffer.length;
-                    assetDoc.checksum = checksum;
-                    assetDoc.title = uploaded.fileName ?? body.alt ?? assetDoc.title;
-                    await assetDoc.save();
-                } else if (!assetDoc) {
-                    // Create new asset if referenced asset doc not found
-                    const uploaded = await provider.create(assetStr);
-                    assetDoc = await AssetModel.create({
-                        storageProvider: STORAGE_PROVIDER.CLOUDINARY,
-                        objectKey: uploaded.providerId,
-                        publicUrl: uploaded.url,
-                        contentType: uploaded.contentType ?? "application/octet-stream",
-                        fileSize: uploaded.fileSize ?? buffer.length,
-                        checksum,
-                        assetType: ASSET_TYPE.IMAGE,
-                        title: uploaded.fileName ?? body.alt ?? undefined,
-                        visibility: VISIBILITY.PUBLIC,
+                if (banner.asset) {
+                    assetsToCleanup.push(banner.asset as Types.ObjectId);
+                }
+            }
+
+            else if (/^https?:\/\//.test(assetStr)) {
+                const assetFile = await AssetFileModel
+                    .findOne({ publicUrl: assetStr })
+                    .session(session);
+
+                if (!assetFile) {
+                    throw new ApiError("Referenced asset not found", 404);
+                }
+
+                const asset = await AssetModel
+                    .findOne({ file: assetFile._id, deletedAt: null })
+                    .session(session);
+
+                if (!asset) {
+                    throw new ApiError("Referenced asset not found", 404);
+                }
+
+                newAssetId = asset._id;
+            }
+
+            else if (Types.ObjectId.isValid(assetStr)) {
+                const asset = await AssetModel.findById(assetStr).session(session);
+                if (!asset) throw new ApiError("Referenced asset not found", 404);
+                newAssetId = asset._id;
+            }
+
+            else {
+                throw new ApiError("Invalid asset format", 400);
+            }
+
+            if (newAssetId) {
+                banner.asset = newAssetId;
+            }
+        }
+        
+        await cleanupAssets(assetsToCleanup, session)
+
+
+        // Update scalar fields
+        if ("alt" in body) banner.alt = body.alt ?? null;
+        if ("caption" in body) banner.caption = body.caption ?? null;
+        if ("active" in body) banner.active = body.active;
+
+        // Handle order change: exclude soft-deleted banners when resolving order
+        if ("order" in body && body.order !== undefined && body.order !== banner.order) {
+            const allOtherBanners = (await GuideBannerSetting.find({ _id: { $ne: id }, deleteAt: null }).sort({ order: 1 }).lean().session(session).exec()).map(b => b);
+            const tempBanner = { ...banner.toObject(), order: body.order };
+            const resolved = resolveGuideBannersOrder([...allOtherBanners, tempBanner], body.order);
+
+            // Create bulk write operations for other banners whose order changed
+            const bulkOperations = [];
+
+            for (const resolvedBanner of resolved) {
+                // Skip the banner we're currently updating (we'll update it separately)
+                if (resolvedBanner._id?.toString() === id) continue;
+
+                const originalBanner = allOtherBanners.find(b => String((b._id) ?? "") === String(resolvedBanner._id));
+                if (originalBanner && originalBanner.order !== resolvedBanner.order) {
+                    bulkOperations.push({
+                        updateOne: {
+                            filter: { _id: resolvedBanner._id },
+                            update: { $set: { order: resolvedBanner.order } }
+                        }
                     });
                 }
-            } else {
-                // No existing asset on banner, create new
-                const uploaded = await provider.create(assetStr);
-                assetDoc = await AssetModel.create({
-                    storageProvider: STORAGE_PROVIDER.CLOUDINARY,
-                    objectKey: uploaded.providerId,
-                    publicUrl: uploaded.url,
-                    contentType: uploaded.contentType ?? "application/octet-stream",
-                    fileSize: uploaded.fileSize ?? buffer.length,
-                    checksum,
-                    assetType: ASSET_TYPE.IMAGE,
-                    title: uploaded.fileName ?? body.alt ?? undefined,
-                    visibility: VISIBILITY.PUBLIC,
-                });
             }
-        } else if (/^https?:\/\//.test(assetStr)) {
-            // Reference by URL — only accept non-deleted assets
-            assetDoc = await AssetModel.findOne({ publicUrl: assetStr, $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }] });
-            if (!assetDoc) throw new ApiError("Referenced asset not found", 404);
-        } else if (Types.ObjectId.isValid(assetStr)) {
-            assetDoc = await AssetModel.findById(assetStr);
-            if (!assetDoc) throw new ApiError("Referenced asset not found", 404);
-        } else {
-            throw new ApiError("Invalid asset format", 400);
-        }
 
-        // Assign the asset ObjectId to the banner
-        if (assetDoc) banner.asset = assetDoc._id as Types.ObjectId;
-    }
-
-    // Update scalar fields
-    if ("alt" in body) banner.alt = body.alt ?? null;
-    if ("caption" in body) banner.caption = body.caption ?? null;
-    if ("active" in body) banner.active = body.active;
-
-    // Handle order change: exclude soft-deleted banners when resolving order
-    if ("order" in body && body.order !== undefined && body.order !== banner.order) {
-        const allOtherBanners = (await GuideBannerSetting.find({ _id: { $ne: id }, deleteAt: null }).sort({ order: 1 }).lean().exec()).map(b => b);
-        const tempBanner = { ...banner.toObject(), order: body.order };
-        const resolved = resolveGuideBannersOrder([...allOtherBanners, tempBanner], body.order);
-
-        // Create bulk write operations for other banners whose order changed
-        const bulkOperations = [];
-
-        for (const resolvedBanner of resolved) {
-            // Skip the banner we're currently updating (we'll update it separately)
-            if (resolvedBanner._id?.toString() === id) continue;
-
-            const originalBanner = allOtherBanners.find(b => String((b._id) ?? "") === String(resolvedBanner._id));
-            if (originalBanner && originalBanner.order !== resolvedBanner.order) {
-                bulkOperations.push({
-                    updateOne: {
-                        filter: { _id: resolvedBanner._id },
-                        update: { $set: { order: resolvedBanner.order } }
-                    }
-                });
+            if (bulkOperations.length > 0) {
+                await GuideBannerSetting.bulkWrite(bulkOperations, { session });
             }
+
+            // Find the new order for the current banner from resolved list
+            const currentBannerResolved = resolved.find(b => String(b._id ?? "") === String(id));
+            banner.order = currentBannerResolved?.order ?? body.order;
         }
 
-        if (bulkOperations.length > 0) {
-            await GuideBannerSetting.bulkWrite(bulkOperations);
-        }
+        await banner.save({ session });
 
-        // Find the new order for the current banner from resolved list
-        const currentBannerResolved = resolved.find(b => String(b._id ?? "") === String(id));
-        banner.order = currentBannerResolved?.order ?? body.order;
-    }
+        // Populate for response
+        const populateBanner = await banner.populate({
+            path: "asset",
+            populate: {
+                path: "file",
+                select: "publicUrl",
+            },
+        });
 
-    await banner.save();
+        const populatedBanner = populateBanner as unknown as PopulatedGuideBannerSetting;
 
-    // Prepare response asset value: prefer updated assetDoc.publicUrl if available
-    const responseAsset = assetDoc?.publicUrl ?? (typeof banner.asset === "object" && "toString" in banner.asset ? banner.asset.toString() : banner.asset);
+        // Safely extract the public URL from the populated structure
+        const getPublicUrl = (populatedBanner: PopulatedGuideBannerSetting): string | null => {
+            if (
+                populatedBanner?.asset &&
+                typeof populatedBanner.asset === "object" &&
+                populatedBanner.asset?.file &&
+                typeof populatedBanner.asset.file === "object" &&
+                populatedBanner.asset.file.publicUrl
+            ) {
+                return populatedBanner.asset.file.publicUrl;
+            }
+            return null;
+        };
 
-    return {
-        data: {
-            ...banner.toObject(),
-            asset: responseAsset,
-        },
-        status: 200,
-    };
+        return {
+            data: {
+                _id: String(populatedBanner._id),
+                asset: getPublicUrl(populatedBanner),
+                alt: populatedBanner.alt ?? null,
+                caption: populatedBanner.caption ?? null,
+                order: populatedBanner.order,
+                active: populatedBanner.active,
+                createdAt: populatedBanner.createdAt?.toISOString(),
+                updatedAt: populatedBanner.updatedAt?.toISOString(),
+            },
+            status: 200,
+        };
+    });
 });
 
 /**
  * DELETE Banner
- * - Soft-delete the banner (set deleteAt and deactivate) using model helper
- * - Soft-delete associated asset and remove from provider if present
+ * - Updated to use new Asset/AssetFile models and Cloudinary cleanup
  */
 export const DELETE = withErrorHandler(async (
     req: NextRequest,
@@ -196,57 +234,31 @@ export const DELETE = withErrorHandler(async (
 
     await ConnectDB();
 
-    // Find the banner (allow deleted check to return 404 if already deleted)
-    const banner = await GuideBannerSetting.findById(id);
-    if (!banner) throw new ApiError("Guide banner not found", 404);
+    return withTransaction(async (session) => {
+        // Find the banner (allow deleted check to return 404 if already deleted)
+        const banner = await GuideBannerSetting.findById(id).session(session);
+        if (!banner) throw new ApiError("Guide banner not found", 404);
 
-    // If banner already soft-deleted, return success (idempotent)
-    if (banner.deleteAt) {
-        return { data: null, status: 200 };
-    }
-
-    // If banner has an asset, attempt to remove from provider and soft-delete the asset record
-    if (banner.asset) {
-        const assetDoc = await AssetModel.findById(banner.asset);
-        if (assetDoc) {
-            // // const provider = getDocumentStorageProvider(STORAGE_PROVIDER.CLOUDINARY);
-            // try {
-            //     // Attempt to delete from provider; ignore provider errors but log
-            // //     await provider.delete(assetDoc.objectKey);
-            // } catch (err) {
-            //     console.warn("Failed to delete asset from provider:", err);
-            // }
-
-            // Soft-delete the asset record (preserve history)
-            if (typeof AssetModel.softDeleteById === "function") {
-                try {
-                    await AssetModel.softDeleteById(assetDoc._id as Types.ObjectId);
-                } catch {
-                    // Fallback: mark deletedAt on document and save
-                    try {
-                        assetDoc.deletedAt = new Date();
-                        await assetDoc.save();
-                    } catch (e) {
-                        console.warn("Failed to soft-delete asset record:", e);
-                    }
-                }
-            } else {
-                // If helper not present, mark deletedAt directly
-                assetDoc.deletedAt = new Date();
-                await assetDoc.save();
-            }
+        // If banner already soft-deleted, return success (idempotent)
+        if (banner.deleteAt) {
+            return { data: null, status: 200 };
         }
-    }
 
-    // Soft-delete the banner using model helper if available
-    if (typeof GuideBannerSetting.softDeleteById === "function") {
-        await GuideBannerSetting.softDeleteById(id);
-    } else {
-        // Fallback: mark deleteAt and deactivate
-        banner.deleteAt = new Date();
-        banner.active = false;
-        await banner.save();
-    }
+        // If banner has an asset, use cleanupAssets to handle it
+        if (banner.asset) {
+            await cleanupAssets([banner.asset as Types.ObjectId], session);
+        }
 
-    return { data: null, status: 200 };
+        // Soft-delete the banner using model helper if available
+        if (typeof GuideBannerSetting.softDeleteById === "function") {
+            await GuideBannerSetting.softDeleteById(id);
+        } else {
+            // Fallback: mark deleteAt and deactivate
+            banner.deleteAt = new Date();
+            banner.active = false;
+            await banner.save({ session });
+        }
+
+        return { data: null, status: 200 };
+    });
 });

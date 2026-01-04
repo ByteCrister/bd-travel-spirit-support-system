@@ -2,19 +2,26 @@ export const runtime = "nodejs";
 
 import { NextRequest } from "next/server";
 import ConnectDB from "@/config/db";
-import GuideBannerSetting from "@/models/site-settings/guideBanner.model";
-import "@/models/asset.model";
+import GuideBannerSetting, { IGuideBanner } from "@/models/site-settings/guideBanner.model";
 
-import { AssetModel, type IAsset } from "@/models/asset.model";
-import { GUIDE_BANNER_SORT_KEYS, GuideBannerCreateDTO, type GuideBannerSortKey } from "@/types/guide-banner-settings.types";
+import "@/models/assets/asset.model";
+import "@/models/assets/asset-file.model";
+
+import {
+    GUIDE_BANNER_SORT_KEYS,
+    GuideBannerCreateDTO,
+    type GuideBannerSortKey,
+} from "@/types/guide-banner-settings.types";
 import { Lean } from "@/types/mongoose-lean.types";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { GuideBanner } from "@/models/site-settings.model";
-import { ASSET_TYPE, AssetType, STORAGE_PROVIDER, VISIBILITY } from "@/constants/asset.const";
-import { base64ToBuffer, sha256 } from "@/lib/helpers/document-conversions";
-import { getDocumentStorageProvider } from "@/lib/storage-providers";
+import { ASSET_TYPE } from "@/constants/asset.const";
+import { base64ToBuffer } from "@/lib/helpers/document-conversions";
 import { resolveGuideBannersOrder } from "@/lib/helpers/resolve-guideBanner-order";
 import { Types } from "mongoose";
+import { withTransaction } from "@/lib/helpers/withTransaction";
+import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
+import { PopulatedAsset } from "@/types/populated-asset.types";
 
 /* -------------------------
    Query parsing
@@ -38,18 +45,23 @@ function parseQuery(req: NextRequest) {
 }
 
 function isGuideBannerSortKey(v: unknown): v is GuideBannerSortKey {
-    return typeof v === "string" && (GUIDE_BANNER_SORT_KEYS as readonly string[]).includes(v);
+    return (
+        typeof v === "string" &&
+        (GUIDE_BANNER_SORT_KEYS as readonly string[]).includes(v)
+    );
 }
 
 /* -------------------------
    Helper types
 ------------------------- */
-type PopulatedAssetLean = Lean<Pick<IAsset, "_id" | "publicUrl">>;
+type BannerWithPopulatedAsset = Omit<IGuideBanner, "asset"> & {
+    asset: PopulatedAsset;
+};
 
 type GuideBannerLean = Lean<
     GuideBanner & {
         _id: unknown;
-        asset?: PopulatedAssetLean | string | null;
+        asset?: PopulatedAsset | string | null;
         createdAt?: Date | null;
         updatedAt?: Date | null;
         deleteAt?: Date | null;
@@ -82,9 +94,11 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     const { limit, offset, sortBy, sortDir, active, search } = parseQuery(req);
 
     /* -------------------------
-       Mongo-level filters
-    ------------------------- */
-    const filter: Record<string, unknown> = { deleteAt: null }; // only non-deleted by default
+         Mongo filters
+      ------------------------- */
+    const filter: Record<string, unknown> = {
+        deleteAt: null,
+    };
 
     if (typeof active === "boolean") {
         filter.active = active;
@@ -97,13 +111,20 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
         ];
     }
 
+    /* -------------------------
+         Query
+      ------------------------- */
     const docs = await GuideBannerSetting.find(filter)
         .populate({
             path: "asset",
-            select: "_id publicUrl",
+            select: "_id file",
+            populate: {
+                path: "file",
+                select: "_id publicUrl",
+            },
             options: { lean: true },
         })
-        .lean()
+        .lean<GuideBannerLean[]>()
         .exec();
 
     if (!docs.length) {
@@ -117,11 +138,9 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     }
 
     /* -------------------------
-       Sorting (type-safe)
-    ------------------------- */
-    const banners: GuideBannerLean[] = docs as GuideBannerLean[];
-
-    banners.sort((a, b) => {
+         Sorting
+      ------------------------- */
+    docs.sort((a, b) => {
         const av = getFieldForSort(a, sortBy);
         const bv = getFieldForSort(b, sortBy);
 
@@ -144,25 +163,37 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
         return String(av).localeCompare(String(bv)) * sortDir;
     });
 
-    const total = banners.length;
-    const page = banners.slice(offset, offset + limit);
+    const total = docs.length;
+    const page = docs.slice(offset, offset + limit);
 
     /* -------------------------
-       Mapping → API entity
-    ------------------------- */
-    const data = page.map((b) => ({
-        _id: String(b._id),
-        asset:
-            b.asset && typeof b.asset === "object" && "publicUrl" in b.asset
-                ? (b.asset as PopulatedAssetLean).publicUrl
-                : null,
-        alt: b.alt ?? null,
-        caption: b.caption ?? null,
-        order: typeof b.order === "number" ? b.order : 0,
-        active: typeof b.active === "boolean" ? b.active : true,
-        createdAt: b.createdAt ? b.createdAt.toISOString() : undefined,
-        updatedAt: b.updatedAt ? b.updatedAt.toISOString() : undefined,
-    }));
+         Mapping → API response
+      ------------------------- */
+    const data = page.map((b) => {
+        let assetUrl: string | null = null;
+
+        if (
+            b.asset &&
+            typeof b.asset === "object" &&
+            "file" in b.asset &&
+            b.asset.file &&
+            typeof b.asset.file === "object" &&
+            "publicUrl" in b.asset.file
+        ) {
+            assetUrl = b.asset.file.publicUrl as string;
+        }
+
+        return {
+            _id: String(b._id),
+            asset: assetUrl,
+            alt: b.alt ?? null,
+            caption: b.caption ?? null,
+            order: typeof b.order === "number" ? b.order : 0,
+            active: typeof b.active === "boolean" ? b.active : true,
+            createdAt: b.createdAt?.toISOString(),
+            updatedAt: b.updatedAt?.toISOString(),
+        };
+    });
 
     return {
         data: {
@@ -173,14 +204,6 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     };
 });
 
-/* -------------------------
-   Helpers for POST
-------------------------- */
-function deriveAssetType(contentType?: string): AssetType {
-    if (!contentType) return ASSET_TYPE.OTHER;
-    if (contentType.startsWith("image/")) return ASSET_TYPE.IMAGE;
-    return ASSET_TYPE.OTHER;
-}
 
 /* -------------------------
    POST - upload guide banner
@@ -195,6 +218,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         throw new ApiError("asset is required", 400);
     }
 
+    // Early size validation
     const buffer = base64ToBuffer(body.asset);
     if (buffer.length > 10_000_000) {
         throw new ApiError("Asset too large", 413);
@@ -202,109 +226,118 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
 
     await ConnectDB();
 
-    // Check if asset already exists (only non-deleted assets)
-    let assetDoc = await AssetModel.findOne({
-        checksum: sha256(buffer),
-        $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
-    });
+    return withTransaction(async (session) => {
+        /* -------------------------
+               1️⃣ Upload asset (Asset + AssetFile)
+            ------------------------- */
+        const [assetId] = await uploadAssets(
+            [
+                {
+                    base64: body.asset,
+                    name: body.alt ?? "Guide Banner",
+                    assetType: ASSET_TYPE.IMAGE,
+                },
+            ],
+            session
+        );
 
-    if (!assetDoc) {
-        const provider = getDocumentStorageProvider(STORAGE_PROVIDER.CLOUDINARY);
-        const uploaded = await provider.create(body.asset);
-
-        assetDoc = await AssetModel.create({
-            storageProvider: STORAGE_PROVIDER.CLOUDINARY,
-            objectKey: uploaded.providerId,
-            publicUrl: uploaded.url,
-            contentType: uploaded.contentType ?? "application/octet-stream",
-            fileSize: uploaded.fileSize ?? buffer.length,
-            checksum: sha256(buffer),
-            assetType: deriveAssetType(uploaded.contentType),
-            title: uploaded.fileName ?? body.alt ?? undefined,
-            visibility: VISIBILITY.PUBLIC,
-        });
-    }
-
-    if (!assetDoc) {
-        throw new ApiError("Failed to create or find asset", 500);
-    }
-
-    // Determine banner order
-    // Only consider non-deleted banners when resolving order
-    const existingBanners = (await GuideBannerSetting.find({ deleteAt: null }).sort({ order: 1 }).lean().exec()) as GuideBannerLean[];
-
-    const order = body.order ?? existingBanners.length;
-
-    // Include new banner temporarily to resolve orders
-    // Ensure asset is typed as a Mongoose ObjectId to satisfy GuideBanner typing
-    const tempBanner: Partial<GuideBannerLean> = {
-        _id: undefined as unknown as undefined,
-        order,
-        asset: assetDoc._id as unknown as Types.ObjectId,
-    };
-
-    // Build the array for resolution
-    const allBanners = [...existingBanners, tempBanner as unknown as GuideBannerLean];
-    
-    // Resolve orders (resolveGuideBannersOrder expects a list of banners; cast as needed)
-    const resolvedOrders = resolveGuideBannersOrder(allBanners, order);
-
-    // Separate existing banners that need updating and find final order for new banner
-    const bannersToUpdate = resolvedOrders.filter((b) => b._id);
-    const newBannerResolved = resolvedOrders.find((b) => !b._id);
-    const finalOrder = newBannerResolved?.order ?? order;
-
-    // Create bulk write operations for updates only
-    const bulkOperations = [];
-
-    for (const banner of bannersToUpdate) {
-        // originalBanner._id from existingBanners may be an ObjectId; compare as strings
-        const originalBanner = existingBanners.find(b => String((b._id) ?? "") === String(banner._id));
-        if (originalBanner && originalBanner.order !== banner.order) {
-            bulkOperations.push({
-                updateOne: {
-                    filter: { _id: banner._id },
-                    update: { $set: { order: banner.order } }
-                }
-            });
+        if (!assetId) {
+            throw new ApiError("Failed to upload asset", 500);
         }
-    }
 
-    // Execute updates first (if any)
-    if (bulkOperations.length > 0) {
-        await GuideBannerSetting.bulkWrite(bulkOperations);
-    }
+        /* -------------------------
+               2️⃣ Resolve order (non-deleted only)
+            ------------------------- */
+        const existingBanners = (await GuideBannerSetting.find({
+            deleteAt: null,
+        })
+            .sort({ order: 1 })
+            .lean()
+            .session(session)
+            .exec()) as GuideBannerLean[];
 
-    // Create the new banner (use create to reliably get the inserted _id)
-    const bannerEntry = await GuideBannerSetting.create({
-        asset: assetDoc._id,
-        alt: body.alt ?? null,
-        caption: body.caption ?? null,
-        order: finalOrder,
-        active: body.active ?? true,
+        const requestedOrder = body.order ?? existingBanners.length;
+
+        const tempBanner: GuideBannerLean = {
+            _id: undefined as unknown as Types.ObjectId,
+            order: requestedOrder,
+            asset: assetId,
+        } as GuideBannerLean;
+
+        const resolved = resolveGuideBannersOrder(
+            [...existingBanners, tempBanner],
+            requestedOrder
+        );
+
+        const bannersToUpdate = resolved.filter((b) => b._id);
+        const newBanner = resolved.find((b) => !b._id);
+        const finalOrder = newBanner?.order ?? requestedOrder;
+
+        /* -------------------------
+               3️⃣ Update existing banner orders
+            ------------------------- */
+        if (bannersToUpdate.length) {
+            await GuideBannerSetting.bulkWrite(
+                bannersToUpdate.map((b) => ({
+                    updateOne: {
+                        filter: { _id: b._id },
+                        update: { $set: { order: b.order } },
+                    },
+                })),
+                { session }
+            );
+        }
+
+        /* -------------------------
+               4️⃣ Create new banner
+            ------------------------- */
+        const banner = await GuideBannerSetting.create(
+            [
+                {
+                    asset: assetId,
+                    alt: body.alt ?? null,
+                    caption: body.caption ?? null,
+                    order: finalOrder,
+                    active: body.active ?? true,
+                },
+            ],
+            { session }
+        ).then((d) => d[0]);
+
+        /* -------------------------
+               5️⃣ Populate asset.file.publicUrl
+            ------------------------- */
+        await banner.populate({
+            path: "asset",
+            populate: {
+                path: "file",
+                select: "publicUrl",
+            },
+        });
+
+        /* -------------------------
+               6️⃣ Response
+            ------------------------- */
+        const populatedBanner = banner as unknown as BannerWithPopulatedAsset;
+        return {
+            data: {
+                _id: String(populatedBanner._id),
+                asset:
+                    populatedBanner.asset &&
+                        typeof populatedBanner.asset === "object" &&
+                        "file" in populatedBanner.asset &&
+                        populatedBanner.asset.file &&
+                        typeof populatedBanner.asset.file === "object"
+                        ? populatedBanner.asset.file.publicUrl
+                        : null,
+                alt: populatedBanner.alt ?? null,
+                caption: populatedBanner.caption ?? null,
+                order: populatedBanner.order,
+                active: populatedBanner.active,
+                createdAt: populatedBanner.createdAt?.toISOString(),
+                updatedAt: populatedBanner.updatedAt?.toISOString(),
+            },
+            status: 201,
+        };
     });
-
-    if (!bannerEntry) {
-        throw new ApiError("Banner not created, Please try again!", 400);
-    }
-
-    // Populate asset publicUrl if needed for response
-    await bannerEntry.populate({ path: "asset", select: "_id publicUrl", options: { lean: true } });
-
-    return {
-        data: {
-            _id: String(bannerEntry._id),
-            asset:
-                bannerEntry.asset && typeof bannerEntry.asset === "object" && "publicUrl" in bannerEntry.asset
-                    ? (bannerEntry.asset as PopulatedAssetLean).publicUrl
-                    : (assetDoc?.publicUrl ?? null),
-            alt: bannerEntry.alt ?? null,
-            caption: bannerEntry.caption ?? null,
-            order: bannerEntry.order,
-            active: bannerEntry.active,
-            createdAt: bannerEntry.createdAt ? bannerEntry.createdAt.toISOString() : undefined,
-            updatedAt: bannerEntry.updatedAt ? bannerEntry.updatedAt.toISOString() : undefined,
-        },
-        status: 201,
-    };
 });

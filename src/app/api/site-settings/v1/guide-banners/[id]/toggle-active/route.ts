@@ -1,11 +1,20 @@
 // PATCH /api/site-settings/v1/guide-banners/[id]/toggle-active
+import "@/models/assets/asset.model";
+import "@/models/assets/asset-file.model";
 import { NextRequest } from "next/server";
 import { Types } from "mongoose";
 import ConnectDB from "@/config/db";
 import GuideBannerSetting from "@/models/site-settings/guideBanner.model";
-import { AssetModel } from "@/models/asset.model";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
+import AssetModel, { IAsset } from "@/models/assets/asset.model";
+import { PopulatedAssetFile } from "@/types/populated-asset.types";
 
+type populatedAssetDoc = Omit<IAsset, "file"> & {
+    file: PopulatedAssetFile;
+};
+/**
+ * Toggle guide banner active/inactive
+ */
 export const PATCH = withErrorHandler(async (
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -34,11 +43,14 @@ export const PATCH = withErrorHandler(async (
             _id: banner.asset,
             $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
         })
-            .select("publicUrl")
+            .populate({
+                path: "file",
+                select: "publicUrl",
+            })
             .lean()
             .exec();
 
-        assetUrl = assetDoc?.publicUrl ?? null;
+        assetUrl = (assetDoc as unknown as populatedAssetDoc)?.file.publicUrl ?? null;
     }
 
     const obj = banner.toObject();

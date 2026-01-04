@@ -33,12 +33,14 @@ export async function cleanupAssets(
 ): Promise<void> {
     if (!assetIds?.length) return;
 
-    // Using the static softDeleteMany method for batch soft-delete
-    await AssetModel.softDeleteMany(
-        { _id: { $in: assetIds } },
-        session
-    );
+    // 1️⃣ Fetch Assets to get their file IDs
+    const assets = await AssetModel.find({ _id: { $in: assetIds }, deletedAt: null })
+        .session(session)
+        .select("file");
 
-    // Note for maintainers
-    // Git actions or other background jobs may permanently remove the documents later.
+    if (!assets.length) return;
+
+    // 2️⃣ Soft-delete Assets
+    await AssetModel.softDeleteMany({ _id: { $in: assetIds } }, session);
+
 }

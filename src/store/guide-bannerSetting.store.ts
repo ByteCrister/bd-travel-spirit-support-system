@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/stores/guide-bannerSetting.store.ts
 import { create } from "zustand";
 import { produce, enableMapSet } from "immer";
@@ -47,6 +48,8 @@ const OPTIMISTIC_TTL_MS = Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 60_000; /
 function nowISO(): ISODateString {
     return new Date().toISOString();
 }
+
+const optimisticTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 function makeEntityRequestState(
     status: RequestStatus,
@@ -190,7 +193,6 @@ function scheduleOptimisticCleanup(key: string, entry: OptimisticEntry, unregist
     entry.timerId = setTimeout(() => {
         try {
             entry.rollback();
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_) {
             // swallow rollback errors
         } finally {
@@ -358,23 +360,40 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
     },
 
     registerOptimistic(key: string, rollback: () => void) {
+        // Clear existing timer
+        const existingTimer = optimisticTimers.get(key);
+        if (existingTimer) clearTimeout(existingTimer);
+
         set(
             produce((s: GuideBannersState) => {
-                // create entry and schedule cleanup
-                const entry: OptimisticEntry = { rollback, createdAt: nowISO() };
-                s.optimisticRegistry[key] = { rollback: entry.rollback, createdAt: entry.createdAt };
-                // schedule local timer outside produce to avoid closure issues (we'll schedule after set)
+                s.optimisticRegistry[key] = { rollback, createdAt: nowISO() };
             })
         );
-        // schedule timer (use get().unregisterOptimistic to clear)
-        const entryForTimer: OptimisticEntry = { rollback, createdAt: nowISO() };
-        scheduleOptimisticCleanup(key, entryForTimer, (k) => {
-            // call store's unregisterOptimistic to remove registry entry
-            get().unregisterOptimistic(k);
-        });
+
+        const timerId = setTimeout(() => {
+            const store = get();
+            const entry = store.optimisticRegistry[key];
+            if (entry) {
+                try {
+                    entry.rollback();
+                } catch (_) {
+                    // swallow
+                } finally {
+                    store.unregisterOptimistic(key);
+                }
+            }
+        }, OPTIMISTIC_TTL_MS);
+
+        optimisticTimers.set(key, timerId);
     },
 
     unregisterOptimistic(key: string) {
+        const timerId = optimisticTimers.get(key);
+        if (timerId) {
+            clearTimeout(timerId);
+            optimisticTimers.delete(key);
+        }
+
         set(
             produce((s: GuideBannersState) => {
                 delete s.optimisticRegistry[key];
@@ -582,7 +601,6 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
             if (reg) {
                 try {
                     reg.rollback();
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 } catch (_) {
                     // swallow
                 }
@@ -657,7 +675,6 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
             if (reg) {
                 try {
                     reg.rollback();
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 } catch (_) {
                     // swallow
                 }
@@ -738,60 +755,78 @@ export const useGuideBannersStore = create<GuideBannersStore>((set, get) => ({
     async removeBanner(id: ID) {
         const requestId = uuidv4();
         const stringId = String(id);
-        const snapshot = get().normalized.byId[stringId] ? { ...get().normalized.byId[stringId] } : undefined;
 
-        // optimistic remove - capture index so rollback restores position
+        // Take a snapshot for rollback
+        const snapshot = get().normalized.byId[stringId] ? { ...get().normalized.byId[stringId] } : undefined;
         const indexSnapshot = get().normalized.allIds.indexOf(stringId);
+
+        // --- Optimistic remove ---
         get().removeLocal(stringId);
 
-        // re-ordering after removing the banner
+        // Re-order banners after removal
         set(
             produce((s: GuideBannersState) => {
                 const result = resolveGuideBannersOrderClient(s.normalized.byId, s.normalized.allIds);
                 s.normalized.byId = result.byId;
                 s.normalized.allIds = result.allIds;
+
+                // Update total safely
+                s.total = typeof s.total === "number" ? s.total - 1 : 0;
             })
         );
 
+        // Register optimistic rollback
         get().registerOptimistic(`optimistic:${requestId}`, () => {
-            if (snapshot) {
-                set(
-                    produce((s: GuideBannersState) => {
-                        // restore entity and insert at previous index
-                        s.normalized.byId[stringId] = snapshot;
-                        const idx = indexSnapshot >= 0 ? Math.min(indexSnapshot, s.normalized.allIds.length) : s.normalized.allIds.length;
-                        if (!s.normalized.allIds.includes(stringId)) s.normalized.allIds.splice(idx, 0, stringId);
-                        // update total banner number
-                        s.total = s.total ?? 1 - 1;
-                    })
-                );
-            }
+            if (!snapshot) return;
+            set(
+                produce((s: GuideBannersState) => {
+                    // Restore entity at original index
+                    s.normalized.byId[stringId] = snapshot;
+                    const idx = indexSnapshot >= 0 ? Math.min(indexSnapshot, s.normalized.allIds.length) : s.normalized.allIds.length;
+                    if (!s.normalized.allIds.includes(stringId)) s.normalized.allIds.splice(idx, 0, stringId);
+
+                    // Restore total
+                    s.total = typeof s.total === "number" ? s.total + 1 : 1;
+
+                    // Reorder again for safety
+                    const result = resolveGuideBannersOrderClient(s.normalized.byId, s.normalized.allIds);
+                    s.normalized.byId = result.byId;
+                    s.normalized.allIds = result.allIds;
+                })
+            );
         });
 
         try {
             get().setOperationPending(OP_DELETE, id, requestId);
+
+            // Call API
             await api.delete(`${URL_AFTER_API}/${encodeURIComponent(stringId)}`);
+
+            // Success: clear optimistic rollback **before cache invalidation**
             get().unregisterOptimistic(`optimistic:${requestId}`);
             get().setOperationSuccess(OP_DELETE, id, requestId);
-            // Invalidate the cache
+
+            // Invalidate cache after successful deletion
             get().invalidateQueryCache(() => true);
+
             showToast.success("Guide banner removed");
         } catch (err) {
             const error = getErrorObject(err);
+
+            // Rollback if API fails
             const regKey = `optimistic:${requestId}`;
             const reg = get().optimisticRegistry[regKey];
             if (reg) {
                 try {
                     reg.rollback();
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 } catch (_) {
                     // swallow
                 }
                 get().unregisterOptimistic(regKey);
             } else if (snapshot) {
-                // fallback restore
                 get().upsertLocal(snapshot);
             }
+
             get().setOperationFailed(OP_DELETE, error, id, requestId);
             showToast.error("Failed to remove guide banner", error.message);
             throw error;

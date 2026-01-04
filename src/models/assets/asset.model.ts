@@ -29,6 +29,8 @@ interface AssetQueryHelpers {
  * Asset document interface (PLAIN DATA ONLY)
  * ======================================================= */
 export interface IAsset {
+    _id?: Types.ObjectId;
+
     file: Types.ObjectId;
 
     assetType: AssetType;
@@ -130,17 +132,19 @@ AssetSchema.query.notDeleted = function () {
  * ======================================================= */
 
 AssetSchema.pre("save", async function () {
-    const session = this.$session();
+    const session = this.$session() ?? undefined; // convert null to undefined
 
     if (this.isNew) {
-        // New asset, increment ref
-        await AssetFileModel.incrementRef(this.file.toString(), session ?? undefined);
+        const assetFile = await AssetFileModel.findById(this.file).session(session ?? null);
+        if (assetFile && assetFile.refCount > 1) return; // already counted
+        if (assetFile && assetFile.refCount === 1) return; // newly created, don't increment
+        // Only increment if refCount > 1 is not the case
+        await AssetFileModel.incrementRef(this.file.toString(), session);
     } else if (this.isModified("deletedAt")) {
-        // Soft delete / restore
         if (this.deletedAt) {
-            await AssetFileModel.decrementRef(this.file.toString(), session ?? undefined);
+            await AssetFileModel.decrementRef(this.file.toString(), session);
         } else {
-            await AssetFileModel.incrementRef(this.file.toString(), session ?? undefined);
+            await AssetFileModel.incrementRef(this.file.toString(), session);
         }
     }
 });
@@ -195,16 +199,26 @@ AssetSchema.statics.softDeleteMany = async function (
     filter: Record<string, unknown>,
     session?: Session
 ) {
-    const assets = await this.find({ ...filter, deletedAt: null }).session(session ?? null);
+    const assets = await this.find({ ...filter, deletedAt: null })
+        .session(session ?? null)
+        .select("_id file");
 
-    for (const asset of assets) {
-        await asset.softDelete(session);
-    }
+    if (!assets.length) return { matchedCount: 0, modifiedCount: 0 };
 
-    return {
-        matchedCount: assets.length,
-        modifiedCount: assets.length,
-    };
+    const assetIds = assets.map(a => a._id);
+    const fileIds = assets.map(a => a.file.toString());
+
+    // 1️⃣ Soft-delete all assets in one query
+    await this.updateMany(
+        { _id: { $in: assetIds } },
+        { $set: { deletedAt: new Date() } },
+        { session }
+    );
+
+    // 2️⃣ Decrement refCount for all associated files at once
+    await AssetFileModel.decrementManyRef(fileIds, session);
+
+    return { matchedCount: assets.length, modifiedCount: assets.length };
 };
 
 /* =========================================================

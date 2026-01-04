@@ -57,27 +57,26 @@ export interface Base64Asset {
 export async function uploadAssets(
     assets: Base64Asset[],
     session: mongoose.ClientSession
-): Promise<mongoose.Types.ObjectId[]> {
+): Promise<Types.ObjectId[]> {
     if (!assets?.length) return [];
 
     const storage = getDocumentStorageProvider(STORAGE_PROVIDER.CLOUDINARY);
-    const assetIds: mongoose.Types.ObjectId[] = [];
+    const assetIds: Types.ObjectId[] = [];
 
     for (const { base64, name, assetType } of assets) {
         const dataUrl = assertValidDataUrl(base64);
         const buffer = base64ToBuffer(dataUrl);
         const checksum = sha256(buffer);
-        const assetTitle = name?.trim() || "Uploaded Asset";
+        const title = name?.trim() || "Uploaded Asset";
 
-        // --- 1️⃣ Check if an AssetFile with this checksum already exists
+        // 1️⃣ Check if AssetFile already exists
         let assetFile = await AssetFileModel.findOne({ checksum }).session(session);
 
+        // 2️⃣ If not, upload to storage and create AssetFile
         if (!assetFile) {
-            // --- 2️⃣ Upload to Cloudinary
-            const uploaded = await storage.create(dataUrl);
-
             try {
-                // --- 3️⃣ Create AssetFile document
+                const uploaded = await storage.create(dataUrl);
+
                 assetFile = await AssetFileModel.create(
                     [
                         {
@@ -87,50 +86,37 @@ export async function uploadAssets(
                             contentType: uploaded.contentType,
                             fileSize: uploaded.fileSize,
                             checksum,
-                            refCount: 1,
+                            refCount: 1, // start at 1
                         },
                     ],
                     { session }
                 ).then(d => d[0]);
             } catch (err: unknown) {
-                // COMPENSATION: delete uploaded Cloudinary asset
-                try {
-                    await storage.delete(uploaded.providerId);
-                } catch (cleanupErr) {
-                    console.error(
-                        "Failed to cleanup orphaned Cloudinary asset:",
-                        uploaded.providerId,
-                        cleanupErr
-                    );
-                }
-
-                if (isMongoDuplicateKeyError(err) && err.keyPattern?.checksum) {
-                    // Rare race: another transaction inserted same checksum
+                // Handle rare race condition: another transaction inserted same checksum
+                if (isMongoDuplicateKeyError(err)) {
                     assetFile = await AssetFileModel.findOne({ checksum }).session(session);
-                    if (!assetFile) throw new DuplicateAssetChecksumError(assetTitle);
-                    // Increment refCount for this transaction
+                    if (!assetFile) throw new DuplicateAssetChecksumError(title);
+                    // increment refCount for existing file
                     await AssetFileModel.incrementRef((assetFile._id as Types.ObjectId).toString(), session);
                 } else {
                     throw err;
                 }
             }
         } else {
-            // ✅ Already exists, increment refCount
+            // ✅ Existing file: increment refCount because we are creating a new Asset
             await AssetFileModel.incrementRef((assetFile._id as Types.ObjectId).toString(), session);
         }
 
-        if (!assetFile?._id) {
-            throw new Error(`AssetFile _id is missing for checksum ${checksum}`);
-        }
+        if (!assetFile) throw new Error(`Failed to resolve AssetFile for checksum ${checksum}`);
 
-        // --- 4️⃣ Create Asset document
+        // 3️⃣ Create Asset document
         const asset = await AssetModel.create(
             [
                 {
                     file: assetFile._id,
                     assetType: assetType ?? ASSET_TYPE.DOCUMENT,
-                    title: assetTitle,
-                    visibility: VISIBILITY.PRIVATE,
+                    title,
+                    visibility: VISIBILITY.PUBLIC,
                 },
             ],
             { session }

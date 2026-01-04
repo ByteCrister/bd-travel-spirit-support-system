@@ -1,34 +1,75 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { GuideBanner } from "@/models/site-settings.model";
 
 /**
- * Insert a banner at `newOrder` by shifting existing banners at or after that
- * position one slot higher, then return the banners sorted by their final order.
+ * Resolves banner order safely.
  *
- * This function is pure: it does not mutate the original banner objects or the
- * input array. It normalizes missing orders to 0, applies the shift, and sorts
- * the result so callers get a stable, ordered list ready for persistence.
- *
- * @param banners - Array of GuideBanner objects (may have undefined order)
- * @param newOrder - The target order index where a new banner will be inserted
- * @returns A new array of GuideBanner objects with updated `order` values, sorted ascending
+ * Guarantees:
+ * - Orders are always 0..n-1
+ * - Invalid / sparse / duplicate input orders are ignored
+ * - Insertion index is clamped
+ * - Stable relative ordering is preserved
  */
 export function resolveGuideBannersOrder(
     banners: GuideBanner[],
-    newOrder: number
+    requestedOrder: number
 ): GuideBanner[] {
-    // 1) Normalize: ensure every banner has a numeric `order` (treat undefined as 0).
-    const normalized = banners.map((b) => ({ ...b, order: b.order ?? 0 }));
+    /* ---------------------------------
+       1️⃣ Normalize & stable-sort
+       --------------------------------- */
+    const normalized = banners.map((b, index) => ({
+        ...b,
+        // treat invalid / undefined orders as +∞ so they go last
+        _safeOrder:
+            typeof b.order === "number" && b.order >= 0
+                ? b.order
+                : Number.MAX_SAFE_INTEGER,
+        _index: index, // stability key
+    }));
 
-    // 1a) Special case: if only one banner and its order is 1, reset to 0
-    if (normalized.length === 1 && normalized[0].order === 1) {
-        normalized[0] = { ...normalized[0], order: 0 };
-    }
+    normalized.sort((a, b) => {
+        if (a._safeOrder !== b._safeOrder) {
+            return a._safeOrder - b._safeOrder;
+        }
+        return a._index - b._index; // stable
+    });
 
-    // 2) Shift: for any banner whose order is >= newOrder, increment its order by 1.
-    const shifted = normalized.map((b) =>
-        b.order! >= newOrder ? { ...b, order: b.order! + 1 } : b
-    );
+    /* ---------------------------------
+       2️⃣ Compact orders → 0..n-1
+       --------------------------------- */
+    const compacted = normalized.map((b, i) => ({
+        ...b,
+        order: i,
+    }));
 
-    // 3) Sort: return a new array sorted by the numeric `order` ascending.
-    return shifted.sort((a, b) => a.order! - b.order!);
+    /* ---------------------------------
+       3️⃣ Clamp requested order
+       --------------------------------- */
+    const insertAt =
+        typeof requestedOrder === "number" && requestedOrder >= 0
+            ? Math.min(requestedOrder, compacted.length - 1)
+            : compacted.length - 1;
+
+    /* ---------------------------------
+       4️⃣ Rebuild list with insertion
+       --------------------------------- */
+    const reordered = [...compacted].sort((a, b) => a.order! - b.order!);
+
+    reordered.forEach((b) => {
+        if (!b._id) {
+            b.order = insertAt;
+        } else if (b.order! >= insertAt) {
+            b.order! += 1;
+        }
+    });
+
+    /* ---------------------------------
+       5️⃣ Final normalize (absolute safety)
+       --------------------------------- */
+    return reordered
+        .sort((a, b) => a.order! - b.order!)
+        .map((b, i) => {
+            const { _safeOrder, _index, ...clean } = b;
+            return { ...clean, order: i };
+        });
 }

@@ -1,5 +1,5 @@
 // models/asset-file.model.ts
-import { Schema, Document, Model, ClientSession } from "mongoose";
+import { Schema, Document, Model, ClientSession, Types } from "mongoose";
 import { STORAGE_PROVIDER, StorageProvider } from "@/constants/asset.const";
 import { defineModel } from "@/lib/helpers/defineModel";
 
@@ -22,6 +22,7 @@ export interface IAssetFile extends Document {
 export interface IAssetFileModel extends Model<IAssetFile> {
     incrementRef(fileId: string, session?: ClientSession): Promise<void>;
     decrementRef(fileId: string, session?: ClientSession): Promise<IAssetFile | null>;
+    decrementManyRef(fileId: string[], session?: ClientSession): Promise<IAssetFile | null>;
 }
 
 const AssetFileSchema = new Schema<IAssetFile, IAssetFileModel>(
@@ -68,6 +69,47 @@ AssetFileSchema.statics.decrementRef = async function (
         { _id: fileId },
         { $inc: { refCount: -1 } },
         { new: true, session }
+    ).exec();
+};
+
+/* =========================================================
+ * Statics
+ * ======================================================= */
+AssetFileSchema.statics.incrementRef = async function (
+    fileId: string,
+    session?: ClientSession
+) {
+    await this.updateOne(
+        { _id: fileId },
+        { $inc: { refCount: 1 } },
+        { session }
+    ).exec();
+};
+
+AssetFileSchema.statics.decrementRef = async function (
+    fileId: string,
+    session?: ClientSession
+) {
+    return this.findOneAndUpdate(
+        { _id: fileId },
+        { $inc: { refCount: -1 } },
+        { new: true, session }
+    ).exec();
+};
+
+/**
+ * Decrement refCount for multiple AssetFiles in a single query
+ */
+AssetFileSchema.statics.decrementManyRef = async function (
+    fileIds: string[] | Types.ObjectId[],
+    session?: ClientSession
+) {
+    if (!fileIds?.length) return;
+
+    await this.updateMany(
+        { _id: { $in: fileIds } },
+        { $inc: { refCount: -1 } },
+        { session }
     ).exec();
 };
 

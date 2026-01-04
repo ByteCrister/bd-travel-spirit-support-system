@@ -6,6 +6,7 @@ import { AuditLog } from "@/types/current-user.types";
 import { ContactInfoDTO, DocumentDTO, EmployeeDetailDTO, PayrollRecordDTO, SalaryHistoryDTO, UserSummaryDTO } from "@/types/employee.types";
 import { UserRole } from "@/constants/user.const";
 import { ClientSession } from "mongoose";
+import { PopulatedAsset } from "@/types/populated-asset.types";
 
 
 type ObjectId = Types.ObjectId;
@@ -17,18 +18,9 @@ interface IUserLean {
     role: UserRole
 }
 
-interface IAssetFileLean {
-    _id: ObjectId;
-    publicUrl: string;
-}
-
-interface IAssetLean {
-    file: IAssetFileLean
-}
-
 interface IEmployeeDocumentLean {
     type: string;
-    asset: IAssetLean;
+    asset: PopulatedAsset;
     uploadedAt: Date;
 }
 
@@ -40,7 +32,7 @@ type EmployeeLeanPopulated =
     > & {
         _id: ObjectId;
         user: IUserLean;
-        avatar?: IAssetLean;
+        avatar?: PopulatedAsset;
         documents: IEmployeeDocumentLean[];
     };
 
@@ -104,7 +96,7 @@ export async function buildEmployeeDTO(
         .filter((d) => d.asset?.file._id && assetMap.has(d.asset.file._id.toString()))
         .map((doc) => ({
             type: doc.type,
-            url: assetMap.get(doc.asset.file._id.toString())!,
+            url: assetMap.get((doc.asset.file._id as Types.ObjectId).toString())!,
             uploadedAt: doc.uploadedAt.toISOString(),
         }));
 
