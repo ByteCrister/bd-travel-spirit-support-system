@@ -1,14 +1,17 @@
 import { sha256, base64ToBuffer, assertValidDataUrl, isCloudinaryUrl, isBase64DataUrl } from "@/lib/helpers/document-conversions";
-import AssetModel from "@/models/asset.model";
+import AssetModel from "@/models/assets/asset.model";
 import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
 import { cleanupAssets } from "@/lib/cloudinary/delete.cloudinary";
 import { ASSET_TYPE, AssetType } from "@/constants/asset.const";
 import { Types, ClientSession } from "mongoose";
+import AssetFileModel, { IAssetFile } from "@/models/assets/asset-file.model";
+import { MongoServerError } from "mongodb";
 
 type IncomingDocument = {
     type: string;
     url: string; // base64 OR cloudinary
 };
+
 /**
  * Resolve employee documents by reusing existing assets, uploading new base64 assets,
  * and cleaning up assets that are no longer referenced.
@@ -104,72 +107,87 @@ export async function resolveDocuments(
     assetType: AssetType,
     session: ClientSession
 ) {
-    /** 1 Load existing assets */
+    /** 1️⃣ Load existing assets with populated AssetFile */
     const existingAssets = await AssetModel.find({
         _id: { $in: existingDocs.map(d => d.asset) },
         deletedAt: null,
-    }).session(session);
+    })
+        .populate<{ file: IAssetFile }>("file")
+        .session(session);
 
-    const assetByUrl = new Map(
-        existingAssets.map(a => [a.publicUrl, a])
-    );
+    /** 2️⃣ Build lookup maps for quick reuse */
+    const assetByUrl = new Map<string, typeof existingAssets[0]>();
+    const assetByChecksum = new Map<string, typeof existingAssets[0]>();
 
-    const assetByChecksum = new Map(
-        existingAssets.map(a => [a.checksum, a])
-    );
+    for (const asset of existingAssets) {
+        const file = asset.file;
+        if (file?.publicUrl) assetByUrl.set(file.publicUrl, asset);
+        if (file?.checksum) assetByChecksum.set(file.checksum, asset);
+    }
 
     const finalDocuments: { type: string; asset: Types.ObjectId }[] = [];
     const usedAssetIds = new Set<string>();
 
-    /** 2 Resolve incoming documents */
+    /** 3️⃣ Resolve each incoming document */
     for (const doc of incoming) {
-        // CASE A: unchanged (cloudinary url)
+        // CASE A: Existing Cloudinary URL
         if (isCloudinaryUrl(doc.url)) {
             const asset = assetByUrl.get(doc.url);
-            if (!asset) {
-                throw new Error("Invalid document URL provided");
-            }
+            if (!asset) throw new Error(`Invalid document URL provided: ${doc.url}`);
 
-            usedAssetIds.add((asset._id as Types.ObjectId).toString());
-            finalDocuments.push({ type: doc.type, asset: asset._id as Types.ObjectId });
+            usedAssetIds.add(asset._id.toString());
+            finalDocuments.push({ type: doc.type, asset: asset._id });
             continue;
         }
 
-        // CASE B: base64 → new or replaced
+        // CASE B: Base64 → reuse by checksum or upload
         if (isBase64DataUrl(doc.url)) {
             const dataUrl = assertValidDataUrl(doc.url);
             const buffer = base64ToBuffer(dataUrl);
             const checksum = sha256(buffer);
 
-            // Reuse existing by checksum
+            // 1️⃣ Try to reuse existing asset by checksum
             const existing = assetByChecksum.get(checksum);
             if (existing) {
-                usedAssetIds.add((existing._id as Types.ObjectId).toString());
-                finalDocuments.push({ type: doc.type, asset: existing._id as Types.ObjectId });
+                usedAssetIds.add(existing._id.toString());
+                finalDocuments.push({ type: doc.type, asset: existing._id });
                 continue;
             }
 
-            // Upload new asset
-            const [newAssetId] = await uploadAssets(
-                [
-                    {
-                        base64: doc.url,
-                        name: doc.type,
-                        assetType: assetType ?? ASSET_TYPE.DOCUMENT,
-                    },
-                ],
-                session
-            );
+            // 2️⃣ Upload new asset (concurrency-safe)
+            try {
+                const [newAssetId] = await uploadAssets(
+                    [
+                        {
+                            base64: doc.url,
+                            name: doc.type,
+                            assetType: assetType ?? ASSET_TYPE.DOCUMENT,
+                        },
+                    ],
+                    session
+                );
 
-            usedAssetIds.add(newAssetId.toString());
-            finalDocuments.push({ type: doc.type, asset: newAssetId });
+                usedAssetIds.add(newAssetId.toString());
+                finalDocuments.push({ type: doc.type, asset: newAssetId });
+            } catch (err) {
+                // Handle duplicate checksum race condition
+                if (err instanceof MongoServerError && err.code === 11000 && err.keyPattern?.checksum) {
+                    const reused = await AssetFileModel.findOne({ checksum }).session(session);
+                    if (!reused) throw new Error("Failed to reuse existing asset after checksum conflict");
+                    usedAssetIds.add((reused._id as Types.ObjectId).toString());
+                    finalDocuments.push({ type: doc.type, asset: reused._id as Types.ObjectId });
+                } else {
+                    throw err;
+                }
+            }
+
             continue;
         }
 
-        throw new Error("Invalid document format");
+        throw new Error(`Invalid document format: ${doc.url}`);
     }
 
-    /** 3 Cleanup removed assets */
+    /** 4️⃣ Soft-delete assets that are no longer referenced */
     const assetsToDelete = existingDocs
         .map(d => d.asset)
         .filter(id => !usedAssetIds.has(id.toString()));

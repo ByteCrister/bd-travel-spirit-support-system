@@ -9,7 +9,7 @@ import {
     TOUR_STATUS,
     TRAVEL_TYPE,
     AUDIENCE_TYPE,
-    CONTENT_CATEGORY,
+    TOUR_CATEGORIES,
 } from "@/constants/tour.const";
 
 // --- Helper: pick random enum value ---
@@ -62,7 +62,7 @@ function generateFakeTour(): TourListItemDTO {
         travelTypes: randomSubset(Object.values(TRAVEL_TYPE), 2),
         category: faker.helpers.arrayElement(["Adventure", "Cultural", "Leisure"]),
         subCategory: faker.helpers.arrayElement(["Hiking", "City Tour", "Safari"]),
-        categories: randomSubset(Object.values(CONTENT_CATEGORY), 2),
+        categories: randomSubset(Object.values(TOUR_CATEGORIES), 2),
         audience: randomSubset(Object.values(AUDIENCE_TYPE), 2),
 
         // Pricing

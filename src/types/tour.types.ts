@@ -1,83 +1,79 @@
 // tour.types.ts
+
+// UI DTOs aligned with the updated tour model
+
 import {
-    DIFFICULTY_LEVEL,
-    TOUR_STATUS,
-    TRAVEL_TYPE,
+    PaymentMethod,
+    TourDiscount,
+    TourStatus,
+    TravelType,
+    DifficultyLevel,
+    AudienceType,
+    TourCategories,
+    Season,
+    Currency,
+    AgeSuitability,
+    ModerationStatus,
+    TranslationContent,
+    MealsProvided,
 } from "@/constants/tour.const";
 
 /* ----------------------------- Sub Types ----------------------------- */
 
-/**
- * Pricing option (normalized from PriceOptionSchema).
- */
 export interface TourPriceOptionDTO {
-    name: string;
+    /** optional label for the option (e.g., "Per person", "Private group") */
+    name?: string;
     amount: number;
     currency: string;
 }
 
-/**
- * Discount configuration.
- * `isActive` can be computed on the frontend using validFrom/validUntil vs serverNow.
- */
 export interface TourDiscountDTO {
-    code: string;
-    description?: string;
-    percentage: number; // 0–100
+    /** discount type (seasonal, early_bird, group, promo) */
+    type?: TourDiscount | string;
+    /** percentage or numeric value depending on backend usage (0-100) */
+    value: number;
+    code?: string;
     validFrom?: string;
     validUntil?: string;
+    description?: string;
 }
 
-/**
- * GeoJSON point ([longitude, latitude]) with fixed type "Point".
- */
 export interface GeoPointDTO {
     type: "Point";
-    coordinates: [number, number];
+    coordinates: [number, number]; // [lng, lat]
 }
 
-/**
- * Meetup instructions and location.
- */
 export interface MeetingPointDTO {
     title: string;
     description?: string;
-    location: {
+    location?: {
         address?: string;
-        coordinates: GeoPointDTO;
+        coordinates?: GeoPointDTO;
     };
-    time: string;
+    time?: string;
 }
 
-/**
- * Route waypoint displayed as part of the tour roadmap.
- */
 export interface RoadMapPointDTO {
     title: string;
     description?: string;
     imageUrl?: string;
-    location: {
+    location?: {
         address?: string;
-        coordinates: GeoPointDTO;
+        coordinates?: GeoPointDTO;
     };
 }
 
-/**
- * Inclusion/Exclusion item.
- */
 export interface IncludeItemDTO {
     label: string;
-    included: boolean;
+    included?: boolean;
+    description?: string;
 }
 
-/**
- * Day-by-day itinerary entry.
- */
 export interface ItineraryEntryDTO {
     day: number; // starts at 1
-    title: string;
+    title?: string;
     description?: string;
-    mealsProvided?: Array<"Breakfast" | "Lunch" | "Dinner">;
+    mealsProvided?: MealsProvided[];
     accommodation?: string;
     activities?: string[];
     imageUrls?: string[];
@@ -85,9 +81,6 @@ export interface ItineraryEntryDTO {
 
 /* ----------------------------- FAQ DTOs ----------------------------- */
 
-/**
- * Lightweight FAQ entry for embedding in tours.
- */
 export interface FAQEntryDTO {
     id: string;
     question: string;
@@ -96,9 +89,6 @@ export interface FAQEntryDTO {
     order: number;
 }
 
-/**
- * Full FAQ detail (for management/admin views).
- */
 export interface TourFAQDetailDTO extends FAQEntryDTO {
     tourId: string;
     askedBy: string;
@@ -108,18 +98,12 @@ export interface TourFAQDetailDTO extends FAQEntryDTO {
     updatedAt: string;
 }
 
-/**
- * Seasonal highlight used in marketing.
- */
 export interface SeasonalHighlightDTO {
     season?: string;
     description?: string;
     imageUrl?: string;
 }
 
-/**
- * Host/guide info card.
- */
 export interface TourHostDTO {
     name?: string;
     bio?: string;
@@ -128,43 +112,38 @@ export interface TourHostDTO {
     rating?: number; // 0–5
 }
 
-/**
- * Health and safety notice.
- */
 export interface HealthAndSafetyNoteDTO {
     title: string;
     description: string;
 }
 
-/**
- * Packing list item.
- */
 export interface PackingListItemDTO {
     item: string;
     required: boolean;
     notes?: string;
 }
 
-/**
- * Cancellation policy for bookings.
- */
+/* Cancellation policy now mirrors model's ICancellationPolicy */
 export interface CancellationPolicyDTO {
-    freeCancellationUntil?: string; // ISO date
-    refundPercentage?: number; // 0–100
+    refundable?: boolean;
+    rules?: Array<{
+        daysBefore?: number;
+        refundPercent?: number; // 0–100
+        notes?: string;
+    }>;
+    freeCancellationUntil?: string;
     notes?: string;
 }
 
-/**
- * Age restriction for participants.
- */
+/* Age suitability replaced with model's ageSuitability enum */
 export interface AgeRestrictionDTO {
+    /** use AGE_SUITABILITY values (e.g., "all", "kids", "adults", "seniors") */
+    ageSuitability?: AgeSuitability | string;
     minAge?: number;
     maxAge?: number;
 }
 
-/**
- * Emergency/local contact.
- */
+/* Emergency/local contact */
 export interface EmergencyContactDTO {
     phone?: string;
     email?: string;
@@ -174,38 +153,43 @@ export interface EmergencyContactDTO {
 
 /**
  * Rich tour detail payload designed for direct UI consumption.
+ * Fields marked optional reflect optional/nullable model fields.
  */
 export interface TourDetailDTO {
-    // Identity
+    // Identity & system
     id: string;
     title: string;
     slug: string;
-    status: TOUR_STATUS;
-    owner?: string;
+    status: TourStatus;
+    owner?: string; // company/guide id or name
+    companyId?: string;
+    authorId?: string;
 
-    // Marketing
-    highlights: string[];
-    description: string;
+    // Marketing & content
+    highlights?: string[];
+    description?: string;
+    summary?: string;
 
     // Inclusions & info
-    includes: IncludeItemDTO[];
-    importantInfo: string[];
+    includes?: IncludeItemDTO[];
+    exclusions?: IncludeItemDTO[];
+    importantInfo?: string[];
 
     // Logistics & categorization
-    meetingPoints: MeetingPointDTO[];
-    activities: string[];
-    tags: string[];
-    travelTypes: TRAVEL_TYPE[];
-    difficulty?: DIFFICULTY_LEVEL; // aligned with schema
+    meetingPoints?: MeetingPointDTO[];
+    meetingPoint?: string; // legacy single meeting point
+    activities?: string[];
+    tags?: string[];
+    travelTypes?: TravelType[];
+    difficulty?: DifficultyLevel;
     category?: string;
     subCategory?: string;
+    audience?: AudienceType[]; // from model
+    categories?: TourCategories[]; // content categories
+    bestSeason?: Season[];
+    transportModes?: string[]; // TransportMode values
+    pickupOptions?: { city?: string; price?: number; currency?: Currency }[];
 
-    //  New fields from model
-    audience?: string[]; // AUDIENCE_TYPE[]
-    categories?: string[]; // CONTENT_CATEGORY[]
-    bestSeason?: string[]; // SEASON[]
-    transportModes?: string[];
-    pickupOptions?: { city?: string; price?: number; currency?: string }[];
     mainLocation?: {
         address?: {
             line1?: string;
@@ -213,15 +197,21 @@ export interface TourDetailDTO {
             city?: string;
             district?: string;
             region?: string;
-            country: string;
+            country?: string;
             postalCode?: string;
         };
         coordinates?: GeoPointDTO;
     };
 
     // Pricing & discounts
-    priceOptions: TourPriceOptionDTO[];
-    discounts: TourDiscountDTO[];
+    /** basePrice mirrors model.basePrice */
+    basePrice?: {
+        amount: number;
+        currency: Currency | string;
+    };
+    /** legacy priceOptions kept for UI scenarios where multiple options exist */
+    priceOptions?: TourPriceOptionDTO[];
+    discounts?: TourDiscountDTO[];
     priceSummary?: {
         minAmount: number;
         maxAmount: number;
@@ -229,41 +219,68 @@ export interface TourDetailDTO {
     };
 
     // Schedule & capacity
-    startDate: string;
-    endDate: string;
+    startDate?: string;
+    endDate?: string;
     bookingDeadline?: string;
-    durationDays: number;
-    maxGroupSize: number;
-    repeatCount: number;
+    durationDays?: number;
+    duration?: { days?: number; nights?: number };
+    maxGroupSize?: number;
+    repeatCount?: number;
 
-    // Booking summary
-    booking: {
-        userIds: string[];
-        count: number;
-        isFull: boolean;
-        remaining: number;
+    // Departures & operating windows (model additions)
+    operatingWindows?: Array<{
+        startDate: string;
+        endDate: string;
+        seatsTotal?: number;
+        seatsBooked?: number;
+    }>;
+    departures?: Array<{
+        id?: string;
+        date: string;
+        seatsTotal: number;
+        seatsBooked?: number;
+        meetingPoint?: string;
+        meetingCoordinates?: { lat: number; lng: number } | GeoPointDTO;
+    }>;
+
+    // Booking summary (UI-friendly)
+    booking?: {
+        userIds?: string[];
+        count?: number;
+        isFull?: boolean;
+        remaining?: number;
     };
 
     cancellationPolicy?: CancellationPolicyDTO;
     refundPolicy?: {
-        method: string[];
-        processingDays: number;
+        method?: PaymentMethod[];
+        processingDays?: number;
     };
     ageRestriction?: AgeRestrictionDTO;
+    ageSuitability?: AgeSuitability | string;
 
-    // Relations
-    reviewCount: number;
-    reportCount: number;
-    averageRating: number;
+    // Relations & moderation
+    reviewCount?: number;
+    reportCount?: number;
+    averageRating?: number;
+    ratings?: { average: number; count: number };
+    moderationStatus?: ModerationStatus | string;
+    rejectionReason?: string;
+    completedAt?: string;
+    reApprovalRequestedAt?: string;
+    deletedAt?: string;
 
     // Media
     heroImageUrl?: string;
+    heroImage?: string; // id
     galleryImageUrls?: string[];
+    gallery?: string[]; // ids
     videoUrls?: string[];
+    videos?: string[]; // ids
     virtualTourUrl?: string;
 
     // Structure & extras
-    roadMap: RoadMapPointDTO[];
+    roadMap?: RoadMapPointDTO[];
     itinerary?: ItineraryEntryDTO[];
     packingList?: PackingListItemDTO[];
     faqs?: FAQEntryDTO[];
@@ -272,6 +289,12 @@ export interface TourDetailDTO {
     host?: TourHostDTO;
     healthAndSafety?: HealthAndSafetyNoteDTO[];
     accessibilityFeatures?: string[];
+    accessibility?: {
+        wheelchair?: boolean;
+        familyFriendly?: boolean;
+        petFriendly?: boolean;
+        notes?: string;
+    };
     accessibilityRating?: number;
     emergencyContact?: EmergencyContactDTO;
 
@@ -279,7 +302,7 @@ export interface TourDetailDTO {
     weatherTips?: string[];
     seasonalHighlights?: SeasonalHighlightDTO[];
 
-    // New engagement & content fields
+    // Engagement & content fields
     wishlistCount?: number;
     popularityScore?: number;
     featured?: boolean;
@@ -293,7 +316,7 @@ export interface TourDetailDTO {
         title?: string;
         summary?: string;
         content?: {
-            type: "paragraph" | "heading" | "link";
+            type: TranslationContent | string;
             text?: string;
             href?: string;
         }[];
@@ -304,43 +327,46 @@ export interface TourDetailDTO {
     seoDescription?: string;
 
     // System
-    createdAt: string;
-    updatedAt: string;
-    serverNow: string;
+    createdAt?: string;
+    updatedAt?: string;
+    serverNow?: string;
+
+    // Optional editorial metrics
+    readingTime?: number;
+    wordCount?: number;
+    allowComments?: boolean;
 }
 
 /**
- * Table row for Tours section (lightweight view).
+ * Lightweight table row for Tours section (aligned with model additions)
  */
 export interface TourListItemDTO {
     id: string;
     title: string;
     slug: string;
-    status: TOUR_STATUS;
+    status: TourStatus;
 
     // Schedule
-    startDate: string;
-    endDate: string;
-    durationDays: number;
+    startDate?: string;
+    endDate?: string;
+    durationDays?: number;
 
     // Quality & demand
-    averageRating: number;
-    reviewCount: number;
-    reportCount: number;
-    faqCount: number;
-    bookingCount: number;
-    maxGroupSize: number;
-    isFull: boolean;
+    averageRating?: number;
+    reviewCount?: number;
+    reportCount?: number;
+    faqCount?: number;
+    bookingCount?: number;
+    maxGroupSize?: number;
+    isFull?: boolean;
 
     // Categorization
-    tags: string[];
-    travelTypes: TRAVEL_TYPE[];
+    tags?: string[];
+    travelTypes?: TravelType[];
     category?: string;
     subCategory?: string;
-
-    // New
-    categories?: string[];
-    audience?: string[];
+    categories?: TourCategories[];
+    audience?: AudienceType[];
 
     // Pricing summary
     priceSummary?: {
@@ -356,7 +382,7 @@ export interface TourListItemDTO {
     heroImageId?: string;
     isFeatured?: boolean;
 
-    // New engagement fields
+    // Engagement
     wishlistCount?: number;
     popularityScore?: number;
     featured?: boolean;
@@ -371,8 +397,14 @@ export interface TourListItemDTO {
     bookingTrend?: "increasing" | "stable" | "decreasing";
 
     // Row timestamps
-    createdAt: string;
-    updatedAt: string;
+    createdAt?: string;
+    updatedAt?: string;
+
+    // Moderation & soft-delete
+    moderationStatus?: ModerationStatus | string;
+    deletedAt?: string;
+    authorId?: string;
+    companyId?: string;
 }
 
 /**

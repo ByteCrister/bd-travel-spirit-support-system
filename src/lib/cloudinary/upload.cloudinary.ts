@@ -1,10 +1,12 @@
 // lib/cloudinary/upload.cloudinary.ts
 import mongoose from "mongoose";
-import AssetModel from "@/models/asset.model";
+import AssetModel from "@/models/assets/asset.model";
 import { getDocumentStorageProvider } from "@/lib/storage-providers";
 import { STORAGE_PROVIDER, ASSET_TYPE, VISIBILITY } from "@/constants/asset.const";
 import { assertValidDataUrl, base64ToBuffer, sha256 } from "@/lib/helpers/document-conversions";
 import { DuplicateAssetChecksumError, isMongoDuplicateKeyError } from "@/lib/helpers/asset-checksum-error";
+import AssetFileModel from "@/models/assets/asset-file.model";
+import { Types } from "mongoose";
 
 /**
  * A single asset provided as a base64 data URL and an optional friendly name.
@@ -67,52 +69,74 @@ export async function uploadAssets(
         const checksum = sha256(buffer);
         const assetTitle = name?.trim() || "Uploaded Asset";
 
-        const existing = await AssetModel
-            .findOne({ checksum, deletedAt: null })
-            .session(session);
+        // --- 1️⃣ Check if an AssetFile with this checksum already exists
+        let assetFile = await AssetFileModel.findOne({ checksum }).session(session);
 
-        if (existing) throw new DuplicateAssetChecksumError(assetTitle);
+        if (!assetFile) {
+            // --- 2️⃣ Upload to Cloudinary
+            const uploaded = await storage.create(dataUrl);
 
-        // 1 Upload first
-        const uploaded = await storage.create(dataUrl);
+            try {
+                // --- 3️⃣ Create AssetFile document
+                assetFile = await AssetFileModel.create(
+                    [
+                        {
+                            storageProvider: STORAGE_PROVIDER.CLOUDINARY,
+                            objectKey: uploaded.providerId,
+                            publicUrl: uploaded.url,
+                            contentType: uploaded.contentType,
+                            fileSize: uploaded.fileSize,
+                            checksum,
+                            refCount: 1,
+                        },
+                    ],
+                    { session }
+                ).then(d => d[0]);
+            } catch (err: unknown) {
+                // COMPENSATION: delete uploaded Cloudinary asset
+                try {
+                    await storage.delete(uploaded.providerId);
+                } catch (cleanupErr) {
+                    console.error(
+                        "Failed to cleanup orphaned Cloudinary asset:",
+                        uploaded.providerId,
+                        cleanupErr
+                    );
+                }
 
-        try {
-            // 2 Save DB record
-            const asset = await AssetModel.create(
-                [{
-                    storageProvider: STORAGE_PROVIDER.CLOUDINARY,
-                    objectKey: uploaded.providerId,
-                    publicUrl: uploaded.url,
-                    contentType: uploaded.contentType,
-                    fileSize: uploaded.fileSize,
-                    checksum,
+                if (isMongoDuplicateKeyError(err) && err.keyPattern?.checksum) {
+                    // Rare race: another transaction inserted same checksum
+                    assetFile = await AssetFileModel.findOne({ checksum }).session(session);
+                    if (!assetFile) throw new DuplicateAssetChecksumError(assetTitle);
+                    // Increment refCount for this transaction
+                    await AssetFileModel.incrementRef((assetFile._id as Types.ObjectId).toString(), session);
+                } else {
+                    throw err;
+                }
+            }
+        } else {
+            // ✅ Already exists, increment refCount
+            await AssetFileModel.incrementRef((assetFile._id as Types.ObjectId).toString(), session);
+        }
+
+        if (!assetFile?._id) {
+            throw new Error(`AssetFile _id is missing for checksum ${checksum}`);
+        }
+
+        // --- 4️⃣ Create Asset document
+        const asset = await AssetModel.create(
+            [
+                {
+                    file: assetFile._id,
                     assetType: assetType ?? ASSET_TYPE.DOCUMENT,
                     title: assetTitle,
                     visibility: VISIBILITY.PRIVATE,
-                }],
-                { session }
-            ).then(d => d[0]);
+                },
+            ],
+            { session }
+        ).then(d => d[0]);
 
-            assetIds.push(asset._id as mongoose.Types.ObjectId);
-
-        } catch (err: unknown) {
-            // COMPENSATION: delete uploaded Cloudinary asset
-            try {
-                await storage.delete(uploaded.providerId);
-            } catch (cleanupErr) {
-                console.error(
-                    "Failed to cleanup orphaned Cloudinary asset:",
-                    uploaded.providerId,
-                    cleanupErr
-                );
-            }
-
-            if (isMongoDuplicateKeyError(err) && err.keyPattern?.checksum) {
-                throw new DuplicateAssetChecksumError(assetTitle);
-            }
-
-            throw err;
-        }
+        assetIds.push(asset._id);
     }
 
     return assetIds;

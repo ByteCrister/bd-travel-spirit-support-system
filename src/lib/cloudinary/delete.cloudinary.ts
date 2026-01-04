@@ -1,8 +1,6 @@
 // lib/cloudinary/delete.cloudinary.ts
 import mongoose from "mongoose";
-import AssetModel from "@/models/asset.model";
-import { getDocumentStorageProvider } from "@/lib/storage-providers";
-import { STORAGE_PROVIDER } from "@/constants/asset.const";
+import AssetModel from "@/models/assets/asset.model";
 
 /**
  * Soft-delete assets in the database and remove their files from the configured storage provider.
@@ -35,23 +33,11 @@ export async function cleanupAssets(
 ): Promise<void> {
     if (!assetIds?.length) return;
 
-    // 1. Load assets that are not already soft-deleted
-    const assets = await AssetModel.find({ _id: { $in: assetIds }, deletedAt: null }).session(session);
-
-    const storage = getDocumentStorageProvider(STORAGE_PROVIDER.CLOUDINARY);
-
-    // 2. Delete files from the storage provider. Failures are logged but do not stop the cleanup.
-    for (const asset of assets) {
-        try {
-            await storage.delete(asset.objectKey);
-        } catch (err) {
-            // Log the error for later investigation but continue processing other assets
-            console.error("Cloudinary delete failed for objectKey", asset.objectKey, err);
-        }
-    }
-
-    // 3. Soft-delete documents in DB using the provided session so the caller can control transactions
-    await AssetModel.softDeleteMany({ _id: { $in: assetIds } }, session);
+    // Using the static softDeleteMany method for batch soft-delete
+    await AssetModel.softDeleteMany(
+        { _id: { $in: assetIds } },
+        session
+    );
 
     // Note for maintainers
     // Git actions or other background jobs may permanently remove the documents later.

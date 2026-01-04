@@ -5,7 +5,7 @@ import {
     TOUR_STATUS,
     TRAVEL_TYPE,
     AUDIENCE_TYPE,
-    CONTENT_CATEGORY,
+    TOUR_CATEGORIES,
     SEASON,
     TRANSPORT_MODE,
     PAYMENT_METHOD,
@@ -137,7 +137,7 @@ export async function GET(
 
         // 🆕 New domain fields
         audience: randomSubset(Object.values(AUDIENCE_TYPE), 2),
-        categories: randomSubset(Object.values(CONTENT_CATEGORY), 2),
+        categories: randomSubset(Object.values(TOUR_CATEGORIES), 2),
         bestSeason: randomSubset(Object.values(SEASON), 2),
         transportModes: randomSubset(Object.values(TRANSPORT_MODE), 2),
         pickupOptions: [

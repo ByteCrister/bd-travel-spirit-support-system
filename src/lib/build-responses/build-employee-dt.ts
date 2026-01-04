@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import AuditModel from "@/models/audit.model";
-import "@/models/asset.model"; // for populate and 
+import "@/models/assets/asset.model"; // for populate and 
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
 import { AuditLog } from "@/types/current-user.types";
 import { ContactInfoDTO, DocumentDTO, EmployeeDetailDTO, PayrollRecordDTO, SalaryHistoryDTO, UserSummaryDTO } from "@/types/employee.types";
@@ -10,25 +10,29 @@ import { ClientSession } from "mongoose";
 
 type ObjectId = Types.ObjectId;
 
-export interface IUserLean {
+interface IUserLean {
     _id: ObjectId;
     name: string;
     email: string;
     role: UserRole
 }
 
-export interface IAssetLean {
+interface IAssetFileLean {
     _id: ObjectId;
     publicUrl: string;
 }
 
-export interface IEmployeeDocumentLean {
+interface IAssetLean {
+    file: IAssetFileLean
+}
+
+interface IEmployeeDocumentLean {
     type: string;
     asset: IAssetLean;
     uploadedAt: Date;
 }
 
-export type EmployeeLeanPopulated =
+type EmployeeLeanPopulated =
     Omit<IEmployee,
         | "user"
         | "avatar"
@@ -60,12 +64,14 @@ export async function buildEmployeeDTO(
         .populate({ path: "user", select: "name email role" })
         .populate({
             path: "avatar",
-            select: "publicUrl deletedAt",
+            select: "file deletedAt",
+            populate: { path: "file", select: "publicUrl" },
             ...(withDeleted ? {} : { match: { deletedAt: null } }),
         })
         .populate({
             path: "documents.asset",
-            select: "publicUrl deletedAt",
+            select: "file  deletedAt",
+            populate: { path: "file", select: "publicUrl" },
             ...(withDeleted ? {} : { match: { deletedAt: null } }),
         })
         .lean()
@@ -81,13 +87,13 @@ export async function buildEmployeeDTO(
     /* ---------------------------------- */
     const assetMap = new Map<string, string>();
 
-    if (employee.avatar?._id && employee.avatar.publicUrl) {
-        assetMap.set(employee.avatar._id.toString(), employee.avatar.publicUrl);
+    if (employee.avatar?.file?._id && employee.avatar.file?.publicUrl) {
+        assetMap.set(employee.avatar?.file?._id.toString(), employee.avatar.file.publicUrl);
     }
 
     for (const doc of employee.documents || []) {
-        if (doc.asset?._id && doc.asset.publicUrl) {
-            assetMap.set(doc.asset._id.toString(), doc.asset.publicUrl);
+        if (doc.asset?.file._id && doc.asset.file.publicUrl) {
+            assetMap.set(doc.asset.file._id.toString(), doc.asset.file.publicUrl);
         }
     }
 
@@ -95,10 +101,10 @@ export async function buildEmployeeDTO(
     /* Documents DTO (skip missing asset) */
     /* ---------------------------------- */
     const documents: DocumentDTO[] = (employee.documents || [])
-        .filter((d) => d.asset?._id && assetMap.has(d.asset._id.toString()))
+        .filter((d) => d.asset?.file._id && assetMap.has(d.asset.file._id.toString()))
         .map((doc) => ({
             type: doc.type,
-            url: assetMap.get(doc.asset._id.toString())!,
+            url: assetMap.get(doc.asset.file._id.toString())!,
             uploadedAt: doc.uploadedAt.toISOString(),
         }));
 
@@ -165,8 +171,8 @@ export async function buildEmployeeDTO(
     /* ---------------------------------- */
     /* User summary                       */
     /* ---------------------------------- */
-    const avatarUrl = employee.avatar?._id
-        ? assetMap.get(employee.avatar._id.toString())
+    const avatarUrl = employee.avatar?.file._id
+        ? assetMap.get(employee.avatar.file._id.toString())
         : undefined;
 
     const userSummary: UserSummaryDTO = {

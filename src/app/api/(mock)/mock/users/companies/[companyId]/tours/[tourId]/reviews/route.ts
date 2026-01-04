@@ -84,51 +84,68 @@ function parseIntOrDefault(value: string | null, fallback: number) {
 /** GET handler: returns paginated reviews in a consistent format */
 export async function GET(
     req: Request,
-    { params }: { params: { companyId: string; tourId: string } }
+    { params }: { params: Promise<{ companyId: string; tourId: string }> } // Note: params is now a Promise
 ) {
-    const url = new URL(req.url);
-    const page = parseIntOrDefault(url.searchParams.get("page"), 1);
-    const limit = parseIntOrDefault(url.searchParams.get("limit"), 10);
-    const { companyId, tourId } = params;
+    try {
+        // Await the params since they're now a Promise
+        const awaitedParams = await params;
+        const { companyId, tourId } = awaitedParams;
 
-    // Seed faker for reproducible data per tour
-    const seed = [...tourId].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    faker.seed(seed);
+        const url = new URL(req.url);
+        const page = parseIntOrDefault(url.searchParams.get("page"), 1);
+        const limit = parseIntOrDefault(url.searchParams.get("limit"), 10);
 
-    const reviewCount = faker.number.int({ min: 40, max: 200 });
-    const allReviews = Array.from({ length: reviewCount }, () => generateRandomReview(tourId));
+        // Fix: Use string methods instead of spread operator
+        // const seed = [...tourId].reduce((acc, ch) => acc + ch.charCodeAt(0), 0); // Old way
+        const seed = Array.from(tourId).reduce((acc, ch) => acc + ch.charCodeAt(0), 0); // Fixed way
 
-    const total = allReviews.length;
-    const pages = Math.max(1, Math.ceil(total / limit));
-    const normalizedPage = Math.min(Math.max(page, 1), pages);
+        faker.seed(seed);
 
-    const docs = allReviews.slice((normalizedPage - 1) * limit, normalizedPage * limit);
+        const reviewCount = faker.number.int({ min: 40, max: 200 });
+        const allReviews = Array.from({ length: reviewCount }, () => generateRandomReview(tourId));
 
-    // Aggregated summary
-    const totalRating = allReviews.reduce((sum, r) => sum + r.rating, 0);
-    const averageRating = Number((totalRating / total).toFixed(1));
+        const total = allReviews.length;
+        const pages = Math.max(1, Math.ceil(total / limit));
+        const normalizedPage = Math.min(Math.max(page, 1), pages);
 
-    const ratingBreakdown = [1, 2, 3, 4, 5].reduce((acc, val) => {
-        acc[val as 1 | 2 | 3 | 4 | 5] = allReviews.filter(r => r.rating === val).length;
-        return acc;
-    }, {} as Record<1 | 2 | 3 | 4 | 5, number>);
+        const docs = allReviews.slice((normalizedPage - 1) * limit, normalizedPage * limit);
 
-    const verifiedCount = allReviews.filter(r => r.isVerified).length;
+        // Aggregated summary
+        const totalRating = allReviews.reduce((sum, r) => sum + r.rating, 0);
+        const averageRating = Number((totalRating / total).toFixed(1));
 
-    const data: TourReviewsResponseDTO = {
-        companyId,
-        tourId,
-        summary: {
-            totalReviews: total,
-            averageRating,
-            verifiedCount,
-            ratingBreakdown,
-        },
-        docs,
-        total,
-        page: normalizedPage,
-        pages,
-    };
+        const ratingBreakdown = [1, 2, 3, 4, 5].reduce((acc, val) => {
+            acc[val as 1 | 2 | 3 | 4 | 5] = allReviews.filter(r => r.rating === val).length;
+            return acc;
+        }, {} as Record<1 | 2 | 3 | 4 | 5, number>);
 
-    return NextResponse.json({ success: true, data });
+        const verifiedCount = allReviews.filter(r => r.isVerified).length;
+
+        const data: TourReviewsResponseDTO = {
+            companyId,
+            tourId,
+            summary: {
+                totalReviews: total,
+                averageRating,
+                verifiedCount,
+                ratingBreakdown,
+            },
+            docs,
+            total,
+            page: normalizedPage,
+            pages,
+        };
+
+        return NextResponse.json({ success: true, data });
+    } catch (error) {
+        console.error("Error in reviews API:", error);
+        return NextResponse.json(
+            {
+                success: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+                stack: process.env.NODE_ENV === "development" ? error : undefined
+            },
+            { status: 500 }
+        );
+    }
 }
