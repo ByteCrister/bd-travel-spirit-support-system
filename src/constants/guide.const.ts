@@ -35,6 +35,9 @@ export enum GUIDE_STATUS {
 
   /** Rejected after review */
   REJECTED = "rejected",
+
+  /** Rejected after review */
+  SUSPENDED = "suspended",
 }
 export type GuideStatus = `${GUIDE_STATUS}`;
 

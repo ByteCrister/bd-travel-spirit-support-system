@@ -2,7 +2,6 @@
 import { NextRequest } from "next/server";
 import { Types } from "mongoose";
 import UserModel from "@/models/user.model";
-import AssetModel, { IAsset } from "@/models/asset.model";
 import {
     GUIDE_DOCUMENT_CATEGORY,
     GUIDE_SOCIAL_PLATFORM,
@@ -13,6 +12,13 @@ import GuideModel, { GuideSocialLink, IGuide, IGuideDocument } from "@/models/gu
 import { DocumentFile, FormData, SegmentedDocuments } from "@/types/register-as-guide.types";
 import ConnectDB from "@/config/db";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
+import AssetModel, { IAsset } from "@/models/assets/asset.model";
+import { IAssetFile } from "@/models/assets/asset-file.model";
+
+type AssetWithFileLean =
+    Omit<IAsset, "file"> & {
+        file?: Lean<IAssetFile>;
+    } | null;
 
 /** Helpers */
 const isValidEmail = (email: string): boolean => {
@@ -39,17 +45,39 @@ function mapCategoryToSegment(category: string): keyof SegmentedDocuments | null
     }
 }
 
-function buildDocumentFileFromAsset(asset: Lean<IAsset>): DocumentFile {
-    const publicUrl = asset.publicUrl ?? "";
-    const base64 = Buffer.from(publicUrl, "utf-8").toString("base64");
+function buildDocumentFileFromAsset(
+    asset: AssetWithFileLean
+): DocumentFile {
+
+    const file = asset?.file;
+
+    if (!file) {
+        return {
+            name: asset?.title || String(asset?._id),
+            base64: "",
+            uploadedAt: asset?.createdAt
+                ? new Date(asset?.createdAt).toISOString()
+                : new Date().toISOString(),
+            type: "unknown",
+            size: 0,
+        };
+    }
+
+    const base64 = Buffer
+        .from(file.publicUrl, "utf-8")
+        .toString("base64");
+
     return {
-        name: asset.title || asset.objectKey || String(asset._id),
+        name: asset?.title || file?.objectKey || String(asset?._id),
         base64,
-        uploadedAt: asset.createdAt ? new Date(asset.createdAt).toISOString() : new Date().toISOString(),
-        type: asset.contentType || String(asset.assetType) || "application/octet-stream",
-        size: asset.fileSize ?? 0,
+        uploadedAt: asset.createdAt
+            ? new Date(asset.createdAt).toISOString()
+            : new Date().toISOString(),
+        type: file.contentType,
+        size: file.fileSize,
     };
 }
+
 
 function buildDocumentFileFromGuideDoc(doc: Lean<IGuideDocument>): DocumentFile {
     // Guide documents only have AssetUrl (ObjectId reference), not direct file properties
@@ -139,7 +167,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         const segmentKey = mapCategoryToSegment(String(doc.category));
         if (!segmentKey) continue;
 
-        let asset: Lean<IAsset> | null = null;
+        let asset: AssetWithFileLean = null;
 
         // Guide documents store AssetUrl as ObjectId, not fileUrl
         if (doc.AssetUrl) {
@@ -147,7 +175,12 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
             asset = await AssetModel.findOne({
                 _id: doc.AssetUrl,
                 deletedAt: null
-            }).lean() as Lean<IAsset> | null;
+            })
+                .populate({
+                    path: "file",
+                    select: "publicUrl contentType fileSize objectKey",
+                })
+                .lean() as AssetWithFileLean;
         }
 
         const documentFile: DocumentFile = asset

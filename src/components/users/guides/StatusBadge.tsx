@@ -2,7 +2,7 @@
 
 import { GUIDE_STATUS, GuideStatus } from "@/constants/guide.const";
 import { Badge } from "../../ui/badge";
-import { FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiPause, FiXCircle } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 
 const statusConfig = {
@@ -23,6 +23,12 @@ const statusConfig = {
         className: "bg-red-50 text-red-700 border border-red-200",
         icon: FiXCircle,
         dotColor: "bg-red-500"
+    },
+    [GUIDE_STATUS.SUSPENDED]: {
+        label: "Suspended",
+        className: "bg-orange-50 text-orange-700 border border-orange-200",
+        icon: FiPause,
+        dotColor: "bg-orange-500",
     },
 };
 

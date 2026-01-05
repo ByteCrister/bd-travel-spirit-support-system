@@ -29,6 +29,8 @@ export default function GuidePage() {
         fetch,
         approve,
         reject,
+        suspend,
+        unsuspend,
         updateReviewComment,
     } = useGuideStore();
 
@@ -130,6 +132,8 @@ export default function GuidePage() {
                         onSortChange={handleSortChange}
                         onApprove={async (id) => await approve(id)}
                         onReject={async (id, reason) => await reject(id, reason)}
+                        onSuspend={async (id, reason, until) => await suspend(id, reason, until)}
+                        onUnsuspend={async (id, reason) => await unsuspend(id, reason)}
                         onComment={async (id, comment) => await updateReviewComment(id, comment)}
                         onOpenDocument={(guide, doc) => setSelectedDoc({ guide, doc })}
                         page={query.page}
@@ -147,30 +151,6 @@ export default function GuidePage() {
                 doc={selectedDoc?.doc}
                 onClose={() => setSelectedDoc(null)}
             />
-
-            {/* Enhanced Error Notification */}
-            {error && (
-                <div
-                    role="alert"
-                    className={cn(
-                        "fixed bottom-6 left-1/2 -translate-x-1/2 z-50",
-                        "rounded-lg bg-red-600 text-white px-6 py-4 shadow-2xl",
-                        "border border-red-700 min-w-[320px] max-w-md",
-                        "animate-in slide-in-from-bottom-4 duration-300"
-                    )}
-                >
-                    <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 mt-0.5">
-                            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                            </svg>
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-medium">{error}</p>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

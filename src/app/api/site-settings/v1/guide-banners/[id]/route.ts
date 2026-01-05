@@ -10,7 +10,7 @@ import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { ASSET_TYPE } from "@/constants/asset.const";
 import { GuideBannerUpdateDTO } from "@/types/guide-banner-settings.types";
 import { resolveGuideBannersOrder } from "@/lib/helpers/resolve-guideBanner-order";
-import { PopulatedAsset } from "@/types/populated-asset.types";
+import { PopulatedAssetLean } from "@/types/populated-asset.types";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
 import AssetModel from "@/models/assets/asset.model";
@@ -18,7 +18,7 @@ import { cleanupAssets } from "@/lib/cloudinary/delete.cloudinary";
 import AssetFileModel from "@/models/assets/asset-file.model";
 
 type PopulatedGuideBannerSetting = Omit<IGuideBanner, "asset"> & {
-    asset: PopulatedAsset;
+    asset: PopulatedAssetLean;
 }
 
 /**
@@ -45,7 +45,7 @@ export const GET = withErrorHandler(async (req: NextRequest, { params }: { param
     if (!banner || banner.deleteAt) throw new ApiError("Guide banner not found", 404);
 
     // Narrow the populated union properly
-    const asset = banner.asset.file.publicUrl;
+    const asset = banner?.asset?.file?.publicUrl;
 
     return {
         data: {

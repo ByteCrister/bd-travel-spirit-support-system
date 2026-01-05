@@ -7,10 +7,10 @@ import ConnectDB from "@/config/db";
 import GuideBannerSetting from "@/models/site-settings/guideBanner.model";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import AssetModel, { IAsset } from "@/models/assets/asset.model";
-import { PopulatedAssetFile } from "@/types/populated-asset.types";
+import { PopulatedAssetFileLean } from "@/types/populated-asset.types";
 
 type populatedAssetDoc = Omit<IAsset, "file"> & {
-    file: PopulatedAssetFile;
+    file: PopulatedAssetFileLean;
 };
 /**
  * Toggle guide banner active/inactive

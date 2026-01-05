@@ -37,6 +37,8 @@ export interface PendingGuideDTO {
     reviewComment?: string;
     reviewer?: string; // reviewer’s userId as string
     reviewedAt?: string;
+    suspendedUntil?:string;
+    suspensionReason: string;
     createdAt: string;
     updatedAt: string;
 }

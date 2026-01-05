@@ -130,6 +130,9 @@ function buildMongooseQuery(query: EmployeesQuery) {
     return { filter, sort };
 }
 
+/**
+ * GET employee list table data
+ */
 export const GET = withErrorHandler(async (req: NextRequest) => {
     // Authenticate
     const userId = await getUserIdFromSession();
@@ -163,7 +166,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     const pipeline: mongoose.PipelineStage[] = [
         { $match: filter },
 
-        // Lookup user
+        // -------------------- USER --------------------
         {
             $lookup: {
                 from: 'users',
@@ -174,29 +177,52 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
         },
         { $unwind: '$user' },
 
-        // Lookup user avatar
+        // User avatar -> Asset
         {
             $lookup: {
-                from: 'assets',
+                from: 'asset',
                 localField: 'user.avatar',
                 foreignField: '_id',
-                as: 'userAvatar',
+                as: 'userAvatarAsset',
             },
         },
-        { $unwind: { path: '$userAvatar', preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$userAvatarAsset', preserveNullAndEmptyArrays: true } },
 
-        // Lookup employee avatar
+        // User avatar -> AssetFile
         {
             $lookup: {
-                from: 'assets',
-                localField: 'avatar',
+                from: 'assetfile',
+                localField: 'userAvatarAsset.file',
                 foreignField: '_id',
-                as: 'employeeAvatar',
+                as: 'userAvatarFile',
             },
         },
-        { $unwind: { path: '$employeeAvatar', preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$userAvatarFile', preserveNullAndEmptyArrays: true } },
 
-        // Search filter
+        // -------------------- EMPLOYEE --------------------
+        // Employee avatar -> Asset
+        {
+            $lookup: {
+                from: 'asset',
+                localField: 'avatar',
+                foreignField: '_id',
+                as: 'employeeAvatarAsset',
+            },
+        },
+        { $unwind: { path: '$employeeAvatarAsset', preserveNullAndEmptyArrays: true } },
+
+        // Employee avatar -> AssetFile
+        {
+            $lookup: {
+                from: 'assetfile',
+                localField: 'employeeAvatarAsset.file',
+                foreignField: '_id',
+                as: 'employeeAvatarFile',
+            },
+        },
+        { $unwind: { path: '$employeeAvatarFile', preserveNullAndEmptyArrays: true } },
+
+        // -------------------- SEARCH --------------------
         ...(query.filters?.search
             ? [
                 {
@@ -212,14 +238,12 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
             ]
             : []),
 
-        // Sort
+        // -------------------- SORT & PAGINATION --------------------
         { $sort: sort },
-
-        // Pagination
         { $skip: (query.page! - 1) * query.limit! },
         { $limit: query.limit! },
 
-        // Project to final DTO
+        // -------------------- PROJECT --------------------
         {
             $project: {
                 _id: 1,
@@ -236,14 +260,16 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
                 createdAt: 1,
                 updatedAt: 1,
                 companyId: 1,
+
                 user: {
                     firstName: { $arrayElemAt: [{ $split: ['$user.name', ' '] }, 0] },
                     lastName: { $arrayElemAt: [{ $split: ['$user.name', ' '] }, 1] },
                     email: '$user.email',
                     phone: '$user.phone',
-                    avatarUrl: '$userAvatar.publicUrl',
+                    avatarUrl: '$userAvatarFile.publicUrl',
                 },
-                avatarUrl: '$employeeAvatar.publicUrl',
+
+                avatarUrl: '$employeeAvatarFile.publicUrl',
             },
         },
     ];

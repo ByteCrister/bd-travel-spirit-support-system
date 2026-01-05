@@ -48,9 +48,11 @@ type Props = {
         sortBy: SortByTypes,
         sortDir: SortDirTypes,
     ) => void;
-    onApprove: (id: string) => void;
-    onReject: (id: string, reason: string) => void;
-    onComment: (id: string, comment: string) => void;
+    onApprove: (id: string) => Promise<boolean>;
+    onReject: (id: string, reason: string) => Promise<boolean>;
+    onSuspend: (id: string, reason: string, until: Date) => Promise<boolean>;
+    onUnsuspend: (id: string, reason: string) => Promise<boolean>;
+    onComment: (id: string, comment: string) => Promise<boolean>;
     onOpenDocument: (guide: PendingGuideDTO, doc: PendingGuideDocumentDTO) => void;
     page: number;
     pageSize: number;
@@ -66,6 +68,8 @@ export function GuideTable({
     onSortChange,
     onApprove,
     onReject,
+    onSuspend,
+    onUnsuspend,
     onComment,
     onOpenDocument,
     page,
@@ -412,6 +416,8 @@ export function GuideTable({
                 onClose={() => setDetailGuide(undefined)}
                 onApprove={onApprove}
                 onReject={onReject}
+                onSuspend={onSuspend}
+                onUnsuspend={onUnsuspend}
                 onComment={onComment}
                 onOpenDocument={onOpenDocument}
             />

@@ -21,7 +21,7 @@ import { resolveGuideBannersOrder } from "@/lib/helpers/resolve-guideBanner-orde
 import { Types } from "mongoose";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
-import { PopulatedAsset } from "@/types/populated-asset.types";
+import { PopulatedAssetLean } from "@/types/populated-asset.types";
 
 /* -------------------------
    Query parsing
@@ -55,13 +55,13 @@ function isGuideBannerSortKey(v: unknown): v is GuideBannerSortKey {
    Helper types
 ------------------------- */
 type BannerWithPopulatedAsset = Omit<IGuideBanner, "asset"> & {
-    asset: PopulatedAsset;
+    asset: PopulatedAssetLean;
 };
 
 type GuideBannerLean = Lean<
     GuideBanner & {
         _id: unknown;
-        asset?: PopulatedAsset | string | null;
+        asset?: PopulatedAssetLean | string | null;
         createdAt?: Date | null;
         updatedAt?: Date | null;
         deleteAt?: Date | null;

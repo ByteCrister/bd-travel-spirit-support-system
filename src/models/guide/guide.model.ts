@@ -579,6 +579,7 @@ GuideSchema.statics.findApproved = function (): Query<IGuide[], IGuide> {
 GuideSchema.statics.findSuspended = function (): Query<IGuide[], IGuide> {
     return this.find({
         'suspension.until': { $gt: new Date() },
+        status: GUIDE_STATUS.SUSPENDED,
         deletedAt: null,
     });
 };
@@ -660,6 +661,7 @@ GuideSchema.statics.suspend = async function (
         return this.findByIdAndUpdate(
             guideId,
             {
+                status: GUIDE_STATUS.SUSPENDED,
                 suspension: {
                     reason,
                     suspendedBy,

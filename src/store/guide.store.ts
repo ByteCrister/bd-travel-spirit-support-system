@@ -75,6 +75,8 @@ type GuideStoreState = {
     fetch: (force?: boolean, overrideQuery?: Partial<QueryParams>) => Promise<boolean>;
     approve: (id: string) => Promise<boolean>;
     reject: (id: string, reason?: string) => Promise<boolean>;
+    suspend: (id: string, reason: string, until: Date) => Promise<boolean>;
+    unsuspend: (id: string, reason: string) => Promise<boolean>;
     updateReviewComment: (id: string, reviewComment: string) => Promise<boolean>;
     invalidateCache: (key?: string) => void;
 };
@@ -115,11 +117,12 @@ function normalizeList(list: PendingGuideDTO[]) {
 }
 
 function computeCounts(items: Record<string, PendingGuideDTO>, total: number) {
-    const counts = { total, pending: 0, approved: 0, rejected: 0 };
+    const counts = { total, pending: 0, approved: 0, rejected: 0, suspended: 0 };
     Object.values(items).forEach((g) => {
         if (g.status === GUIDE_STATUS.PENDING) counts.pending++;
         else if (g.status === GUIDE_STATUS.APPROVED) counts.approved++;
         else if (g.status === GUIDE_STATUS.REJECTED) counts.rejected++;
+        else if (g.status === GUIDE_STATUS.SUSPENDED) counts.suspended++;
     });
     return counts;
 }
@@ -164,7 +167,7 @@ export const useGuideStore = create<GuideStoreState>()(
         total: 0,
         query: { page: 1, pageSize: 20, sortBy: "createdAt", sortDir: "desc" },
         guides: [],
-        counts: { total: 0, pending: 0, approved: 0, rejected: 0 },
+        counts: { total: 0, pending: 0, approved: 0, rejected: 0, suspended: 0 },
         loading: false,
         error: null,
         cache: {},
@@ -374,7 +377,9 @@ export const useGuideStore = create<GuideStoreState>()(
 
                 return true;
             } catch (err) {
-                set({ error: extractErrorMessage(err) });
+                const error = extractErrorMessage(err);
+                set({ error });
+                showToast.error("Application approved Failed", error)
                 return false;
             }
         },
@@ -424,7 +429,112 @@ export const useGuideStore = create<GuideStoreState>()(
 
                 return true;
             } catch (err) {
-                set({ error: extractErrorMessage(err) });
+                const error = extractErrorMessage(err);
+                set({ error });
+                showToast.error("Application reject Failed", error)
+                return false;
+            }
+        },
+
+        suspend: async (id, reason, until) => {
+            try {
+                const res = await api.put<ApiResponse<GuideActionType>>(`${URL_AFTER_API}/${id}/status`, {
+                    status: GUIDE_STATUS.SUSPENDED,
+                    reason,
+                    until, // Send the suspension end date
+                });
+
+                if (!res.data.data) {
+                    throw new Error("Invalid response body")
+                }
+
+                const data = res.data.data;
+
+                set((state) => {
+                    const updatedItem: PendingGuideDTO = {
+                        ...state.items[id],
+                        status: data.status,
+                        reviewedAt: data.reviewedAt,
+                        reviewer: data.reviewer,
+                        suspensionReason: reason,
+                        suspendedUntil: until.toISOString(), // Store the suspension end date
+                        updatedAt: new Date().toISOString(),
+                    };
+
+                    const newItems = {
+                        ...state.items,
+                        [id]: updatedItem,
+                    };
+
+                    const newGuides = state.guides.map(guide =>
+                        guide._id === id ? updatedItem : guide
+                    );
+
+                    return {
+                        items: newItems,
+                        guides: newGuides,
+                        cache: updateAllCachesById(state.cache, id, () => updatedItem),
+                        counts: computeCounts(newItems, state.total),
+                    };
+                });
+
+                showToast.success("Guide suspended", "The application has been suspended.")
+                return true;
+            } catch (err) {
+                const error = extractErrorMessage(err);
+                set({ error });
+                showToast.error("Guide suspension Failed", error)
+                return false;
+            }
+        },
+
+        unsuspend: async (id, reason) => {
+            try {
+                const res = await api.put<ApiResponse<GuideActionType>>(`${URL_AFTER_API}/${id}/unsuspend`, {
+                    reason,
+                });
+
+                if (!res.data.data) {
+                    throw new Error("Invalid response body")
+                }
+
+                const data = res.data.data;
+
+                set((state) => {
+                    const updatedItem: PendingGuideDTO = {
+                        ...state.items[id],
+                        status: data.status,
+                        reviewedAt: data.reviewedAt,
+                        reviewer: data.reviewer,
+                        reviewComment: data.reviewComment,
+                        suspensionReason: "",
+                        suspendedUntil: undefined, // Clear the suspension date
+                        updatedAt: new Date().toISOString(),
+                    };
+
+                    const newItems = {
+                        ...state.items,
+                        [id]: updatedItem,
+                    };
+
+                    const newGuides = state.guides.map(guide =>
+                        guide._id === id ? updatedItem : guide
+                    );
+
+                    return {
+                        items: newItems,
+                        guides: newGuides,
+                        cache: updateAllCachesById(state.cache, id, () => updatedItem),
+                        counts: computeCounts(newItems, state.total),
+                    };
+                });
+
+                showToast.success("Guide unsuspended", "The application has been unsuspended.")
+                return true;
+            } catch (err) {
+                const error = extractErrorMessage(err);
+                set({ error });
+                showToast.error("Guide unsuspend Failed", error)
                 return false;
             }
         },
@@ -462,7 +572,9 @@ export const useGuideStore = create<GuideStoreState>()(
 
                 return true;
             } catch (err) {
-                set({ error: extractErrorMessage(err) });
+                const error = extractErrorMessage(err);
+                set({ error });
+                showToast.error("Review Comment Failed", error)
                 return false;
             }
         },

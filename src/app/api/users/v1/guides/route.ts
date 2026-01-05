@@ -3,13 +3,14 @@ import { NextRequest } from "next/server";
 import mongoose, { FilterQuery, Types } from "mongoose";
 import ConnectDB from "@/config/db";
 import GuideModel, { IGuide } from "@/models/guide/guide.model";
-import AssetModel from "@/models/asset.model";
 import { GUIDE_DOCUMENT_TYPE, GUIDE_STATUS, GuideDocumentType } from "@/constants/guide.const";
 import type { PendingGuideDTO } from "@/types/pendingGuide.types";
 import { withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { AssetType } from "@/constants/asset.const";
 import { PaginatedResponse } from "@/store/guide.store";
+import AssetModel, { IAsset } from "@/models/assets/asset.model";
+import { PopulatedAssetFileLean } from "@/types/populated-asset.types";
 
 /* ------------------------------------------------------------------ */
 /* Types (aligned with frontend store)                                 */
@@ -106,6 +107,9 @@ function mapGuideToDTO(
         reviewComment: guide.reviewComment,
         reviewer: guide.reviewer?.toString(),
 
+        suspendedUntil: guide.suspension?.until.toISOString(),
+        suspensionReason: guide.suspension?.reason??"",
+
         appliedAt: guide.createdAt.toISOString(),
         reviewedAt: guide.reviewedAt?.toISOString(),
         createdAt: guide.createdAt.toISOString(),
@@ -174,18 +178,29 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
             g.documents.forEach(d => assetIds.add(String(d.AssetUrl)));
         }
 
-        const assets = assetIds.size
-            ? await AssetModel.find({ _id: { $in: [...assetIds].map(id => new Types.ObjectId(id)) } })
-                .select({ publicUrl: 1, assetType: 1, title: 1 })
+        const rawAssets = assetIds.size
+            ? await AssetModel.find({
+                _id: { $in: [...assetIds].map(id => new Types.ObjectId(id)) },
+            })
+                .select({ file: 1, assetType: 1, title: 1 })
+                .populate({
+                    path: "file",
+                    select: "publicUrl",
+                })
                 .lean()
             : [];
 
+        const assets = rawAssets as unknown as (Omit<IAsset, "file"> & { file?: PopulatedAssetFileLean })[]
+
         const assetUrlMap = new Map(
-            assets.map(a => [String(a._id), {
-                publicUrl: a.publicUrl,
-                assetType: a.assetType,
-                title: a.title,
-            }])
+            assets.map(a => [
+                String(a._id),
+                {
+                    publicUrl: a.file?.publicUrl,
+                    assetType: a.assetType,
+                    title: a.title,
+                },
+            ])
         );
 
         const data = guides.map(g =>

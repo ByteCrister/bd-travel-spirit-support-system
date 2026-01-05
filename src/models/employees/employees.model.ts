@@ -472,10 +472,10 @@ EmployeeSchema.statics.findDeleted = function (
 };
 
 EmployeeSchema.statics.findOneWithDeleted = function (
-    query: FilterQuery<IEmployee>,
-    session?: ClientSession
+  query: FilterQuery<IEmployee>,
+  session?: ClientSession
 ) {
-    return this.findOne({ ...query, deletedAt: { $exists: true } }).session(session ?? null);
+  return this.findOne(query).session(session ?? null);
 };
 
 /* =========================================================
