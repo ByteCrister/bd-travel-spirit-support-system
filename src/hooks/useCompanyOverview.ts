@@ -73,7 +73,7 @@ export function useCompanyOverview(companyId: string) {
             }
         };
         fetch().catch(() => { });
-    }, [activeTab, companyId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [activeTab, companyId, limit, sortKey, sortOrder, employeeSortKey, fetchTours, fetchEmployees]); // FIXED: Added all dependencies
 
     // --- Refetch on limit/sort changes ---
     useEffect(() => {
@@ -93,12 +93,12 @@ export function useCompanyOverview(companyId: string) {
     }, [limit, sortOrder, sortKey, employeeSortKey, activeTab, companyId, fetchTours, fetchEmployees]);
 
     // --- Get current cached lists ---
-    const tourCacheKey = activeCacheKey.tours[companyId];
-    const toursList = tourCacheKey ? listCache.tours[companyId]?.[tourCacheKey] : undefined;
+    const tourCacheKey = activeCacheKey?.tours?.[companyId];
+    const toursList = tourCacheKey ? listCache?.tours?.[companyId]?.[tourCacheKey] : undefined;
 
-    const employeeCacheKey = activeCacheKey.employees[companyId];
+    const employeeCacheKey = activeCacheKey?.employees?.[companyId];
     const employeesList = employeeCacheKey
-        ? listCache.employees[companyId]?.[employeeCacheKey]
+        ? listCache?.employees?.[companyId]?.[employeeCacheKey]
         : undefined;
 
     // --- Client-side filtering for search ---
@@ -120,11 +120,9 @@ export function useCompanyOverview(companyId: string) {
 
         return items.filter((e) =>
             [
-                e.user?.name,          // from embedded user summary
+                e.user?.name,
                 e.user?.email,
                 e.user?.phone,
-                e.subRole,
-                e.position,
                 e.employmentType,
                 e.status,
             ]
@@ -150,8 +148,8 @@ export function useCompanyOverview(companyId: string) {
     const handleFetchEmployeeDetail = async (employeeId: string, force?: boolean) => {
         return await fetchEmployeeDetail(companyId, employeeId, force);
     }
-    const handleFetchTourDetail = async (employeeId: string, force?: boolean) => {
-        return await fetchTourDetail(companyId, employeeId, force);
+    const handleFetchTourDetail = async (tourId: string, force?: boolean) => {
+        return await fetchTourDetail(companyId, tourId, force);
     }
 
     return {
@@ -179,7 +177,7 @@ export function useCompanyOverview(companyId: string) {
         employeeCacheKey,
         loading,
         error,
-        company: companies[companyId],
+        company: companies?.[companyId],
         handleRefresh,
         isCompanyLoading,
         isToursLoading,

@@ -1,8 +1,7 @@
 "use client";
 
-import  { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-// import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     MdStar,
@@ -30,9 +29,19 @@ import {
     FaWheelchair,
     FaSnowflake,
 } from "react-icons/fa";
-import { useCompanyDetailStore } from "@/store/company-detail.store";
-import AllDetailsSkeleton from "./skeletons/AllDetailsSkeleton";
-import { TourDetailDTO } from "@/types/tour.types";
+import {
+    FileText,        // Draft
+    Send,            // Submitted
+    CheckCircle,     // Active/Approved
+    PlayCircle,      // Active (alternative)
+    CircleCheck,     // Completed
+    XCircle,         // Terminated/Denied
+    Archive,         // Archived
+    Clock,           // Pending
+    PauseCircle,
+    CheckCircle2,     // Suspended
+} from "lucide-react";
+import AllDetailsSkeleton from "./skeletons/TourDetailPageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,15 +51,22 @@ import {
     TOUR_STATUS,
     MODERATION_STATUS,
 } from "@/constants/tour.const";
+import { Breadcrumbs } from "@/components/global/Breadcrumbs";
+import { useTourApproval } from "@/store/tour-approval.store";
+import { ConfirmApproveDialog } from "../ConfirmApproveDialog";
+import { RejectDialog } from "../RejectDialog";
 
 type Props = {
-    companyId: string;
     tourId: string;
-    setBredCrumbs: (items: { label: string; href: string; }[]) => void
 };
 
-const tourDetailLoadingKey = (id: string) => `tourDetail:${id}`;
-const tourDetailErrorKey = (id: string) => `tourDetailError:${id}`;
+const getBreadCrumbs = (tourId: string, title: string) => {
+    return [
+        { label: "Home", href: `/` },
+        { label: "Tour Approval", href: `/support/tours` },
+        { label: title, href: `/support/tours/${tourId}` },
+    ]
+}
 
 // Animation variants
 const fadeInUp = {
@@ -73,32 +89,32 @@ const STATUS_CONFIG = {
     [TOUR_STATUS.DRAFT]: {
         gradient: "from-slate-400 to-slate-500",
         text: "Draft",
-        icon: "○"
+        icon: <FileText className="w-4 h-4" />
     },
     [TOUR_STATUS.SUBMITTED]: {
         gradient: "from-amber-500 to-orange-500",
         text: "Submitted",
-        icon: "↗"
+        icon: <Send className="w-4 h-4" />
     },
     [TOUR_STATUS.ACTIVE]: {
         gradient: "from-emerald-500 to-teal-500",
         text: "Active",
-        icon: "✓"
+        icon: <PlayCircle className="w-4 h-4" />
     },
     [TOUR_STATUS.COMPLETED]: {
         gradient: "from-blue-500 to-indigo-500",
         text: "Completed",
-        icon: "✓"
+        icon: <CircleCheck className="w-4 h-4" />
     },
     [TOUR_STATUS.TERMINATED]: {
         gradient: "from-rose-500 to-pink-500",
         text: "Terminated",
-        icon: "⊗"
+        icon: <XCircle className="w-4 h-4" />
     },
     [TOUR_STATUS.ARCHIVED]: {
         gradient: "from-gray-500 to-gray-600",
         text: "Archived",
-        icon: "📁"
+        icon: <Archive className="w-4 h-4" />
     },
 };
 
@@ -106,53 +122,45 @@ const MODERATION_CONFIG = {
     [MODERATION_STATUS.PENDING]: {
         gradient: "from-amber-400 to-orange-500",
         text: "Pending",
-        icon: "⏳"
+        icon: <Clock className="w-4 h-4" />
     },
     [MODERATION_STATUS.APPROVED]: {
         gradient: "from-emerald-400 to-green-500",
         text: "Approved",
-        icon: "✓"
+        icon: <CheckCircle className="w-4 h-4" />
     },
     [MODERATION_STATUS.DENIED]: {
         gradient: "from-red-400 to-rose-500",
         text: "Denied",
-        icon: "✗"
+        icon: <XCircle className="w-4 h-4" />
     },
     [MODERATION_STATUS.SUSPENDED]: {
         gradient: "from-yellow-400 to-amber-500",
         text: "Suspended",
-        icon: "⏸️"
+        icon: <PauseCircle className="w-4 h-4" />
     },
 };
 
-export default function AllDetails({ companyId, tourId, setBredCrumbs }: Props) {
+export default function TourDetailPage({ tourId }: Props) {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
-    const [isBookmarkHovered, setIsBookmarkHovered] = useState(false);
+    const {
+        fetchTourById,
+        getFromTourCache,
+        isProcessing,
+        selectedTour,
+        isLoading,
+        error
+    } = useTourApproval();
+    // Get tour from cache if not in selectedTour
+    const tour = selectedTour?.id === tourId
+        ? selectedTour
+        : getFromTourCache(tourId);
 
-    const fetchTourDetail = useCompanyDetailStore((s) => s.fetchTourDetail);
-    const tour = useCompanyDetailStore((s) => s.tourDetails?.[tourId] ?? null) as TourDetailDTO | null;
-    const loading = useCompanyDetailStore((s) => Boolean(s.loading[tourDetailLoadingKey(tourId)]));
-    const error = useCompanyDetailStore((s) => s.error[tourDetailErrorKey(tourId)]);
-
-    const load = useCallback(
-        async (force = false) => {
-            try {
-                const fetchedTour = await fetchTourDetail(companyId, tourId, force);
-                if (fetchedTour?.title) {
-                    setBredCrumbs([
-                        { label: "Company", href: `/users/companies/${companyId}` },
-                        { label: fetchedTour.title, href: `/users/companies/${companyId}/${tourId}` },
-                    ]);
-                }
-            } catch {
-                // store manages errors
-            }
-        },
-        [companyId, fetchTourDetail, setBredCrumbs, tourId]
-    );
+    const [approveOpenFor, setApproveOpenFor] = useState<string | null>(null);
+    const [rejectOpenFor, setRejectOpenFor] = useState<string | null>(null);
 
     useEffect(() => {
-        void load(false);
+        fetchTourById(tourId)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -220,7 +228,7 @@ export default function AllDetails({ companyId, tourId, setBredCrumbs }: Props) 
         return stars;
     };
 
-    if (loading && !tour) {
+    if (isLoading && !tour) {
         return (
             <div className="rounded-2xl overflow-hidden">
                 <AllDetailsSkeleton />
@@ -245,7 +253,7 @@ export default function AllDetails({ companyId, tourId, setBredCrumbs }: Props) 
                         </h3>
                         <p className="text-sm text-red-600 dark:text-red-300 mb-6">{String(error)}</p>
                         <Button
-                            onClick={() => void load(true)}
+                            onClick={async () => fetchTourById(tourId, true)}
                             className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
                         >
                             Try Again
@@ -271,6 +279,7 @@ export default function AllDetails({ companyId, tourId, setBredCrumbs }: Props) 
             variants={staggerContainer}
             className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 rounded-3xl overflow-hidden shadow-sm"
         >
+            <Breadcrumbs className="p-5" items={getBreadCrumbs(tourId, tour.title ?? "-")} />
             {/* Hero Section */}
             <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 via-transparent to-cyan-600/10 pointer-events-none z-10" />
@@ -479,23 +488,25 @@ export default function AllDetails({ companyId, tourId, setBredCrumbs }: Props) 
                                     </div>
                                 )}
 
-                                {/* CTA Buttons */}
-                                {/* <div className="space-y-3">
+                                {/* Action Buttons - Side by side on desktop, stacked on mobile */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
                                     <Button
-                                        disabled={tour.bookingSummary?.isFull}
-                                        size="lg"
-                                        className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl"
+                                        onClick={() => setApproveOpenFor(tour.id)}
+                                        disabled={isProcessing}
+                                        className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md hover:shadow-lg transition-all py-3 text-sm sm:text-base"
                                     >
-                                        {tour.bookingSummary?.isFull ? "Fully Booked" : "Book Now"}
+                                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                                        Approve
                                     </Button>
                                     <Button
-                                        variant="outline"
-                                        size="lg"
-                                        className="w-full h-12 font-semibold border-2 hover:bg-violet-50 dark:hover:bg-violet-950/30 rounded-2xl"
+                                        onClick={() => setRejectOpenFor(tour.id)}
+                                        disabled={isProcessing}
+                                        className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white shadow-md hover:shadow-lg transition-all py-3 text-sm sm:text-base"
                                     >
-                                        Check Availability
+                                        <XCircle className="w-4 h-4 mr-2" />
+                                        Reject
                                     </Button>
-                                </div> */}
+                                </div>
 
                                 {/* Next Departure */}
                                 {tour.nextDeparture && (
@@ -612,38 +623,10 @@ export default function AllDetails({ companyId, tourId, setBredCrumbs }: Props) 
 
                         {/* Action Buttons */}
                         <div className="flex items-center gap-3">
-                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className="rounded-xl border-2 hover:bg-violet-50 dark:hover:bg-violet-950/30"
-                                    onMouseEnter={() => setIsBookmarkHovered(true)}
-                                    onMouseLeave={() => setIsBookmarkHovered(false)}
-                                >
-                                    <motion.div
-                                        animate={{
-                                            scale: isBookmarkHovered ? [1, 1.2, 1] : 1,
-                                            rotate: isBookmarkHovered ? [0, -10, 10, 0] : 0
-                                        }}
-                                        transition={{ duration: 0.3 }}
-                                    >
-                                        <MdFavorite className="text-red-500" />
-                                    </motion.div>
-                                </Button>
-                            </motion.div>
-
-                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className="rounded-xl border-2 hover:bg-violet-50 dark:hover:bg-violet-950/30"
-                                >
-                                    <MdShare className="text-violet-600" />
-                                </Button>
-                            </motion.div>
 
                             {/* <Button
                                 variant="ghost"
+
                                 size="lg"
                                 asChild
                                 className="rounded-xl hover:bg-violet-50 dark:hover:bg-violet-950/30"
@@ -652,6 +635,7 @@ export default function AllDetails({ companyId, tourId, setBredCrumbs }: Props) 
                                     Edit Tour
                                 </Link>
                             </Button> */}
+
                         </div>
                     </div>
                 </motion.header>
@@ -1799,6 +1783,19 @@ export default function AllDetails({ companyId, tourId, setBredCrumbs }: Props) 
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <ConfirmApproveDialog
+                open={approveOpenFor === tour.id}
+                onOpenChange={(open: boolean) => !open && setApproveOpenFor(null)}
+                tourId={tour.id}
+                tourTitle={tour.title}
+            />
+            <RejectDialog
+                open={rejectOpenFor === tour.id}
+                onOpenChange={(open: boolean) => !open && setRejectOpenFor(null)}
+                tourId={tour.id}
+                tourTitle={tour.title}
+            />
         </motion.article>
     );
 }
@@ -1808,15 +1805,15 @@ Status and Moderation Pills
 ---------------------- */
 
 function StatusPill({ status }: { status: string }) {
-    const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.draft;
+    const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG[TOUR_STATUS.DRAFT];
 
     return (
         <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className={`px-4 py-2 rounded-full bg-gradient-to-r ${config.gradient} text-white font-bold text-sm shadow-lg flex items-center gap-2`}
+            className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${config.gradient} text-white font-semibold text-xs shadow-lg flex items-center gap-2`}
         >
-            <span>{config.icon}</span>
+            {config.icon}
             <span>{config.text}</span>
         </motion.div>
     );
@@ -1825,13 +1822,15 @@ function StatusPill({ status }: { status: string }) {
 function ModerationPill({ status }: { status: string }) {
     const config = MODERATION_CONFIG[status as keyof typeof MODERATION_CONFIG];
 
+    if (!config) return null;
+
     return (
         <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className={`px-4 py-2 rounded-full bg-gradient-to-r ${config.gradient} text-white font-bold text-sm shadow-lg flex items-center gap-2`}
+            className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${config.gradient} text-white font-semibold text-xs shadow-lg flex items-center gap-2`}
         >
-            <span>{config.icon}</span>
+            {config.icon}
             <span>{config.text}</span>
         </motion.div>
     );

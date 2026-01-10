@@ -4,9 +4,8 @@ import { faker } from "@faker-js/faker";
 import {
     EmployeeListItemDTO,
     EmployeesListResponse,
-    EmployeeStatus,
-    EmploymentType,
 } from "@/types/employee.types";
+import { EmployeeStatus, EmploymentType } from "@/constants/employee.const";
 
 /**
  * Generate a single fake employee list item

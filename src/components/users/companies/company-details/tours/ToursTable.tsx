@@ -20,8 +20,6 @@ import {
     MdStar,
     MdPeople,
     MdTrendingUp,
-    MdVisibility,
-    MdShield,
     MdOpenInNew,
     MdRemoveRedEye,
     MdThumbUp,
@@ -30,11 +28,17 @@ import {
     MdRateReview,
     MdFlag,
     MdSchedule,
+    MdLocalOffer,
+    MdPlace,
+    MdTerrain,
+    MdCategory,
+    MdGroup,
 } from "react-icons/md";
 
-import { TOUR_STATUS } from "@/constants/tour.const";
+import { TOUR_STATUS, MODERATION_STATUS, ModerationStatus, DifficultyLevel, DIFFICULTY_LEVEL, TourStatus } from "@/constants/tour.const";
 import { TourListItemDTO } from "@/types/tour.types";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
+import Image from "next/image";
 
 interface Props {
     companyId: string;
@@ -71,8 +75,7 @@ export function ToursTable({
         []
     );
 
-    const currencyFormatter = (currency?: string, amount?: number) => {
-        if (!currency || typeof amount !== "number") return undefined;
+    const currencyFormatter = (currency: string, amount: number) => {
         try {
             return new Intl.NumberFormat(undefined, {
                 style: "currency",
@@ -85,16 +88,15 @@ export function ToursTable({
     };
 
     const handleRouteClick = async (tourId: string) => {
-        // ? companyId already encoded
         router.push(`/users/companies/${companyId}/${encodeId(encodeURIComponent(tourId))}`);
     };
 
-    const statusBadge = (status: TOUR_STATUS) => {
+    const statusBadge = (status: TourStatus) => {
         switch (status) {
-            case TOUR_STATUS.PUBLISHED:
+            case TOUR_STATUS.ACTIVE:
                 return (
                     <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 shadow-sm">
-                        Published
+                        Active
                     </Badge>
                 );
             case TOUR_STATUS.DRAFT:
@@ -103,11 +105,93 @@ export function ToursTable({
                         Draft
                     </Badge>
                 );
+            case TOUR_STATUS.SUBMITTED:
+                return (
+                    <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 shadow-sm">
+                        Submitted
+                    </Badge>
+                );
+            case TOUR_STATUS.COMPLETED:
+                return (
+                    <Badge variant="outline" className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                        Completed
+                    </Badge>
+                );
+            case TOUR_STATUS.TERMINATED:
+                return (
+                    <Badge className="bg-gradient-to-r from-red-600 to-rose-600 text-white border-0 shadow-sm">
+                        Terminated
+                    </Badge>
+                );
             case TOUR_STATUS.ARCHIVED:
             default:
                 return (
                     <Badge variant="outline" className="text-slate-600 dark:text-slate-400">
                         Archived
+                    </Badge>
+                );
+        }
+    };
+
+    const moderationStatusBadge = (status: ModerationStatus) => {
+        switch (status) {
+            case MODERATION_STATUS.APPROVED:
+                return (
+                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 shadow-sm">
+                        Approved
+                    </Badge>
+                );
+            case MODERATION_STATUS.PENDING:
+                return (
+                    <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-sm">
+                        Pending
+                    </Badge>
+                );
+            case MODERATION_STATUS.DENIED:
+                return (
+                    <Badge className="bg-gradient-to-r from-red-600 to-rose-600 text-white border-0 shadow-sm">
+                        Denied
+                    </Badge>
+                );
+            case MODERATION_STATUS.SUSPENDED:
+                return (
+                    <Badge variant="outline" className="border-rose-600 text-rose-600 dark:text-rose-400">
+                        Suspended
+                    </Badge>
+                );
+            default:
+                return (
+                    <Badge variant="outline" className="text-slate-600 dark:text-slate-400">
+                        {status}
+                    </Badge>
+                );
+        }
+    };
+
+    const difficultyBadge = (difficulty: DifficultyLevel) => {
+        switch (difficulty) {
+            case DIFFICULTY_LEVEL.EASY:
+                return (
+                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 shadow-sm">
+                        Easy
+                    </Badge>
+                );
+            case DIFFICULTY_LEVEL.MODERATE:
+                return (
+                    <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-sm">
+                        Moderate
+                    </Badge>
+                );
+            case DIFFICULTY_LEVEL.CHALLENGING:
+                return (
+                    <Badge className="bg-gradient-to-r from-red-600 to-rose-600 text-white border-0 shadow-sm">
+                        Challenging
+                    </Badge>
+                );
+            default:
+                return (
+                    <Badge variant="outline" className="text-slate-600 dark:text-slate-400">
+                        {difficulty}
                     </Badge>
                 );
         }
@@ -133,21 +217,14 @@ export function ToursTable({
             <div className="space-y-3">
                 <AnimatePresence mode="popLayout">
                     {items.map((tour, index) => {
-                        const start = dateFormatter.format(new Date(tour.startDate));
-                        const end = dateFormatter.format(new Date(tour.endDate));
                         const updated = dateFormatter.format(new Date(tour.updatedAt));
                         const created = dateFormatter.format(new Date(tour.createdAt));
-                        const lastBooking = tour.lastBookingDate
-                            ? dateFormatter.format(new Date(tour.lastBookingDate))
-                            : "—";
-                        const priceMin = currencyFormatter(
-                            tour.priceSummary?.currency,
-                            tour.priceSummary?.minAmount
-                        );
-                        const priceMax = currencyFormatter(
-                            tour.priceSummary?.currency,
-                            tour.priceSummary?.maxAmount
-                        );
+                        const published = tour.publishedAt ? dateFormatter.format(new Date(tour.publishedAt)) : "—";
+                        const nextDeparture = tour.nextDeparture ? dateFormatter.format(new Date(tour.nextDeparture)) : "—";
+                        const basePrice = currencyFormatter(tour.basePrice.currency, tour.basePrice.amount);
+                        const discountedPrice = tour.hasActiveDiscount && tour.activeDiscountValue
+                            ? currencyFormatter(tour.basePrice.currency, tour.basePrice.amount * (1 - tour.activeDiscountValue / 100))
+                            : null;
 
                         return (
                             <motion.div
@@ -164,7 +241,7 @@ export function ToursTable({
                                     >
                                         {/* Always Visible Header */}
                                         <div className="relative">
-                                            {tour.isFeatured && (
+                                            {tour.featured && (
                                                 <div className="absolute -top-0 -right-0 z-10">
                                                     <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-bl-xl rounded-tr-xl text-xs font-semibold shadow-lg">
                                                         ⭐ Featured
@@ -178,7 +255,20 @@ export function ToursTable({
                                                 <AccordionTrigger>
                                                     <div className="flex items-center gap-4 flex-1 min-w-0">
                                                         <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-600/10 to-purple-600/10 flex items-center justify-center">
-                                                            <MdTrendingUp className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                                                            {tour.heroImage ? (
+                                                                <Image
+                                                                    src={tour.heroImage}
+                                                                    alt={tour.title}
+                                                                    width={48}
+                                                                    height={48}
+                                                                    className="rounded-xl object-cover"
+                                                                    priority={index < 3}
+                                                                />
+                                                            ) : (
+                                                                <div className="h-full w-full flex items-center justify-center">
+                                                                    <MdTrendingUp className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                                                                </div>
+                                                            )}
                                                         </div>
 
                                                         <div className="flex-1 min-w-0 space-y-3">
@@ -187,90 +277,80 @@ export function ToursTable({
                                                                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 line-clamp-1">
                                                                     {tour.title}
                                                                 </h3>
+                                                                {statusBadge(tour.status)}
+                                                                {moderationStatusBadge(tour.moderationStatus)}
                                                             </div>
 
                                                             {/* Key Metrics Row */}
                                                             <div className="flex flex-wrap items-center gap-3">
-                                                                {statusBadge(tour.status)}
-
-                                                                {/* Date Range */}
+                                                                {/* Location */}
                                                                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                                                                    <MdCalendarToday className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                                                                    <MdPlace className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                                                                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                                                        {start}
-                                                                    </span>
-                                                                    <span className="text-slate-400">→</span>
-                                                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                                                        {end}
+                                                                        {tour.district}, {tour.division}
                                                                     </span>
                                                                 </div>
 
-                                                                {/* Duration */}
+                                                                {/* Tour Type */}
                                                                 <Badge
                                                                     variant="outline"
                                                                     className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300"
                                                                 >
-                                                                    <MdSchedule className="h-3.5 w-3.5 mr-1" />
-                                                                    {tour.durationDays} days
+                                                                    <MdCategory className="h-3.5 w-3.5 mr-1" />
+                                                                    {tour.tourType}
                                                                 </Badge>
 
-                                                                {/* Rating */}
-                                                                {typeof tour.averageRating === "number" &&
-                                                                    !Number.isNaN(tour.averageRating) && (
-                                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                                                                            <MdStar className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                                                            <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
-                                                                                {tour.averageRating.toFixed(1)}
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
+                                                                {/* Difficulty */}
+                                                                {difficultyBadge(tour.difficulty)}
 
-                                                                {/* Bookings */}
-                                                                <div className="flex items-center gap-2">
+                                                                {/* Duration */}
+                                                                {tour.duration && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300"
+                                                                    >
+                                                                        <MdSchedule className="h-3.5 w-3.5 mr-1" />
+                                                                        {tour.duration.days} days
+                                                                        {tour.duration.nights && ` / ${tour.duration.nights} nights`}
+                                                                    </Badge>
+                                                                )}
+
+                                                                {/* Next Departure */}
+                                                                {tour.nextDeparture && (
+                                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                                                                        <MdCalendarToday className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                                                        <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                                                                            Next: {nextDeparture}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Occupancy */}
+                                                                {tour.occupancyPercentage !== undefined && (
                                                                     <Badge className="bg-gradient-to-r from-blue-600/10 to-indigo-600/10 text-blue-700 dark:text-blue-300 border border-blue-600/20">
                                                                         <MdPeople className="h-3.5 w-3.5 mr-1" />
-                                                                        {tour.bookingCount}/{tour.maxGroupSize}
+                                                                        {tour.occupancyPercentage}% full
                                                                     </Badge>
-
-                                                                    {tour.isFull && (
-                                                                        <Badge className="bg-gradient-to-r from-red-600 to-pink-600 text-white border-0 shadow-sm">
-                                                                            Full
-                                                                        </Badge>
-                                                                    )}
-                                                                </div>
+                                                                )}
 
                                                                 {/* Discount */}
-                                                                {tour.activeDiscountPercentage && (
+                                                                {tour.hasActiveDiscount && tour.activeDiscountValue && (
                                                                     <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 shadow-sm animate-pulse">
-                                                                        🎉 -{tour.activeDiscountPercentage}% off
+                                                                        <MdLocalOffer className="h-3.5 w-3.5 mr-1" />
+                                                                        -{tour.activeDiscountValue}% off
                                                                     </Badge>
                                                                 )}
                                                             </div>
 
-                                                            {/* Tags Row */}
-                                                            {tour.tags && tour.tags.length > 0 && (
-                                                                <div className="flex flex-wrap gap-1.5">
-                                                                    {tour.tags.slice(0, 5).map((tag) => (
-                                                                        <span
-                                                                            key={tag}
-                                                                            className="text-xs px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md"
-                                                                        >
-                                                                            {tag}
-                                                                        </span>
-                                                                    ))}
-
-                                                                    {tour.tags.length > 5 && (
-                                                                        <span className="text-xs px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md">
-                                                                            +{tour.tags.length - 5} more
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                            {/* Summary */}
+                                                            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                                                                {tour.summary}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </AccordionTrigger>
 
-                                                {/* Right Section - View Button (sibling, aligned center with row) */}
+                                                {/* Right Section - View Button */}
                                                 <Button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -287,148 +367,182 @@ export function ToursTable({
                                             {/* Expandable Content */}
                                             <AccordionContent className="px-6 pb-6 pt-2">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-                                                    {/* Categories */}
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                                            <div className="h-1 w-1 rounded-full bg-indigo-600" />
-                                                            Categories
-                                                        </div>
-
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            {(
-                                                                tour.categories ??
-                                                                (tour.category ? [tour.category] : [])
-                                                            )?.map((c) => (
-                                                                <span
-                                                                    key={c}
-                                                                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 text-indigo-700 dark:text-indigo-300 text-sm border border-indigo-200 dark:border-indigo-800"
-                                                                >
-                                                                    {c}
-                                                                </span>
-                                                            ))}
-
-                                                            {tour.subCategory && (
-                                                                <span className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 text-purple-700 dark:text-purple-300 text-sm border border-purple-200 dark:border-purple-800">
-                                                                    {tour.subCategory}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Audience */}
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                                            <div className="h-1 w-1 rounded-full bg-violet-600" />
-                                                            Audience
-                                                        </div>
-
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            {tour.audience && tour.audience.length > 0 ? (
-                                                                tour.audience.map((a) => (
-                                                                    <span
-                                                                        key={a}
-                                                                        className="px-2.5 py-1 rounded-lg bg-violet-50 dark:bg-violet-950/20 text-violet-700 dark:text-violet-300 text-sm border border-violet-200 dark:border-violet-800"
-                                                                    >
-                                                                        {a}
-                                                                    </span>
-                                                                ))
-                                                            ) : (
-                                                                <span className="text-sm text-slate-400 dark:text-slate-500">
-                                                                    Not specified
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Travel Types */}
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                                            <div className="h-1 w-1 rounded-full bg-blue-600" />
-                                                            Travel Types
-                                                        </div>
-
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            {tour.travelTypes && tour.travelTypes.length > 0 ? (
-                                                                tour.travelTypes.map((tt) => (
-                                                                    <span
-                                                                        key={tt}
-                                                                        className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 text-sm border border-blue-200 dark:border-blue-800"
-                                                                    >
-                                                                        {tt}
-                                                                    </span>
-                                                                ))
-                                                            ) : (
-                                                                <span className="text-sm text-slate-400 dark:text-slate-500">
-                                                                    Not specified
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Price Summary */}
+                                                    {/* Pricing */}
                                                     <div className="space-y-2">
                                                         <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                                                             <div className="h-1 w-1 rounded-full bg-emerald-600" />
-                                                            Price Range
+                                                            Pricing
                                                         </div>
 
-                                                        {priceMin || priceMax ? (
-                                                            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                                                                {priceMin && priceMax
-                                                                    ? `${priceMin} – ${priceMax}`
-                                                                    : priceMin || priceMax}
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-sm text-slate-600 dark:text-slate-400">Base Price:</span>
+                                                                <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                                                                    {basePrice}
+                                                                    {discountedPrice && (
+                                                                        <span className="ml-2 text-sm line-through text-slate-400 dark:text-slate-500">
+                                                                            {discountedPrice}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {tour.hasActiveDiscount && (
+                                                                <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-800">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <MdLocalOffer className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                                                        <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                                                                            Active discount applied: {tour.activeDiscountValue}% off
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Status Info */}
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                                            <div className="h-1 w-1 rounded-full bg-blue-600" />
+                                                            Status Information
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                                                                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
+                                                                    Status
+                                                                </div>
+                                                                <div className="text-sm font-medium">
+                                                                    {statusBadge(tour.status)}
+                                                                </div>
+                                                            </div>
+                                                            <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                                                                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
+                                                                    Moderation
+                                                                </div>
+                                                                <div className="text-sm font-medium">
+                                                                    {moderationStatusBadge(tour.moderationStatus)}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Location Details */}
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                                            <div className="h-1 w-1 rounded-full bg-indigo-600" />
+                                                            Location
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center gap-2 p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800">
+                                                                <MdPlace className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                                                <div>
+                                                                    <div className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                                                                        {tour.district}
+                                                                    </div>
+                                                                    <div className="text-xs text-indigo-600/70 dark:text-indigo-400/70">
+                                                                        {tour.division} Division
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                                                                <MdTerrain className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                                                <div>
+                                                                    <div className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                                                                        Difficulty: {tour.difficulty}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Ratings */}
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                                            <div className="h-1 w-1 rounded-full bg-amber-600" />
+                                                            Ratings
+                                                        </div>
+                                                        {tour.ratings ? (
+                                                            <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                                                                <div className="flex items-center gap-1">
+                                                                    <MdStar className="h-5 w-5 text-amber-600 dark:text-amber-400 fill-current" />
+                                                                    <span className="text-xl font-bold text-amber-700 dark:text-amber-300">
+                                                                        {tour.ratings.average.toFixed(1)}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="h-8 w-px bg-amber-200 dark:bg-amber-800" />
+                                                                <div>
+                                                                    <div className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                                                                        {tour.ratings.count} reviews
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         ) : (
-                                                            <span className="text-sm text-slate-400 dark:text-slate-500">
-                                                                Not available
-                                                            </span>
+                                                            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                                                                <span className="text-sm text-slate-400 dark:text-slate-500">
+                                                                    No ratings yet
+                                                                </span>
+                                                            </div>
                                                         )}
                                                     </div>
 
-                                                    {/* Visibility & Trend */}
-                                                    <div className="space-y-3">
-                                                        <div>
-                                                            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
-                                                                <div className="h-1 w-1 rounded-full bg-slate-600" />
-                                                                Visibility
-                                                            </div>
-
-                                                            {tour.visibility ? (
-                                                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                                                                    <MdVisibility className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                                                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 capitalize">
-                                                                        {tour.visibility}
-                                                                    </span>
+                                                    {/* Schedule */}
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                                            <div className="h-1 w-1 rounded-full bg-violet-600" />
+                                                            Schedule
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            {tour.nextDeparture && (
+                                                                <div className="p-2 rounded-lg bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800">
+                                                                    <div className="text-xs text-violet-600 dark:text-violet-400 mb-1">
+                                                                        Next Departure
+                                                                    </div>
+                                                                    <div className="text-sm font-medium text-violet-700 dark:text-violet-300">
+                                                                        {nextDeparture}
+                                                                    </div>
                                                                 </div>
-                                                            ) : (
-                                                                <span className="text-sm text-slate-400 dark:text-slate-500">
-                                                                    Not specified
-                                                                </span>
+                                                            )}
+                                                            {tour.duration && (
+                                                                <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                                                                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
+                                                                        Duration
+                                                                    </div>
+                                                                    <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                                                                        {tour.duration.days} days
+                                                                        {tour.duration.nights && `, ${tour.duration.nights} nights`}
+                                                                    </div>
+                                                                </div>
                                                             )}
                                                         </div>
+                                                    </div>
 
-                                                        {tour.bookingTrend && (
-                                                            <div>
-                                                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">
-                                                                    <div className="h-1 w-1 rounded-full bg-slate-600" />
-                                                                    Booking Trend
-                                                                </div>
-
-                                                                <div
-                                                                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border ${tour.bookingTrend === "increasing"
-                                                                        ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
-                                                                        : tour.bookingTrend === "stable"
-                                                                            ? "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-                                                                            : "bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300"
-                                                                        }`}
-                                                                >
-                                                                    <MdShield className="h-4 w-4" />
-                                                                    <span className="text-sm font-medium capitalize">
-                                                                        {tour.bookingTrend}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                    {/* Status Indicators */}
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                                            <div className="h-1 w-1 rounded-full bg-slate-600" />
+                                                            Status Indicators
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            {tour.isUpcoming && (
+                                                                <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 shadow-sm">
+                                                                    Upcoming
+                                                                </Badge>
+                                                            )}
+                                                            {tour.isExpired && (
+                                                                <Badge className="bg-gradient-to-r from-red-600 to-rose-600 text-white border-0 shadow-sm">
+                                                                    Expired
+                                                                </Badge>
+                                                            )}
+                                                            {tour.occupancyPercentage !== undefined && (
+                                                                <Badge className={`${tour.occupancyPercentage >= 80
+                                                                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600'
+                                                                    : tour.occupancyPercentage >= 50
+                                                                        ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+                                                                        : 'bg-gradient-to-r from-blue-600 to-indigo-600'
+                                                                    } text-white border-0 shadow-sm`}>
+                                                                    {tour.occupancyPercentage}% Occupied
+                                                                </Badge>
+                                                            )}
+                                                        </div>
                                                     </div>
 
                                                     {/* Engagement Stats */}
@@ -494,19 +608,19 @@ export function ToursTable({
                                                                         Reviews
                                                                     </div>
                                                                     <div className="text-lg font-bold text-amber-700 dark:text-amber-300">
-                                                                        {tour.reviewCount ?? 0}
+                                                                        {tour.ratings?.count ?? 0}
                                                                     </div>
                                                                 </div>
                                                             </div>
 
                                                             <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800 dark:to-gray-900 border border-slate-200 dark:border-slate-700">
-                                                                <MdFlag className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                                                                <MdGroup className="h-5 w-5 text-slate-600 dark:text-slate-400" />
                                                                 <div>
                                                                     <div className="text-xs text-slate-600 dark:text-slate-400">
-                                                                        Reports
+                                                                        Occupancy
                                                                     </div>
                                                                     <div className="text-lg font-bold text-slate-700 dark:text-slate-300">
-                                                                        {tour.reportCount ?? 0}
+                                                                        {tour.occupancyPercentage ?? 0}%
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -541,25 +655,13 @@ export function ToursTable({
 
                                                             <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                                                                 <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
-                                                                    Last Booking
+                                                                    Published
                                                                 </div>
                                                                 <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                                                    {lastBooking}
+                                                                    {published}
                                                                 </div>
                                                             </div>
                                                         </div>
-
-                                                        {tour.trendingUntil && (
-                                                            <div className="mt-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200 dark:border-purple-800">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="h-2 w-2 rounded-full bg-purple-600 animate-pulse" />
-                                                                    <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                                                                        Trending until:{" "}
-                                                                        {dateFormatter.format(new Date(tour.trendingUntil))}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 </div>
                                             </AccordionContent>

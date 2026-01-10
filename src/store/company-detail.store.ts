@@ -350,11 +350,11 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
         // --------------------
         fetchEmployees: async (companyId, overrideParams = {}, force = false) => {
           const state = get();
-          const prevParams = state.params.employees[companyId] ?? defaultParams;
+          const prevParams = state.params.employees?.[companyId] ?? defaultParams;
           const params: PaginationParams = { ...defaultParams, ...prevParams, ...overrideParams };
           const cacheKey = makeCacheKey(params);
 
-          const cached = state.listCache.employees[companyId]?.[cacheKey];
+          const cached = state.listCache.employees?.[companyId]?.[cacheKey];
           const tsKey = `employees:${companyId}:${cacheKey}`;
           const tsVal = state.cacheTimestamps[tsKey];
 

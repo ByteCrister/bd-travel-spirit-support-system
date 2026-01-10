@@ -60,11 +60,12 @@ export function FiltersBar({
             durationDays: "Duration",
             averageRating: "Rating",
             bookingCount: "Bookings",
-            maxGroupSize: "Group Size",
+
             fullName: "Name",
-            position: "Position",
-            subRole: "Sub-role",
+            employmentType: "Employment Type",
             dateOfJoining: "Joined",
+            dateOfLeaving: "Left",
+            
             createdAt: "Created",
             updatedAt: "Updated"
         };
@@ -162,7 +163,6 @@ export function FiltersBar({
                                         <SelectItem value="durationDays">Duration</SelectItem>
                                         <SelectItem value="averageRating">Rating</SelectItem>
                                         <SelectItem value="bookingCount">Bookings</SelectItem>
-                                        <SelectItem value="maxGroupSize">Group Size</SelectItem>
                                         <Separator className="my-1.5" />
                                         <SelectItem value="createdAt">Created</SelectItem>
                                         <SelectItem value="updatedAt">Updated</SelectItem>
@@ -175,11 +175,6 @@ export function FiltersBar({
                                     </SelectTrigger>
                                     <SelectContent className="max-h-[300px]">
                                         <SelectItem value="fullName">Name</SelectItem>
-                                        <SelectItem value="position">Position</SelectItem>
-                                        <SelectItem value="role">Role</SelectItem>
-                                        <SelectItem value="subRole">Sub-role</SelectItem>
-                                        <SelectItem value="department">Department</SelectItem>
-                                        <SelectItem value="team">Team</SelectItem>
                                         <SelectItem value="employmentType">Employment Type</SelectItem>
                                         <SelectItem value="status">Status</SelectItem>
                                         <SelectItem value="dateOfJoining">Joined</SelectItem>

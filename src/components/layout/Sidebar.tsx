@@ -23,7 +23,7 @@ import { HiOutlineChartSquareBar } from 'react-icons/hi';
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { ShieldCheck } from "lucide-react";
+import { Compass, ShieldCheck } from "lucide-react";
 import { MdBusiness, MdTravelExplore } from 'react-icons/md';
 import { usePathname } from "next/navigation";
 import { TbPasswordFingerprint, TbReceipt } from "react-icons/tb";
@@ -55,7 +55,7 @@ const navigationGroups: NavGroup[] = [
     title: "Overview",
     icon: FiHome,
     items: [
-      { href: "/overview/dashboard", label: "Dashboard", icon: FiHome, adminOnly: false },
+      { href: "/overview/dashboard", label: "Dashboard", icon: FiHome },
       { href: "/overview/statistics", label: "Statistics", icon: HiOutlineChartSquareBar, adminOnly: true },
     ],
   },
@@ -63,19 +63,20 @@ const navigationGroups: NavGroup[] = [
     title: "Users",
     icon: FiUsers,
     items: [
-      { href: "/users/travelers", label: "Travelers", icon: ShieldCheck, adminOnly: false },
-      { href: "/users/guides", label: "Guides", icon: MdTravelExplore, adminOnly: false },
-      { href: "/users/companies", label: "Companies", icon: MdBusiness, adminOnly: false },
-      { href: "/users/employees", label: "Employees", icon: FaUsers, adminOnly: false },
+      { href: "/users/travelers", label: "Travelers", icon: ShieldCheck },
+      { href: "/users/guides", label: "Guides", icon: MdTravelExplore },
+      { href: "/users/companies", label: "Companies", icon: MdBusiness },
+      { href: "/users/employees", label: "Employees", icon: FaUsers },
     ],
   },
   {
     title: "Support",
     icon: FiFileText,
     items: [
-      { href: "/support/users", label: "Users", icon: FiHeadphones, adminOnly: false },
-      { href: "/support/articles", label: "Articles", icon: FiFileText, adminOnly: false },
-      { href: "/support/article-comments", label: "Article Comments", icon: FaComments, adminOnly: false },
+      { href: "/support/users", label: "Users", icon: FiHeadphones },
+      { href: "/support/tours", label: "Tours", icon: Compass },
+      { href: "/support/articles", label: "Articles", icon: FiFileText },
+      { href: "/support/article-comments", label: "Article Comments", icon: FaComments },
       { href: "/support/reset-password-requests", label: "Employees Pass", icon: TbPasswordFingerprint, adminOnly: true },
     ],
   },
