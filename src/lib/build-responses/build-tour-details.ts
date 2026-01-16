@@ -1,0 +1,351 @@
+// src/lib/build-responses/build-tour-details.ts
+import { TOUR_STATUS } from "@/constants/tour.const";
+import TourModel, { IAttraction, IDestinationBlock, ITour } from "@/models/tours/tour.model";
+import { PopulatedAssetLean } from "@/types/populated-asset.types";
+import { TourDetailDTO } from "@/types/tour.types";
+import { ClientSession, Types } from "mongoose";
+import "@/models/assets/asset.model";
+import AssetModel from "@/models/assets/asset.model";
+import AssetFileModel from "@/models/assets/asset-file.model";
+import { ApiError } from "../helpers/withErrorHandler";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
+
+type ObjectId = Types.ObjectId;
+
+
+type IDestinationBlockLean =
+    Omit<IDestinationBlock, "attractions" | "images"> & {
+        attractions: (Omit<IAttraction, "images"> & {
+            images: PopulatedAssetLean[];
+        })[];
+        images: PopulatedAssetLean[];
+    };
+
+type TourLeanPopulated =
+    Omit<ITour,
+        | "heroImage"
+        | "gallery"
+        | "destinations"
+    > & {
+        _id: ObjectId;
+        heroImage: PopulatedAssetLean | null;
+        gallery: PopulatedAssetLean[];
+        destinations: IDestinationBlockLean[]
+    };
+
+// Helper function to transform Mongoose document to TourDetailDTO
+export async function buildTourDetailDTO(
+    tourId: ObjectId,
+    withDeleted = false,
+    session?: ClientSession,
+): Promise<TourDetailDTO> {
+    if (!tourId) throw new Error("tourId is required");
+
+    try {
+        const baseQuery = withDeleted
+            ? TourModel.findOneWithDeleted({ _id: tourId }).session(session ?? null)
+            : TourModel.findById(tourId).session(session ?? null);
+
+        const rawTour = await baseQuery
+            .populate({
+                path: "heroImage",
+                select: "file deletedAt",
+                model: AssetModel,
+                populate: { path: "file", select: "publicUrl", model: AssetFileModel },
+                ...(withDeleted ? {} : { match: { deletedAt: null } }),
+                options: { lean: true } // optional
+            })
+            .populate({
+                path: "gallery",
+                select: "file deletedAt",
+                model: AssetModel,
+                populate: { path: "file", select: "publicUrl", model: AssetFileModel },
+                ...(withDeleted ? {} : { match: { deletedAt: null } }),
+            })
+            .populate({
+                path: "destinations.images",
+                select: "file deletedAt",
+                model: AssetModel,
+                populate: { path: "file", select: "publicUrl", model: AssetFileModel },
+                ...(withDeleted ? {} : { match: { deletedAt: null } }),
+            })
+            .populate({
+                path: "destinations.attractions.images",
+                select: "file deletedAt",
+                model: AssetModel,
+                populate: { path: "file", select: "publicUrl", model: AssetFileModel },
+                ...(withDeleted ? {} : { match: { deletedAt: null } }),
+            })
+            .exec();
+
+        if (!rawTour) {
+            throw new ApiError(`Tour not found for id: ${tourId.toString()}`, 404);
+        };
+
+        const tour = rawTour.toObject() as unknown as TourLeanPopulated;
+
+        // Calculate computed fields
+        const priceSummary = calculatePriceSummary(tour);
+        const bookingSummary = calculateBookingSummary(tour);
+        const nextDeparture = calculateNextDeparture(tour);
+        const hasActiveDiscount = checkActiveDiscount(tour.discounts);
+
+        return {
+            // =============== IDENTITY & BASIC INFO ===============
+            id: tour._id.toString(),
+            title: tour.title,
+            slug: tour.slug,
+            status: tour.status,
+            summary: tour.summary,
+            heroImage: tour.heroImage?.file?.publicUrl.toString() ?? undefined,
+            gallery: tour.gallery?.map((asset) => asset?.file?.publicUrl ?? "") || [],
+            seo: tour.seo,
+
+            // =============== BANGLADESH-SPECIFIC FIELDS ===============
+            tourType: tour.tourType,
+            division: tour.division,
+            district: tour.district,
+            accommodationType: tour.accommodationType || [],
+            guideIncluded: tour.guideIncluded,
+            transportIncluded: tour.transportIncluded,
+            emergencyContacts: tour.emergencyContacts || {},
+
+            // =============== CONTENT & ITINERARY ===============
+            destinations: transformDestinations(tour.destinations) || [],
+            itinerary: tour.itinerary || [],
+            inclusions: tour.inclusions || [],
+            exclusions: tour.exclusions || [],
+            difficulty: tour.difficulty,
+            bestSeason: tour.bestSeason || [],
+            audience: tour.audience || [],
+            categories: tour.categories || [],
+            translations: tour.translations || {},
+
+            // =============== LOGISTICS ===============
+            mainLocation: tour.mainLocation,
+            transportModes: tour.transportModes || [],
+            pickupOptions: tour.pickupOptions || [],
+            meetingPoint: tour.meetingPoint || '',
+            packingList: tour.packingList || [],
+
+            // =============== PRICING & COMMERCE ===============
+            basePrice: tour.basePrice,
+            discounts: transformDiscounts(tour.discounts) || [],
+            duration: tour.duration,
+            operatingWindows: transformOperatingWindows(tour.operatingWindows) || [],
+            departures: transformDepartures(tour.departures) || [],
+            paymentMethods: tour.paymentMethods || [],
+
+            // =============== COMPLIANCE & ACCESSIBILITY ===============
+            licenseRequired: tour.licenseRequired || false,
+            ageSuitability: tour.ageSuitability,
+            accessibility: tour.accessibility || {},
+
+            // =============== POLICIES ===============
+            cancellationPolicy: tour.cancellationPolicy,
+            refundPolicy: tour.refundPolicy,
+            terms: tour.terms || '',
+
+            // =============== ENGAGEMENT & RATINGS ===============
+            ratings: tour.ratings || { average: 0, count: 0 },
+            wishlistCount: tour.wishlistCount || 0,
+            featured: tour.featured || false,
+
+            // =============== MODERATION ===============
+            moderationStatus: tour.moderationStatus,
+            rejectionReason: tour.rejectionReason,
+            completedAt: tour.completedAt?.toISOString(),
+            reApprovalRequestedAt: tour.reApprovalRequestedAt?.toISOString(),
+
+            // =============== SYSTEM FIELDS ===============
+            companyId: tour.companyId._id.toString(),
+            authorId: tour.authorId._id.toString(),
+            tags: tour.tags || [],
+            publishedAt: tour.publishedAt?.toISOString(),
+            viewCount: tour.viewCount || 0,
+            likeCount: tour.likeCount || 0,
+            shareCount: tour.shareCount || 0,
+            createdAt: tour.createdAt.toISOString(),
+            updatedAt: tour.updatedAt.toISOString(),
+            deletedAt: tour.deletedAt?.toISOString(),
+
+            // =============== COMPUTED/UI-ONLY FIELDS ===============
+            priceSummary,
+            bookingSummary,
+            nextDeparture,
+            isUpcoming: isTourUpcoming(tour),
+            isExpired: isTourExpired(tour),
+            hasActiveDiscount
+        };
+    } catch (error: unknown) {
+        const message = extractErrorMessage(error);
+        console.error("[buildTourDetailDTO Error]", message);
+        throw new ApiError(
+            `Failed to build tour details: ${message || error}`,
+            500
+        );
+    }
+}
+
+// Helper function to transform destinations with image URLs
+function transformDestinations(destinations: IDestinationBlockLean[] | undefined): TourDetailDTO['destinations'] {
+    if (!destinations) return [];
+
+    return destinations.map(({ _id, attractions, images, ...rest }) => ({
+        ...rest,
+        id: _id?.toString(),
+        attractions: (attractions ?? []).map(({ _id, images, ...attRest }) => ({
+            ...attRest,
+            id: _id?.toString(),
+            imageIds: images?.map(img => ({ id: img?._id.toString(), url: img?.file?.publicUrl ?? "" })) ?? [],
+        })),
+        imageIds: images?.map(img => ({ id: img?._id.toString(), url: img?.file?.publicUrl ?? "" })) ?? [],
+    }));
+}
+
+// Helper function to transform discounts
+function transformDiscounts(discounts: ITour["discounts"] | undefined): TourDetailDTO['discounts'] {
+    if (!discounts) return [];
+
+    return discounts.map(discount => ({
+        ...discount,
+        validFrom: discount.validFrom?.toISOString(),
+        validUntil: discount.validUntil?.toISOString()
+    }));
+}
+
+// Helper function to transform operating windows
+function transformOperatingWindows(windows: ITour["operatingWindows"] | undefined): TourDetailDTO['operatingWindows'] {
+    if (!windows) return [];
+
+    return windows.map(win => ({
+        ...win,
+        startDate: win.startDate.toISOString(),
+        endDate: win.endDate.toISOString()
+    }));
+}
+
+// Helper function to transform departures
+function transformDepartures(departures: ITour["departures"] | undefined): TourDetailDTO['departures'] {
+    if (!departures) return [];
+
+    return departures.map(dep => ({
+        date: dep.date.toISOString(),
+        seatsTotal: dep.seatsTotal,
+        seatsBooked: dep.seatsBooked,
+        meetingPoint: dep.meetingPoint,
+        meetingCoordinates: dep.meetingCoordinates
+    }));
+}
+
+// Calculate price summary
+function calculatePriceSummary(tour: TourLeanPopulated): TourDetailDTO['priceSummary'] {
+    const baseAmount = tour.basePrice?.amount || 0;
+    const currency = tour.basePrice?.currency || 'BDT';
+
+    // Apply active discount if any
+    const activeDiscount = tour.discounts?.find((d) =>
+        (!d.validFrom || new Date(d.validFrom) <= new Date()) &&
+        (!d.validUntil || new Date(d.validUntil) >= new Date())
+    );
+
+    const discountedAmount = activeDiscount
+        ? baseAmount * (1 - (activeDiscount.value / 100))
+        : undefined;
+
+    return {
+        minAmount: baseAmount,
+        maxAmount: baseAmount,
+        currency,
+        discountedAmount
+    };
+}
+
+// Calculate booking summary
+function calculateBookingSummary(tour: TourLeanPopulated): TourDetailDTO['bookingSummary'] {
+    const departures = tour.departures || [];
+
+    const totalSeats = departures.reduce((sum, dep) =>
+        sum + (dep.seatsTotal || 0), 0
+    );
+
+    const bookedSeats = departures.reduce((sum, dep) =>
+        sum + (dep.seatsBooked || 0), 0
+    );
+
+    const availableSeats = totalSeats - bookedSeats;
+    const isFull = availableSeats <= 0;
+    const occupancyPercentage = totalSeats > 0 ? (bookedSeats / totalSeats) * 100 : 0;
+
+    return {
+        totalSeats,
+        bookedSeats,
+        availableSeats,
+        isFull,
+        occupancyPercentage
+    };
+}
+
+// Calculate next departure
+function calculateNextDeparture(tour: TourLeanPopulated): string | undefined {
+    const departures = tour.departures || [];
+    const now = new Date();
+
+    const futureDepartures = departures
+        .filter((dep) => new Date(dep.date) > now)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return futureDepartures[0]?.date.toISOString();
+}
+
+// Check if tour has active discount
+function checkActiveDiscount(discounts: ITour["discounts"] | undefined): boolean {
+    if (!discounts) return false;
+
+    const now = new Date();
+    return discounts.some(discount =>
+        (!discount.validFrom || new Date(discount.validFrom) <= now) &&
+        (!discount.validUntil || new Date(discount.validUntil) >= now)
+    );
+}
+
+// Check if tour is upcoming
+function isTourUpcoming(tour: TourLeanPopulated): boolean {
+    const now = new Date();
+
+    // Check if any future departure exists
+    const futureDepartures = tour.departures?.some((dep) =>
+        new Date(dep.date) > now
+    );
+
+    // Check operating windows
+    const futureWindows = tour.operatingWindows?.some((win) =>
+        new Date(win.endDate) > now
+    );
+
+    return !!(futureDepartures || futureWindows);
+}
+
+// Check if tour is expired
+function isTourExpired(tour: TourLeanPopulated): boolean {
+    if (tour.status === TOUR_STATUS.COMPLETED ||
+        tour.status === TOUR_STATUS.TERMINATED ||
+        tour.status === TOUR_STATUS.ARCHIVED) {
+        return true;
+    }
+
+    const now = new Date();
+
+    // Check if all departures are in the past
+    const allPastDepartures = tour.departures?.every((dep) =>
+        new Date(dep.date) < now
+    ) || false;
+
+    // Check if all operating windows are in the past
+    const allPastWindows = tour.operatingWindows?.every((win) =>
+        new Date(win.endDate) < now
+    ) || false;
+
+    return !!(tour.departures?.length && allPastDepartures) ||
+        !!(tour.operatingWindows?.length && allPastWindows);
+}

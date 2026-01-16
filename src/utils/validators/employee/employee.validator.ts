@@ -3,16 +3,11 @@ import * as yup from "yup";
 import {
     EMPLOYMENT_TYPE,
     EmploymentType,
+    SALARY_PAYMENT_MODE,
+    SalaryPaymentMode,
 } from "@/constants/employee.const";
 import { CURRENCY, Currency } from "@/constants/tour.const";
-import { DayOfWeek, EmergencyContactDTO, ContactInfoDTO, ShiftDTO, DocumentDTO } from "@/types/employee.types";
-import { Types } from "mongoose";
-
-const objectIdSchema = yup
-    .string()
-    .test("is-object-id", "Invalid employee id", (value) =>
-        value ? Types.ObjectId.isValid(value) : false
-    );
+import { DayOfWeek, EmergencyContactDTO, ContactInfoDTO, ShiftDTO, DocumentDTO, CreateEmployeePayload } from "@/types/employee.types";
 
 // Phone validation regex for Bangladesh
 export const phoneRegex = /^(?:\+88|88)?(01[3-9]\d{8})$/;
@@ -81,13 +76,20 @@ export const documentValidationSchema: yup.ObjectSchema<DocumentDTO> = yup.objec
 });
 
 // Main validation schema
-export const updateEmployeeServerSchema = yup.object({
-    id: objectIdSchema.required("Employee ID is required"),
+export const createEmployeeValidationSchema = yup.object({
     name: yup.string()
         .min(3, "Employee must be at least 3 character")
         .trim()
         .matches(/^[A-Za-z]+(?: [A-Za-z]+)*$/, "Name must contain only letters A to Z and single spaces")
         .required("Employee name is required"),
+    password: yup
+        .string()
+        .min(8, "Password must be at least 8 characters")
+        .matches(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+            "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+        )
+        .required("Password is required"),
     employmentType: yup
         .mixed<EmploymentType>()
         .oneOf(Object.values(EMPLOYMENT_TYPE))
@@ -101,67 +103,16 @@ export const updateEmployeeServerSchema = yup.object({
         .mixed<Currency>()
         .oneOf(Object.values(CURRENCY))
         .required("Currency is required"),
-    /**
-  * dateOfJoining
-  * - Accepts Date | ISO string | timestamp
-  * - Optional and nullable
-  * - No restriction on being in the future (joining may be planned)
-  */
+    paymentMode: yup
+        .mixed<SalaryPaymentMode>()
+        .oneOf(Object.values(SALARY_PAYMENT_MODE))
+        .required("Payment mode is required"),
     dateOfJoining: yup
         .date()
+        .min(new Date(), "Date cannot be in the past")
         .optional()
         .nullable()
-        .transform((value, originalValue) => (originalValue === "" ? undefined : value))
-        .typeError("Invalid joining date")
-        .test(
-            "not-in-past",
-            "Joining date cannot be in the past",
-            function (value) {
-                if (!value) return true; // not provided -> ok
-                const today = new Date();
-                today.setHours(0, 0, 0, 0); // normalize to start of day
-                return value.getTime() >= today.getTime();
-            }
-        ),
-
-    /**
-     * dateOfLeaving
-     * - Accepts Date | ISO string | timestamp
-     * - Optional and nullable
-     * - If provided, must not be before dateOfJoining (when dateOfJoining is provided and valid)
-     * - If dateOfJoining is in the future, providing dateOfLeaving is disallowed
-     */
-    dateOfLeaving: yup
-        .date()
-        .optional()
-        .nullable()
-        .transform((value, originalValue) => (originalValue === "" ? undefined : value))
-        .typeError("Invalid leaving date")
-        .test(
-            "leaving-after-joining",
-            "Leaving date cannot be before joining date",
-            function (value) {
-                if (!value) return true; // not provided -> ok
-                const { dateOfJoining } = this.parent as { dateOfJoining?: Date | string | null };
-                if (!dateOfJoining) return true; // no joining provided -> cannot compare
-                const doj = dateOfJoining instanceof Date ? dateOfJoining : new Date(dateOfJoining);
-                if (isNaN(doj.getTime())) return true; // invalid joining handled by its own schema
-                return value.getTime() >= doj.getTime();
-            }
-        )
-        .test(
-            "no-leaving-if-joining-future",
-            "Cannot set leaving date when joining date is in the future",
-            function (value) {
-                if (!value) return true; // leaving not provided -> ok
-                const { dateOfJoining } = this.parent as { dateOfJoining?: Date | string | null };
-                if (!dateOfJoining) return true; // no joining provided -> ok
-                const doj = dateOfJoining instanceof Date ? dateOfJoining : new Date(dateOfJoining);
-                if (isNaN(doj.getTime())) return true; // invalid joining handled elsewhere
-                const now = new Date();
-                return doj.getTime() <= now.getTime(); // if joining is in future -> fail
-            }
-        ),
+        .transform((value) => (value === "" ? undefined : value)),
     contactInfo: contactInfoValidationSchema.required("Contact info is required"),
     shifts: yup.array().of(shiftValidationSchema).optional().default([]),
     documents: yup.array().of(documentValidationSchema).optional().default([]),
@@ -171,3 +122,82 @@ export const updateEmployeeServerSchema = yup.object({
         .nullable()
         .transform((value) => (value === "" ? undefined : value)),
 });
+
+// Form values type that matches the schema
+export type CreateEmployeeFormValues = {
+    name: string;
+    password: string;
+    employmentType: EmploymentType;
+    avatar: string | null;
+    salary: number | null;
+    currency: Currency;
+    paymentMode: SalaryPaymentMode; // auto | manual
+    dateOfJoining: Date;
+    contactInfo: ContactInfoDTO;
+    shifts: ShiftDTO[];
+    documents: DocumentDTO[];
+    notes?: string | null;
+};
+
+// Helper function to transform form values to API payload
+export const transformToCreateEmployeePayload = (
+    values: CreateEmployeeFormValues
+) => {
+    const now = new Date().toISOString();
+    const payload: CreateEmployeePayload = {
+        name: values.name,
+        password: values.password,
+        salary: values.salary,
+        currency: values.currency,
+        paymentMode: values.paymentMode,
+        employmentType: values.employmentType
+            ? EMPLOYMENT_TYPE[values.employmentType as keyof typeof EMPLOYMENT_TYPE]
+            : EMPLOYMENT_TYPE.FULL_TIME, // default
+        avatar: values.avatar ?? "", // base64 image string
+        dateOfJoining: values.dateOfJoining?.toISOString() ?? new Date().toISOString(),
+        contactInfo: {
+            phone: values.contactInfo.phone,
+            email: values.contactInfo.email || "",
+            emergencyContact: values.contactInfo.emergencyContact || { name: "", phone: "", relation: "" },
+        },
+        shifts: values.shifts ?? [],
+        documents: (values.documents ?? []).map((doc) => ({
+            type: doc.type,
+            url: doc.url, // base64 string
+            uploadedAt: doc.uploadedAt ?? now,
+        })),
+        notes: values.notes ?? undefined,
+    };
+
+    // Add optional fields only if they have values
+    if (values.employmentType) {
+        payload.employmentType = values.employmentType;
+    }
+
+    if (values.avatar) {
+        payload.avatar = values.avatar;
+    }
+
+    if (values.dateOfJoining) {
+        payload.dateOfJoining = values.dateOfJoining.toISOString();
+    }
+
+    if (values.shifts.length > 0) {
+        payload.shifts = values.shifts;
+    }
+
+    if (values.documents.length > 0) {
+        // Add uploadedAt for new documents
+        const now = new Date().toISOString();
+        payload.documents = values.documents.map(doc => ({
+            ...doc,
+            uploadedAt: doc.uploadedAt || now,
+        }));
+    }
+
+    if (values.notes) {
+        payload.notes = values.notes;
+    }
+
+    return payload;
+};

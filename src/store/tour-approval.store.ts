@@ -14,7 +14,8 @@ import { extractErrorMessage } from '@/utils/axios/extract-error-message';
 import api from '@/utils/axios';
 import { MODERATION_STATUS } from '@/constants/tour.const';
 
-const URL_AFTER_API = `/mock/support/tours`;
+// const URL_AFTER_API = `/mock/support/tours`;
+const URL_AFTER_API = `/support/v1/tours`;
 
 // Cache configuration
 const CACHE_TTL = Number(process.env.NEXT_PUBLIC_CACHE_TTL) ?? 1 * 60 * 1000; // 1 minute in milliseconds
@@ -330,7 +331,7 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                         };
 
                         // Handle array filters
-                        const arrayFilters = ['moderationStatus', 'division', 'district', 'tourType', 'difficulty', 'audience', 'categories', 'status'];
+                        const arrayFilters = ['moderationStatus', 'division', 'district', 'tourType', 'difficulty', 'status'];
                         arrayFilters.forEach(filterName => {
                             if (Array.isArray(currentFilters[filterName as keyof TourFilterOptions])) {
                                 const value = currentFilters[filterName as keyof TourFilterOptions];
@@ -391,7 +392,7 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                     }
                 },
 
-                // Fetch single tour by ID with caching
+                // In stores/tour-approval.store.ts - Update fetchTourById
                 fetchTourById: async (tourId: string, skipCache = false) => {
                     // Check cache first unless skipping
                     if (!skipCache) {
@@ -400,13 +401,9 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                             set({ selectedTour: cachedTour, isLoading: false });
                             return;
                         }
-
-                        // Also check if we have it in selectedTour
-                        if (get().selectedTour?.id === tourId) {
-                            return;
-                        }
                     }
 
+                    // Don't return early if selectedTour matches - always fetch if cache is empty/expired
                     set({ isLoading: true, error: null });
 
                     try {
@@ -428,13 +425,10 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                         // Cache the tour
                         get().setToTourCache(tourId, tour);
 
-                        // return tour;
-
                     } catch (error) {
                         const message = extractErrorMessage(error);
                         set({ error: message, isLoading: false });
                         console.error('Error fetching tour:', error);
-                        // return null;
                     }
                 },
 
@@ -691,6 +685,18 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                         return currentState;
                     }
 
+                    const now = Date.now();
+
+                    // Filter out expired list cache entries
+                    const filteredListCache = persistedState.listCache.filter(([, item]) =>
+                        now - item.timestamp <= CACHE_TTL
+                    );
+
+                    // Filter out expired tour cache entries
+                    const filteredTourCache = persistedState.tourCache.filter(([, item]) =>
+                        now - item.timestamp <= CACHE_TTL
+                    );
+
                     return {
                         ...currentState,
                         filters: persistedState.filters || currentState.filters,
@@ -698,8 +704,9 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                             ...currentState.pagination,
                             limit: persistedState.pagination.limit,
                         },
-                        listCache: new Map(persistedState.listCache),
-                        tourCache: new Map(persistedState.tourCache),
+                        listCache: new Map(filteredListCache),
+                        tourCache: new Map(filteredTourCache),
+                        selectedTour: null, // Clear selectedTour on rehydration
                     };
                 },
             }

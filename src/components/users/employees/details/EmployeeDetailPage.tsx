@@ -59,7 +59,7 @@ import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { CURRENCY } from "@/constants/tour.const";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from "next/image";
-import { validateUpdateEmployeePayload } from "@/utils/validators/employee.update-validator";
+import { validateUpdateEmployeePayload } from "@/utils/validators/employee/employee.update-validator";
 import { updateEmployeePassword } from "@/utils/api/update-employee-pass.api";
 import ConfirmationDialog from "./ConfirmationDialog";
 import EmployeeDetailSkeleton from "./EmployeeDetailSkeleton";

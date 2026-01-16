@@ -56,13 +56,13 @@ export function MultiSelectComboBox<T extends string = string>({
     onChange(newValue);
   };
 
-  const handleRemove = (optionValue: T, e: React.MouseEvent) => {
+  const handleRemove = (optionValue: T, e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
     const newValue = value.filter(v => v !== optionValue);
     onChange(newValue);
   };
 
-  const clearAll = (e: React.MouseEvent) => {
+  const clearAll = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
     onChange([]);
   };
@@ -85,13 +85,22 @@ export function MultiSelectComboBox<T extends string = string>({
                   className="mr-1 mb-1"
                 >
                   {option.label}
-                  <button
-                    type="button"
-                    className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  {/* Replace button with span for accessibility */}
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-muted transition-colors cursor-pointer"
                     onClick={(e) => handleRemove(option.value, e)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleRemove(option.value, e);
+                      }
+                    }}
+                    aria-label={`Remove ${option.label}`}
                   >
                     <X className="h-3 w-3" />
-                  </button>
+                  </span>
                 </Badge>
               ))
             ) : (
@@ -100,14 +109,23 @@ export function MultiSelectComboBox<T extends string = string>({
           </div>
           <div className="flex items-center">
             {selectedOptions.length > 0 && (
-              <button
-                type="button"
-                className="mr-2 text-muted-foreground hover:text-foreground"
+              // Replace this button with span as well
+              <span
+                role="button"
+                tabIndex={0}
+                className="mr-2 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-sm"
                 onClick={clearAll}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    clearAll(e);
+                  }
+                }}
                 title="Clear all"
+                aria-label="Clear all selections"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </span>
             )}
             <ChevronsUpDown className="h-4 w-4 opacity-50" />
           </div>

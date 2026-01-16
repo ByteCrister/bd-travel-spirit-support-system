@@ -9,10 +9,11 @@ import {
     contactInfoValidationSchema,
     shiftValidationSchema,
     documentValidationSchema,
-} from "./employee.validator";
+} from "../employee.validator";
 import {
     EMPLOYEE_STATUS,
     EMPLOYMENT_TYPE,
+    SALARY_PAYMENT_MODE,
 } from "@/constants/employee.const";
 import { CURRENCY } from "@/constants/tour.const";
 import { showToast } from "@/components/global/showToast";
@@ -114,6 +115,13 @@ export const validateUpdateEmployeePayload = async (
     if (payload.currency) {
         if (!Object.values(CURRENCY).includes(payload.currency as CURRENCY)) {
             showToast.error("Invalid currency");
+            hasError = true;
+        }
+    }
+     /* ---------------- Payment mode ---------------- */
+     if (payload.paymentMode) {
+        if (!Object.values(SALARY_PAYMENT_MODE).includes(payload.paymentMode as SALARY_PAYMENT_MODE)) {
+            showToast.error("Invalid payment mode");
             hasError = true;
         }
     }

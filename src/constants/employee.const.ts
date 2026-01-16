@@ -40,6 +40,12 @@ export enum PAYROLL_STATUS {
 
 export type PayrollStatus = `${PAYROLL_STATUS}`;
 
+export enum SALARY_PAYMENT_MODE {
+  AUTO = "auto",
+  MANUAL = "manual",
+}
+export type SalaryPaymentMode = `${SALARY_PAYMENT_MODE}`;
+
 /* ------------------------------------------------------------------
    TYPE DERIVATIONS — Always in sync with constants
 ------------------------------------------------------------------- */

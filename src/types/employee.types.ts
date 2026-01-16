@@ -5,6 +5,7 @@ import {
   EmployeeStatus,
   EmploymentType,
   PayrollStatus,
+  SalaryPaymentMode,
 } from "@/constants/employee.const";
 import { AuditLog } from "./current-user.types";
 import { Currency } from "@/constants/tour.const";
@@ -75,6 +76,17 @@ export interface UserSummaryDTO {
   avatar?: string; // URL or Asset id depending on API
 }
 
+export interface CurrentMonthPaymentStatusDTO {
+  status: PayrollStatus; // "pending" | "paid" | "failed"
+  amount: number;
+  currency: string;
+  dueDate?: ISODateString; // When the payment is due
+  attemptedAt?: ISODateString;
+  paidAt?: ISODateString;
+  transactionRef?: string;
+  failureReason?: string;
+}
+
 /* ---------------------------------------------------------------------
   3. CORE EMPLOYEE DTOs
 --------------------------------------------------------------------- */
@@ -101,6 +113,8 @@ export interface EmployeeListItemDTO {
   // Compensation
   salary: number;
   currency: string;
+  paymentMode: SalaryPaymentMode; // auto | manual
+  currentMonthPayment?: CurrentMonthPaymentStatusDTO; // current month payment status
 
   // Dates
   dateOfJoining: ISODateString;
@@ -140,6 +154,8 @@ export interface EmployeeDetailDTO {
   salary: number;
   currency: string;
   salaryHistory: SalaryHistoryDTO[];
+  paymentMode: SalaryPaymentMode; // auto | manual
+  currentMonthPayment?: CurrentMonthPaymentStatusDTO; // current month payment status
 
   // Dates
   dateOfJoining: ISODateString;
@@ -166,13 +182,14 @@ export interface EmployeeDetailDTO {
 --------------------------------------------------------------------- */
 
 export interface CreateEmployeePayload {
-  id?:string;
+  id?: string;
   name: string;
   password: string;
   employmentType: EmploymentType;
   avatar: ObjectIdString;
   salary: number | null;
   currency: Currency;
+  paymentMode: SalaryPaymentMode; // auto | manual
   dateOfJoining: ISODateString;
   contactInfo: ContactInfoDTO; // phone is required
   shifts: ShiftDTO[];
@@ -180,23 +197,18 @@ export interface CreateEmployeePayload {
   notes?: string;
 }
 
-export interface UpdateEmployeePayload {
+export type UpdateEmployeePayload = Omit<CreateEmployeePayload, "password" | "id" | "salary"> & {
   id: ObjectIdString;
-  name: string;
-  employmentType?: EmploymentType;
-  avatar: ObjectIdString;
   status: EmployeeStatus;
   salary: number;
-  currency: Currency;
-  dateOfJoining?: ISODateString;
   dateOfLeaving?: ISODateString;
-  contactInfo: ContactInfoDTO;
-  shifts: ShiftDTO[];
-  documents?: DocumentDTO[];
-  notes?: string;
-}
+};
 
 export interface RestoreEmployeePayload {
+  id: ObjectIdString;
+}
+
+export interface RetrySalaryPaymentPayload {
   id: ObjectIdString;
 }
 
@@ -214,13 +226,18 @@ export type EmployeeSortKey =
   | "dateOfJoining"
   | "dateOfLeaving"
   | "createdAt"
-  | "updatedAt";
+  | "updatedAt"
+  | "paymentStatus"; // sort by payment status
+
 
 // Filter criteria
 export interface EmployeeFilters {
   // Status filters
   statuses?: EmployeeStatus[];
   employmentTypes?: EmploymentType[];
+
+  // Payment status filter
+  paymentStatuses?: PayrollStatus[]; // filter by current month payment status
 
   // Text search
   search?: string;
@@ -322,3 +339,15 @@ export const sortableEmployeeFields = [
 ] as const;
 
 export type SortableEmployeeField = (typeof sortableEmployeeFields)[number];
+
+/* ---------------------------------------------------------------------
+  9. PAYMENT ACTION TYPES (Add new section)
+--------------------------------------------------------------------- */
+
+export interface SalaryPaymentRetryResponse {
+  success: boolean;
+  transactionId?: string;
+  message: string;
+  payment: CurrentMonthPaymentStatusDTO;
+  employee?: EmployeeDetailDTO; // Optional full employee data
+}

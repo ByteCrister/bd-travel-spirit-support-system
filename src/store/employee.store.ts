@@ -1,8 +1,6 @@
 // stores/employee.store.ts
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import api from "@/utils/axios";
-import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import {
     CreateEmployeePayload,
     EmployeeDetailDTO,
@@ -16,9 +14,11 @@ import {
 } from "@/types/employee.types";
 import { ApiResponse } from "@/types/api.types";
 import { showToast } from "@/components/global/showToast";
+import api from "@/utils/axios";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 
 // const URL_AFTER_API = `/mock/users/employees`;
-const URL_AFTER_API = `/users/v1/employees`;
+const URL_AFTER_API = `/users/employees/v1`;
 
 const DEFAULT_TTL_SECONDS =
     Number.parseInt(process.env.NEXT_PUBLIC_CACHE_TTL || "300", 10) || 300;
@@ -70,6 +70,8 @@ interface EmployeeStore {
     softDeleteEmployee: (id: string, reason: string) => Promise<void>;
     restoreEmployee: (payload: RestoreEmployeePayload) => Promise<EmployeeDetailDTO>;
 
+    retryEmployeeSalaryPayment: (id: string) => Promise<EmployeeDetailDTO>;
+
     // Meta endpoints
     fetchEnums: (force?: boolean) => Promise<unknown>;
 
@@ -86,6 +88,7 @@ const EMP_API = {
     UPDATE: (id: string) => `${URL_AFTER_API}/${id}`,
     SOFT_DELETE: (id: string) => `${URL_AFTER_API}/${id}/soft-delete`,
     RESTORE: (id: string) => `${URL_AFTER_API}/${id}/restore`,
+    RETRY_SALARY_PAYMENT: (id: string) => `${URL_AFTER_API}/${id}/retry-payment`,
     POSITIONS: `${URL_AFTER_API}/positions`,
     ENUMS: `${URL_AFTER_API}/enums`,
 } as const;
@@ -583,6 +586,95 @@ export const useEmployeeStore = create<EmployeeStore>()(
                                 "employees/restore:error"
                             );
                             showToast.error("Employee did not restored", message)
+                            throw new Error(message);
+                        }
+                    },
+
+                    // Add this new method after restoreEmployee method
+                    async retryEmployeeSalaryPayment(id: string) {
+                        set(
+                            (s) => ({
+                                lastError: null,
+                                loadingById: { ...s.loadingById, [id]: true },
+                            }),
+                            false,
+                            "employees/retrySalaryPayment:start"
+                        );
+
+                        try {
+                            const res = await api.post<ApiResponse<EmployeeDetailDTO>>(
+                                EMP_API.RETRY_SALARY_PAYMENT(id)
+                            );
+                            const body = res.data;
+
+                            if (!body?.data) {
+                                throw new Error("Failed to retry salary payment");
+                            }
+
+                            const updatedEmployee = body.data;
+
+                            // Cache the updated employee detail
+                            const detailKey = EMPLOYEES_CACHE_KEYS.detail(id as ObjectIdString);
+                            get().cache.set(detailKey, {
+                                ts: nowMs(),
+                                ttl: DEFAULT_TTL_SECONDS,
+                                data: updatedEmployee,
+                            });
+
+                            // Update canonical list cache if employee exists there
+                            const cacheEntries = Array.from(get().cache.entries());
+
+                            cacheEntries.forEach(([key, entry]) => {
+                                if (key.startsWith("employees:list:canonical:")) {
+                                    const canonical = entry.data as CanonicalListCache;
+
+                                    const employeeIndex = canonical.items.findIndex(item => item?.id === id);
+                                    if (employeeIndex !== -1) {
+                                        // Update the payment status in the list item
+                                        canonical.items[employeeIndex] = {
+                                            ...canonical.items[employeeIndex],
+                                            currentMonthPayment: updatedEmployee.currentMonthPayment,
+                                            // Update other relevant fields if needed
+                                            status: updatedEmployee.status,
+                                            updatedAt: updatedEmployee.updatedAt,
+                                        };
+
+                                        // Update the cache entry
+                                        get().cache.set(key, {
+                                            ...entry,
+                                            data: canonical,
+                                        });
+                                    }
+                                }
+                            });
+
+                            // Invalidate list cache to ensure UI updates
+                            get().invalidateCacheKeyPrefix("employees:list:canonical:");
+
+                            set(
+                                (s) => ({
+                                    loadingById: { ...s.loadingById, [id]: false },
+                                }),
+                                false,
+                                "employees/retrySalaryPayment:done"
+                            );
+
+                            showToast.success(
+                                "Salary payment retried successfully",
+                                `Payment for ${updatedEmployee.user.name} has been retried.`
+                            );
+                            return updatedEmployee;
+                        } catch (err) {
+                            const message = extractErrorMessage(err);
+                            set(
+                                (s) => ({
+                                    lastError: message,
+                                    loadingById: { ...s.loadingById, [id]: false },
+                                }),
+                                false,
+                                "employees/retrySalaryPayment:error"
+                            );
+                            showToast.error("Salary payment retry failed", message);
                             throw new Error(message);
                         }
                     },

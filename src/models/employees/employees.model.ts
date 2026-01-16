@@ -5,6 +5,10 @@ import {
     EMPLOYMENT_TYPE,
     EmployeeStatus,
     EmploymentType,
+    PAYROLL_STATUS,
+    PayrollStatus,
+    SALARY_PAYMENT_MODE,
+    SalaryPaymentMode,
 } from "@/constants/employee.const";
 
 import { Currency } from "@/constants/tour.const";
@@ -15,14 +19,6 @@ import { ClientSession } from "mongoose";
 /* =========================================================
    PAYROLL
 ========================================================= */
-
-enum PAYROLL_STATUS {
-    PENDING = "pending",
-    PAID = "paid",
-    FAILED = "failed",
-}
-
-type PayrollStatus = `${PAYROLL_STATUS}`
 
 export interface IPayrollRecord {
     year: number;                  // e.g. 2025
@@ -37,7 +33,6 @@ export interface IPayrollRecord {
 
     failureReason?: string;
     transactionRef?: string;
-    paidBy?: Types.ObjectId;        // Admin / Owner
 }
 
 const PayrollSchema = new Schema<IPayrollRecord>(
@@ -60,8 +55,6 @@ const PayrollSchema = new Schema<IPayrollRecord>(
 
         failureReason: { type: String, trim: true },
         transactionRef: { type: String, trim: true },
-
-        paidBy: { type: Schema.Types.ObjectId, ref: "User" },
     },
     { _id: false }
 );
@@ -248,6 +241,7 @@ export interface IEmployee extends Document {
     salary: number;
     currency: Currency;
     salaryHistory: ISalaryHistory[];
+    paymentMode: SalaryPaymentMode; // auto | manual
 
     payroll: IPayrollRecord[];
 
@@ -314,6 +308,11 @@ const EmployeeSchema = new Schema<IEmployee, IEmployeeModel, IEmployeeMethods>(
         /* FINANCIAL */
         salary: { type: Number, required: true, min: 0 },
         currency: { type: String, required: true, uppercase: true },
+        paymentMode: {
+            type: String,
+            enum: Object.values(SALARY_PAYMENT_MODE),
+            required: true,
+        },
 
         salaryHistory: {
             type: [SalaryHistorySchema],
@@ -472,10 +471,10 @@ EmployeeSchema.statics.findDeleted = function (
 };
 
 EmployeeSchema.statics.findOneWithDeleted = function (
-  query: FilterQuery<IEmployee>,
-  session?: ClientSession
+    query: FilterQuery<IEmployee>,
+    session?: ClientSession
 ) {
-  return this.findOne(query).session(session ?? null);
+    return this.findOne(query).session(session ?? null);
 };
 
 /* =========================================================

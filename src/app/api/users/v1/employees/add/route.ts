@@ -9,7 +9,7 @@ import { EMPLOYEE_STATUS, EMPLOYMENT_TYPE } from "@/constants/employee.const";
 import UserModel, { IUserDoc } from "@/models/user.model";
 import { CreateEmployeePayload } from "@/types/employee.types";
 import { Types } from "mongoose";
-import { createEmployeeValidationSchema } from "@/utils/validators/employee.validator";
+import { createEmployeeValidationSchema } from "@/utils/validators/employee/employee.validator";
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
 import ConnectDB from "@/config/db";
 import { withTransaction } from "@/lib/helpers/withTransaction";
@@ -129,6 +129,7 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
             avatar: avatarAssetId,
             salary: body.salary || 0,
             currency: body.currency,
+            paymentMode: body.paymentMode,
             dateOfJoining: new Date(body.dateOfJoining),
             contactInfo: {
                 phone: body.contactInfo.phone,

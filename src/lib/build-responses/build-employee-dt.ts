@@ -1,13 +1,14 @@
+// lib/build-responses/build-employee-dt.ts
 import { Types } from "mongoose";
 import AuditModel from "@/models/audit.model";
-import "@/models/assets/asset.model"; // for populate and 
+import "@/models/assets/asset.model"; // for populate
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
 import { AuditLog } from "@/types/current-user.types";
-import { ContactInfoDTO, DocumentDTO, EmployeeDetailDTO, PayrollRecordDTO, SalaryHistoryDTO, UserSummaryDTO } from "@/types/employee.types";
+import { ContactInfoDTO, DocumentDTO, EmployeeDetailDTO, PayrollRecordDTO, SalaryHistoryDTO, UserSummaryDTO, CurrentMonthPaymentStatusDTO } from "@/types/employee.types";
 import { UserRole } from "@/constants/user.const";
 import { ClientSession } from "mongoose";
 import { PopulatedAssetLean } from "@/types/populated-asset.types";
-
+import { PAYROLL_STATUS, PayrollStatus } from "@/constants/employee.const";
 
 type ObjectId = Types.ObjectId;
 
@@ -36,6 +37,77 @@ type EmployeeLeanPopulated =
         documents: IEmployeeDocumentLean[];
     };
 
+/**
+ * Calculate current month payment status for an employee
+ */
+function calculateCurrentMonthPaymentStatus(
+    dateOfJoining: Date,
+    salary: number,
+    currency: string,
+    payroll: IEmployee["payroll"] = []
+): CurrentMonthPaymentStatusDTO | undefined {
+    const today = new Date();
+    const joiningDate = new Date(dateOfJoining);
+
+    // Reset times for accurate day calculation
+    joiningDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    // Calculate days since joining
+    const timeDiff = today.getTime() - joiningDate.getTime();
+    const daysSinceJoining = Math.floor(timeDiff / (1000 * 3600 * 24));
+
+    // Calculate current cycle number (30-day cycles)
+    const currentCycle = Math.floor(daysSinceJoining / 30);
+
+    // Calculate which month and year this payment cycle corresponds to
+    const cycleDate = new Date(joiningDate);
+    cycleDate.setDate(cycleDate.getDate() + (currentCycle * 30));
+
+    const currentYear = cycleDate.getFullYear();
+    const currentMonth = cycleDate.getMonth() + 1; // 1-12
+
+    // Calculate next due date (next cycle)
+    const dueDate = new Date(joiningDate);
+    dueDate.setDate(dueDate.getDate() + ((currentCycle + 1) * 30));
+
+    // Find payroll record for current cycle month/year
+    const currentMonthRecord = payroll.find(
+        (record) => record.year === currentYear && record.month === currentMonth
+    );
+
+    // Determine status
+    let status: PayrollStatus = PAYROLL_STATUS.PENDING;
+    let attemptedAt: string | undefined;
+    let paidAt: string | undefined;
+    let transactionRef: string | undefined;
+    let failureReason: string | undefined;
+
+    if (currentMonthRecord) {
+        status = currentMonthRecord.status;
+        attemptedAt = currentMonthRecord.attemptedAt?.toISOString();
+        paidAt = currentMonthRecord.paidAt?.toISOString();
+        transactionRef = currentMonthRecord.transactionRef;
+        failureReason = currentMonthRecord.failureReason;
+    } else {
+        // If no record exists but payment is due, it's pending
+        if (daysSinceJoining >= currentCycle * 30) {
+            status = PAYROLL_STATUS.PENDING;
+        }
+        // If not yet due, still show as pending (not yet processed)
+    }
+
+    return {
+        status,
+        amount: salary,
+        currency,
+        dueDate: dueDate.toISOString(),
+        attemptedAt,
+        paidAt,
+        transactionRef,
+        failureReason,
+    };
+}
 
 /**
  * Build EmployeeDetailDTO array from multiple employeeIds
@@ -62,7 +134,7 @@ export async function buildEmployeeDTO(
         })
         .populate({
             path: "documents.asset",
-            select: "file  deletedAt",
+            select: "file deletedAt",
             populate: { path: "file", select: "publicUrl" },
             ...(withDeleted ? {} : { match: { deletedAt: null } }),
         })
@@ -75,7 +147,7 @@ export async function buildEmployeeDTO(
     const user = employee.user;
 
     /* ---------------------------------- */
-    /* Asset map (safe)                    */
+    /* Asset map (safe)                   */
     /* ---------------------------------- */
     const assetMap = new Map<string, string>();
 
@@ -124,8 +196,17 @@ export async function buildEmployeeDTO(
         paidAt: p.paidAt?.toISOString(),
         failureReason: p.failureReason,
         transactionRef: p.transactionRef,
-        paidBy: p.paidBy?.toString(),
     }));
+
+    /* ---------------------------------- */
+    /* Current Month Payment Status       */
+    /* ---------------------------------- */
+    const currentMonthPayment = calculateCurrentMonthPaymentStatus(
+        employee.dateOfJoining,
+        employee.salary,
+        employee.currency,
+        employee.payroll || []
+    );
 
     /* ---------------------------------- */
     /* Contact info                       */
@@ -186,6 +267,8 @@ export async function buildEmployeeDTO(
         employmentType: employee.employmentType,
         salary: employee.salary,
         currency: employee.currency,
+        paymentMode: employee.paymentMode,
+        currentMonthPayment, // Added current month payment status
         salaryHistory,
         dateOfJoining: employee.dateOfJoining.toISOString(),
         dateOfLeaving: employee.dateOfLeaving?.toISOString(),

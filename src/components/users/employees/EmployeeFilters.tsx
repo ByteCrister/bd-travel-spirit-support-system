@@ -38,6 +38,8 @@ import {
     EmployeeStatus,
     EMPLOYMENT_TYPE,
     EmploymentType,
+    PAYROLL_STATUS,
+    PayrollStatus,
 } from "@/constants/employee.const";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -52,6 +54,10 @@ import {
     FileText,
     Loader2,
     Sparkles,
+    CreditCard,
+    CheckCircle,
+    XCircle,
+    Clock,
 } from "lucide-react";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
@@ -59,8 +65,8 @@ type EnumsShape = {
     roles?: EmployeeRole[];
     statuses?: EmployeeStatus[];
     employmentTypes?: EmploymentType[];
+    paymentStatuses?: PayrollStatus[];
 };
-
 
 const STATUS_LABELS: Record<EmployeeStatus, string> = {
     active: "Active",
@@ -74,6 +80,24 @@ const EMPLOYMENT_TYPE_LABELS: Record<EmploymentType, string> = {
     part_time: "Part Time",
     contract: "Contract",
     intern: "Intern",
+};
+
+const PAYMENT_STATUS_LABELS: Record<PayrollStatus, string> = {
+    pending: "Pending",
+    paid: "Paid",
+    failed: "Failed",
+};
+
+const PAYMENT_STATUS_ICONS: Record<PayrollStatus, React.ReactNode> = {
+    pending: <Clock className="h-4 w-4" />,
+    paid: <CheckCircle className="h-4 w-4" />,
+    failed: <XCircle className="h-4 w-4" />,
+};
+
+const PAYMENT_STATUS_VARIANTS: Record<PayrollStatus, "default" | "secondary" | "destructive" | "outline"> = {
+    pending: "secondary",
+    paid: "default",
+    failed: "destructive",
 };
 
 const STATUS_VARIANTS: Record<EmployeeStatus, "default" | "secondary" | "destructive" | "outline"> = {
@@ -117,11 +141,11 @@ export function EmployeeFilters({
 
             if (!mounted) return;
 
-
             setEnums({
                 roles: Object.values(EMPLOYEE_ROLE),
                 statuses: Object.values(EMPLOYEE_STATUS),
                 employmentTypes: Object.values(EMPLOYMENT_TYPE),
+                paymentStatuses: Object.values(PAYROLL_STATUS),
             });
         };
 
@@ -171,7 +195,6 @@ export function EmployeeFilters({
             onRemove: () => void;
         }> = [];
 
-
         if (filters.statuses?.[0]) {
             const s = filters.statuses[0];
             chips.push({
@@ -188,6 +211,16 @@ export function EmployeeFilters({
                 key: `type:${t}`,
                 label: EMPLOYMENT_TYPE_LABELS[t] ?? t,
                 onRemove: () => setFilters({ employmentTypes: undefined }),
+            });
+        }
+
+        if (filters.paymentStatuses?.[0]) {
+            const p = filters.paymentStatuses[0];
+            chips.push({
+                key: `payment:${p}`,
+                label: PAYMENT_STATUS_LABELS[p] ?? p,
+                variant: PAYMENT_STATUS_VARIANTS[p],
+                onRemove: () => setFilters({ paymentStatuses: undefined }),
             });
         }
 
@@ -214,7 +247,7 @@ export function EmployeeFilters({
         }
 
         return chips;
-    }, [debouncedUpdateSearch, filters.employmentTypes, filters.includeDeleted, filters.search, filters.statuses, setFilters]);
+    }, [debouncedUpdateSearch, filters.employmentTypes, filters.includeDeleted, filters.paymentStatuses, filters.search, filters.statuses, setFilters]);
 
     // Handle search input change
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -321,6 +354,11 @@ export function EmployeeFilters({
                                                 variant={chip.variant ?? "secondary"}
                                                 className="h-8 gap-2 rounded-full pl-3.5 pr-2 text-xs font-medium shadow-sm backdrop-blur-sm transition-all hover:shadow-md hover:scale-105"
                                             >
+                                                {chip.key.startsWith('payment:') && (
+                                                    <span className="flex items-center">
+                                                        {PAYMENT_STATUS_ICONS[chip.key.split(':')[1] as PayrollStatus]}
+                                                    </span>
+                                                )}
                                                 {chip.label}
                                                 <button
                                                     type="button"
@@ -375,8 +413,7 @@ export function EmployeeFilters({
                                 <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
 
                                 {/* Filter grid with improved spacing */}
-                                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-
+                                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
                                     <ShadcnFilterSelect
                                         label="Employment Status"
@@ -410,6 +447,26 @@ export function EmployeeFilters({
                                         }
                                         loading={!enums || loading}
                                         placeholder="Select type"
+                                        disabled={loading}
+                                    />
+
+                                    <ShadcnFilterSelect
+                                        label="Payment Status"
+                                        icon={<CreditCard className="h-4 w-4" aria-hidden="true" />}
+                                        value={filters.paymentStatuses?.[0] ?? ""}
+                                        onValueChange={(value) =>
+                                            setFilters({
+                                                paymentStatuses: value ? [value as PayrollStatus] : undefined,
+                                            })
+                                        }
+                                        options={
+                                            enums?.paymentStatuses?.map((p) => ({
+                                                value: p,
+                                                label: PAYMENT_STATUS_LABELS[p],
+                                            })) ?? []
+                                        }
+                                        loading={!enums || loading}
+                                        placeholder="Select payment status"
                                         disabled={loading}
                                     />
                                 </div>

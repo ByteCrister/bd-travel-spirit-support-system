@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-import { CreateEmployeeFormValues, createEmployeeValidationSchema } from "@/utils/validators/employee.validator";
+import { CreateEmployeeFormValues, createEmployeeValidationSchema } from "@/utils/validators/employee/employee.validator";
 import { CreateEmployeePayload, ShiftDTO, DayOfWeek, DocumentDTO } from "@/types/employee.types";
 import { EMPLOYMENT_TYPE } from "@/constants/employee.const";
 import { CURRENCY } from "@/constants/tour.const";

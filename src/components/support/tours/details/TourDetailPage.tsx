@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -143,26 +143,48 @@ const MODERATION_CONFIG = {
 
 export default function TourDetailPage({ tourId }: Props) {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
+
     const {
         fetchTourById,
         getFromTourCache,
+        setSelectedTour,
         isProcessing,
         selectedTour,
         isLoading,
         error
     } = useTourApproval();
-    // Get tour from cache if not in selectedTour
-    const tour = selectedTour?.id === tourId
-        ? selectedTour
-        : getFromTourCache(tourId);
+
+    // Get tour from cache FIRST, then check selectedTour
+    const cachedTour = getFromTourCache(tourId);
+    const tour = cachedTour || (selectedTour?.id === tourId ? selectedTour : null);
 
     const [approveOpenFor, setApproveOpenFor] = useState<string | null>(null);
     const [rejectOpenFor, setRejectOpenFor] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchTourById(tourId)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        const loadTour = async () => {
+            // On initial load, always try cache first
+            if (isInitialLoad) {
+                setIsInitialLoad(false);
+
+                // If we have cached data, use it immediately
+                if (cachedTour) {
+                    setSelectedTour(cachedTour);
+                }
+
+                // Then fetch fresh data in background
+                await fetchTourById(tourId, false);
+                return;
+            }
+
+            // Subsequent loads, use normal logic
+            await fetchTourById(tourId, false);
+        };
+
+        loadTour();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tourId]);
 
     const formatDate = (d?: string) => {
         if (!d) return "—";
@@ -228,6 +250,10 @@ export default function TourDetailPage({ tourId }: Props) {
         return stars;
     };
 
+    const handleRetry = useCallback(async () => {
+        await fetchTourById(tourId, true); // Force skip cache
+    }, [fetchTourById, tourId]);
+
     if (isLoading && !tour) {
         return (
             <div className="rounded-2xl overflow-hidden">
@@ -253,7 +279,7 @@ export default function TourDetailPage({ tourId }: Props) {
                         </h3>
                         <p className="text-sm text-red-600 dark:text-red-300 mb-6">{String(error)}</p>
                         <Button
-                            onClick={async () => fetchTourById(tourId, true)}
+                            onClick={handleRetry}
                             className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
                         >
                             Try Again
@@ -491,7 +517,7 @@ export default function TourDetailPage({ tourId }: Props) {
                                 {/* Action Buttons - Side by side on desktop, stacked on mobile */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
                                     <Button
-                                        onClick={() => setApproveOpenFor(tour.id)}
+                                        onClick={() => setApproveOpenFor(tourId)}
                                         disabled={isProcessing}
                                         className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md hover:shadow-lg transition-all py-3 text-sm sm:text-base"
                                     >
@@ -499,7 +525,7 @@ export default function TourDetailPage({ tourId }: Props) {
                                         Approve
                                     </Button>
                                     <Button
-                                        onClick={() => setRejectOpenFor(tour.id)}
+                                        onClick={() => setRejectOpenFor(tourId)}
                                         disabled={isProcessing}
                                         className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white shadow-md hover:shadow-lg transition-all py-3 text-sm sm:text-base"
                                     >
@@ -1785,15 +1811,15 @@ export default function TourDetailPage({ tourId }: Props) {
             </AnimatePresence>
 
             <ConfirmApproveDialog
-                open={approveOpenFor === tour.id}
+                open={approveOpenFor === tourId}
                 onOpenChange={(open: boolean) => !open && setApproveOpenFor(null)}
-                tourId={tour.id}
+                tourId={tourId}
                 tourTitle={tour.title}
             />
             <RejectDialog
-                open={rejectOpenFor === tour.id}
+                open={rejectOpenFor === tourId}
                 onOpenChange={(open: boolean) => !open && setRejectOpenFor(null)}
-                tourId={tour.id}
+                tourId={tourId}
                 tourTitle={tour.title}
             />
         </motion.article>

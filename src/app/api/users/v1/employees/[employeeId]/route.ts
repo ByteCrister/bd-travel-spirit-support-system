@@ -12,7 +12,7 @@ import { withTransaction } from "@/lib/helpers/withTransaction";
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
 import UserModel from "@/models/user.model";
 import { UpdateEmployeePayload } from "@/types/employee.types";
-import { updateEmployeeServerSchema } from "@/utils/validators/employee-server-payload.validator";
+import { updateEmployeeServerSchema } from "@/utils/validators/employee/employee-server-payload.validator";
 import { isValidObjectId, Types } from "mongoose";
 import { USER_ROLE, UserRole } from "@/constants/user.const";
 import ConnectDB from "@/config/db";
@@ -110,6 +110,8 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
             status: body.status,
             employmentType: body.employmentType,
             salary: body.salary,
+            currency: body.currency,
+            paymentMode: body.paymentMode,
             dateOfJoining: toDate(body.dateOfJoining),
             dateOfLeaving: toDate(body.dateOfLeaving),
             contactInfo: body.contactInfo,

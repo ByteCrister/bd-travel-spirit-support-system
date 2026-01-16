@@ -1,8 +1,8 @@
-// app/api/user/v1/employees/route.ts
+// app/api/users/employees/v1/route.ts
 import { NextRequest } from 'next/server';
 import mongoose from 'mongoose';
 import ConnectDB from '@/config/db';
-import EmployeeModel from '@/models/employees/employees.model';
+import EmployeeModel, { IEmployee } from '@/models/employees/employees.model';
 import { getUserIdFromSession } from '@/lib/auth/session.auth';
 import { withErrorHandler, ApiError } from '@/lib/helpers/withErrorHandler';
 import {
@@ -12,6 +12,7 @@ import {
     EmployeesListResponse,
     EmployeeListItemDTO,
 } from '@/types/employee.types';
+import { PAYROLL_STATUS } from '@/constants/employee.const';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -73,6 +74,9 @@ function buildMongooseQuery(query: EmployeesQuery) {
     // Employment type filter
     if (query.filters?.employmentTypes?.length) filter.employmentType = { $in: query.filters.employmentTypes };
 
+    // Payment status filter - handled separately in aggregation
+    // (We'll filter this after computing current month payment status)
+
     // Salary range
     if (query.filters?.salaryMin !== undefined || query.filters?.salaryMax !== undefined) {
         filter.salary = {};
@@ -123,6 +127,10 @@ function buildMongooseQuery(query: EmployeesQuery) {
         case 'updatedAt':
             sort.updatedAt = sortOrder;
             break;
+        case 'paymentStatus':
+            // We'll sort by payment status in aggregation after computing it
+            sort['currentPaymentStatus'] = sortOrder;
+            break;
         default:
             sort.createdAt = -1;
     }
@@ -155,6 +163,9 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     }
     if (query.filters?.statuses && !Array.isArray(query.filters.statuses)) {
         query.filters.statuses = [query.filters.statuses];
+    }
+    if (query.filters?.paymentStatuses && !Array.isArray(query.filters.paymentStatuses)) {
+        query.filters.paymentStatuses = [query.filters.paymentStatuses];
     }
 
     // Connect to DB
@@ -222,6 +233,90 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
         },
         { $unwind: { path: '$employeeAvatarFile', preserveNullAndEmptyArrays: true } },
 
+        // -------------------- PAYMENT STATUS CALCULATION --------------------
+        // Add current month payment status calculation
+        {
+            $addFields: {
+                // Calculate days since joining
+                daysSinceJoining: {
+                    $floor: {
+                        $divide: [
+                            { $subtract: [new Date(), '$dateOfJoining'] },
+                            1000 * 60 * 60 * 24 // milliseconds in a day
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            $addFields: {
+                // Calculate current payment cycle (30-day cycles)
+                currentCycle: {
+                    $floor: { $divide: ['$daysSinceJoining', 30] }
+                },
+                // Get current month and year based on cycle
+                currentPaymentMonthYear: {
+                    $let: {
+                        vars: {
+                            cycleDate: {
+                                $add: [
+                                    '$dateOfJoining',
+                                    { $multiply: ['$currentCycle', 30, 1000 * 60 * 60 * 24] }
+                                ]
+                            }
+                        },
+                        in: {
+                            year: { $year: '$$cycleDate' },
+                            month: { $month: '$$cycleDate' }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $addFields: {
+                // Find payroll record for current month
+                currentMonthPayrollRecord: {
+                    $arrayElemAt: [
+                        {
+                            $filter: {
+                                input: '$payroll',
+                                as: 'record',
+                                cond: {
+                                    $and: [
+                                        { $eq: ['$$record.year', '$currentPaymentMonthYear.year'] },
+                                        { $eq: ['$$record.month', '$currentPaymentMonthYear.month'] }
+                                    ]
+                                }
+                            }
+                        },
+                        0
+                    ]
+                },
+                // Calculate if payment is due
+                isPaymentDue: {
+                    $gte: ['$daysSinceJoining', { $multiply: ['$currentCycle', 30] }]
+                }
+            }
+        },
+        {
+            $addFields: {
+                currentPaymentStatus: {
+                    $cond: {
+                        if: { $gt: [{ $size: { $ifNull: ['$currentMonthPayrollRecord', []] } }, 0] },
+                        then: '$currentMonthPayrollRecord.status',
+                        else: {
+                            $cond: {
+                                if: '$isPaymentDue',
+                                then: PAYROLL_STATUS.PENDING,
+                                else: PAYROLL_STATUS.PENDING // Not yet due, still pending
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
         // -------------------- SEARCH --------------------
         ...(query.filters?.search
             ? [
@@ -238,6 +333,17 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
             ]
             : []),
 
+        // -------------------- PAYMENT STATUS FILTER --------------------
+        ...(query.filters?.paymentStatuses?.length
+            ? [
+                {
+                    $match: {
+                        currentPaymentStatus: { $in: query.filters.paymentStatuses }
+                    }
+                }
+            ]
+            : []),
+
         // -------------------- SORT & PAGINATION --------------------
         { $sort: sort },
         { $skip: (query.page! - 1) * query.limit! },
@@ -251,6 +357,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
                 employmentType: 1,
                 salary: 1,
                 currency: 1,
+                paymentMode: 1,
                 dateOfJoining: 1,
                 dateOfLeaving: 1,
                 contactInfo: 1,
@@ -260,6 +367,8 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
                 createdAt: 1,
                 updatedAt: 1,
                 companyId: 1,
+                payroll: 1,
+                currentPaymentStatus: 1, // Include calculated payment status
 
                 user: {
                     firstName: { $arrayElemAt: [{ $split: ['$user.name', ' '] }, 0] },
@@ -274,42 +383,84 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
         },
     ];
 
-    // Get total count (respect search filters)
-    const countPipeline = [...pipeline];
+    // Get total count (respect all filters including payment status)
+    const countPipeline = [...pipeline.slice(0, -4)]; // Remove sort, skip, limit, project
     countPipeline.push({ $count: 'total' });
-    const countResult = await EmployeeModel.aggregate(countPipeline);
-    const total = countResult[0]?.total || 0;
+
+    let total = 0;
+    try {
+        const countResult = await EmployeeModel.aggregate(countPipeline);
+        total = countResult[0]?.total || 0;
+    } catch (error) {
+        console.error('Error counting employees:', error);
+        // If there's an error with the complex aggregation, fall back to simple count
+        const simpleCount = await EmployeeModel.countDocuments(filter);
+        total = simpleCount;
+    }
 
     // Execute main aggregation
     const employees = await EmployeeModel.aggregate(pipeline);
 
     // Map to DTO
-    const docs: EmployeeListItemDTO[] = employees.map((emp) => ({
-        id: emp._id.toString(),
-        user: {
-            name: [emp.user.firstName, emp.user.lastName].filter(Boolean).join(' '),
-            email: emp.user.email,
-            phone: emp.user.phone,
-            avatar: emp.user.avatarUrl,
-        },
-        companyId: emp.companyId?.toString(),
-        status: emp.status,
-        employmentType: emp.employmentType,
-        salary: emp.salary,
-        currency: emp.currency,
-        dateOfJoining: emp.dateOfJoining.toISOString(),
-        dateOfLeaving: emp.dateOfLeaving?.toISOString(),
-        contactPhone: emp.contactInfo.phone,
-        contactEmail: emp.contactInfo.email,
-        shiftSummary: emp.shifts?.length
-            ? `${emp.shifts[0].startTime}-${emp.shifts[0].endTime} (${emp.shifts[0].days.join(', ')})`
-            : undefined,
-        lastLogin: emp.lastLogin?.toISOString(),
-        avatar: emp.avatarUrl,
-        isDeleted: !!emp.deletedAt,
-        createdAt: emp.createdAt.toISOString(),
-        updatedAt: emp.updatedAt.toISOString(),
-    }));
+    const docs: EmployeeListItemDTO[] = employees.map((emp) => {
+        // Calculate current month payment status for DTO
+        const currentPaymentStatus = emp.currentPaymentStatus || PAYROLL_STATUS.PENDING;
+
+        // Calculate due date for current payment cycle
+        const joiningDate = new Date(emp.dateOfJoining);
+        const today = new Date();
+        const timeDiff = today.getTime() - joiningDate.getTime();
+        const daysSinceJoining = Math.floor(timeDiff / (1000 * 3600 * 24));
+        const currentCycle = Math.floor(daysSinceJoining / 30);
+        const dueDate = new Date(joiningDate);
+        dueDate.setDate(dueDate.getDate() + ((currentCycle + 1) * 30));
+
+        // Find current month payroll record for additional details
+        const currentMonthRecord = (emp.payroll as IEmployee["payroll"])?.find((record) => {
+            const recordDate = new Date(record.year, record.month - 1, 1);
+            const currentDate = new Date();
+            return recordDate.getFullYear() === currentDate.getFullYear() &&
+                recordDate.getMonth() === currentDate.getMonth();
+        });
+
+        return {
+            id: emp._id.toString(),
+            user: {
+                name: [emp.user.firstName, emp.user.lastName].filter(Boolean).join(' '),
+                email: emp.user.email,
+                phone: emp.user.phone,
+                avatar: emp.user.avatarUrl,
+            },
+            companyId: emp.companyId?.toString(),
+            status: emp.status,
+            employmentType: emp.employmentType,
+            salary: emp.salary,
+            currency: emp.currency,
+            paymentMode: emp.paymentMode,
+            currentMonthPayment: {
+                status: currentPaymentStatus,
+                amount: emp.salary,
+                currency: emp.currency,
+                dueDate: dueDate.toISOString(),
+                attemptedAt: currentMonthRecord?.attemptedAt?.toISOString(),
+                paidAt: currentMonthRecord?.paidAt?.toISOString(),
+                transactionRef: currentMonthRecord?.transactionRef,
+                failureReason: currentMonthRecord?.failureReason,
+            },
+            dateOfJoining: emp.dateOfJoining.toISOString(),
+            dateOfLeaving: emp.dateOfLeaving?.toISOString(),
+            contactPhone: emp.contactInfo.phone,
+            contactEmail: emp.contactInfo.email,
+            shiftSummary: emp.shifts?.length
+                ? `${emp.shifts[0].startTime}-${emp.shifts[0].endTime} (${emp.shifts[0].days.join(', ')})`
+                : undefined,
+            lastLogin: emp.lastLogin?.toISOString(),
+            avatar: emp.avatarUrl,
+            isDeleted: !!emp.deletedAt,
+            createdAt: emp.createdAt.toISOString(),
+            updatedAt: emp.updatedAt.toISOString(),
+        };
+    });
 
     // Pagination metadata
     const pages = Math.ceil(total / query.limit!);
