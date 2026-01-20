@@ -16,7 +16,7 @@ import { ImageUploader } from './ImageUploader';
 import { FormikErrors, FormikTouched } from 'formik';
 import { CreateArticleFormValues } from '@/utils/validators/article.create.validator';
 import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
-import { TRAVEL_TYPE } from '@/constants/tour.const';
+import { TOUR_CATEGORIES } from '@/constants/tour.const';
 
 export interface ArticleBasicsProps {
   values: CreateArticleFormValues;
@@ -166,7 +166,7 @@ export function ArticleBasics({
       <div>
         <label className="text-sm font-medium">Categories</label>
         <div className="mt-2 flex flex-wrap gap-2">
-          {Object.values(TRAVEL_TYPE).map((cat) => {
+          {Object.values(TOUR_CATEGORIES).map((cat) => {
             const active = categories.includes(cat);
             return (
               <Badge
@@ -175,7 +175,7 @@ export function ArticleBasics({
                 className={`cursor-pointer ${categoriesError ? '' : ''}`}
                 onClick={() => {
                   const next = active
-                    ? categories.filter((c): c is TRAVEL_TYPE => typeof c === 'string' && c !== cat)
+                    ? categories.filter((c): c is TOUR_CATEGORIES => typeof c === 'string' && c !== cat)
                     : [...categories, cat];
                   setFieldValue('categories', next);
                 }}
@@ -233,7 +233,7 @@ export function ArticleBasics({
         <ImageUploader
           label="Hero image"
           value={values.heroImage ?? null}
-          onChange={(v) => setFieldValue('heroImage', (v as string | null) ?? null)}
+          onChange={(v) => setFieldValue('heroImage', v as string)}
         />
         {heroImageError && (
           <p className="mt-1 text-xs text-red-600" role="alert">
@@ -247,7 +247,7 @@ export function ArticleBasics({
         <div>
           <label className="text-sm font-medium">Author bio (optional)</label>
           <Textarea
-            value={values.authorBio}
+            value={values.authorBio ?? ''}
             onChange={(e) => setFieldValue('authorBio', e.target.value)}
             placeholder="Short author bio"
             aria-label="Author bio"

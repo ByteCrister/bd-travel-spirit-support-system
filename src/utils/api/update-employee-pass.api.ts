@@ -24,7 +24,7 @@ import api from "../axios";
  */
 export async function updateEmployeePassword(employeeId: string, password: string, sendMail: boolean): Promise<boolean> {
     try {
-        await api.put(`/users/v1/employees/${encodeURIComponent(employeeId)}/update-password`, {
+        await api.put(`/users/employees/v1/${encodeURIComponent(employeeId)}/update-password`, {
             password,
             sendMail
         });

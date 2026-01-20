@@ -9,7 +9,7 @@ import { toast } from 'sonner'; // shadcn toast
 import imageCompression from 'browser-image-compression'; // lightweight client-side compression
 
 interface ImageUploaderProps {
-    value?: ImageUrl | ImageUrl[] | null;
+    value?: ImageUrl |null;
     onChange: (v: ImageUrl | ImageUrl[] | null ) => void;
     multiple?: boolean;
     label?: string;

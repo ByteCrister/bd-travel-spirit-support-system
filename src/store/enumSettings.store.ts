@@ -25,7 +25,7 @@ import { showToast } from "@/components/global/showToast";
 enableMapSet();
 
 // const URL_AFTER_API = "/mock/site-settings/enums";
-const URL_AFTER_API = "/site-settings/v1/enums";
+const URL_AFTER_API = "/site-settings/enums/v1";
 
 /* Helpers */
 const nowIso = () => new Date().toISOString();

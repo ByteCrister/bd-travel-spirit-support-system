@@ -24,7 +24,7 @@ import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 enableMapSet();
 
 // const URL_AFTER_API = "/mock/site-settings/footer";
-const URL_AFTER_API = "/site-settings/v1/footer";
+const URL_AFTER_API = "/site-settings/footer/v1";
 
 /* ---------- Helpers ---------- */
 

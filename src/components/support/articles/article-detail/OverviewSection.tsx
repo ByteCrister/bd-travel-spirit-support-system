@@ -24,25 +24,25 @@ import {
     FiMapPin,
     FiGlobe,
     FiBook,
-    FiEdit3
+    FiEdit3,
+    FiCloud,
+    FiSun,
+    FiFlag,
+    FiUsers,
+    FiCalendar,
+    FiCoffee,
+    FiCompass
 } from 'react-icons/fi';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
-import { TRAVEL_TYPE } from '@/constants/tour.const';
+import { TOUR_CATEGORIES } from '@/constants/tour.const';
+import { CreateArticleFormValues } from '@/utils/validators/article.create.validator';
 
-type Values = {
-    title: string;
-    slug: string;
-    summary: string;
-    heroImage: string | null;
-    status: ARTICLE_STATUS;
-    articleType: ARTICLE_TYPE;
-    categories: TRAVEL_TYPE[];
-    tags: string[];
-};
+// Use the imported type from validator
+type Values = CreateArticleFormValues;
 
-// Animation variants
+// Animation variants (unchanged)
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -62,7 +62,7 @@ const itemVariants: Variants = {
     }
 };
 
-/** Status configuration */
+/** Status configuration (unchanged) */
 const STATUS_CONFIG: Record<ARTICLE_STATUS, { color: string; icon: ReactNode; description: string }> = {
     [ARTICLE_STATUS.DRAFT]: {
         color: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
@@ -81,14 +81,21 @@ const STATUS_CONFIG: Record<ARTICLE_STATUS, { color: string; icon: ReactNode; de
     }
 };
 
-/** Article type configuration */
+/** Article type configuration - UPDATED with new ARTICLE_TYPE values */
 const TYPE_CONFIG: Record<ARTICLE_TYPE, { icon: ReactNode; color: string }> = {
     [ARTICLE_TYPE.SINGLE_DESTINATION]: { icon: <FiMapPin className="h-4 w-4" />, color: 'text-blue-600' },
     [ARTICLE_TYPE.MULTI_DESTINATION]: { icon: <FiGlobe className="h-4 w-4" />, color: 'text-purple-600' },
-    [ARTICLE_TYPE.GENERAL_TIPS]: { icon: <FiBook className="h-4 w-4" />, color: 'text-green-600' }
+    [ARTICLE_TYPE.CITY_GUIDE]: { icon: <FiCompass className="h-4 w-4" />, color: 'text-green-600' },
+    [ARTICLE_TYPE.HILL_STATION]: { icon: <FiCloud className="h-4 w-4" />, color: 'text-teal-600' },
+    [ARTICLE_TYPE.BEACH_DESTINATION]: { icon: <FiSun className="h-4 w-4" />, color: 'text-yellow-600' },
+    [ARTICLE_TYPE.HISTORICAL_SITE]: { icon: <FiFlag className="h-4 w-4" />, color: 'text-red-600' },
+    [ARTICLE_TYPE.CULTURAL_EXPERIENCE]: { icon: <FiUsers className="h-4 w-4" />, color: 'text-indigo-600' },
+    [ARTICLE_TYPE.FESTIVAL_GUIDE]: { icon: <FiCalendar className="h-4 w-4" />, color: 'text-pink-600' },
+    [ARTICLE_TYPE.FOOD_GUIDE]: { icon: <FiCoffee className="h-4 w-4" />, color: 'text-orange-600' },
+    [ARTICLE_TYPE.TRAVEL_TIPS]: { icon: <FiBook className="h-4 w-4" />, color: 'text-gray-600' }
 };
 
-// Input field wrapper component
+// Input field wrapper component (unchanged)
 const FormField = ({
     label,
     icon: Icon,
@@ -296,8 +303,9 @@ export function OverviewSection() {
                         </h3>
 
                         <div className="space-y-6">
+                            {/* English Title */}
                             <FormField
-                                label="Title"
+                                label="Title (English)"
                                 icon={FiType}
                                 error={errors.title}
                                 touched={touched.title}
@@ -306,11 +314,31 @@ export function OverviewSection() {
                                 <Input
                                     value={values.title}
                                     onChange={(e) => setFieldValue('title', e.target.value)}
-                                    placeholder="Enter an engaging article title..."
+                                    placeholder="Enter an engaging article title in English..."
                                     className={`transition-all ${touched.title && errors.title
                                         ? 'border-red-300 focus:ring-red-500'
                                         : 'focus:ring-blue-500'
                                         }`}
+                                />
+                            </FormField>
+
+                            {/* Bangla Title - NEW FIELD */}
+                            <FormField
+                                label="Title (Bangla)"
+                                icon={FiType}
+                                error={errors.banglaTitle}
+                                touched={touched.banglaTitle}
+                                required
+                            >
+                                <Input
+                                    value={values.banglaTitle || ''}
+                                    onChange={(e) => setFieldValue('banglaTitle', e.target.value)}
+                                    placeholder="বাংলায় একটি আকর্ষণীয় শিরোনাম লিখুন..."
+                                    className={`transition-all ${touched.banglaTitle && errors.banglaTitle
+                                        ? 'border-red-300 focus:ring-red-500'
+                                        : 'focus:ring-blue-500'
+                                        }`}
+                                    dir="rtl"
                                 />
                             </FormField>
 
@@ -441,7 +469,6 @@ export function OverviewSection() {
                                                 <SelectItem key={s} value={s}>
                                                     <div className="flex items-center gap-3">
                                                         <span className={`inline-flex items-center justify-center rounded ${config.color} h-8 w-8`}>
-                                                            {/* icon node already includes size; inherit color from parent by not setting text color on icon, or override as needed */}
                                                             {config.icon}
                                                         </span>
                                                         <div>
@@ -476,7 +503,7 @@ export function OverviewSection() {
                                                         <span className={`${config.color} inline-flex items-center justify-center`}>
                                                             {config.icon}
                                                         </span>
-                                                        <span className="font-medium">{t}</span>
+                                                        <span className="font-medium">{t.replace(/_/g, ' ')}</span>
                                                     </div>
                                                 </SelectItem>
                                             );
@@ -488,7 +515,7 @@ export function OverviewSection() {
                     </Card>
 
 
-                    {/* Categories */}
+                    {/* Categories - UPDATED to use TOUR_CATEGORIES */}
                     <Card className="p-6 shadow-sm border-gray-200/60">
                         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                             <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
@@ -500,7 +527,7 @@ export function OverviewSection() {
                             Select relevant categories for your article
                         </p>
                         <div className="flex flex-wrap gap-2">
-                            {Object.values(TRAVEL_TYPE).map((c) => {
+                            {Object.values(TOUR_CATEGORIES).map((c) => {
                                 const selected = values.categories.includes(c);
                                 return (
                                     <motion.div
@@ -536,7 +563,7 @@ export function OverviewSection() {
                         )}
                     </Card>
 
-                    {/* Tags */}
+                    {/* Tags (unchanged) */}
                     <Card className="p-6 shadow-sm border-gray-200/60">
                         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                             <div className="h-8 w-8 rounded-lg bg-orange-100 flex items-center justify-center">
@@ -590,7 +617,7 @@ export function OverviewSection() {
                                                 whileHover={{ scale: 1.03 }}
                                                 className="flex items-center"
                                             >
-                                                {editingTag?.original === tag ? (
+                                                {editingTag && editingTag.original === tag ? (
                                                     <div className="flex items-center gap-2 bg-white border border-gray-300 rounded py-1 px-2">
                                                         <FiTag className="h-4 w-4 text-gray-500" />
                                                         <input
@@ -622,7 +649,7 @@ export function OverviewSection() {
                                                         <div className="ml-2 flex items-center gap-1">
                                                             <button
                                                                 type="button"
-                                                                onClick={() => startEditTag(tag)}
+                                                                onClick={() => startEditTag(tag ?? '')}
                                                                 className="p-1 text-gray-400 hover:text-gray-600"
                                                                 aria-label={`Edit ${tag}`}
                                                             >
@@ -630,7 +657,7 @@ export function OverviewSection() {
                                                             </button>
                                                             <button
                                                                 type="button"
-                                                                onClick={() => removeTag(tag)}
+                                                                onClick={() => removeTag(tag ?? '')}
                                                                 className="p-1 text-gray-400 hover:text-red-600"
                                                                 aria-label={`Remove ${tag}`}
                                                             >

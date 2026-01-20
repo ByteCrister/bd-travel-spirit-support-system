@@ -272,14 +272,18 @@ export default function ToursTable() {
 
                                     {/* Action Buttons */}
                                     <div className="flex flex-wrap gap-3">
-                                        <Button
-                                            onClick={() => setApproveOpenFor(t.id)}
-                                            disabled={isProcessing}
-                                            className="flex-1 min-w-[140px] bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md hover:shadow-lg transition-all"
-                                        >
-                                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                                            Approve
-                                        </Button>
+                                        {
+                                            t.moderationStatus === MODERATION_STATUS.PENDING && (
+                                                <Button
+                                                    onClick={() => setApproveOpenFor(t.id)}
+                                                    disabled={isProcessing}
+                                                    className="flex-1 min-w-[140px] bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md hover:shadow-lg transition-all"
+                                                >
+                                                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                                                    Approve
+                                                </Button>
+                                            )
+                                        }
                                         <Button
                                             onClick={() => setRejectOpenFor(t.id)}
                                             disabled={isProcessing}

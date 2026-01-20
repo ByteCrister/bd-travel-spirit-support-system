@@ -62,7 +62,7 @@ export default function ForgotPasswordDialog({
 
         try {
             // Make API call using your axios instance
-            await api.post("/support/v1/employees-password-requests", {
+            await api.post("/support/employees-password-requests/v1", {
                 email: values.email,
                 description: values.description,
             });

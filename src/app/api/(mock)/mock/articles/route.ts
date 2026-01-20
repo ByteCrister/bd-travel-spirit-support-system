@@ -8,7 +8,7 @@ import {
   UserRef,
 } from "@/types/article.types";
 import { ARTICLE_STATUS, ARTICLE_TYPE } from "@/constants/article.const";
-import { TRAVEL_TYPE } from "@/constants/tour.const";
+import { TOUR_CATEGORIES } from "@/constants/tour.const";
 
 /**
  * GET /api/articles
@@ -69,35 +69,26 @@ function makeListItem(seed: string | number): ArticleListItem {
   return {
     id: faker.string.uuid(),
     title,
+    banglaTitle: Math.random() > 0.7 ? faker.lorem.sentence() : undefined, // Added banglaTitle
     slug: faker.helpers.slugify(title).toLowerCase(),
     status: randChoice(Object.values(ARTICLE_STATUS)),
     articleType: randChoice(Object.values(ARTICLE_TYPE)),
     author: makeUserRef(`${seedVal}-author`),
+    authorBio: Math.random() > 0.5 ? faker.person.bio() : undefined, // Added authorBio
     summary: faker.lorem.paragraph(),
     heroImage: Math.random() > 0.5 ? makeImageRef() : undefined,
     categories:
       Math.random() > 0.6
         ? [
-            randChoice([
-              TRAVEL_TYPE.DESTINATION_GUIDE,
-              TRAVEL_TYPE.BEACHES,
-              TRAVEL_TYPE.FOOD_DRINK,
-              TRAVEL_TYPE.CULTURE_HISTORY,
-              TRAVEL_TYPE.ADVENTURE_SEEKERS,
-              TRAVEL_TYPE.FAMILIES,
-              TRAVEL_TYPE.COUPLES,
-              TRAVEL_TYPE.SOLO,
-              TRAVEL_TYPE.BUSINESS,
-              TRAVEL_TYPE.GROUP_OF_FRIENDS,
-            ]),
+            randChoice(Object.values(TOUR_CATEGORIES)),
+            ...(Math.random() > 0.5 ? [randChoice(Object.values(TOUR_CATEGORIES))] : []),
           ]
         : undefined,
-
     tags: faker.helpers.arrayElements(
-      ["beach", "city", "food", "budget", "luxury", "family"],
-      faker.number.int({ min: 1, max: 3 })
+      ["beach", "city", "food", "budget", "luxury", "family", "adventure", "cultural", "historical"],
+      faker.number.int({ min: 1, max: 4 })
     ),
-    publishedAt: faker.date.past({ years: 2 }).toISOString(),
+    publishedAt: Math.random() > 0.3 ? faker.date.past({ years: 2 }).toISOString() : undefined,
     readingTime: faker.number.int({ min: 2, max: 20 }),
     wordCount: faker.number.int({ min: 300, max: 4200 }),
     viewCount: faker.number.int({ min: 0, max: 100_000 }),
@@ -106,15 +97,6 @@ function makeListItem(seed: string | number): ArticleListItem {
     allowComments: Math.random() > 0.2,
     createdAt: faker.date.past({ years: 3 }).toISOString(),
     updatedAt: faker.date.recent().toISOString(),
-    destinationCount:
-      Math.random() > 0.6 ? faker.number.int({ min: 1, max: 5 }) : undefined,
-    topDestinations:
-      Math.random() > 0.6
-        ? faker.helpers.arrayElements(
-            ["Cox's Bazar", "Dhaka", "Sylhet", "Sundarbans"],
-            faker.number.int({ min: 1, max: 3 })
-          )
-        : undefined,
   };
 }
 
@@ -150,7 +132,9 @@ export async function GET(
       if (
         query &&
         !item.title.toLowerCase().includes(query) &&
-        !item.summary.toLowerCase().includes(query)
+        !item.summary.toLowerCase().includes(query) &&
+        !(item.banglaTitle && item.banglaTitle.toLowerCase().includes(query)) &&
+        !item.tags?.some(tag => tag.toLowerCase().includes(query))
       ) {
         continue;
       }

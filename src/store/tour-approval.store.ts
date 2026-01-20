@@ -13,9 +13,11 @@ import { TourDetailDTO, TourFilterOptions } from '@/types/tour.types';
 import { extractErrorMessage } from '@/utils/axios/extract-error-message';
 import api from '@/utils/axios';
 import { MODERATION_STATUS } from '@/constants/tour.const';
+import { showToast } from '@/components/global/showToast';
+import { decodeId } from '@/utils/helpers/mongodb-id-conversions';
 
 // const URL_AFTER_API = `/mock/support/tours`;
-const URL_AFTER_API = `/support/v1/tours`;
+const URL_AFTER_API = `/support/tours/v1`;
 
 // Cache configuration
 const CACHE_TTL = Number(process.env.NEXT_PUBLIC_CACHE_TTL) ?? 1 * 60 * 1000; // 1 minute in milliseconds
@@ -490,7 +492,7 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
 
                     try {
                         const response = await api.post<ApiResponse<TourApprovalResponse>>(
-                            `${URL_AFTER_API}/${tourId}/approve`,
+                            `${URL_AFTER_API}/${decodeURIComponent(decodeId(tourId) ?? "")}/approve`,
                             { reason }
                         );
 
@@ -536,6 +538,9 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                     } catch (error) {
                         const message = extractErrorMessage(error);
                         set({ error: message, isProcessing: false });
+
+                        showToast.error('Error approving tour', message);
+
                         console.error('Error approving tour:', error);
                         return {
                             data: undefined,
@@ -556,7 +561,7 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
 
                     try {
                         const response = await api.post<ApiResponse<TourApprovalResponse>>(
-                            `${URL_AFTER_API}/${tourId}/reject`,
+                            `${URL_AFTER_API}/${decodeURIComponent(decodeId(tourId) ?? "")}/reject`,
                             { reason }
                         );
 
@@ -602,6 +607,9 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                     } catch (error) {
                         const message = extractErrorMessage(error);
                         set({ error: message, isProcessing: false });
+
+                        showToast.error('Error rejecting tour', message);
+
                         console.error('Error rejecting tour:', error);
                         return {
                             data: undefined,

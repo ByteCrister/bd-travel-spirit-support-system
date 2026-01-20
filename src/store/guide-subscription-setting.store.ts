@@ -32,7 +32,7 @@ Constants
 ------------------------- */
 
 // const URL_AFTER_API = "/mock/site-settings/guide-subscriptions";
-const URL_AFTER_API = "/site-settings/v1/guide-subscriptions";
+const URL_AFTER_API = "/site-settings/guide-subscriptions/v1";
 
 const FETCH_TTL_MS = Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 1000 * 60 * 2; // 2 minutes
 const CACHE_MAX_ENTRIES = 50; // simple bound to avoid unbounded growth

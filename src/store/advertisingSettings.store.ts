@@ -34,7 +34,7 @@ import { PLACEMENT } from "@/constants/advertising.const";
 enableMapSet();
 
 // const URL_AFTER_API = "/mock/site-settings/advertising";
-const URL_AFTER_API = "/site-settings/v1/advertising";
+const URL_AFTER_API = "/site-settings/advertising/v1";
 
 const mapDtoToRow = (dto: AdvertisingPriceDTO): AdvertisingPriceRow => ({
   id: dto.id,

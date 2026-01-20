@@ -201,7 +201,6 @@ export default function ArticleToolbar() {
         localFilter.publishedFrom,
         localFilter.publishedTo,
         localFilter.destinationCity,
-        localFilter.destinationCountry,
     ].filter(Boolean).length;
 
     return (
@@ -600,13 +599,6 @@ export default function ArticleToolbar() {
                                             onChange={(e) => setLocalFilter((f) => ({ ...f, destinationCity: e.target.value }))}
                                             className="bg-white dark:bg-slate-900"
                                             aria-label="Destination city"
-                                        />
-                                        <Input
-                                            placeholder="Country"
-                                            value={localFilter.destinationCountry ?? ''}
-                                            onChange={(e) => setLocalFilter((f) => ({ ...f, destinationCountry: e.target.value }))}
-                                            className="bg-white dark:bg-slate-900"
-                                            aria-label="Destination country"
                                         />
                                     </div>
                                 </div>

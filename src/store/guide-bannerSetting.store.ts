@@ -31,7 +31,7 @@ enableMapSet();
 
 /* Main API path constant requested */
 // export const URL_AFTER_API = "/mock/site-settings/guide-banners";
-export const URL_AFTER_API = "/site-settings/v1/guide-banners";
+export const URL_AFTER_API = "/site-settings/guide-banners/v1";
 
 /* Operation keys used by the store */
 const OP_CREATE = "create";

@@ -24,6 +24,7 @@ import { showToast } from '@/components/global/showToast';
 import { useArticleStore } from '@/store/article.store';
 import {
     CreateArticleInput,
+    DestinationBlock,
 } from '@/types/article.types';
 import { ArticleBasics } from './ArticleBasics';
 import { DestinationBlockForm } from './DestinationBlockForm';
@@ -31,10 +32,10 @@ import { FaqForm } from './FaqForm';
 import { SeoForm } from './SeoForm';
 import { CreateArticleFormValues, createArticleSchema } from '@/utils/validators/article.create.validator';
 import { playfair, inter } from '@/styles/fonts';
-import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
-import { TRAVEL_TYPE } from '@/constants/tour.const';
+import { ARTICLE_RICH_TEXT_BLOCK_TYPE, ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
 import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 import { useState } from 'react';
+import { DISTRICT, DIVISION, TOUR_CATEGORIES } from '@/constants/tour.const';
 
 interface TabConfig {
     value: string;
@@ -77,16 +78,66 @@ export function ArticleForm() {
 
     const initialValues: CreateArticleFormValues = {
         title: '',
+        banglaTitle: '',
         slug: '',
         status: ARTICLE_STATUS.DRAFT,
         articleType: ARTICLE_TYPE.SINGLE_DESTINATION,
         authorBio: '',
         summary: '',
-        heroImage: null,
-        destinations: [],
+        heroImage: '', 
+        destinations: [
+            {
+                division: DIVISION.DHAKA,
+                district: DISTRICT.DHAKA,
+                area: '',
+                description: '',
+                content: [
+                    {
+                        type: ARTICLE_RICH_TEXT_BLOCK_TYPE.PARAGRAPH,
+                        text: '',
+                    },
+                ],
+                highlights: [''],
+                foodRecommendations: [
+                    {
+                        dishName: '',
+                        description: '',
+                        bestPlaceToTry: '',
+                        approximatePrice: '',
+                        spiceLevel: null,
+                    },
+                ],
+                localFestivals: [
+                    {
+                        name: '',
+                        description: '',
+                        timeOfYear: '',
+                        location: '',
+                        significance: '',
+                    },
+                ],
+                localTips: [''],
+                transportOptions: [''],
+                accommodationTips: [''],
+                coordinates: {
+                    lat: 0,
+                    lng: 0,
+                },
+                imageAsset: {
+                    title: '',
+                    assetId: '',
+                    url: '',
+                },
+            },
+        ],
+
         categories: [],
         tags: [],
-        seo: { metaTitle: '', metaDescription: '', ogImage: null },
+        seo: {
+            metaTitle: '',
+            metaDescription: '',
+            ogImage: null,
+        },
         faqs: [],
         allowComments: true,
     };
@@ -112,48 +163,95 @@ export function ArticleForm() {
     const handleSubmit = async (values: CreateArticleFormValues) => {
         try {
             clearError();
+
+            // Prepare destinations data according to new structure
+            const destinations: DestinationBlock[] = values.destinations.map(dest => ({
+                division: dest.division,
+                district: dest.district,
+                area: dest.area || undefined,
+                description: dest.description,
+
+                content: dest.content.map(block => ({
+                    type: block.type,
+                    text: block.text || undefined,
+                    href: block.href || undefined,
+                })),
+
+                highlights: dest.highlights.filter(
+                    (h): h is string => typeof h === 'string'
+                ),
+
+                foodRecommendations: dest.foodRecommendations.map(food => ({
+                    dishName: food.dishName,
+                    description: food.description,
+                    bestPlaceToTry: food.bestPlaceToTry || undefined,
+                    approximatePrice: food.approximatePrice || undefined,
+                    spiceLevel: food.spiceLevel || undefined,
+                })),
+
+                localFestivals: dest.localFestivals.map(festival => ({
+                    name: festival.name,
+                    description: festival.description,
+                    timeOfYear: festival.timeOfYear,
+                    location: festival.location,
+                    significance: festival.significance || undefined,
+                })),
+
+                localTips: dest.localTips.filter(
+                    (t): t is string => typeof t === 'string'
+                ),
+
+                transportOptions: dest.transportOptions.filter(
+                    (t): t is string => typeof t === 'string'
+                ),
+
+                accommodationTips: dest.accommodationTips.filter(
+                    (t): t is string => typeof t === 'string'
+                ),
+
+                coordinates: {
+                    lat: dest.coordinates.lat,
+                    lng: dest.coordinates.lng,
+                },
+
+                imageAsset: dest.imageAsset,
+            }));
+
+
+
             const payload: CreateArticleInput = {
-                ...values,
-                heroImage: values.heroImage ?? null,
-                destinations: values.destinations?.length
-                    ? values.destinations.map(dest => ({
-                        ...dest,
-                        region: dest.region ?? undefined,
-                        content: dest.content?.map(block => ({
-                            ...block,
-                            text: block.text ?? undefined,
-                            href: block.href ?? undefined,
-                        })) ?? [],
-                        attractions: dest.attractions?.map(a => ({
-                            ...a,
-                            bestFor: a.bestFor ?? undefined,
-                            insiderTip: a.insiderTip ?? undefined,
-                            address: a.address ?? undefined,
-                            openingHours: a.openingHours ?? undefined,
-                            coordinates: a.coordinates ?? undefined,
-                            images: a.images?.filter((img): img is string => !!img) ?? [],
-                        })) ?? [],
-                        activities: dest.activities?.map(a => ({
-                            ...a,
-                            url: a.url ?? undefined,
-                            provider: a.provider ?? undefined,
-                            duration: a.duration ?? undefined,
-                            price: a.price ?? undefined,
-                            rating: a.rating ?? undefined,
-                        })) ?? [],
-                        highlights: dest.highlights?.filter((h): h is string => !!h) ?? [],
-                        images: dest.images?.filter((img): img is string => !!img) ?? [],
-                    }))
-                    : undefined,
-                categories: values.categories?.filter((c): c is TRAVEL_TYPE => Boolean(c))?.length
-                    ? values.categories.filter((c): c is TRAVEL_TYPE => Boolean(c))
-                    : undefined,
-                tags: values.tags?.filter(Boolean).length
-                    ? values.tags.filter((t): t is string => Boolean(t))
-                    : undefined,
-                seo: values.seo ?? undefined,
-                allowComments: values.allowComments ?? true,
+                title: values.title,
+                banglaTitle: values.banglaTitle,
+                slug: values.slug,
+                status: values.status,
+                articleType: values.articleType,
+                authorBio: values.authorBio || undefined,
+                summary: values.summary,
+                heroImage: values.heroImage,
+
+                destinations,
+
+                categories: values.categories.filter(
+                    (c): c is TOUR_CATEGORIES => Boolean(c)
+                ),
+
+                tags: values.tags.filter((t): t is string => Boolean(t)),
+
+                seo: {
+                    metaTitle: values.seo.metaTitle,
+                    metaDescription: values.seo.metaDescription,
+                    ogImage: values.seo.ogImage || undefined,
+                },
+
+                faqs: values.faqs.map(faq => ({
+                    question: faq.question,
+                    answer: faq.answer,
+                    category: faq.category || undefined,
+                })),
+
+                allowComments: values.allowComments,
             };
+
 
             const result = await createArticle(payload);
             if (result.success && result.article) {
@@ -177,9 +275,14 @@ export function ArticleForm() {
             validateOnBlur
         >
             {({ values, errors, touched, isSubmitting, setFieldValue, isValid, dirty }) => {
-                const requiresDestinations =
-                    values.articleType === ARTICLE_TYPE.SINGLE_DESTINATION ||
-                    values.articleType === ARTICLE_TYPE.MULTI_DESTINATION;
+                const requiresDestinations = [
+                    ARTICLE_TYPE.SINGLE_DESTINATION,
+                    ARTICLE_TYPE.MULTI_DESTINATION,
+                    ARTICLE_TYPE.CITY_GUIDE,
+                    ARTICLE_TYPE.HILL_STATION,
+                    ARTICLE_TYPE.BEACH_DESTINATION,
+                    ARTICLE_TYPE.HISTORICAL_SITE
+                ].includes(values.articleType);
 
                 const firstFormError = findFirstError(errors);
                 const bannerMessage = error ?? firstFormError;
@@ -410,26 +513,6 @@ export function ArticleForm() {
                                                 </p>
                                             </CardHeader>
                                             <CardContent className="space-y-6 pt-6">
-                                                {/* Publishing Date */}
-                                                <motion.div
-                                                    whileHover={{ scale: 1.02 }}
-                                                    transition={{ type: 'spring', stiffness: 300 }}
-                                                >
-                                                    <label className={`${inter.className} block text-sm font-semibold text-slate-700 mb-2`}>
-                                                        Published At
-                                                    </label>
-                                                    <input
-                                                        type="datetime-local"
-                                                        onChange={(e) =>
-                                                            setFieldValue('publishedAt', new Date(e.target.value).toISOString())
-                                                        }
-                                                        className={`${inter.className} w-full rounded-lg border border-slate-300 px-4 py-3 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200`}
-                                                    />
-                                                    <p className={`${inter.className} text-xs text-slate-500 mt-1`}>
-                                                        Leave blank to publish immediately
-                                                    </p>
-                                                </motion.div>
-
                                                 {/* Comments Toggle */}
                                                 <motion.div
                                                     whileHover={{ scale: 1.02 }}

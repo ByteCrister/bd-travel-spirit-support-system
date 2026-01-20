@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArticleListItem } from '@/types/article.types';
 import { Badge } from '@/components/ui/badge';
 import { motion, Variants } from 'framer-motion';
-import { FiMapPin, FiArrowRight } from 'react-icons/fi';
+import { FiArrowRight } from 'react-icons/fi';
 import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 
 type Props<T extends ArticleListItem> = {
@@ -92,14 +92,6 @@ export default function ArticleTableRow<T extends ArticleListItem>({
                                 <FiArrowRight className="w-4 h-4 text-primary" />
                             </motion.div>
                         </div>
-                        {item.topDestinations && item.topDestinations.length > 0 && (
-                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                                <FiMapPin className="w-3 h-3 flex-shrink-0" />
-                                <span className="line-clamp-1">
-                                    {item.topDestinations.slice(0, 3).join(', ')}
-                                </span>
-                            </div>
-                        )}
                     </div>
                 </div>
             </td>

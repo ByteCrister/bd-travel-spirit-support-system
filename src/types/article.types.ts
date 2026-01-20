@@ -1,17 +1,15 @@
 // /types/article.types.ts
 
-import { ARTICLE_STATUS, ARTICLE_TYPE } from "@/constants/article.const";
+import { ARTICLE_STATUS, ARTICLE_TYPE, ArticleRichTextBlockType, FAQ_CATEGORY, FoodRecoSpiceType } from "@/constants/article.const";
 import { COMMENT_STATUS } from "@/constants/articleComment.const";
-import { TRAVEL_TYPE } from "@/constants/tour.const";
+import { TourCategories, Division, District, TRAVEL_TYPE } from "@/constants/tour.const";
 
 /* ============================================================
    Core primitives and cross-cutting types
    ============================================================ */
 
 export type ID = string; // string ObjectId in API payloads
-
 export type URL = string;
-
 export type ISODateString = string; // e.g., "2025-10-08T13:23:44.165Z"
 
 /** Minimal reference for users to keep payloads slim */
@@ -24,54 +22,59 @@ export interface UserRef {
 /** Minimal reference for images (your Image model) */
 export type ImageUrl = URL;
 
-
 /* ============================================================
-   Content blocks (aligned, but safe for UI)
+   Content blocks (aligned with updated model)
    ============================================================ */
 
-export type RichTextBlockType = 'paragraph' | 'link' | 'heading';
-
 export interface RichTextBlock {
-    type: RichTextBlockType;
+    type: ArticleRichTextBlockType;
     text?: string;
     href?: string;
 }
 
-export interface Activity {
-    title: string;
-    url?: string;
-    provider?: string;
-    duration?: string;
-    price?: string;
-    rating?: number;
-}
-
-export interface Attraction {
-    title: string;
+// Bangladesh-specific food recommendation
+export interface FoodRecommendation {
+    dishName: string;
     description: string;
-    bestFor?: string;
-    insiderTip?: string;
-    address?: string;
-    openingHours?: string;
-    images: ImageUrl[]; // normalized for UI
-    coordinates?: { lat: number; lng: number };
+    bestPlaceToTry?: string;
+    approximatePrice?: string;
+    spiceLevel?: FoodRecoSpiceType;
 }
 
+// Bangladesh-specific local festival
+export interface LocalFestival {
+    name: string;
+    description: string;
+    timeOfYear: string;
+    location: string;
+    significance?: string;
+}
+
+// Updated DestinationBlock for Bangladesh context
 export interface DestinationBlock {
-    city: string;
-    country: string;
-    region?: string;
+    id?: ID;
+    division: Division; // e.g., "Dhaka", "Chittagong", "Sylhet"
+    district: District; // e.g., "Cox's Bazar", "Bandarban", "Sylhet"
+    area?: string; // Specific area/location
     description: string;
     content: RichTextBlock[];
     highlights: string[];
-    attractions: Attraction[];
-    activities: Activity[];
-    images: ImageUrl[];
+
+    // Bangladesh-specific fields
+    foodRecommendations: FoodRecommendation[];
+    localFestivals: LocalFestival[];
+    localTips: string[];
+    transportOptions: string[]; // e.g., "Bus from Dhaka", "Train", "Domestic Flight"
+    accommodationTips: string[];
+    coordinates: { lat: number; lng: number };
+    imageAsset?: { title: string; assetId: ID; url: ImageUrl }; // Added url for frontend display
 }
 
+// Updated FAQ with category
 export interface FaqItem {
     question: string;
     answer: string;
+    category?: FAQ_CATEGORY;
 }
 
 /* ============================================================
@@ -82,14 +85,18 @@ export interface FaqItem {
 export interface ArticleListItem {
     id: ID;
     title: string;
+    banglaTitle?: string; // Title in Bengali
     slug: string;
     status: ARTICLE_STATUS;
     articleType: ARTICLE_TYPE;
     author: UserRef;
+    authorBio?: string; // Author biography
     summary: string;
     heroImage?: ImageUrl;
-    categories?: TRAVEL_TYPE[];
+    categories?: TourCategories[]; // Changed from TRAVEL_TYPE to TourCategories
     tags?: string[];
+
+    // Stats and metadata
     publishedAt?: ISODateString;
     readingTime?: number;
     wordCount?: number;
@@ -99,14 +106,10 @@ export interface ArticleListItem {
     allowComments: boolean;
     createdAt: ISODateString;
     updatedAt: ISODateString;
-
-    // Derived/display helpers
-    destinationCount?: number; // quick glance in table
-    topDestinations?: string[]; // e.g., ["Sylhet", "Cox's Bazar"]
 }
 
 /** Detailed shape for /article/[articleId]/page.tsx */
-export interface ArticleDetail extends Omit<ArticleListItem, 'destinationCount' | 'topDestinations'> {
+export interface ArticleDetail extends ArticleListItem {
     seo: {
         metaTitle: string;
         metaDescription: string;
@@ -175,7 +178,6 @@ export interface ArticleFilter {
     maxWordCount?: number;
     allowComments?: boolean;
     destinationCity?: string; // subdocument match
-    destinationCountry?: string;
 }
 
 /** Simple search model (can be extended with field-scoped queries) */
@@ -252,21 +254,22 @@ export interface ArticleDashboardStats {
 
 export interface CreateArticleInput {
     title: string;
+    banglaTitle: string;
     slug: string;
     status: ARTICLE_STATUS;
     articleType: ARTICLE_TYPE;
     authorBio?: string;
     summary: string;
     heroImage: ImageUrl | null; // backend may accept image id; UI may carry ImageUrl
-    destinations?: DestinationBlock[];
-    categories?: TRAVEL_TYPE[];
-    tags?: string[];
-    seo?: {
+    destinations: DestinationBlock[];
+    categories: TourCategories[];
+    tags: string[];
+    seo: {
         metaTitle: string;
         metaDescription: string;
         ogImage?: ImageUrl | null;
     };
-    faqs?: FaqItem[];
+    faqs: FaqItem[];
     allowComments?: boolean;
 }
 
@@ -335,7 +338,6 @@ export type ArticleTableColumnKey =
     | 'viewCount'
     | 'likeCount'
     | 'shareCount'
-    | 'destinationCount'
     | 'createdAt'
     | 'updatedAt'
     | 'actions';

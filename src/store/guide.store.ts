@@ -9,7 +9,7 @@ import { ApiResponse } from "@/types/api.types";
 import { showToast } from "@/components/global/showToast";
 
 // const URL_AFTER_API = "/mock/users/guides";
-const URL_AFTER_API = "/users/v1/guides";
+const URL_AFTER_API = "/users/guides/v1";
 const CACHE_TTL_MS = Number(process.env.NEXT_PUBLIC_CACHE_TTL ?? 60_000);
 
 /* ----------------------------- Types ----------------------------- */

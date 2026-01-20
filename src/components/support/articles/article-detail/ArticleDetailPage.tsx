@@ -40,7 +40,6 @@ import {
     DeleteArticleInput,
     ID,
 } from '@/types/article.types';
-import { CreateArticleFormValues, createArticleSchema } from '@/utils/validators/article.create.validator';
 import { useArticleStore } from '@/store/article.store';
 import { showToast } from '@/components/global/showToast';
 import { ArticleDetailSkeleton } from './ArticleDetailSkeleton';
@@ -53,6 +52,7 @@ import { SettingsSection } from './SettingsSection';
 import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
 import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 import { Breadcrumbs } from '@/components/global/Breadcrumbs';
+import { CreateArticleFormValues, createArticleSchema } from '@/utils/validators/article.create.validator';
 
 
 // ---------------------
@@ -95,23 +95,23 @@ const updateArticleSchema = createArticleSchema
     .clone()
     .shape({
         title: Yup.string().min(5, 'Title must be at least 5 characters').optional(),
+        banglaTitle: Yup.string().min(5, 'Bangla title must be at least 5 characters').optional(), // Added banglaTitle
         slug: Yup.string()
             .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be kebab-case')
             .optional(),
         status: Yup.mixed<ARTICLE_STATUS>().oneOf(Object.values(ARTICLE_STATUS)).optional(),
         articleType: Yup.mixed<ARTICLE_TYPE>().oneOf(Object.values(ARTICLE_TYPE)).optional(),
-        authorBio: Yup.string().optional(),
+        authorBio: Yup.string().nullable().optional(),
         summary: Yup.string().min(10, 'Summary must be at least 10 characters').max(300, 'Summary must be under 300 characters').optional(),
-        heroImage: Yup.string().url().nullable().optional(),
+        heroImage: Yup.string().nullable().optional(),
         destinations: Yup.array().optional(),
         categories: Yup.array().optional(),
         tags: Yup.array().optional(),
         seo: Yup.object({
             metaTitle: Yup.string().min(5).optional(),
             metaDescription: Yup.string().min(10).optional(),
-            ogImage: Yup.string().url().nullable().optional(),
+            ogImage: Yup.string().nullable().optional(),
         })
-            .nullable()
             .optional(),
         faqs: Yup.array().optional(),
         allowComments: Yup.boolean().optional(),
@@ -120,8 +120,14 @@ const updateArticleSchema = createArticleSchema
         'destinations-required-update',
         'At least one destination is required for destination articles',
         (val) => {
-            const type = val?.articleType;
-            if (type === ARTICLE_TYPE.SINGLE_DESTINATION || type === ARTICLE_TYPE.MULTI_DESTINATION) {
+            if (
+                val?.articleType === ARTICLE_TYPE.SINGLE_DESTINATION ||
+                val?.articleType === ARTICLE_TYPE.MULTI_DESTINATION ||
+                val?.articleType === ARTICLE_TYPE.CITY_GUIDE ||
+                val?.articleType === ARTICLE_TYPE.HILL_STATION ||
+                val?.articleType === ARTICLE_TYPE.BEACH_DESTINATION ||
+                val?.articleType === ARTICLE_TYPE.HISTORICAL_SITE
+            ) {
                 if (val?.destinations === undefined) return true;
                 return Array.isArray(val?.destinations) && val.destinations.length > 0;
             }
@@ -140,22 +146,28 @@ function normalizeOgImage(input: unknown): string | null {
 function mapDetailToFormValues(detail: ArticleDetail): CreateArticleFormValues {
     return {
         title: detail.title,
+        banglaTitle: detail.banglaTitle || '', // Added banglaTitle
         slug: detail.slug,
         status: detail.status,
         articleType: detail.articleType,
-        authorBio: '',
+        authorBio: detail.authorBio || '', // Added authorBio
         summary: detail.summary,
-        heroImage: detail.heroImage ?? null,
+        heroImage: detail.heroImage ?? '',
         destinations: (detail.destinations ?? []).map(d => ({
-            ...d,
-            highlights: d.highlights ?? [],
-            images: d.images ?? [],
-            activities: d.activities ?? [],
-            attractions: (d.attractions ?? []).map(a => ({
-                ...a,
-                images: a.images ?? [],
-                coordinates: a.coordinates ?? null,
-            })),
+            id: d.id,
+            division: d.division,
+            district: d.district,
+            area: d.area || '',
+            description: d.description,
+            content: d.content || [],
+            highlights: d.highlights || [],
+            foodRecommendations: d.foodRecommendations || [],
+            localFestivals: d.localFestivals || [],
+            localTips: d.localTips || [],
+            transportOptions: d.transportOptions || [],
+            accommodationTips: d.accommodationTips || [],
+            coordinates: d.coordinates,
+            imageAsset: d.imageAsset,
         })),
         categories: detail.categories ?? [],
         tags: detail.tags ?? [],
@@ -164,7 +176,11 @@ function mapDetailToFormValues(detail: ArticleDetail): CreateArticleFormValues {
             metaDescription: detail.seo?.metaDescription ?? '',
             ogImage: normalizeOgImage(detail.seo?.ogImage),
         },
-        faqs: detail.faqs ?? [],
+        faqs: (detail.faqs ?? []).map(f => ({
+            question: f.question,
+            answer: f.answer,
+            category: f.category,
+        })),
         allowComments: detail.allowComments ?? true,
     };
 }

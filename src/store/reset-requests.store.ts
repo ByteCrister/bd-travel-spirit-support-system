@@ -24,7 +24,7 @@ enableMapSet();
 /* ---------------------- Constants & Defaults ----------------------------- */
 
 // const URL_AFTER_API = "/mock/reset-password-requests"
-const URL_AFTER_API = "/support/v1/employees-password-requests"
+const URL_AFTER_API = "/support/employees-password-requests/v1"
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
