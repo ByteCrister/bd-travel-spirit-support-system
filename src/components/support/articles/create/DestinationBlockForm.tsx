@@ -42,6 +42,7 @@ import {
 import { ComboBox } from '@/components/ui/combobox';
 import { MapPickerDialog } from '@/components/settings/footer/MapPickerDialog';
 import Image from 'next/image';
+import { getDistrictsByDivision } from '@/utils/helpers/conversions.tour';
 
 // Define enum options for combobox
 const DIVISION_OPTIONS = Object.values(DIVISION).map(division => ({
@@ -49,10 +50,13 @@ const DIVISION_OPTIONS = Object.values(DIVISION).map(division => ({
   label: division
 }));
 
-const DISTRICT_OPTIONS = Object.values(DISTRICT).map(district => ({
-  value: district,
-  label: district
-}));
+const getDistrictOptionsForDivision = (division: Division) => {
+  const districts = getDistrictsByDivision(division);
+  return districts.map(district => ({
+    value: district,
+    label: district
+  }));
+};
 
 const SPICE_LEVEL_OPTIONS = [
   { value: FOOD_RECO_SPICE_TYPE.MILD, label: 'Mild' },
@@ -367,6 +371,22 @@ export function DestinationBlockForm({
     return touch && error ? String(error) : undefined;
   };
 
+  const handleDivisionChange = (destIndex: number, newDivision: Division) => {
+    const currentDest = destinations[destIndex];
+
+    // Get districts for the new division
+    const districtsForDivision = getDistrictsByDivision(newDivision);
+
+    // Check if current district belongs to the new division
+    const isCurrentDistrictValid = districtsForDivision.includes(currentDest.district as District);
+
+    // Update with new division and possibly reset district
+    updateAt(destIndex, {
+      division: newDivision,
+      district: isCurrentDistrictValid ? currentDest.district : (districtsForDivision[0] || '')
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Map Picker Dialog */}
@@ -445,7 +465,7 @@ export function DestinationBlockForm({
                       options={DIVISION_OPTIONS}
                       value={d.division}
                       placeholder="Select Division"
-                      onChange={(value) => updateAt(idx, { division: value as Division })}
+                      onChange={(value) => handleDivisionChange(idx, value as Division)}
                     />
                     {getFieldError(`destinations.${idx}.division`) && (
                       <p className="text-xs text-destructive">
@@ -456,7 +476,7 @@ export function DestinationBlockForm({
                   <div className="space-y-2">
                     <label className="text-xs font-medium">District *</label>
                     <ComboBox
-                      options={DISTRICT_OPTIONS}
+                      options={getDistrictOptionsForDivision(d.division as Division)}
                       value={d.district}
                       placeholder="Select District"
                       onChange={(value) => updateAt(idx, { district: value as District })}

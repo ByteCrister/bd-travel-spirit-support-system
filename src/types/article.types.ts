@@ -1,8 +1,9 @@
 // /types/article.types.ts
 
-import { ARTICLE_STATUS, ARTICLE_TYPE, ArticleRichTextBlockType, FAQ_CATEGORY, FoodRecoSpiceType } from "@/constants/article.const";
-import { COMMENT_STATUS } from "@/constants/articleComment.const";
-import { TourCategories, Division, District, TRAVEL_TYPE } from "@/constants/tour.const";
+import { ArticleRichTextBlockType, ArticleStatus, ArticleType, FaqCategory, FoodRecoSpiceType } from "@/constants/article.const";
+import { CommentStatus } from "@/constants/articleComment.const";
+import { TourCategories, Division, District } from "@/constants/tour.const";
+import { ApiResponse } from "./api.types";
 
 /* ============================================================
    Core primitives and cross-cutting types
@@ -74,7 +75,7 @@ export interface DestinationBlock {
 export interface FaqItem {
     question: string;
     answer: string;
-    category?: FAQ_CATEGORY;
+    category?: FaqCategory;
 }
 
 /* ============================================================
@@ -87,8 +88,8 @@ export interface ArticleListItem {
     title: string;
     banglaTitle?: string; // Title in Bengali
     slug: string;
-    status: ARTICLE_STATUS;
-    articleType: ARTICLE_TYPE;
+    status: ArticleStatus;
+    articleType: ArticleType;
     author: UserRef;
     authorBio?: string; // Author biography
     summary: string;
@@ -113,7 +114,7 @@ export interface ArticleDetail extends ArticleListItem {
     seo: {
         metaTitle: string;
         metaDescription: string;
-        ogImage?: ImageUrl | string; // support legacy string, prefer ImageUrl
+        ogImage?: ImageUrl; // support legacy string, prefer ImageUrl
     };
     destinations?: DestinationBlock[];
     faqs?: FaqItem[];
@@ -135,7 +136,7 @@ export interface CommentListItem {
     content: string;
     likes: number;
     replies: ID[];
-    status: COMMENT_STATUS;
+    status: CommentStatus;
     createdAt: ISODateString;
     updatedAt: ISODateString;
     replyCount?: number; // virtual convenience
@@ -165,11 +166,11 @@ export interface ArticleSort {
 
 /** Flexible filter set for server/API and client UI */
 export interface ArticleFilter {
-    status?: ARTICLE_STATUS[];
-    articleType?: ARTICLE_TYPE[];
-    categories?: TRAVEL_TYPE[];
+    status?: ArticleStatus[];
+    articleType?: ArticleType[];
+    categories?: TourCategories[];
     tags?: string[];
-    authorIds?: ID[];
+    authorNames?: string[];
     publishedFrom?: ISODateString;
     publishedTo?: ISODateString;
     minReadingTime?: number;
@@ -255,12 +256,11 @@ export interface ArticleDashboardStats {
 export interface CreateArticleInput {
     title: string;
     banglaTitle: string;
-    slug: string;
-    status: ARTICLE_STATUS;
-    articleType: ARTICLE_TYPE;
+    status: ArticleStatus;
+    articleType: ArticleType;
     authorBio?: string;
     summary: string;
-    heroImage: ImageUrl | null; // backend may accept image id; UI may carry ImageUrl
+    heroImage?: ImageUrl | null;
     destinations: DestinationBlock[];
     categories: TourCategories[];
     tags: string[];
@@ -280,7 +280,9 @@ export interface UpdateArticleInput extends Partial<CreateArticleInput> {
 export interface DeleteArticleInput {
     id: ID;
 }
-
+export interface RestoreArticleInput {
+    id: ID;
+}
 export interface MutationResult {
     success: boolean;
     message?: string;
@@ -298,6 +300,9 @@ export interface DeleteArticleResponse extends MutationResult {
     deletedId?: ID;
 }
 
+export interface RestoreArticleResponse extends MutationResult {
+    article?: ArticleDetail;
+}
 /* ============================================================
    Cache keys and query identity
    ============================================================ */
@@ -392,19 +397,17 @@ export interface ArticleStoreActions {
     createArticle: (input: CreateArticleInput) => Promise<CreateArticleResponse>;
     updateArticle: (input: UpdateArticleInput) => Promise<UpdateArticleResponse>;
     deleteArticle: (input: DeleteArticleInput) => Promise<DeleteArticleResponse>;
+    restoreArticle: (input: RestoreArticleInput) => Promise<RestoreArticleResponse>;
 }
 
 /* ============================================================
    API route helpers (optional but convenient)
    ============================================================ */
 
-export type ApiResult<T> =
-    | { ok: true; data: T }
-    | { ok: false; error: string; status?: number };
-
-export type ArticleListApi = ApiResult<ArticleListQueryResponse>;
-export type ArticleDetailApi = ApiResult<ArticleDetail>;
-export type ArticleStatsApi = ApiResult<ArticleDashboardStats>;
-export type CreateArticleApi = ApiResult<CreateArticleResponse>;
-export type UpdateArticleApi = ApiResult<UpdateArticleResponse>;
-export type DeleteArticleApi = ApiResult<DeleteArticleResponse>;
+export type ArticleListApi = ApiResponse<ArticleListQueryResponse>;
+export type ArticleDetailApi = ApiResponse<ArticleDetail>;
+export type ArticleStatsApi = ApiResponse<ArticleDashboardStats>;
+export type CreateArticleApi = ApiResponse<CreateArticleResponse>;
+export type UpdateArticleApi = ApiResponse<UpdateArticleResponse>;
+export type DeleteArticleApi = ApiResponse<DeleteArticleResponse>;
+export type RestoreArticleApi = ApiResponse<RestoreArticleResponse>;

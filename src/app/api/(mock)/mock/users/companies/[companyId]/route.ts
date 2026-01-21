@@ -4,14 +4,13 @@ import { faker } from "@faker-js/faker";
 import {
     CompanyOverviewDTO,
 } from "@/types/company.overview.types";
-import { decodeId } from "@/utils/helpers/mongodb-id-conversions";
+import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 
 export async function GET(
     req: Request,
-    { params }: { params: { companyId: string } }
+    { params }: { params: Promise<{ companyId: string }> }
 ) {
-    const { companyId } = await params;
-    const decodeCompanyId = decodeId(decodeURIComponent(companyId));
+    const decodeCompanyId = resolveMongoId((await params).companyId);
 
     // Generate collections
     const tours = 200;
@@ -19,7 +18,7 @@ export async function GET(
     const employees = 200;
 
     const overview: CompanyOverviewDTO = {
-        companyId,
+        companyId: decodeCompanyId,
         companyName: faker.company.name(),
         kpis: {
             totalTours: tours,

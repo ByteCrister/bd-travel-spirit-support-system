@@ -3,11 +3,13 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ImageUploader } from './ImageUploader';
 import { CreateArticleFormValues } from '@/utils/validators/article.create.validator';
 import { FormikErrors, FormikHelpers, FormikTouched } from 'formik';
-import { Search, Eye, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Search, Eye, AlertCircle, CheckCircle2, X, Upload } from 'lucide-react';
 import { inter, playfair } from '@/styles/fonts';
+import { useState, useRef } from 'react';
+import { fileToBase64, IMAGE_EXTENSIONS } from '@/utils/helpers/file-conversion';
+import Image from 'next/image';
 
 interface SeoFormProps {
     values: CreateArticleFormValues;
@@ -20,6 +22,10 @@ export function SeoForm({ values, setFieldValue, errors, touched }: SeoFormProps
     const seo = typeof values.seo === 'object' && values.seo !== null
         ? values.seo
         : { metaTitle: '', metaDescription: '', ogImage: null };
+
+    const [uploadError, setUploadError] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // SEO Score calculation
     const calculateSeoScore = () => {
@@ -37,6 +43,83 @@ export function SeoForm({ values, setFieldValue, errors, touched }: SeoFormProps
     const itemVariants = {
         hidden: { opacity: 0, y: 10 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+    };
+
+    // Function to handle file upload using file-conversion utility
+    const handleFileUpload = async (file: File) => {
+        setUploadError(null);
+        setIsUploading(true);
+
+        try {
+            // Validate file type
+            const fileName = file.name.toLowerCase();
+            const isValidImage = IMAGE_EXTENSIONS.some(ext => fileName.endsWith(`.${ext}`));
+
+            if (!isValidImage) {
+                throw new Error(`Please upload a valid image file (${IMAGE_EXTENSIONS.join(', ')})`);
+            }
+
+            // Validate file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                throw new Error('Image size must be less than 5MB');
+            }
+
+            // Convert file to base64 with compression
+            const base64Image = await fileToBase64(file, {
+                compressImages: true,
+                maxWidth: 1200, // Optimal for social media
+                quality: 0.8,
+                maxFileBytes: 5 * 1024 * 1024,
+                allowedExtensions: IMAGE_EXTENSIONS
+            });
+
+            // Set the base64 image as the ogImage value
+            setFieldValue('seo.ogImage', base64Image);
+        } catch (error) {
+            setUploadError(error instanceof Error ? error.message : 'Failed to upload image');
+            console.error('Image upload error:', error);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    // Handle file input change
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            handleFileUpload(file);
+        }
+    };
+
+    // Handle drag and drop
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            handleFileUpload(file);
+        }
+    };
+
+    // Handle drag over
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    // Remove image
+    const removeImage = () => {
+        setFieldValue('seo.ogImage', null);
+        setUploadError(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    // Trigger file input click
+    const triggerFileInput = () => {
+        fileInputRef.current?.click();
     };
 
     return (
@@ -248,13 +331,91 @@ export function SeoForm({ values, setFieldValue, errors, touched }: SeoFormProps
                             </p>
                         </div>
                     </div>
-                    <ImageUploader
-                        label=""
-                        value={seo?.ogImage ?? undefined}
-                        onChange={(v) => setFieldValue('seo.ogImage', v)}
+
+                    {/* Hidden file input */}
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
                     />
+
+                    {seo.ogImage ? (
+                        <div className="relative group">
+                            <div className="rounded-lg border border-slate-200 p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-16 h-16 flex items-center justify-center rounded-lg bg-slate-100 overflow-hidden">
+                                        <Image
+                                            src={seo.ogImage}
+                                            alt="Open Graph preview"
+                                            fill
+                                            className="object-cover"
+                                            sizes="100vw"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className={`${inter.className} text-sm font-medium text-slate-900`}>
+                                            Image uploaded successfully
+                                        </p>
+                                        <p className={`${inter.className} text-xs text-slate-500 mt-1`}>
+                                            Ready for social media sharing
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={removeImage}
+                                        className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-red-600 transition-colors"
+                                        aria-label="Remove image"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div
+                            onDrop={handleDrop}
+                            onDragOver={handleDragOver}
+                            onClick={triggerFileInput}
+                            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${isUploading
+                                ? 'border-blue-300 bg-blue-50'
+                                : 'border-slate-300 hover:border-blue-400 hover:bg-blue-50'
+                                }`}
+                        >
+                            <div className="flex flex-col items-center gap-3">
+                                {isUploading ? (
+                                    <>
+                                        <div className="w-12 h-12 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
+                                        <p className={`${inter.className} text-sm text-blue-700`}>
+                                            Uploading image...
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <Upload className="w-6 h-6 text-blue-600" />
+                                        </div>
+                                        <div>
+                                            <p className={`${inter.className} text-sm font-medium text-slate-900`}>
+                                                Upload Open Graph Image
+                                            </p>
+                                            <p className={`${inter.className} text-xs text-slate-500 mt-1`}>
+                                                Drag & drop or click to browse
+                                            </p>
+                                            <p className={`${inter.className} text-xs text-slate-400 mt-1`}>
+                                                Supports {IMAGE_EXTENSIONS.join(', ')} • Max 5MB
+                                            </p>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Upload error */}
                     <AnimatePresence>
-                        {errors?.ogImage && touched?.ogImage && (
+                        {(uploadError || (errors?.ogImage && touched?.ogImage)) && (
                             <motion.div
                                 initial={{ opacity: 0, y: -5 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -262,7 +423,7 @@ export function SeoForm({ values, setFieldValue, errors, touched }: SeoFormProps
                                 className={`${inter.className} mt-2 flex items-center gap-1.5 text-xs text-red-600`}
                             >
                                 <AlertCircle className="w-3 h-3 flex-shrink-0" />
-                                {errors.ogImage}
+                                {uploadError || errors.ogImage}
                             </motion.div>
                         )}
                     </AnimatePresence>

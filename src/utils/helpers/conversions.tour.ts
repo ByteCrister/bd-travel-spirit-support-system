@@ -1,0 +1,109 @@
+import { DISTRICT, District, DIVISION, Division } from "@/constants/tour.const";
+
+// Get formatted display name
+export function getDisplayName(district: District): string {
+    return district
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
+// Get division by district
+export function getDivision(district: District): Division {
+    const divisionMap: Record<District, Division> = {
+        [DISTRICT.DHAKA]: DIVISION.DHAKA,
+        [DISTRICT.GAZIPUR]: DIVISION.DHAKA,
+        [DISTRICT.NARAYANGANJ]: DIVISION.DHAKA,
+        [DISTRICT.NARSINGDI]: DIVISION.DHAKA,
+        [DISTRICT.NAWABGANJ]: DIVISION.DHAKA,
+        [DISTRICT.MUNSHIGANJ]: DIVISION.DHAKA,
+        [DISTRICT.MANIKGANJ]: DIVISION.DHAKA,
+        [DISTRICT.FARIDPUR]: DIVISION.DHAKA,
+        [DISTRICT.RAJBARI]: DIVISION.DHAKA,
+        [DISTRICT.GOPALGANJ]: DIVISION.DHAKA,
+        [DISTRICT.MADARIPUR]: DIVISION.DHAKA,
+        [DISTRICT.SHARIATPUR]: DIVISION.DHAKA,
+        [DISTRICT.KISHOREGANJ]: DIVISION.DHAKA,
+        [DISTRICT.TANGAIL]: DIVISION.DHAKA,
+
+        [DISTRICT.CHATTOGRAM]: DIVISION.CHATTOGRAM,
+        [DISTRICT.COX_BAZAR]: DIVISION.CHATTOGRAM,
+        [DISTRICT.BANDARBAN]: DIVISION.CHATTOGRAM,
+        [DISTRICT.KHAGRACHHARI]: DIVISION.CHATTOGRAM,
+        [DISTRICT.RANGAMATI]: DIVISION.CHATTOGRAM,
+        [DISTRICT.FENI]: DIVISION.CHATTOGRAM,
+        [DISTRICT.LAKSHMIPUR]: DIVISION.CHATTOGRAM,
+        [DISTRICT.NOAKHALI]: DIVISION.CHATTOGRAM,
+        [DISTRICT.CHANDPUR]: DIVISION.CHATTOGRAM,
+        [DISTRICT.COMILLA]: DIVISION.CHATTOGRAM,
+        [DISTRICT.BRAHMANBARIA]: DIVISION.CHATTOGRAM,
+
+        [DISTRICT.RAJSHAHI]: DIVISION.RAJSHAHI,
+        [DISTRICT.NATORE]: DIVISION.RAJSHAHI,
+        [DISTRICT.CHAPAINAWABGANJ]: DIVISION.RAJSHAHI,
+        [DISTRICT.NAOGAON]: DIVISION.RAJSHAHI,
+        [DISTRICT.PABNA]: DIVISION.RAJSHAHI,
+        [DISTRICT.SIRAJGANJ]: DIVISION.RAJSHAHI,
+        [DISTRICT.BOGURA]: DIVISION.RAJSHAHI,
+        [DISTRICT.JOYPURHAT]: DIVISION.RAJSHAHI,
+
+        [DISTRICT.KHULNA]: DIVISION.KHULNA,
+        [DISTRICT.BAGERHAT]: DIVISION.KHULNA,
+        [DISTRICT.SATKHIRA]: DIVISION.KHULNA,
+        [DISTRICT.JHENAIDAH]: DIVISION.KHULNA,
+        [DISTRICT.MAGURA]: DIVISION.KHULNA,
+        [DISTRICT.NARAIL]: DIVISION.KHULNA,
+        [DISTRICT.CHUADANGA]: DIVISION.KHULNA,
+        [DISTRICT.KUSHTIA]: DIVISION.KHULNA,
+        [DISTRICT.MEHERPUR]: DIVISION.KHULNA,
+        [DISTRICT.JASHORE]: DIVISION.KHULNA,
+
+        [DISTRICT.BARISAL]: DIVISION.BARISHAL,
+        [DISTRICT.BARGUNA]: DIVISION.BARISHAL,
+        [DISTRICT.BHOLA]: DIVISION.BARISHAL,
+        [DISTRICT.JHALOKATI]: DIVISION.BARISHAL,
+        [DISTRICT.PATUAKHALI]: DIVISION.BARISHAL,
+        [DISTRICT.PIROJPUR]: DIVISION.BARISHAL,
+
+        [DISTRICT.SYLHET]: DIVISION.SYLHET,
+        [DISTRICT.HABIGANJ]: DIVISION.SYLHET,
+        [DISTRICT.MOULVIBAZAR]: DIVISION.SYLHET,
+        [DISTRICT.SUNAMGANJ]: DIVISION.SYLHET,
+
+        [DISTRICT.RANGPUR]: DIVISION.RANGPUR,
+        [DISTRICT.DINAJPUR]: DIVISION.RANGPUR,
+        [DISTRICT.GAIBANDHA]: DIVISION.RANGPUR,
+        [DISTRICT.KURIGRAM]: DIVISION.RANGPUR,
+        [DISTRICT.LALMONIRHAT]: DIVISION.RANGPUR,
+        [DISTRICT.NILPHAMARI]: DIVISION.RANGPUR,
+        [DISTRICT.PANCHAGARH]: DIVISION.RANGPUR,
+        [DISTRICT.THAKURGAON]: DIVISION.RANGPUR,
+
+        [DISTRICT.MYMENSINGH]: DIVISION.MYMENSINGH,
+        [DISTRICT.JAMALPUR]: DIVISION.MYMENSINGH,
+        [DISTRICT.NETRAKONA]: DIVISION.MYMENSINGH,
+        [DISTRICT.SHERPUR]: DIVISION.MYMENSINGH
+    };
+
+    return divisionMap[district] || DIVISION.DHAKA;
+}
+
+// Get all districts in a division
+export function getDistrictsByDivision(division: Division): District[] {
+    const allDistricts = Object.values(DISTRICT) as District[];
+    return allDistricts.filter(district =>
+        getDivision(district) === division
+    );
+}
+
+// Get district by key
+export function getDistrictByKey(key: string): District | null {
+    const enumKey = key.toUpperCase() as keyof typeof DISTRICT;
+    return DISTRICT[enumKey] || null;
+}
+
+// Get districts sorted alphabetically
+export function getSortedDistricts(): District[] {
+    return (Object.values(DISTRICT) as District[])
+        .sort((a, b) => a.localeCompare(b));
+}

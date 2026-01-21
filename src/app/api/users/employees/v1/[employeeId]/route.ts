@@ -2,7 +2,6 @@
 import { NextRequest } from "next/server";
 import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
-import { decodeId } from "@/utils/helpers/mongodb-id-conversions";
 import { ASSET_TYPE } from "@/constants/asset.const";
 import { cleanupAssets } from "@/lib/cloudinary/delete.cloudinary";
 import { resolveDocuments } from "@/lib/cloudinary/resolve.cloudinary";
@@ -16,6 +15,7 @@ import { updateEmployeeServerSchema } from "@/utils/validators/employee/employee
 import { isValidObjectId, Types } from "mongoose";
 import { USER_ROLE, UserRole } from "@/constants/user.const";
 import ConnectDB from "@/config/db";
+import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 
 interface Params {
     params: Promise<{ employeeId: string }>
@@ -48,9 +48,8 @@ function toDate(value?: string | Date | null): Date | undefined {
 
 // Get full employee details
 export const GET = withErrorHandler(async (req: NextRequest, { params }: Params) => {
-    const { employeeId } = await params;
 
-    const decodedId = decodeId(decodeURIComponent(employeeId));
+    const decodedId = resolveMongoId((await params).employeeId);
 
     if (!decodedId || !Types.ObjectId.isValid(decodedId)) {
         throw new ApiError("Invalid employeeId", 400);
@@ -73,7 +72,8 @@ export const GET = withErrorHandler(async (req: NextRequest, { params }: Params)
 
 // update employee details
 export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params) => {
-    const { employeeId } = await params;
+
+    const employeeId = resolveMongoId((await params).employeeId);
 
     const body: UpdateEmployeePayload = await req.json();
 

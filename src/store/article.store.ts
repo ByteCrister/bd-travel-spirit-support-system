@@ -25,6 +25,9 @@ import {
     ArticleSearch,
     ArticleSort,
     ID,
+    RestoreArticleInput,
+    RestoreArticleResponse,
+    RestoreArticleApi,
 } from '@/types/article.types';
 
 import api from '@/utils/axios';
@@ -188,6 +191,7 @@ type ArticleStore = {
     createArticle: (input: CreateArticleInput) => Promise<CreateArticleResponse>;
     updateArticle: (input: UpdateArticleInput) => Promise<UpdateArticleResponse>;
     deleteArticle: (input: DeleteArticleInput) => Promise<DeleteArticleResponse>;
+    restoreArticle: (input: RestoreArticleInput) => Promise<RestoreArticleResponse>;
 
     invalidateList: (req?: ArticleListQueryRequest) => void;
     invalidateDetail: (id: ID) => void;
@@ -307,7 +311,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
             }
 
             const { data } = await api.get<ArticleListApi>(`${URL_AFTER_API}`, { params });
-            if (!data.ok) throw new Error(data.error || 'Failed to load articles');
+            if (!data || !data.data) throw new Error('Failed to load articles');
 
             const response = data.data;
             if (response.paginationType === 'offset') {
@@ -369,7 +373,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
         set({ loading: { ...state.loading, isLoadingDetail: true }, error: undefined });
         try {
             const { data } = await api.get<ArticleDetailApi>(`${URL_AFTER_API}/${id}`);
-            if (!data.ok) throw new Error(data.error || 'Failed to load article');
+            if (!data || !data.data) throw new Error('Failed to load article detail');
             const detail = data.data;
             detailCache.set(key, detail);
             set({ detailById: { ...get().detailById, [id]: detail }, loading: { ...get().loading, isLoadingDetail: false }, error: undefined });
@@ -390,7 +394,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
         set({ loading: { ...state.loading, isLoadingStats: true }, error: undefined });
         try {
             const { data } = await api.get<ArticleStatsApi>(`${URL_AFTER_API}/stats`);
-            if (!data.ok) throw new Error(data.error || 'Failed to load stats');
+            if (!data || !data.data) throw new Error('Failed to load stats');
             const stats = data.data;
             statsCache.set(key, stats);
             set({ stats, loading: { ...get().loading, isLoadingStats: false }, error: undefined });
@@ -402,7 +406,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
     createArticle: async (input) => {
         try {
             const { data } = await api.post<CreateArticleApi>(`${URL_AFTER_API}`, input);
-            if (!data.ok) throw new Error(data.error || 'Failed to create article');
+            if (!data || !data.data) throw new Error('Failed to create article');
             const created = data.data.article;
             if (created) {
                 // New article affects lists & stats. Clear paged cache and stats detail caches for consistency.
@@ -424,7 +428,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
         const { id, ...payload } = input;
         try {
             const { data } = await api.put<UpdateArticleApi>(`${URL_AFTER_API}/${id}`, payload);
-            if (!data.ok) throw new Error(data.error || 'Failed to update article');
+            if (!data || !data.data) throw new Error('Failed to update articles');
             const updated = data.data.article;
             if (updated) {
                 // update detail cache and update local store; clear pagedCache for simplicity
@@ -449,7 +453,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
         set({ listItems: prevList.filter((a) => a.id !== id) });
         try {
             const { data } = await api.delete<DeleteArticleApi>(`${URL_AFTER_API}/${id}`);
-            if (!data.ok) throw new Error(data.error || 'Failed to delete article');
+            if (!data || !data.data) throw new Error('Failed to delete article');
             detailCache.del(`detail:${id}`);
             pagedCache.clear();
             const detailById = { ...get().detailById };
@@ -459,6 +463,48 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
         } catch (err) {
             set({ listItems: prevList, error: extractErrorMessage(err) });
             return { success: false, message: extractErrorMessage(err), deletedId: undefined } as DeleteArticleResponse;
+        }
+    },
+
+    restoreArticle: async (input) => {
+        const { id } = input;
+
+        try {
+            // Typically restore would be a PATCH or POST to a restore endpoint
+            const { data } = await api.post<RestoreArticleApi>(`${URL_AFTER_API}/${id}/restore`);
+
+            if (!data || !data.data) throw new Error('Failed to restore article');
+
+            const restored = data.data.article;
+            if (restored) {
+                // Update caches and store state
+                detailCache.set(`detail:${id}`, restored);
+                pagedCache.clear(); // Clear list cache as the restored article might appear in lists
+                statsCache.clear(); // Stats might change
+
+                const state = get();
+                const newDetailById = { ...state.detailById, [id]: restored };
+
+                // If the article exists in listItems, update it
+                const newListItems = state.listItems.map((a) =>
+                    a.id === id ? { ...a, ...restored, status: restored.status } : a
+                );
+
+                set({
+                    detailById: newDetailById,
+                    listItems: newListItems,
+                    error: undefined
+                });
+            }
+
+            return data.data;
+        } catch (err) {
+            const message = extractErrorMessage(err);
+            set({ error: message });
+            return {
+                success: false,
+                message
+            } as RestoreArticleResponse;
         }
     },
 

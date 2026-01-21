@@ -8,6 +8,7 @@ import {
     FOOD_RECO_SPICE_TYPE,
     ArticleRichTextBlockType,
     FoodRecoSpiceType,
+    ArticleType,
 } from '@/constants/article.const';
 import { TOUR_CATEGORIES, DIVISION, DISTRICT, Division, District, TourCategories } from '@/constants/tour.const';
 
@@ -88,13 +89,10 @@ export const createArticleSchema = Yup.object().shape({
     banglaTitle: Yup.string()
         .min(5, 'Bangla title must be at least 5 characters')
         .required('Bangla title is required'),
-    slug: Yup.string()
-        .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be kebab-case')
-        .required('Slug is required'),
     status: Yup.mixed<ARTICLE_STATUS>()
         .oneOf(Object.values(ARTICLE_STATUS))
         .required('Status is required'),
-    articleType: Yup.mixed<ARTICLE_TYPE>()
+    articleType: Yup.mixed<ArticleType>()
         .oneOf(Object.values(ARTICLE_TYPE))
         .required('Article type is required'),
     authorBio: Yup.string().nullable(),
@@ -102,10 +100,14 @@ export const createArticleSchema = Yup.object().shape({
         .min(10, 'Summary must be at least 10 characters')
         .max(300, 'Summary must be under 300 characters')
         .required('Summary is required'),
-    heroImage: Yup.string().nullable().required('Hero image is required'),
+    heroImage: Yup.string().nullable(),
     destinations: Yup.array().of(destinationBlockSchema).min(1, 'At least one content block is required').required(),
     categories: Yup.array()
-        .of(Yup.mixed<TourCategories>().oneOf(Object.values(TOUR_CATEGORIES)))
+        .of(
+            Yup.mixed<TourCategories>().oneOf(
+                Object.values(TOUR_CATEGORIES) as TourCategories[]
+            )
+        )
         .min(1, 'At least one category is required')
         .required('Categories are required'),
     tags: Yup.array().of(Yup.string().trim()).required('Tags is required'),

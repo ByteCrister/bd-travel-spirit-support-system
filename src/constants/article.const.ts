@@ -38,7 +38,6 @@ export enum FOOD_RECO_SPICE_TYPE{
 export type FoodRecoSpiceType = `${FOOD_RECO_SPICE_TYPE}`;
 
 export enum FAQ_CATEGORY {
-  VISA = "Visa",
   TRANSPORT = "Transport",
   ACCOMMODATION = "Accommodation",
   FOOD = "Food",

@@ -20,13 +20,14 @@ import {
   TourCategories
 } from "@/constants/tour.const";
 import { defineModel } from "@/lib/helpers/defineModel";
+import { slugify } from "@/lib/helpers/slugify";
 import { Query } from "mongoose";
 import { Schema, Types, Document, Model, ClientSession, FilterQuery, QueryOptions } from "mongoose";
 
 /**
  * Interface for Bangladeshi cuisine/dining recommendations
  */
-interface IFoodRecommendation {
+export interface IFoodRecommendation {
   dishName: string;
   description: string;
   bestPlaceToTry?: string;
@@ -37,7 +38,7 @@ interface IFoodRecommendation {
 /**
  * Interface for local festivals/events in Bangladesh
  */
-interface ILocalFestival {
+export interface ILocalFestival {
   name: string;
   description: string;
   timeOfYear: string;
@@ -48,7 +49,7 @@ interface ILocalFestival {
 /**
  * Interface for destination blocks within Bangladesh
  */
-interface IDestinationBlock {
+export interface IDestinationBlock {
   _id: Types.ObjectId;
   division: Division;
   district: District;
@@ -62,16 +63,16 @@ interface IDestinationBlock {
   transportOptions?: string[];
   accommodationTips?: string[];
   coordinates?: { lat: number; lng: number };
-  imageAssets?: { title: string, assetId: Types.ObjectId };
+  imageAsset?: { title: string, assetId: Types.ObjectId };
 }
 
-interface IRichTextBlock {
+export interface IRichTextBlock {
   type: ArticleRichTextBlockType;
   text?: string;
   href?: string;
 }
 
-interface IFAQ {
+export interface IFAQ {
   question: string;
   answer: string;
   category?: FaqCategory;
@@ -81,6 +82,7 @@ interface IFAQ {
  * Main travel article interface for Bangladesh with soft delete fields
  */
 export interface ITravelArticle extends Document {
+  _id: Types.ObjectId;
   title: string;
   banglaTitle?: string;
   slug: string;
@@ -142,36 +144,13 @@ export interface ITravelArticleModel extends Model<ITravelArticle> {
   ): Promise<ITravelArticle | null>;
 
   // Soft delete methods
-  softDelete(
-    filter: FilterQuery<ITravelArticle>,
-    deletedBy?: Types.ObjectId,
-    session?: ClientSession
-  ): Promise<{ modifiedCount: number }>;
-
   softDeleteById(
     id: Types.ObjectId | string,
     deletedBy?: Types.ObjectId,
     session?: ClientSession
   ): Promise<ITravelArticle | null>;
 
-  // Restore methods
-  restore(
-    filter: FilterQuery<ITravelArticle>,
-    session?: ClientSession
-  ): Promise<{ modifiedCount: number }>;
-
   restoreById(
-    id: Types.ObjectId | string,
-    session?: ClientSession
-  ): Promise<ITravelArticle | null>;
-
-  // Permanent delete methods (hard delete)
-  hardDelete(
-    filter: FilterQuery<ITravelArticle>,
-    session?: ClientSession
-  ): Promise<{ deletedCount: number }>;
-
-  hardDeleteById(
     id: Types.ObjectId | string,
     session?: ClientSession
   ): Promise<ITravelArticle | null>;
@@ -322,7 +301,7 @@ const TravelArticleSchema = new Schema<ITravelArticle, ITravelArticleModel>(
     allowComments: { type: Boolean, default: true },
 
     // Soft delete fields
-    deleted: { type: Boolean, default: false, index: true },
+    deleted: { type: Boolean, default: false },
     deletedAt: { type: Date, index: true },
     deletedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
@@ -331,10 +310,7 @@ const TravelArticleSchema = new Schema<ITravelArticle, ITravelArticleModel>(
 
 // Indexes for better query performance
 TravelArticleSchema.index({ status: 1, publishedAt: -1 });
-TravelArticleSchema.index({ slug: 1 });
 TravelArticleSchema.index({ "destinations.division": 1, "destinations.district": 1 });
-TravelArticleSchema.index({ categories: 1 });
-TravelArticleSchema.index({ tags: 1 });
 TravelArticleSchema.index({ deleted: 1, status: 1, publishedAt: -1 });
 TravelArticleSchema.index({ deleted: 1, slug: 1 });
 
@@ -343,6 +319,49 @@ TravelArticleSchema.pre(/^find/, function (this: Query<ITravelArticle[], ITravel
   const filter = this.getFilter();
   if (filter.deleted === undefined) {
     this.where({ deleted: false });
+  }
+  next();
+});
+
+// Enhanced pre-save middleware with uniqueness check
+TravelArticleSchema.pre('save', async function (next) {
+  if (this.isNew || this.isModified('title')) {
+    const slugOptions = {
+      maxLength: 60,
+      locale: 'en',
+      fallback: 'article'
+    };
+
+    const titleToSlugify = this.title || this.banglaTitle || '';
+    const baseSlug = titleToSlugify ? slugify(titleToSlugify, slugOptions) : `article-${Date.now()}`;
+    let finalSlug = baseSlug;
+    let counter = 1;
+
+    // Get the model from the document's constructor
+    const Model = this.constructor as Model<ITravelArticle>;
+
+    while (true) {
+      const existing = await Model.findOne({
+        slug: finalSlug,
+        _id: { $ne: this._id }
+      } as FilterQuery<ITravelArticle>);
+
+      if (!existing) {
+        break;
+      }
+
+      // Append counter to make it unique
+      finalSlug = `${baseSlug}-${counter}`;
+      counter++;
+
+      // Safety break to prevent infinite loop
+      if (counter > 100) {
+        finalSlug = `${baseSlug}-${Date.now()}`;
+        break;
+      }
+    }
+
+    this.slug = finalSlug;
   }
   next();
 });
@@ -383,26 +402,6 @@ TravelArticleSchema.statics.findByIdWithDeleted = async function (
 };
 
 /**
- * Soft delete multiple documents
- */
-TravelArticleSchema.statics.softDelete = async function (
-  filter: FilterQuery<ITravelArticle>,
-  deletedBy?: Types.ObjectId,
-  session?: ClientSession
-): Promise<{ modifiedCount: number }> {
-  const update = {
-    $set: {
-      deleted: true,
-      deletedAt: new Date(),
-      ...(deletedBy && { deletedBy }),
-    },
-  };
-
-  const result = await this.updateMany(filter, update, { session });
-  return { modifiedCount: result.modifiedCount };
-};
-
-/**
  * Soft delete by ID
  */
 TravelArticleSchema.statics.softDeleteById = async function (
@@ -412,6 +411,7 @@ TravelArticleSchema.statics.softDeleteById = async function (
 ): Promise<ITravelArticle | null> {
   const update = {
     $set: {
+      status: ARTICLE_STATUS.ARCHIVED,
       deleted: true,
       deletedAt: new Date(),
       ...(deletedBy && { deletedBy }),
@@ -419,30 +419,6 @@ TravelArticleSchema.statics.softDeleteById = async function (
   };
 
   return this.findByIdAndUpdate(id, update, { new: true, session });
-};
-
-/**
- * Restore multiple soft-deleted documents
- */
-TravelArticleSchema.statics.restore = async function (
-  filter: FilterQuery<ITravelArticle>,
-  session?: ClientSession
-): Promise<{ modifiedCount: number }> {
-  const update = {
-    $set: {
-      deleted: false,
-      deletedAt: null,
-      deletedBy: null,
-    },
-  };
-
-  const result = await this.updateMany(
-    { ...filter, deleted: true },
-    update,
-    { session }
-  );
-
-  return { modifiedCount: result.modifiedCount };
 };
 
 /**
@@ -456,6 +432,7 @@ TravelArticleSchema.statics.restoreById = async function (
     id,
     {
       $set: {
+        status: ARTICLE_STATUS.DRAFT,
         deleted: false,
         deletedAt: null,
         deletedBy: null,
@@ -463,27 +440,6 @@ TravelArticleSchema.statics.restoreById = async function (
     },
     { new: true, session }
   );
-};
-
-/**
- * Hard delete (permanent delete) multiple documents
- */
-TravelArticleSchema.statics.hardDelete = async function (
-  filter: FilterQuery<ITravelArticle>,
-  session?: ClientSession
-): Promise<{ deletedCount: number }> {
-  const result = await this.deleteMany(filter, { session });
-  return { deletedCount: result.deletedCount };
-};
-
-/**
- * Hard delete by ID
- */
-TravelArticleSchema.statics.hardDeleteById = async function (
-  id: Types.ObjectId | string,
-  session?: ClientSession
-): Promise<ITravelArticle | null> {
-  return this.findByIdAndDelete(id, { session });
 };
 
 /**
@@ -514,35 +470,6 @@ TravelArticleSchema.statics.countActive = async function (
   session?: ClientSession
 ): Promise<number> {
   return this.countDocuments({ ...filter, deleted: false }, { session });
-};
-
-// Instance Methods
-
-/**
- * Soft delete instance method
- */
-TravelArticleSchema.methods.softDelete = async function (
-  deletedBy?: Types.ObjectId,
-  session?: ClientSession
-): Promise<ITravelArticle> {
-  this.deleted = true;
-  this.deletedAt = new Date();
-  if (deletedBy) {
-    this.deletedBy = deletedBy;
-  }
-  return this.save({ session });
-};
-
-/**
- * Restore instance method
- */
-TravelArticleSchema.methods.restore = async function (
-  session?: ClientSession
-): Promise<ITravelArticle> {
-  this.deleted = false;
-  this.deletedAt = undefined;
-  this.deletedBy = undefined;
-  return this.save({ session });
 };
 
 export const TravelArticleModel = defineModel<ITravelArticle, ITravelArticleModel>(

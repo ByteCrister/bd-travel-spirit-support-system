@@ -11,7 +11,7 @@ import { USER_ROLE } from "@/constants/user.const";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { notifyEmployeeNewPassword } from "@/lib/html/notify-new-password.html";
 import { mailer } from "@/config/node-mailer";
-import { decodeId } from "@/utils/helpers/mongodb-id-conversions";
+import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 
 type ObjectId = Types.ObjectId;
 
@@ -25,10 +25,7 @@ export type EmployeeLeanPopulated =
 
 export const PUT = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ employeeId: string }> }) => {
 
-    const employeeId = decodeId(decodeURIComponent((await params).employeeId));
-
-    console.log(employeeId);
-
+    const employeeId = resolveMongoId((await params).employeeId);
 
     // validate id
     if (!employeeId || !mongoose.Types.ObjectId.isValid(employeeId)) {

@@ -55,8 +55,8 @@ const navigationGroups: NavGroup[] = [
     title: "Overview",
     icon: FiHome,
     items: [
-      { href: "/overview/dashboard", label: "Dashboard", icon: FiHome },
-      { href: "/overview/statistics", label: "Statistics", icon: HiOutlineChartSquareBar, adminOnly: true },
+      { href: "/dashboard/overview", label: "Dashboard", icon: FiHome },
+      { href: "/dashboard/statistics", label: "Statistics", icon: HiOutlineChartSquareBar, adminOnly: true },
     ],
   },
   {

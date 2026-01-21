@@ -11,8 +11,8 @@ import ConnectDB from "@/config/db";
 import { Types } from "mongoose";
 import { TourApprovalResponse } from "@/types/tour-approval.types";
 import { buildTourDetailDTO } from "@/lib/build-responses/build-tour-details";
-import { decodeId } from "@/utils/helpers/mongodb-id-conversions";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
+import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 
 /**
  * POST /api/support/v1/tours/[tourId]/approve
@@ -23,7 +23,7 @@ export const POST = withErrorHandler(
         req: NextRequest,
         { params }: { params: Promise<{ tourId: string }> }
     ) => {
-        const tourId = decodeId(decodeURIComponent((await params).tourId));
+        const tourId = resolveMongoId((await params).tourId);
         const body = await req.json();
         const { reason } = body;
 

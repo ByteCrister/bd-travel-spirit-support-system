@@ -5,8 +5,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 // Define the admin routes that should use the dashboard layout
 const ADMIN_ROUTES = [
-  "/overview/dashboard",
-  "/overview/statistics",
+  "/dashboard/overview",
+  "/dashboard/statistics",
 
   "/users/travelers",
   "/users/guides",

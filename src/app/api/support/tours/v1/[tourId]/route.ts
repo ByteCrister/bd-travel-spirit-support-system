@@ -4,8 +4,8 @@ import mongoose from 'mongoose';
 import ConnectDB from '@/config/db';
 import { ApiError, withErrorHandler } from '@/lib/helpers/withErrorHandler';
 import { withTransaction } from '@/lib/helpers/withTransaction';
-import { decodeId } from '@/utils/helpers/mongodb-id-conversions';
 import { buildTourDetailDTO } from '@/lib/build-responses/build-tour-details';
+import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 
 /**
  * GET Full Tour details 
@@ -14,7 +14,7 @@ export const GET = withErrorHandler(async (
     request: NextRequest,
     { params }: { params: Promise<{ tourId: string }> }
 ) => {
-    const tourId = decodeId(decodeURIComponent((await params).tourId));
+    const tourId = resolveMongoId((await params).tourId);
 
     if (!tourId) {
         throw new ApiError("Invalid tour ID", 400);

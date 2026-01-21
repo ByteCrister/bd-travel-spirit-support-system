@@ -49,7 +49,6 @@ export function ArticleBasics({
   const tags = values.tags ?? [];
 
   const titleError = fieldError(errors, touched, 'title');
-  const slugError = fieldError(errors, touched, 'slug');
   const statusError = fieldError(errors, touched, 'status');
   const articleTypeError = fieldError(errors, touched, 'articleType');
   const categoriesError = fieldError(errors, touched, 'categories');
@@ -77,23 +76,6 @@ export function ArticleBasics({
           {titleError && (
             <p className="mt-1 text-xs text-red-600" role="alert">
               {titleError}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="text-sm font-medium">Slug</label>
-          <Input
-            value={values.slug}
-            onChange={(e) => setFieldValue('slug', e.target.value)}
-            placeholder="a-perfect-weekend-in-sylhet"
-            aria-label="Article slug"
-            aria-invalid={!!slugError}
-            className={slugError ? invalidClass : ''}
-          />
-          {slugError && (
-            <p className="mt-1 text-xs text-red-600" role="alert">
-              {slugError}
             </p>
           )}
         </div>

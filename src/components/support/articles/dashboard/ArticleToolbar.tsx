@@ -36,7 +36,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useArticleStore } from '@/store/article.store';
 import { useRouter } from 'next/navigation';
 import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
-import { TRAVEL_TYPE } from '@/constants/tour.const';
+import { TOUR_CATEGORIES, TourCategories } from '@/constants/tour.const';
 
 type Preset = {
     id: string;
@@ -50,7 +50,7 @@ const PRESET_STORAGE_KEY = 'article_filter_presets';
 
 const STATUS_OPTIONS = Object.values(ARTICLE_STATUS);
 const TYPE_OPTIONS = Object.values(ARTICLE_TYPE);
-const CATEGORY_OPTIONS = Object.values(TRAVEL_TYPE);
+const CATEGORY_OPTIONS = Object.values(TOUR_CATEGORIES);
 
 const SORT_FIELDS: ArticleSortField[] = [
     'updatedAt',
@@ -144,7 +144,7 @@ export default function ArticleToolbar() {
     };
 
     // Token management
-    const addToken = (value: string, key: 'tags' | 'authorIds') => {
+    const addToken = (value: string, key: 'tags' | 'authorNames') => {
         const trimmed = value.trim();
         if (!trimmed) return;
         setLocalFilter((f) => {
@@ -155,7 +155,7 @@ export default function ArticleToolbar() {
         });
     };
 
-    const removeToken = (value: string, key: 'tags' | 'authorIds') => {
+    const removeToken = (value: string, key: 'tags' | 'authorNames') => {
         setLocalFilter((f) => ({
             ...f,
             [key]: (f[key] || []).filter((v) => v !== value),
@@ -197,7 +197,7 @@ export default function ArticleToolbar() {
         localFilter.articleType?.length,
         localFilter.categories?.length,
         localFilter.tags?.length,
-        localFilter.authorIds?.length,
+        localFilter.authorNames?.length,
         localFilter.publishedFrom,
         localFilter.publishedTo,
         localFilter.destinationCity,
@@ -434,7 +434,7 @@ export default function ArticleToolbar() {
                                     <Select
                                         value={(localFilter.categories?.[0] as string) ?? ''}
                                         onValueChange={(val) =>
-                                            setLocalFilter((f) => ({ ...f, categories: val ? [val as TRAVEL_TYPE] : [] }))
+                                            setLocalFilter((f) => ({ ...f, categories: val ? [val as TourCategories] : [] }))
                                         }
                                     >
                                         <SelectTrigger className="bg-white dark:bg-slate-900" aria-label="Category filter">
@@ -510,18 +510,18 @@ export default function ArticleToolbar() {
                                 <div className="space-y-3">
                                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
                                         <HiSparkles className="h-4 w-4 text-blue-500" />
-                                        Author IDs
+                                        Author Names
                                     </label>
                                     <div className="flex gap-2">
                                         <Input
                                             value={authorsInput}
                                             onChange={(e) => setAuthorsInput(e.target.value)}
-                                            placeholder="Add author ID..."
+                                            placeholder="Add author Name..."
                                             className="bg-white dark:bg-slate-900"
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
                                                     e.preventDefault();
-                                                    addToken(authorsInput, 'authorIds');
+                                                    addToken(authorsInput, 'authorNames');
                                                     setAuthorsInput('');
                                                 }
                                             }}
@@ -530,7 +530,7 @@ export default function ArticleToolbar() {
                                         <Button
                                             size="sm"
                                             onClick={() => {
-                                                addToken(authorsInput, 'authorIds');
+                                                addToken(authorsInput, 'authorNames');
                                                 setAuthorsInput('');
                                             }}
                                             className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
@@ -540,7 +540,7 @@ export default function ArticleToolbar() {
                                         </Button>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-                                        {(localFilter.authorIds ?? []).map((a) => (
+                                        {(localFilter.authorNames ?? []).map((a) => (
                                             <motion.div
                                                 key={a as ID}
                                                 initial={{ scale: 0 }}
@@ -551,7 +551,7 @@ export default function ArticleToolbar() {
                                                 <Badge
                                                     variant="outline"
                                                     className="cursor-pointer bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-300 dark:border-blue-700 hover:border-blue-500 transition-all"
-                                                    onClick={() => removeToken(a as string, 'authorIds')}
+                                                    onClick={() => removeToken(a as string, 'authorNames')}
                                                 >
                                                     {a}
                                                     <HiXMark className="ml-1 h-3 w-3" />
@@ -573,18 +573,43 @@ export default function ArticleToolbar() {
                                         <Input
                                             type="date"
                                             value={localFilter.publishedFrom ?? ''}
-                                            onChange={(e) => setLocalFilter((f) => ({ ...f, publishedFrom: e.target.value }))}
+                                            onChange={(e) => {
+                                                const newFrom = e.target.value;
+                                                setLocalFilter((f) => {
+                                                    // If to date exists and is earlier than new from date, update both
+                                                    if (newFrom && f.publishedTo && newFrom > f.publishedTo) {
+                                                        return { ...f, publishedFrom: newFrom, publishedTo: newFrom };
+                                                    }
+                                                    return { ...f, publishedFrom: newFrom };
+                                                });
+                                            }}
                                             className="bg-white dark:bg-slate-900"
                                             aria-label="Published from"
+                                            max={localFilter.publishedTo || undefined}
                                         />
                                         <Input
                                             type="date"
                                             value={localFilter.publishedTo ?? ''}
-                                            onChange={(e) => setLocalFilter((f) => ({ ...f, publishedTo: e.target.value }))}
+                                            onChange={(e) => {
+                                                const newTo = e.target.value;
+                                                setLocalFilter((f) => {
+                                                    // If from date exists and is later than new to date, update both
+                                                    if (newTo && f.publishedFrom && newTo < f.publishedFrom) {
+                                                        return { ...f, publishedFrom: newTo, publishedTo: newTo };
+                                                    }
+                                                    return { ...f, publishedTo: newTo };
+                                                });
+                                            }}
                                             className="bg-white dark:bg-slate-900"
                                             aria-label="Published to"
+                                            min={localFilter.publishedFrom || undefined}
                                         />
                                     </div>
+                                    {(localFilter.publishedFrom && localFilter.publishedTo && localFilter.publishedFrom > localFilter.publishedTo) ? (
+                                        <p className="text-xs text-red-500 dark:text-red-400">
+                                            End date cannot be earlier than start date
+                                        </p>
+                                    ) : null}
                                 </div>
 
                                 <div className="space-y-3">

@@ -32,10 +32,11 @@ import { FaqForm } from './FaqForm';
 import { SeoForm } from './SeoForm';
 import { CreateArticleFormValues, createArticleSchema } from '@/utils/validators/article.create.validator';
 import { playfair, inter } from '@/styles/fonts';
-import { ARTICLE_RICH_TEXT_BLOCK_TYPE, ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
+import { ARTICLE_TYPE } from '@/constants/article.const';
 import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 import { useState } from 'react';
-import { DISTRICT, DIVISION, TOUR_CATEGORIES } from '@/constants/tour.const';
+import { TOUR_CATEGORIES } from '@/constants/tour.const';
+import { initialCreateArticlePayload_1 } from '@/data/base-tour-articles';
 
 interface TabConfig {
     value: string;
@@ -76,71 +77,73 @@ export function ArticleForm() {
         },
     ];
 
-    const initialValues: CreateArticleFormValues = {
-        title: '',
-        banglaTitle: '',
-        slug: '',
-        status: ARTICLE_STATUS.DRAFT,
-        articleType: ARTICLE_TYPE.SINGLE_DESTINATION,
-        authorBio: '',
-        summary: '',
-        heroImage: '', 
-        destinations: [
-            {
-                division: DIVISION.DHAKA,
-                district: DISTRICT.DHAKA,
-                area: '',
-                description: '',
-                content: [
-                    {
-                        type: ARTICLE_RICH_TEXT_BLOCK_TYPE.PARAGRAPH,
-                        text: '',
-                    },
-                ],
-                highlights: [''],
-                foodRecommendations: [
-                    {
-                        dishName: '',
-                        description: '',
-                        bestPlaceToTry: '',
-                        approximatePrice: '',
-                        spiceLevel: null,
-                    },
-                ],
-                localFestivals: [
-                    {
-                        name: '',
-                        description: '',
-                        timeOfYear: '',
-                        location: '',
-                        significance: '',
-                    },
-                ],
-                localTips: [''],
-                transportOptions: [''],
-                accommodationTips: [''],
-                coordinates: {
-                    lat: 0,
-                    lng: 0,
-                },
-                imageAsset: {
-                    title: '',
-                    assetId: '',
-                    url: '',
-                },
-            },
-        ],
+    const initialValues: CreateArticleFormValues = initialCreateArticlePayload_1;
 
-        categories: [],
-        tags: [],
-        seo: {
-            metaTitle: '',
-            metaDescription: '',
-            ogImage: null,
-        },
-        faqs: [],
-        allowComments: true,
-    };
+    // const initialValues: CreateArticleFormValues = {
+    //     title: '',
+    //     banglaTitle: '',
+    //     slug: '',
+    //     status: ARTICLE_STATUS.DRAFT,
+    //     articleType: ARTICLE_TYPE.SINGLE_DESTINATION,
+    //     authorBio: '',
+    //     summary: '',
+    //     heroImage: '', 
+    //     destinations: [
+    //         {
+    //             division: DIVISION.DHAKA,
+    //             district: DISTRICT.DHAKA,
+    //             area: '',
+    //             description: '',
+    //             content: [
+    //                 {
+    //                     type: ARTICLE_RICH_TEXT_BLOCK_TYPE.PARAGRAPH,
+    //                     text: '',
+    //                 },
+    //             ],
+    //             highlights: [''],
+    //             foodRecommendations: [
+    //                 {
+    //                     dishName: '',
+    //                     description: '',
+    //                     bestPlaceToTry: '',
+    //                     approximatePrice: '',
+    //                     spiceLevel: null,
+    //                 },
+    //             ],
+    //             localFestivals: [
+    //                 {
+    //                     name: '',
+    //                     description: '',
+    //                     timeOfYear: '',
+    //                     location: '',
+    //                     significance: '',
+    //                 },
+    //             ],
+    //             localTips: [''],
+    //             transportOptions: [''],
+    //             accommodationTips: [''],
+    //             coordinates: {
+    //                 lat: 0,
+    //                 lng: 0,
+    //             },
+    //             imageAsset: {
+    //                 title: '',
+    //                 assetId: '',
+    //                 url: '',
+    //             },
+    //         },
+    //     ],
+
+    //     categories: [],
+    //     tags: [],
+    //     seo: {
+    //         metaTitle: '',
+    //         metaDescription: '',
+    //         ogImage: null,
+    //     },
+    //     faqs: [],
+    //     allowComments: true,
+    // };
 
     function findFirstError(err: unknown): string | undefined {
         if (!err) return undefined;
@@ -222,7 +225,6 @@ export function ArticleForm() {
             const payload: CreateArticleInput = {
                 title: values.title,
                 banglaTitle: values.banglaTitle,
-                slug: values.slug,
                 status: values.status,
                 articleType: values.articleType,
                 authorBio: values.authorBio || undefined,
@@ -282,7 +284,7 @@ export function ArticleForm() {
                     ARTICLE_TYPE.HILL_STATION,
                     ARTICLE_TYPE.BEACH_DESTINATION,
                     ARTICLE_TYPE.HISTORICAL_SITE
-                ].includes(values.articleType);
+                ].includes(values.articleType as ARTICLE_TYPE);
 
                 const firstFormError = findFirstError(errors);
                 const bannerMessage = error ?? firstFormError;
