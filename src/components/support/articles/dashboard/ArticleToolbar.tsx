@@ -37,6 +37,8 @@ import { useArticleStore } from '@/store/article.store';
 import { useRouter } from 'next/navigation';
 import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
 import { TOUR_CATEGORIES, TourCategories } from '@/constants/tour.const';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
+import { HiTrash } from 'react-icons/hi';
 
 type Preset = {
     id: string;
@@ -97,10 +99,12 @@ export default function ArticleToolbar() {
     const [localSearch, setLocalSearch] = React.useState<ArticleSearch>(currentSearch);
     const [localSort, setLocalSort] = React.useState<ArticleSort>(currentSort);
     const [isResetting, setIsResetting] = React.useState(false);
+    const [managePresetsOpen, setManagePresetsOpen] = React.useState(false);
 
     // Token inputs
     const [tagsInput, setTagsInput] = React.useState('');
     const [authorsInput, setAuthorsInput] = React.useState('');
+    const [searchInput, setSearchInput] = React.useState(currentSearch.query ?? '');
 
     // Presets
     const [presetName, setPresetName] = React.useState('');
@@ -115,6 +119,13 @@ export default function ArticleToolbar() {
     const [presetOpen, setPresetOpen] = React.useState(false);
     const [showAdvanced, setShowAdvanced] = React.useState(false);
 
+    const debouncedSetSearch = useDebouncedCallback(
+        (query: string) => {
+            setLocalSearch({ query });
+        },
+        300 // 300ms delay
+    );
+
     // Keep local in sync with store
     React.useEffect(() => {
         setLocalFilter(currentFilter);
@@ -122,10 +133,14 @@ export default function ArticleToolbar() {
         setLocalSort(currentSort);
     }, [currentFilter, currentSearch, currentSort]);
 
+    React.useEffect(() => {
+        setSearchInput(currentSearch.query ?? '');
+    }, [currentSearch.query]);
+
     // Commit local changes to store and refetch
     const commitChanges = async () => {
         setFilter(localFilter);
-        setSearch(localSearch);
+        setSearch({ query: searchInput });
         setSort(localSort);
         await fetchArticleList();
     };
@@ -134,8 +149,15 @@ export default function ArticleToolbar() {
     const handleReset = async () => {
         setIsResetting(true);
         reset();
+        setSearchInput(''); // Clear the search input
         await fetchArticleList();
         setIsResetting(false);
+    };
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSearchInput(value); // Update UI immediately
+        debouncedSetSearch(value); // Debounced store update
     };
 
     // Navigate to create article
@@ -190,6 +212,25 @@ export default function ArticleToolbar() {
         const nextPg: OffsetPageRequest = { page: 1, pageSize: currentPagination.pageSize ?? 20 };
         setPagination(nextPg);
         await fetchArticleList();
+    };
+
+    const deletePreset = (id: string) => {
+        const next = presets.filter(p => p.id !== id);
+        setPresets(next);
+        try {
+            localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(next));
+        } catch {
+            // ignore persist errors
+        }
+    };
+
+    const clearAllPresets = () => {
+        setPresets([]);
+        try {
+            localStorage.removeItem(PRESET_STORAGE_KEY);
+        } catch {
+            // ignore persist errors
+        }
     };
 
     const activeFiltersCount = [
@@ -254,8 +295,8 @@ export default function ArticleToolbar() {
                 <div className="relative flex-1">
                     <HiMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                     <Input
-                        value={localSearch.query ?? ''}
-                        onChange={(e) => setLocalSearch({ query: e.target.value })}
+                        value={searchInput}
+                        onChange={handleSearchChange}
                         placeholder="Search articles by title, summary, or tags..."
                         className="pl-10 h-11 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 transition-all"
                         aria-label="Search articles"
@@ -661,36 +702,53 @@ export default function ArticleToolbar() {
 
                                 <div className="flex-1" />
 
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setPresetOpen(true)}
-                                    className="border-2 hover:border-purple-500 hover:text-purple-600 transition-all"
-                                    aria-label="Save current filter"
-                                >
-                                    <HiBookmark className="mr-2 h-4 w-4" />
-                                    Save Preset
-                                </Button>
-
-                                {presets.length > 0 && (
-                                    <Select
-                                        onValueChange={(id) => applyPreset(presets.find((p) => p.id === id))}
-                                        aria-label="Apply preset"
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setPresetOpen(true)}
+                                        className="border-2 hover:border-purple-500 hover:text-purple-600 transition-all"
+                                        aria-label="Save current filter"
                                     >
-                                        <SelectTrigger className="w-56 bg-white dark:bg-slate-900">
-                                            <SelectValue placeholder="Load saved preset..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {presets.map((p) => (
-                                                <SelectItem key={p.id} value={p.id}>
-                                                    <div className="flex items-center gap-2">
-                                                        <HiBookmark className="h-3 w-3" />
-                                                        {p.name}
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                )}
+                                        <HiBookmark className="mr-2 h-4 w-4" />
+                                        Save Preset
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setManagePresetsOpen(true)}
+                                        className="border-2 hover:border-red-500 hover:text-red-600 transition-all"
+                                        aria-label="Manage presets"
+                                    >
+                                        <HiTrash className="mr-2 h-4 w-4" />
+                                        Manage Presets
+                                    </Button>
+
+                                    {presets.length > 0 && (
+                                        <Select
+                                            onValueChange={(id) => applyPreset(presets.find((p) => p.id === id))}
+                                            aria-label="Apply preset"
+                                        >
+                                            <SelectTrigger className="w-56 bg-white dark:bg-slate-900">
+                                                <SelectValue placeholder="Load saved preset..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {presets.map((p) => (
+                                                    <SelectItem key={p.id} value={p.id}>
+                                                        <div className="flex items-center justify-between w-full">
+                                                            <div className="flex items-center gap-2">
+                                                                <HiBookmark className="h-3 w-3" />
+                                                                {p.name}
+                                                            </div>
+                                                            <span className="text-xs text-slate-500">
+                                                                {Object.keys(p.filter).length} filters
+                                                            </span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </motion.div>
@@ -698,6 +756,117 @@ export default function ArticleToolbar() {
             </AnimatePresence>
 
             {/* Preset Save Dialog */}
+            <Dialog open={managePresetsOpen} onOpenChange={setManagePresetsOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl">
+                            <div className="p-2 bg-gradient-to-br from-red-500 to-orange-600 rounded-lg">
+                                <HiTrash className="h-5 w-5 text-white" />
+                            </div>
+                            Manage Filter Presets
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        {presets.length === 0 ? (
+                            <div className="text-center py-8">
+                                <HiBookmark className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                                <p className="text-slate-600 dark:text-slate-400">
+                                    No presets saved yet. Save your first preset to see it here.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                                {presets.map((preset) => (
+                                    <motion.div
+                                        key={preset.id}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 10 }}
+                                        className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                    >
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <HiBookmark className="h-4 w-4 text-purple-500" />
+                                                <span className="font-medium text-slate-800 dark:text-slate-200">
+                                                    {preset.name}
+                                                </span>
+                                            </div>
+                                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {preset.filter.status && preset.filter.status.length > 0 && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            {preset.filter.status[0]}
+                                                        </Badge>
+                                                    )}
+                                                    {preset.filter.articleType && preset.filter.articleType.length > 0 && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            {preset.filter.articleType[0]}
+                                                        </Badge>
+                                                    )}
+                                                    {preset.filter.tags && preset.filter.tags.length > 0 && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            {preset.filter.tags.length} tags
+                                                        </Badge>
+                                                    )}
+                                                    {preset.search.query && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            Search: {preset.search.query.substring(0, 10)}...
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => applyPreset(preset)}
+                                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                aria-label="Apply preset"
+                                            >
+                                                <HiCheck className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => deletePreset(preset.id)}
+                                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                aria-label="Delete preset"
+                                            >
+                                                <HiTrash className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        {presets.length > 0 && (
+                            <Button
+                                variant="outline"
+                                onClick={clearAllPresets}
+                                className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-500 hover:text-red-700"
+                                aria-label="Clear all presets"
+                            >
+                                <HiTrash className="mr-2 h-4 w-4" />
+                                Clear All
+                            </Button>
+                        )}
+                        <div className="flex-1" />
+                        <Button
+                            variant="outline"
+                            onClick={() => setManagePresetsOpen(false)}
+                            aria-label="Close"
+                        >
+                            Close
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <Dialog open={presetOpen} onOpenChange={setPresetOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
@@ -708,25 +877,29 @@ export default function ArticleToolbar() {
                             Save Filter Preset
                         </DialogTitle>
                     </DialogHeader>
-
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            <label htmlFor="preset-name" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                 Preset Name
                             </label>
                             <Input
+                                id="preset-name"
                                 value={presetName}
                                 onChange={(e) => setPresetName(e.target.value)}
-                                placeholder="e.g., Published Articles 2024"
+                                placeholder="Enter a name for this preset"
                                 className="bg-white dark:bg-slate-900"
                                 aria-label="Preset name"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        savePreset();
+                                    }
+                                }}
                             />
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                            Save your current filters, sorting, and search settings for quick access later.
-                        </p>
+                        <div className="text-sm text-slate-600 dark:text-slate-400">
+                            This will save the current filter, sort, and search settings.
+                        </div>
                     </div>
-
                     <DialogFooter>
                         <Button
                             variant="outline"
@@ -737,6 +910,7 @@ export default function ArticleToolbar() {
                         </Button>
                         <Button
                             onClick={savePreset}
+                            disabled={!presetName.trim()}
                             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                             aria-label="Save preset"
                         >

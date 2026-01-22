@@ -277,7 +277,7 @@ const TravelArticleSchema = new Schema<ITravelArticle, ITravelArticleModel>(
     seo: {
       metaTitle: { type: String, trim: true },
       metaDescription: { type: String, trim: true },
-      ogImage: { type: String, trim: true },
+      ogImage: { type: Schema.Types.ObjectId, ref: "Asset" },
     },
     faqs: [
       {

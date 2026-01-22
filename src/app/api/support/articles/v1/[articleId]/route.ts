@@ -22,9 +22,14 @@ export const GET = withErrorHandler(async (
         throw new ApiError('Invalid article ID format', 400);
     }
 
+    // Get the withDeleted query parameter
+    const withDeleted = _request.nextUrl.searchParams.get('withDeleted');
+    // Convert to boolean: if the string is 'true', then true, otherwise false.
+    const withDeletedBool = withDeleted === 'true';
+
     // Execute with transaction for data consistency
     const articleDetail = await withTransaction(async (session) => {
-        const article = await buildTourArticleDto(articleId, false, session);
+        const article = await buildTourArticleDto(articleId, withDeletedBool, session);
 
         if (!article) {
             throw new ApiError('Article not found', 404);

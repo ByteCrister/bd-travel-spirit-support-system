@@ -131,7 +131,7 @@ export default function ArticleTableRow<T extends ArticleListItem>({
                 <div className="flex flex-wrap gap-1.5 max-w-[200px]">
                     {(item.categories ?? []).slice(0, 3).map((c, i) => (
                         <Badge
-                            key={c}
+                            key={`${c}-${i}`}
                             className={`text-xs font-medium ${categoryColors[i % categoryColors.length]
                                 }`}
                         >

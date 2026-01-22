@@ -32,7 +32,7 @@ import { FaqForm } from './FaqForm';
 import { SeoForm } from './SeoForm';
 import { CreateArticleFormValues, createArticleSchema } from '@/utils/validators/article.create.validator';
 import { playfair, inter } from '@/styles/fonts';
-import { ARTICLE_TYPE } from '@/constants/article.const';
+import { ARTICLE_TYPE, ARTICLE_STATUS, ArticleStatus } from '@/constants/article.const';
 import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 import { useState } from 'react';
 import { TOUR_CATEGORIES } from '@/constants/tour.const';
@@ -45,10 +45,80 @@ interface TabConfig {
     description: string;
 }
 
+// const initialValues: CreateArticleFormValues = {
+//     title: '',
+//     banglaTitle: '',
+//     slug: '',
+//     status: ARTICLE_STATUS.DRAFT,
+//     articleType: ARTICLE_TYPE.SINGLE_DESTINATION,
+//     authorBio: '',
+//     summary: '',
+//     heroImage: '', 
+//     destinations: [
+//         {
+//             division: DIVISION.DHAKA,
+//             district: DISTRICT.DHAKA,
+//             area: '',
+//             description: '',
+//             content: [
+//                 {
+//                     type: ARTICLE_RICH_TEXT_BLOCK_TYPE.PARAGRAPH,
+//                     text: '',
+//                 },
+//             ],
+//             highlights: [''],
+//             foodRecommendations: [
+//                 {
+//                     dishName: '',
+//                     description: '',
+//                     bestPlaceToTry: '',
+//                     approximatePrice: '',
+//                     spiceLevel: null,
+//                 },
+//             ],
+//             localFestivals: [
+//                 {
+//                     name: '',
+//                     description: '',
+//                     timeOfYear: '',
+//                     location: '',
+//                     significance: '',
+//                 },
+//             ],
+//             localTips: [''],
+//             transportOptions: [''],
+//             accommodationTips: [''],
+//             coordinates: {
+//                 lat: 0,
+//                 lng: 0,
+//             },
+//             imageAsset: {
+//                 title: '',
+//                 assetId: '',
+//                 url: '',
+//             },
+//         },
+//     ],
+
+//     categories: [],
+//     tags: [],
+//     seo: {
+//         metaTitle: '',
+//         metaDescription: '',
+//         ogImage: null,
+//     },
+//     faqs: [],
+//     allowComments: true,
+// };
+
+const initialValues: CreateArticleFormValues = initialCreateArticlePayload_1;
+
 export function ArticleForm() {
     const router = useRouter();
     const { createArticle, error, clearError } = useArticleStore();
     const [showBanner, setShowBanner] = useState<boolean>(true);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [submitType, setSubmitType] = useState<ArticleStatus | null>(null);
 
     const tabs: TabConfig[] = [
         {
@@ -77,74 +147,6 @@ export function ArticleForm() {
         },
     ];
 
-    const initialValues: CreateArticleFormValues = initialCreateArticlePayload_1;
-
-    // const initialValues: CreateArticleFormValues = {
-    //     title: '',
-    //     banglaTitle: '',
-    //     slug: '',
-    //     status: ARTICLE_STATUS.DRAFT,
-    //     articleType: ARTICLE_TYPE.SINGLE_DESTINATION,
-    //     authorBio: '',
-    //     summary: '',
-    //     heroImage: '', 
-    //     destinations: [
-    //         {
-    //             division: DIVISION.DHAKA,
-    //             district: DISTRICT.DHAKA,
-    //             area: '',
-    //             description: '',
-    //             content: [
-    //                 {
-    //                     type: ARTICLE_RICH_TEXT_BLOCK_TYPE.PARAGRAPH,
-    //                     text: '',
-    //                 },
-    //             ],
-    //             highlights: [''],
-    //             foodRecommendations: [
-    //                 {
-    //                     dishName: '',
-    //                     description: '',
-    //                     bestPlaceToTry: '',
-    //                     approximatePrice: '',
-    //                     spiceLevel: null,
-    //                 },
-    //             ],
-    //             localFestivals: [
-    //                 {
-    //                     name: '',
-    //                     description: '',
-    //                     timeOfYear: '',
-    //                     location: '',
-    //                     significance: '',
-    //                 },
-    //             ],
-    //             localTips: [''],
-    //             transportOptions: [''],
-    //             accommodationTips: [''],
-    //             coordinates: {
-    //                 lat: 0,
-    //                 lng: 0,
-    //             },
-    //             imageAsset: {
-    //                 title: '',
-    //                 assetId: '',
-    //                 url: '',
-    //             },
-    //         },
-    //     ],
-
-    //     categories: [],
-    //     tags: [],
-    //     seo: {
-    //         metaTitle: '',
-    //         metaDescription: '',
-    //         ogImage: null,
-    //     },
-    //     faqs: [],
-    //     allowComments: true,
-    // };
-
     function findFirstError(err: unknown): string | undefined {
         if (!err) return undefined;
         if (typeof err === 'string') return err;
@@ -166,6 +168,7 @@ export function ArticleForm() {
     const handleSubmit = async (values: CreateArticleFormValues) => {
         try {
             clearError();
+            setIsSubmitting(true);
 
             // Prepare destinations data according to new structure
             const destinations: DestinationBlock[] = values.destinations.map(dest => ({
@@ -220,8 +223,6 @@ export function ArticleForm() {
                 imageAsset: dest.imageAsset,
             }));
 
-
-
             const payload: CreateArticleInput = {
                 title: values.title,
                 banglaTitle: values.banglaTitle,
@@ -254,10 +255,10 @@ export function ArticleForm() {
                 allowComments: values.allowComments,
             };
 
-
             const result = await createArticle(payload);
             if (result.success && result.article) {
-                showToast.info('Article created', 'Redirecting to details...');
+                const action = values.status === ARTICLE_STATUS.PUBLISHED ? 'published' : 'saved as draft';
+                showToast.info(`Article ${action}`, 'Redirecting to details...');
                 router.push(`/support/articles/${encodeId(encodeURIComponent(result.article.id))}`);
             } else {
                 showToast.error('Failed to create', result.message ?? 'Unknown error');
@@ -265,6 +266,9 @@ export function ArticleForm() {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {
             showToast.error('Error', 'Unexpected error occurred');
+        } finally {
+            setIsSubmitting(false);
+            setSubmitType(null);
         }
     };
 
@@ -276,7 +280,7 @@ export function ArticleForm() {
             validateOnChange
             validateOnBlur
         >
-            {({ values, errors, touched, isSubmitting, setFieldValue, isValid, dirty }) => {
+            {({ values, errors, touched, setFieldValue, dirty, submitForm, resetForm }) => {
                 const requiresDestinations = [
                     ARTICLE_TYPE.SINGLE_DESTINATION,
                     ARTICLE_TYPE.MULTI_DESTINATION,
@@ -294,6 +298,21 @@ export function ArticleForm() {
                     hidden: { opacity: 0, y: 10 },
                     visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
                     exit: { opacity: 0, y: -10, transition: { duration: 0.2 } },
+                };
+
+                const handleSaveAsDraft = async () => {
+                    setFieldValue('status', ARTICLE_STATUS.DRAFT);
+                    submitForm();
+                };
+
+                const handlePublish = async () => {
+                    setFieldValue('status', ARTICLE_STATUS.PUBLISHED);
+                    submitForm();
+                };
+
+                const handleReset = (e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.preventDefault();
+                    resetForm();
                 };
 
                 return (
@@ -319,9 +338,7 @@ export function ArticleForm() {
                                         type="button"
                                         aria-label="Close error"
                                         onClick={() => {
-                                            // hide local banner
                                             setShowBanner(false);
-                                            // if server-side error exists, clear it from the store
                                             if (error) clearError();
                                         }}
                                         className="inline-flex items-center justify-center rounded-md p-1 text-red-500 hover:bg-red-100"
@@ -331,7 +348,6 @@ export function ArticleForm() {
                                 </motion.div>
                             )}
                         </AnimatePresence>
-
 
                         {/* Tab Navigation */}
                         <motion.div
@@ -538,58 +554,113 @@ export function ArticleForm() {
                                                         whileTap={{ scale: 0.9 }}
                                                     />
                                                 </motion.div>
+
+                                                {/* Status Information */}
+                                                <motion.div
+                                                    whileHover={{ scale: 1.02 }}
+                                                    transition={{ type: 'spring', stiffness: 300 }}
+                                                    className="border border-slate-200 p-4 rounded-lg bg-gradient-to-r from-slate-50 to-amber-50 hover:shadow-sm transition-shadow"
+                                                >
+                                                    <div className={`${inter.className} text-sm font-semibold text-slate-900 mb-2`}>
+                                                        Article Status
+                                                    </div>
+                                                    <p className={`${inter.className} text-xs text-slate-500`}>
+                                                        Choose &quot;Save as Draft&quot; to save for later editing, or &quot;Publish&quot; to make the article live immediately.
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-3">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`${values.status === ARTICLE_STATUS.DRAFT ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'}`}
+                                                        >
+                                                            {values.status === ARTICLE_STATUS.DRAFT ? 'Draft' : 'Published'}
+                                                        </Badge>
+                                                        <span className={`${inter.className} text-xs text-slate-500`}>
+                                                            Current status: {values.status}
+                                                        </span>
+                                                    </div>
+                                                </motion.div>
                                             </CardContent>
 
                                             {/* Footer Actions */}
-                                            <CardFooter className="border-t border-slate-200 bg-slate-50 flex items-center gap-3 pt-6">
-                                                <motion.div
-                                                    whileHover={{ scale: 1.05 }}
-                                                    whileTap={{ scale: 0.95 }}
-                                                >
-                                                    <Button
-                                                        type="submit"
-                                                        disabled={isSubmitting || (!dirty && !isValid)}
-                                                        className={`${inter.className} flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-200`}
-                                                    >
-                                                        {isSubmitting ? (
-                                                            <>
-                                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                                Creating...
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <Save className="w-4 h-4" />
-                                                                Create Article
-                                                            </>
-                                                        )}
-                                                    </Button>
-                                                </motion.div>
+                                            <CardFooter className="border-t border-slate-200 bg-slate-50 flex items-center justify-between pt-6">
+                                                <div className="flex items-center gap-4">
+                                                    {dirty && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, x: -10 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            className={`${inter.className} flex items-center gap-2 text-sm text-amber-600`}
+                                                        >
+                                                            <div className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
+                                                            Unsaved changes
+                                                        </motion.div>
+                                                    )}
+                                                </div>
 
-                                                <motion.div
-                                                    whileHover={{ scale: 1.05 }}
-                                                    whileTap={{ scale: 0.95 }}
-                                                >
-                                                    <Button
-                                                        type="reset"
-                                                        variant="outline"
-                                                        disabled={isSubmitting || !dirty}
-                                                        className={`${inter.className} flex items-center gap-2 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold transition-all duration-200`}
-                                                    >
-                                                        <RotateCcw className="w-4 h-4" />
-                                                        Reset
-                                                    </Button>
-                                                </motion.div>
-
-                                                {dirty && (
+                                                <div className="flex items-center gap-3">
                                                     <motion.div
-                                                        initial={{ opacity: 0, x: -10 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        className={`${inter.className} ml-auto flex items-center gap-2 text-sm text-amber-600`}
+                                                        whileHover={{ scale: 1.05 }}
+                                                        whileTap={{ scale: 0.95 }}
                                                     >
-                                                        <div className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
-                                                        Unsaved changes
+                                                        <Button
+                                                            type="button"
+                                                            onClick={handleReset}
+                                                            variant="outline"
+                                                            disabled={isSubmitting || !dirty}
+                                                            className={`${inter.className} flex items-center gap-2 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold transition-all duration-200`}
+                                                        >
+                                                            <RotateCcw className="w-4 h-4" />
+                                                            Reset
+                                                        </Button>
                                                     </motion.div>
-                                                )}
+
+                                                    <motion.div
+                                                        whileHover={{ scale: 1.05 }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                    >
+                                                        <Button
+                                                            type="button"
+                                                            onClick={() => handleSaveAsDraft()}
+                                                            disabled={isSubmitting}
+                                                            className={`${inter.className} flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-200`}
+                                                        >
+                                                            {isSubmitting && submitType === ARTICLE_STATUS.DRAFT ? (
+                                                                <>
+                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                    Saving as Draft...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Save className="w-4 h-4" />
+                                                                    Save as Draft
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    </motion.div>
+
+                                                    <motion.div
+                                                        whileHover={{ scale: 1.05 }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                    >
+                                                        <Button
+                                                            type="button"
+                                                            onClick={() => handlePublish()}
+                                                            disabled={isSubmitting}
+                                                            className={`${inter.className} flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-200`}
+                                                        >
+                                                            {isSubmitting && submitType === ARTICLE_STATUS.PUBLISHED ? (
+                                                                <>
+                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                    Publishing...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Save className="w-4 h-4" />
+                                                                    Publish
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    </motion.div>
+                                                </div>
                                             </CardFooter>
                                         </Card>
                                     </motion.div>

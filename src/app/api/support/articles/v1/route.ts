@@ -12,10 +12,11 @@ import {
     ImageUrl,
     ArticleListQueryResponse,
     SortOrder,
-    ArticleSortField
+    ArticleSortField,
+    CreateArticleInput
 } from '@/types/article.types';
 
-import { ArticleStatus, ArticleType } from '@/constants/article.const';
+import { ARTICLE_STATUS, ArticleStatus, ArticleType } from '@/constants/article.const';
 import { TourCategories } from '@/constants/tour.const';
 import UserModel from '@/models/user.model';
 import AssetModel from '@/models/assets/asset.model';
@@ -26,10 +27,35 @@ import { withTransaction } from '@/lib/helpers/withTransaction';
 import { ITravelArticle, TravelArticleModel } from '@/models/articles/travel-article.model';
 import { PopulatedAssetLean } from '@/types/populated-asset.types';
 import ConnectDB from '@/config/db';
+import { getUserIdFromSession } from '@/lib/auth/session.auth';
+import { validateUpdatedYupSchema } from '@/utils/validators/common/update-updated-yup-schema';
+import { createArticleSchema } from '@/utils/validators/article.create.validator';
+import { uploadAssets } from '@/lib/cloudinary/upload.cloudinary';
+import { buildTourArticleDto } from '@/lib/build-responses/build-tour-article-dt';
+import { ASSET_TYPE } from '@/constants/asset.const';
 
 // Helper function to build MongoDB query from filters
 function buildMongoQuery(filter?: ArticleFilter, search?: ArticleSearch) {
     const query: FilterQuery<ITravelArticle> = { deleted: false }; // Only non-deleted articles
+
+    // If explicitly filtering for ARCHIVED status, include deleted articles
+    if (filter?.status?.includes(ARTICLE_STATUS.ARCHIVED)) {
+        // Remove the deleted: false filter when ARCHIVED is requested
+        delete query.deleted;
+
+        // If ARCHIVED is the ONLY status requested, filter by deleted: true
+        if (filter.status.length === 1 && filter.status[0] === ARTICLE_STATUS.ARCHIVED) {
+            query.deleted = true;
+        } else {
+            // If multiple statuses including ARCHIVED, use $or to include both
+            query.$or = [
+                { deleted: false, status: { $in: filter.status.filter(s => s !== ARTICLE_STATUS.ARCHIVED) } },
+                { deleted: true, status: ARTICLE_STATUS.ARCHIVED }
+            ];
+            // Remove the original status filter since we're handling it in $or
+            delete query.status;
+        }
+    }
 
     // Status filter
     if (filter?.status && filter.status.length > 0) {
@@ -412,5 +438,202 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     return {
         data: result,
         status: 200
+    };
+});
+
+// Helper function to validate and prepare image assets
+function prepareImageAssets(formData: CreateArticleInput) {
+    const assetsToUpload: Array<{
+        base64: string;
+        name: string;
+        assetType?: string;
+    }> = [];
+
+    // Process hero image if present
+    if (formData.heroImage) {
+        assetsToUpload.push({
+            base64: formData.heroImage,
+            name: `hero-${formData.title.slice(0, 20)}`,
+            assetType: ASSET_TYPE.IMAGE,
+        });
+    }
+
+    // Process destination images
+    formData.destinations.forEach((destination, index) => {
+        if (destination.imageAsset?.url) {
+            assetsToUpload.push({
+                base64: destination.imageAsset.url,
+                name: `destination-${index}-${destination.area || destination.district}`,
+                assetType: ASSET_TYPE.IMAGE,
+            });
+        }
+    });
+
+    // Process OG image if present
+    if (formData.seo.ogImage) {
+        assetsToUpload.push({
+            base64: formData.seo.ogImage,
+            name: `og-${formData.title.slice(0, 20)}`,
+            assetType: ASSET_TYPE.IMAGE,
+        });
+    }
+
+    return assetsToUpload;
+}
+
+// Helper function to calculate reading time
+function calculateReadingTime(article: CreateArticleInput): number {
+    const wordsPerMinute = 200;
+    let totalWords = 0;
+
+    totalWords += article.title.split(" ").length;
+    totalWords += article.summary.split(" ").length;
+
+    article.destinations?.forEach((destination) => {
+        totalWords += destination.description.split(" ").length;
+        destination.content?.forEach((block) => {
+            if (block.text) totalWords += block.text.split(" ").length;
+        });
+        destination.foodRecommendations?.forEach((food) => {
+            totalWords += food.description.split(" ").length;
+        });
+        destination.localFestivals?.forEach((festival) => {
+            totalWords += festival.description.split(" ").length;
+        });
+    });
+
+    return Math.ceil(totalWords / wordsPerMinute);
+}
+
+// Helper function to calculate word count
+function calculateWordCount(article: CreateArticleInput): number {
+    let wordCount = 0;
+
+    wordCount += article.title.split(" ").length;
+    wordCount += article.summary.split(" ").length;
+
+    article.destinations?.forEach((destination) => {
+        wordCount += destination.description.split(" ").length;
+        destination.content?.forEach((block) => {
+            if (block.text) wordCount += block.text.split(" ").length;
+        });
+        destination.foodRecommendations?.forEach((food) => {
+            wordCount += food.description.split(" ").length;
+        });
+        destination.localFestivals?.forEach((festival) => {
+            wordCount += festival.description.split(" ").length;
+        });
+    });
+
+    return wordCount;
+}
+
+/**
+ * POST for creating new article
+ */
+export const POST = withErrorHandler(async (request: NextRequest) => {
+    // 1. Authentication check
+    const currentUserId = await getUserIdFromSession();
+    if (!currentUserId) {
+        throw new ApiError("Unauthorized", 401);
+    }
+
+    // 2. Parse and validate request body
+    const body: CreateArticleInput = await request.json();
+    const validatedData = validateUpdatedYupSchema<CreateArticleInput>(
+        createArticleSchema,
+        body
+    );
+
+    // 3. Process in transaction
+    const result = await withTransaction(async (session) => {
+        // 4. Prepare and upload image assets
+        const assetsToUpload = prepareImageAssets(validatedData);
+        let uploadedAssetIds: Types.ObjectId[] = [];
+
+        if (assetsToUpload.length > 0) {
+            uploadedAssetIds = await uploadAssets(assetsToUpload, session);
+        }
+
+        // 5. Map uploaded asset IDs to their respective positions
+        let assetIndex = 0;
+        let heroImageAssetId: Types.ObjectId | undefined;
+        const destinationAssetIds: Array<Types.ObjectId | undefined> = [];
+        let ogImageAssetId: Types.ObjectId | undefined;
+
+        // Map hero image
+        if (validatedData.heroImage && uploadedAssetIds[assetIndex]) {
+            heroImageAssetId = uploadedAssetIds[assetIndex];
+            assetIndex++;
+        }
+
+        // Map destination images
+        validatedData.destinations.forEach((destination) => {
+            if (destination.imageAsset?.url && uploadedAssetIds[assetIndex]) {
+                destinationAssetIds.push(uploadedAssetIds[assetIndex]);
+                assetIndex++;
+            } else {
+                destinationAssetIds.push(undefined);
+            }
+        });
+
+        // Map OG image
+        if (validatedData.seo.ogImage && uploadedAssetIds[assetIndex]) {
+            ogImageAssetId = uploadedAssetIds[assetIndex];
+        }
+
+
+        // 6. Prepare article data with uploaded asset IDs
+        const articleData = {
+            ...validatedData,
+            author: new Types.ObjectId(currentUserId), // Use currentUserId from authentication
+            heroImage: heroImageAssetId || undefined,
+            destinations: validatedData.destinations.map((dest, index) => {
+                const assetId = destinationAssetIds[index];
+
+                if (!dest.imageAsset || !assetId) {
+                    return {
+                        ...dest,
+                        imageAsset: undefined,
+                    };
+                }
+
+                return {
+                    ...dest,
+                    imageAsset: {
+                        title: dest.imageAsset.title,
+                        assetId,
+                    },
+                };
+            }),
+            seo: {
+                ...validatedData.seo,
+                ogImage: ogImageAssetId,
+            },
+            publishedAt: validatedData.status === ARTICLE_STATUS.PUBLISHED ? new Date() : undefined,
+            readingTime: calculateReadingTime(validatedData),
+            wordCount: calculateWordCount(validatedData),
+        };
+
+        // 7. Create article in database
+        const article = await TravelArticleModel.create([articleData], {
+            session,
+        });
+
+        // 8. Check for duplicate slug error
+        if (article.length === 0) {
+            throw new ApiError("Failed to create article", 500);
+        }
+        const dto = await buildTourArticleDto(article[0]._id, false, session);
+        if (!dto) {
+            throw new ApiError("Failed to build article DTO", 500);
+        }
+
+        return dto;
+    });
+
+    return {
+        data: result,
+        status: 201,
     };
 });

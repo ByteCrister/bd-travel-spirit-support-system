@@ -185,7 +185,7 @@ type ArticleStore = {
     clearError: () => void;
 
     fetchArticleList: (overrides?: Partial<ArticleListQueryRequest>) => Promise<void>;
-    fetchArticleDetails: (id: ID, force?: boolean) => Promise<void>;
+    fetchArticleDetails: (id: ID, force?: boolean, withDeleted?: boolean) => Promise<void>;
     fetchArticleStats: (force?: boolean) => Promise<void>;
 
     createArticle: (input: CreateArticleInput) => Promise<CreateArticleResponse>;
@@ -361,24 +361,62 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
         }
     },
 
-    fetchArticleDetails: async (id, force = false) => {
+    fetchArticleDetails: async (id, force = false, withDeleted = false) => {
         const state = get();
-        const key = `detail:${id}`;
+
+        // Check if we already have the article in listItems or detailById to determine its status
+        let articleStatus: string | undefined;
+
+        // Check in listItems first
+        const articleInList = state.listItems.find(item => item.id === id);
+        if (articleInList) {
+            articleStatus = articleInList.status;
+        }
+        // If not in list, check in detail cache
+        else {
+            const cachedDetail = state.detailById[id];
+            if (cachedDetail) {
+                articleStatus = cachedDetail.status;
+            }
+        }
+
+        // Determine if we should fetch withDeleted
+        // If withDeleted is explicitly provided, use it
+        // Otherwise, if article status is ARCHIVED, set withDeleted to true
+        const shouldFetchWithDeleted = withDeleted || articleStatus === ARTICLE_STATUS.ARCHIVED;
+
+        const key = `detail:${id}${shouldFetchWithDeleted ? ':withDeleted' : ''}`;
         const cached = !force ? detailCache.get<ArticleDetail>(key) : undefined;
+
         if (cached) {
-            set({ detailById: { ...state.detailById, [id]: cached }, loading: { ...state.loading, isLoadingDetail: false }, error: undefined });
+            set({
+                detailById: { ...state.detailById, [id]: cached },
+                loading: { ...state.loading, isLoadingDetail: false },
+                error: undefined
+            });
             return;
         }
 
         set({ loading: { ...state.loading, isLoadingDetail: true }, error: undefined });
         try {
-            const { data } = await api.get<ArticleDetailApi>(`${URL_AFTER_API}/${id}`);
+            const params = shouldFetchWithDeleted ? { withDeleted: true } : undefined;
+            const { data } = await api.get<ArticleDetailApi>(`${URL_AFTER_API}/${id}`, { params });
+
             if (!data || !data.data) throw new Error('Failed to load article detail');
+
             const detail = data.data;
             detailCache.set(key, detail);
-            set({ detailById: { ...get().detailById, [id]: detail }, loading: { ...get().loading, isLoadingDetail: false }, error: undefined });
+
+            set({
+                detailById: { ...get().detailById, [id]: detail },
+                loading: { ...get().loading, isLoadingDetail: false },
+                error: undefined
+            });
         } catch (err) {
-            set({ loading: { ...get().loading, isLoadingDetail: false }, error: extractErrorMessage(err) });
+            set({
+                loading: { ...get().loading, isLoadingDetail: false },
+                error: extractErrorMessage(err)
+            });
         }
     },
 
@@ -518,7 +556,9 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
     },
 
     invalidateDetail: (id) => {
+        // Clear both possible cache keys
         detailCache.del(`detail:${id}`);
+        detailCache.del(`detail:${id}:withDeleted`);
     },
 
     invalidateStats: () => {

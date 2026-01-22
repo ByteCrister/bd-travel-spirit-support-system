@@ -50,7 +50,7 @@ import { SeoSection } from './SeoSection';
 import { FaqsSection } from './FaqsSection';
 import { SettingsSection } from './SettingsSection';
 import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
-import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
+import { decodeId, encodeId } from '@/utils/helpers/mongodb-id-conversions';
 import { Breadcrumbs } from '@/components/global/Breadcrumbs';
 import { CreateArticleFormValues, createArticleSchema } from '@/utils/validators/article.create.validator';
 
@@ -272,9 +272,10 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
     // Fetch article detail on mount and when id changes
     useEffect(() => {
         if (articleId && !detail) {
-            fetchArticleDetails(articleId as ID).catch(() => { });
+            fetchArticleDetails(decodeId(decodeURIComponent(articleId)) as ID).catch(() => { });
         }
-    }, [articleId, detail, fetchArticleDetails]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [articleId]);
 
     const initialValues = useMemo(() => {
         return detail ? mapDetailToFormValues(detail) : undefined;

@@ -9,6 +9,7 @@ import {
     ArticleRichTextBlockType,
     FoodRecoSpiceType,
     ArticleType,
+    ArticleStatus,
 } from '@/constants/article.const';
 import { TOUR_CATEGORIES, DIVISION, DISTRICT, Division, District, TourCategories } from '@/constants/tour.const';
 
@@ -89,7 +90,7 @@ export const createArticleSchema = Yup.object().shape({
     banglaTitle: Yup.string()
         .min(5, 'Bangla title must be at least 5 characters')
         .required('Bangla title is required'),
-    status: Yup.mixed<ARTICLE_STATUS>()
+    status: Yup.mixed<ArticleStatus>()
         .oneOf(Object.values(ARTICLE_STATUS))
         .required('Status is required'),
     articleType: Yup.mixed<ArticleType>()

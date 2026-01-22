@@ -21,7 +21,7 @@ export interface UserRef {
 }
 
 /** Minimal reference for images (your Image model) */
-export type ImageUrl = URL;
+export type ImageUrl = URL; // from backend this will be a string of Cloudinary URL
 
 /* ============================================================
    Content blocks (aligned with updated model)
