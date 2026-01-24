@@ -28,12 +28,17 @@ import {
     type LoadMoreCommentsResponseDTO,
     type CommentAdminStatsDTO,
     type ApiErrorDTO,
+    DeleteCommentPayloadDTO,
+    RestoreCommentPayloadDTO,
+    RestoreCommentResponseDTO,
+    DeleteCommentResponseDTO,
 } from '@/types/article-comment.types';
 
 import api from '@/utils/axios';
-import { COMMENT_STATUS } from '@/constants/articleComment.const';
+import { COMMENT_STATUS, CommentStatus } from '@/constants/articleComment.const';
+import { ApiResponse } from '@/types/api.types';
 
-const URL_AFTER_API = '/mock/articles/comments';
+const URL_AFTER_API = '/mock/support/article-comments';
 
 /**
  * Map Axios errors into a normalized ApiErrorDTO for consistent UI handling.
@@ -55,8 +60,12 @@ const toApiError = (err: unknown): ApiErrorDTO => {
 /* Cache, persistence, and keys                                               */
 /* ========================================================================== */
 
-const DEFAULT_TABLE_TTL_MS = 60_000; // 1 min for article table
-const DEFAULT_THREAD_TTL_MS = 60_000; // 1 min for per-thread comments
+const DEFAULT_TABLE_TTL_MS = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CACHE_TTL
+    ? Number(process.env.NEXT_PUBLIC_CACHE_TTL)
+    : 60_000;; // 1 min for article table
+const DEFAULT_THREAD_TTL_MS = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CACHE_TTL
+    ? Number(process.env.NEXT_PUBLIC_CACHE_TTL)
+    : 60_000;; // 1 min for per-thread comments
 
 const LS_KEYS = {
     tableQuery: 'ac.table.query', // filters/sort/page/pageSize
@@ -102,7 +111,7 @@ type TableGroupCacheEntry = {
 // With this for production safety:
 type ThreadKey = string;
 
-type ThreadCacheEntry = {
+export type ThreadCacheEntry = {
     nodes: CommentDetailDTO[]; // flattened for VM assembly
     meta: {
         pagination: CursorPageMetaDTO;
@@ -230,6 +239,10 @@ interface ArticleCommentsState {
     toggleLike: (payload: ToggleLikePayloadDTO) => Promise<void>;
     updateStatus: (payload: UpdateCommentStatusPayloadDTO) => Promise<void>;
 
+    // Delete & Restore
+    deleteComment: (payload: DeleteCommentPayloadDTO) => Promise<void>;
+    restoreComment: (payload: RestoreCommentPayloadDTO) => Promise<void>;
+
     // Selectors
     selectRowVMByArticleId: (articleId: string) => AdminArticleRowVM | undefined;
     selectThreadByKey: (key: ThreadKey) => ThreadCacheEntry | undefined;
@@ -250,7 +263,7 @@ const initialQuery: TableQuery = {
     page: 1,
     pageSize: 20,
     sort: { key: 'createdAt', direction: 'desc' },
-    filters: { status: 'any', searchQuery: null, authorId: null, taggedRegion: null },
+    filters: { status: 'any', searchQuery: null, authorName: null, taggedRegion: null },
 };
 
 /* ========================================================================== */
@@ -330,11 +343,11 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                         inFlight: new Set([...s.inFlight, inflightKey]),
                     }));
                     try {
-                        const { data } = await api.get<CommentAdminStatsDTO>(`${URL_AFTER_API}/stats`);
+                        const { data } = await api.get<ApiResponse<CommentAdminStatsDTO>>(`${URL_AFTER_API}/stats`);
                         set((s) => {
                             const nextInFlight = new Set(s.inFlight);
                             nextInFlight.delete(inflightKey);
-                            return { stats: data, statsLoading: false, inFlight: nextInFlight };
+                            return { stats: data.data, statsLoading: false, inFlight: nextInFlight };
                         });
                     } catch (err) {
                         const apiErr = toApiError(err);
@@ -511,8 +524,8 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                             const page = Math.floor(u.start / rangeSize) + 1;
                             const pageSize = rangeSize;
 
-                            const { data } = await api.get<ArticleCommentSummaryListResponseDTO>(
-                                `${URL_AFTER_API}/articles`,
+                            const { data } = await api.get<ApiResponse<ArticleCommentSummaryListResponseDTO>>(
+                                `${URL_AFTER_API}`,
                                 {
                                     params: {
                                         page,
@@ -524,7 +537,20 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                                 }
                             );
 
-                            fetchedSlices.push({ range: u, items: data.data, meta: data.meta });
+                            if (!(data.data?.data && data.data?.meta)) throw new Error("Invalid response body.")
+
+                            fetchedSlices.push({
+                                range: u, items: data.data?.data ?? [], meta: data.data?.meta ?? {
+                                    pagination: {
+                                        page,
+                                        pageSize,
+                                        totalItems: 0,
+                                        totalPages: 0,
+                                    },
+                                    sort: tableQuery.sort,
+                                    filtersApplied: tableQuery.filters,
+                                }
+                            });
                         }
 
                         set((s) => {
@@ -602,7 +628,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                 /**
                  * Fetch root-level comments for an article into cache with TTL.
                  */
-                fetchRootComments: async ({ articleId, pageSize = 100, sort, filters, force }) => {
+                fetchRootComments: async ({ articleId, pageSize = 10, sort, filters, force }) => {
                     const threadKey = get().threadKeyOf(articleId, null);
                     const cache = get().threadCache[threadKey];
                     const now = Date.now();
@@ -618,7 +644,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     }));
 
                     try {
-                        const { data } = await api.get<CommentThreadSegmentDTO>(
+                        const { data } = await api.get<ApiResponse<CommentThreadSegmentDTO>>(
                             `${URL_AFTER_API}/${articleId}/root`,
                             {
                                 params: {
@@ -630,8 +656,10 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                             }
                         );
 
+                        if (!data?.data?.meta) throw new Error("Invalid response body.");
+
                         const entry: ThreadCacheEntry = {
-                            nodes: data.nodes.map((n) => ({
+                            nodes: data.data?.nodes.map((n) => ({
                                 id: n.id,
                                 articleId: n.articleId,
                                 parentId: n.parentId ?? null,
@@ -642,8 +670,18 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                                 replyCount: n.replyCount,
                                 createdAt: n.createdAt,
                                 updatedAt: n.updatedAt,
-                            })),
-                            meta: data.meta,
+                            })) ?? [],
+                            meta: data.data?.meta ?? {
+                                pagination: {
+                                    cursor: null,
+                                    nextCursor: null,
+                                    pageSize,
+                                    hasNextPage: false,
+                                },
+                                sort: sort ?? { key: 'createdAt', direction: 'desc' },
+                                filtersApplied: filters ?? {},
+                                scope: { articleId, parentId: null },
+                            },
                             fetchedAt: now,
                         };
 
@@ -677,7 +715,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                 /**
                  * Fetch children of a specific parent comment (nested replies).
                  */
-                fetchChildComments: async ({ articleId, parentId, pageSize = 100, sort, filters, force }) => {
+                fetchChildComments: async ({ articleId, parentId, pageSize = 10, sort, filters, force }) => {
                     const threadKey = get().threadKeyOf(articleId, parentId);
                     const cache = get().threadCache[threadKey];
                     const now = Date.now();
@@ -693,7 +731,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     }));
 
                     try {
-                        const { data } = await api.get<CommentThreadSegmentDTO>(
+                        const { data } = await api.get<ApiResponse<CommentThreadSegmentDTO>>(
                             `${URL_AFTER_API}/${articleId}/children/${parentId}`,
                             {
                                 params: {
@@ -705,8 +743,10 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                             }
                         );
 
+                        if (!data?.data?.meta) throw new Error("Invalid response body.");
+
                         const entry: ThreadCacheEntry = {
-                            nodes: data.nodes.map((n) => ({
+                            nodes: data.data?.nodes.map((n) => ({
                                 id: n.id,
                                 articleId: n.articleId,
                                 parentId: n.parentId ?? parentId,
@@ -717,8 +757,18 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                                 replyCount: n.replyCount,
                                 createdAt: n.createdAt,
                                 updatedAt: n.updatedAt,
-                            })),
-                            meta: data.meta,
+                            })) ?? [],
+                            meta: data.data?.meta ?? {
+                                pagination: {
+                                    cursor: null,
+                                    nextCursor: null,
+                                    pageSize,
+                                    hasNextPage: false,
+                                },
+                                sort: sort ?? { key: 'createdAt', direction: 'asc' },
+                                filtersApplied: filters ?? {},
+                                scope: { articleId, parentId },
+                            },
                             fetchedAt: now,
                         };
 
@@ -762,14 +812,19 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     }));
 
                     try {
-                        const { data } = await api.get<LoadMoreCommentsResponseDTO>(
+                        const { data } = await api.get<ApiResponse<LoadMoreCommentsResponseDTO>>(
                             `${URL_AFTER_API}/${req.articleId}/segment`,
                             { params: req }
                         );
 
+                        if (!(data?.data?.meta && data?.data?.nodes)) throw new Error("Invalid response body.");
+
+                        const meta = data.data.meta;
+                        const nodes = data.data.nodes;
+
                         set((s) => {
                             const existing = s.threadCache[threadKey];
-                            const incoming = data.nodes.map((n) => ({
+                            const incoming = nodes.map((n) => ({
                                 id: n.id,
                                 articleId: n.articleId,
                                 parentId: n.parentId ?? (req.parentId ?? null),
@@ -784,15 +839,15 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                             // Deduplicate by id when merging (preserve existing order, then append new)
                             const seen = new Set<string>();
-                            const mergedNodes = [...(existing?.nodes ?? []), ...incoming].filter((n) => {
+                            const mergedNodes = [...(existing?.nodes ?? []), ...(incoming ?? [])].filter((n) => {
                                 if (seen.has(n.id)) return false;
                                 seen.add(n.id);
                                 return true;
                             });
 
                             const nextEntry: ThreadCacheEntry = {
+                                meta,
                                 nodes: mergedNodes,
-                                meta: data.meta,
                                 fetchedAt: Date.now(),
                             };
 
@@ -824,12 +879,16 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                  * Inserts the created node at the beginning of the relevant thread.
                  */
                 createReply: async (payload) => {
-                    const { data } = await api.post<CreateCommentResponseDTO>(`${URL_AFTER_API}/reply`, payload);
+                    const { data } = await api.post<ApiResponse<CreateCommentResponseDTO>>(`${URL_AFTER_API}/reply`, payload);
                     const threadKey = get().threadKeyOf(payload.articleId, payload.parentId ?? null);
+
+                    if (!data?.data?.data) throw new Error("Invalid response body");
+
+                    const commentDetail = data.data.data;
 
                     set((s) => {
                         const entry = s.threadCache[threadKey];
-                        const nextNodes = [data.data, ...(entry?.nodes ?? [])];
+                        const nextNodes = [commentDetail, ...(entry?.nodes ?? [])];
                         const nextEntry: ThreadCacheEntry =
                             entry
                                 ? { ...entry, nodes: nextNodes, fetchedAt: Date.now() }
@@ -863,7 +922,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                         }));
                     }
 
-                    return data.data;
+                    return data.data.data;
                 },
 
                 /**
@@ -888,14 +947,19 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     });
 
                     try {
-                        const { data } = await api.post<ToggleLikeResponseDTO>(`${URL_AFTER_API}/like`, payload);
+                        const { data } = await api.post<ApiResponse<ToggleLikeResponseDTO>>(`${URL_AFTER_API}/like`, payload);
+
+                        if (!(data?.data?.data && data.data.data.likes)) throw new Error("Invalid response body");
+
+                        const likes = data.data.data.likes;
+
                         // Reconcile server likes count
                         set((s) => {
                             const nextCache = { ...s.threadCache };
                             for (const [tKey, entry] of Object.entries(nextCache)) {
                                 const idx = entry.nodes.findIndex((n) => n.id === payload.commentId);
                                 if (idx >= 0) {
-                                    entry.nodes[idx] = { ...entry.nodes[idx], likes: data.data.likes };
+                                    entry.nodes[idx] = { ...entry.nodes[idx], likes };
                                     nextCache[tKey] = entry;
                                 }
                             }
@@ -928,7 +992,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                  */
                 updateStatus: async (payload) => {
                     // Capture previous statuses per thread key for accurate rollback
-                    const prevStatuses: Record<string, COMMENT_STATUS> = {};
+                    const prevStatuses: Record<string, CommentStatus> = {};
 
                     // Optimistic: set status to payload.status, remembering previous
                     set((s) => {
@@ -945,17 +1009,20 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     });
 
                     try {
-                        const { data } = await api.post<UpdateCommentStatusResponseDTO>(
+                        const { data } = await api.post<ApiResponse<UpdateCommentStatusResponseDTO>>(
                             `${URL_AFTER_API}/status`,
                             payload
                         );
+
+                        if (!data?.data?.data) throw new Error("Invalid response body");
+                        const nodesData = data.data.data
                         // Reconcile replaced node from server
                         set((s) => {
                             const nextCache = { ...s.threadCache };
                             for (const [tKey, entry] of Object.entries(nextCache)) {
                                 const idx = entry.nodes.findIndex((n) => n.id === payload.commentId);
                                 if (idx >= 0) {
-                                    entry.nodes[idx] = data.data;
+                                    entry.nodes[idx] = nodesData;
                                     nextCache[tKey] = entry;
                                 }
                             }
@@ -987,6 +1054,169 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                             }
                             return { threadCache: nextCache };
                         });
+                        throw apiErr;
+                    }
+                },
+
+                /**
+                * Delete a comment (soft delete). Removes from all thread caches and updates article metrics.
+                */
+                deleteComment: async (payload) => {
+                    const { commentId, reason } = payload;
+
+                    try {
+                        // Call API to delete
+                        const { data } = await api.delete<ApiResponse<DeleteCommentResponseDTO>>(
+                            `${URL_AFTER_API}/${commentId}`,
+                            {
+                                data: { reason }
+                            }
+                        );
+
+                        if (!data?.data?.data) throw new Error("Invalid response body");
+
+                        // Remove from all thread caches
+                        set((s) => {
+                            const nextCache = { ...s.threadCache };
+
+                            for (const [threadKey, entry] of Object.entries(nextCache)) {
+                                const idx = entry.nodes.findIndex((n) => n.id === commentId);
+                                if (idx >= 0) {
+                                    // Remove the deleted comment
+                                    const updatedNodes = [...entry.nodes];
+                                    updatedNodes.splice(idx, 1);
+
+                                    nextCache[threadKey] = {
+                                        ...entry,
+                                        nodes: updatedNodes,
+                                        fetchedAt: Date.now(),
+                                    };
+                                }
+                            }
+
+                            return { threadCache: nextCache };
+                        });
+
+                        // Update article metrics in table cache
+                        const groupKey = get().groupKeyOf(get().tableQuery.sort, get().tableQuery.filters);
+                        const group = get().tableGroupCache[groupKey];
+
+                        if (group) {
+                            set((s) => {
+                                const updatedGroup = { ...group };
+                                // Find and update the article's metrics
+                                for (const key in updatedGroup.itemsByIndex) {
+                                    const row = updatedGroup.itemsByIndex[key];
+                                    if (row.metrics) {
+                                        // Decrement total comments
+                                        row.metrics.totalComments = Math.max(0, row.metrics.totalComments - 1);
+
+                                        // Don't update status counts since deleted comments are removed from counts
+                                        // (depends on backend behavior - adjust accordingly)
+                                    }
+                                }
+
+                                return {
+                                    tableGroupCache: {
+                                        ...s.tableGroupCache,
+                                        [groupKey]: { ...updatedGroup, fetchedAt: 0 },
+                                    },
+                                };
+                            });
+                        }
+
+                    } catch (err) {
+                        const apiErr = toApiError(err);
+                        throw apiErr;
+                    }
+                },
+
+                /**
+                 * Restore a soft-deleted comment. Re-adds to appropriate thread cache.
+                 */
+                restoreComment: async (payload) => {
+                    const { commentId } = payload;
+
+                    try {
+                        // Call API to restore
+                        const { data } = await api.post<ApiResponse<RestoreCommentResponseDTO>>(
+                            `${URL_AFTER_API}/${commentId}/restore`
+                        );
+
+                        if (!data?.data?.data) throw new Error("Invalid response body");
+
+                        const restoredComment = data.data.data;
+
+                        // Add to appropriate thread cache
+                        const threadKey = get().threadKeyOf(
+                            restoredComment.articleId,
+                            restoredComment.parentId ?? null
+                        );
+
+                        set((s) => {
+                            const entry = s.threadCache[threadKey];
+
+                            if (entry) {
+                                // Check if comment already exists (shouldn't since it was deleted)
+                                const exists = entry.nodes.some(n => n.id === commentId);
+                                if (!exists) {
+                                    // Add at beginning (most recent)
+                                    const nextNodes = [restoredComment, ...entry.nodes];
+                                    const nextEntry: ThreadCacheEntry = {
+                                        ...entry,
+                                        nodes: nextNodes,
+                                        fetchedAt: Date.now(),
+                                    };
+
+                                    return {
+                                        threadCache: {
+                                            ...s.threadCache,
+                                            [threadKey]: nextEntry
+                                        }
+                                    };
+                                }
+                            }
+
+                            // If thread doesn't exist, it will be fetched when opened
+                            return s;
+                        });
+
+                        // Update article metrics in table cache
+                        const groupKey = get().groupKeyOf(get().tableQuery.sort, get().tableQuery.filters);
+                        const group = get().tableGroupCache[groupKey];
+
+                        if (group) {
+                            set((s) => {
+                                const updatedGroup = { ...group };
+                                // Find and update the article's metrics
+                                for (const key in updatedGroup.itemsByIndex) {
+                                    const row = updatedGroup.itemsByIndex[key];
+                                    if (row.article.id === restoredComment.articleId && row.metrics) {
+                                        // Increment total comments
+                                        row.metrics.totalComments += 1;
+
+                                        // Update status counts
+                                        if (restoredComment.status === COMMENT_STATUS.APPROVED) {
+                                            row.metrics.approvedComments += 1;
+                                        } else if (restoredComment.status === COMMENT_STATUS.PENDING) {
+                                            row.metrics.pendingComments += 1;
+                                        } else if (restoredComment.status === COMMENT_STATUS.REJECTED) {
+                                            row.metrics.rejectedComments += 1;
+                                        }
+                                    }
+                                }
+
+                                return {
+                                    tableGroupCache: {
+                                        ...s.tableGroupCache,
+                                        [groupKey]: { ...updatedGroup, fetchedAt: 0 },
+                                    },
+                                };
+                            });
+                        }
+
+                    } catch (err) {
+                        const apiErr = toApiError(err);
                         throw apiErr;
                     }
                 },

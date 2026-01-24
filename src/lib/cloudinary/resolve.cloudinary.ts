@@ -7,7 +7,7 @@ import { Types, ClientSession } from "mongoose";
 import AssetFileModel, { IAssetFile } from "@/models/assets/asset-file.model";
 import { MongoServerError } from "mongodb";
 
-type IncomingDocument = {
+export type IncomingDocument = {
     type: string;
     url: string; // base64 OR cloudinary
 };

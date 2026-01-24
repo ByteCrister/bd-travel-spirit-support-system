@@ -12,12 +12,24 @@ import { Checkbox } from '../../ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../ui/accordion';
 import { HiArrowUp } from 'react-icons/hi';
 
+/** CONSTANTS **/
+const PAGE_SIZE = 10;
+const TTL = 60_000
+
 export const Table = memo(function Table() {
-    const store = useArticleCommentsStore();
+    const {
+        fetchRootComments,
+        toggleAccordion,
+        threadKeyOf,
+        threadCache,
+        tableVM,
+        tableQuery,
+        tableLoading,
+    } = useArticleCommentsStore();
     const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
     const [openAccordions, setOpenAccordions] = useState<string[]>([]); // track open accordions
     const accordionRefs = useRef<Record<string, HTMLDivElement | null>>({}); // refs
-    const vm = store.tableVM;
+    const vm = tableVM;
 
     const onToggleSelect = (id: string, checked: boolean) => {
         setSelectedIds((s) => ({ ...s, [id]: checked }));
@@ -28,7 +40,7 @@ export const Table = memo(function Table() {
     const bulkBarVisible = selectedList.length > 0;
 
     const handleAccordionToggle = (rowId: string, open: boolean) => {
-        useArticleCommentsStore.getState().toggleAccordion(rowId, open);
+        toggleAccordion(rowId, open);
         setOpenAccordions((prev) => {
             if (open) {
                 return [...prev.filter((id) => id !== rowId), rowId]; // add to end
@@ -37,18 +49,16 @@ export const Table = memo(function Table() {
             }
         });
         if (open) {
-            const threadKey = useArticleCommentsStore
-                .getState()
-                .threadKeyOf(rowId, null);
-            const cache = useArticleCommentsStore.getState().threadCache[threadKey];
+            const threadKey = threadKeyOf(rowId, null);
+            const cache = threadCache[threadKey];
             const now = Date.now();
             const stale =
                 !cache ||
-                now - (cache?.fetchedAt ?? 0) >= 60_000;
+                now - (cache?.fetchedAt ?? 0) >= TTL;
             if (stale) {
-                useArticleCommentsStore.getState().fetchRootComments({
+                fetchRootComments({
                     articleId: rowId,
-                    pageSize: 100,
+                    pageSize: PAGE_SIZE,
                     sort: { key: 'createdAt', direction: 'desc' },
                 });
             }
@@ -123,7 +133,7 @@ export const Table = memo(function Table() {
             )}
 
             {/* Empty state */}
-            {vm.length === 0 && !store.tableLoading && (
+            {vm.length === 0 && !tableLoading && (
                 <div className="flex flex-col items-center justify-center gap-4 py-16 px-6 text-center">
                     <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full">
                         <svg className="w-8 h-8 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,9 +161,9 @@ export const Table = memo(function Table() {
             )}
 
             {/* Loading state */}
-            {store.tableLoading && vm.length === 0 && (
+            {tableLoading && vm.length === 0 && (
                 <div className="space-y-3">
-                    {Array.from({ length: store.tableQuery.pageSize }).map((_, i) => (
+                    {Array.from({ length: tableQuery.pageSize }).map((_, i) => (
                         <div key={`sk-${i}`} className="border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-[0_1px_3px_0_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_0_rgba(0,0,0,0.3)]">
                             <div className="flex items-center gap-4">
                                 <Skeleton className="h-5 w-5 rounded flex-shrink-0" />

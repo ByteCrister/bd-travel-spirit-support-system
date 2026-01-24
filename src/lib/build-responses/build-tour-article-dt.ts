@@ -24,11 +24,12 @@ type DestinationWithImage = Omit<IDestinationBlock, "imageAsset"> & {
     };
 };
 
-type LeanTravelArticle = Omit<ITravelArticle, 'author' | 'heroImage' | 'destinations'> & {
+type LeanTravelArticle = Omit<ITravelArticle, 'author' | 'heroImage' | 'destinations' | 'seo'> & {
     _id: Types.ObjectId;
     author: PopulatedAuthor;
     heroImage: PopulatedHeroImage;
     destinations?: DestinationWithImage[];
+    seo: Omit<ITravelArticle['seo'], 'ogImage'> & { ogImage: PopulatedAssetLean }
 };
 /**
  * Builds a TourArticle DTO by ID, with optional deletion inclusion and transaction support
@@ -78,6 +79,7 @@ export async function buildTourArticleDto(
             path: 'heroImage',
             model: AssetModel,
             select: '_id',
+            options: { session },
             populate: {
                 path: 'file',
                 model: AssetFileModel,
@@ -88,6 +90,18 @@ export async function buildTourArticleDto(
             path: 'destinations.imageAsset.assetId',
             model: AssetModel,
             select: '_id',
+            options: { session },
+            populate: {
+                path: 'file',
+                model: AssetFileModel,
+                select: 'publicUrl'
+            }
+        },
+        {
+            path: 'seo.ogImage',
+            model: AssetModel,
+            select: '_id',
+            options: { session },
             populate: {
                 path: 'file',
                 model: AssetFileModel,
@@ -126,8 +140,13 @@ export async function buildTourArticleDto(
 
     const destinationAssetIds =
         article.destinations
-            ?.map(d => d.imageAsset?.assetId)
+            ?.map(d =>
+                d.imageAsset?.assetId instanceof Types.ObjectId
+                    ? d.imageAsset.assetId
+                    : null
+            )
             .filter(Boolean) as Types.ObjectId[] || [];
+
 
     const destinationAssets = destinationAssetIds.length
         ? await AssetModel.find({ _id: { $in: destinationAssetIds } })
@@ -163,13 +182,15 @@ export async function buildTourArticleDto(
         transportOptions: dest.transportOptions ?? [],
         accommodationTips: dest.accommodationTips ?? [],
         coordinates: dest.coordinates ?? { lat: 0, lng: 0 },
-        imageAsset: dest.imageAsset
-            ? {
-                title: dest.imageAsset.title,
-                assetId: dest.imageAsset.assetId._id.toString(),
-                url: dest.imageAsset.assetId.file?.publicUrl
-            }
-            : undefined
+        imageAsset:
+            dest.imageAsset?.assetId && typeof dest.imageAsset.assetId === 'object'
+                ? {
+                    title: dest.imageAsset.title,
+                    assetId: dest.imageAsset.assetId._id.toString(),
+                    url: dest.imageAsset.assetId.file?.publicUrl
+                }
+                : undefined
+
     })) ?? [];
 
     /* ---------------- FINAL DTO ---------------- */
@@ -206,7 +227,7 @@ export async function buildTourArticleDto(
         seo: {
             metaTitle: article.seo?.metaTitle ?? '',
             metaDescription: article.seo?.metaDescription ?? '',
-            ogImage: article.seo?.ogImage
+            ogImage: article.seo?.ogImage.file?.publicUrl
         },
         destinations,
         faqs: article.faqs ?? [],

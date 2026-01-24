@@ -1,22 +1,7 @@
 // /types/article-comment.types.ts
 
-import { COMMENT_STATUS } from "@/constants/articleComment.const";
-import { USER_ROLE } from "@/constants/user.const";
-
-/**
- * Article Comment DTO types
- * - Targets Next.js 15 (App Router) with TypeScript.
- * - Designed for axios API instance integration, Zustand store, and UI components.
- * - Aligns with travelComment.model.ts while optimizing for API contracts and frontend needs.
- *
- * Key design choices:
- * - Strongly typed status enum and discriminated unions for robustness.
- * - Clear separation between "summary rows" and "expanded nested comment trees".
- * - Both offset and cursor pagination supported for flexibility.
- * - Explicit meta blocks for pagination, sorting, and applied filters.
- * - Error DTOs normalized for axios consumption and toast/UI display.
- * - Safe IDs and ISO timestamps (string) on the wire; map to Date in domain if needed.
- */
+import { COMMENT_STATUS, CommentStatus } from "@/constants/articleComment.const";
+import { UserRole } from "@/constants/user.const";
 
 /* ========================================================================== */
 /* Domain enums & base primitives                                             */
@@ -41,7 +26,7 @@ export interface UserPreviewDTO {
     id: EntityId;
     name: string;
     avatarUrl?: string | null;
-    role: USER_ROLE;
+    role: UserRole;
 }
 
 /* ========================================================================== */
@@ -99,8 +84,8 @@ export interface CursorPageMetaDTO {
  */
 export interface ArticleFiltersDTO {
     searchQuery?: string | null;      // full-text over title/slug
-    status?: COMMENT_STATUS | 'any';   // aggregates based on comment status; 'any' = no filter
-    authorId?: EntityId | null;       // filter by article author (optional)
+    status?: CommentStatus | 'any';   // aggregates based on comment status; 'any' = no filter
+    authorName?: EntityId | null;       // filter by article author (optional)
     taggedRegion?: string | null;     // example: region tag for travel content
 }
 
@@ -108,10 +93,10 @@ export interface ArticleFiltersDTO {
  * Filters for comment listings per article.
  */
 export interface CommentFiltersDTO {
-    status?: COMMENT_STATUS | 'any';
+    status?: CommentStatus | 'any';
     minLikes?: number | null;
     hasReplies?: boolean | null;      // true: only threads with replies; false: leaf nodes; null: any
-    authorId?: EntityId | null;
+    authorName?: EntityId | null;
     searchQuery?: string | null;      // search in comment content
 }
 
@@ -202,7 +187,7 @@ export interface CommentDetailDTO {
     author: UserPreviewDTO;
     content: string;
     likes: number;
-    status: COMMENT_STATUS;
+    status: CommentStatus;
     replyCount: number;      // from virtual or computed server-side
     createdAt: IsoDateTime;
     updatedAt: IsoDateTime;
@@ -279,7 +264,7 @@ export interface CreateCommentResponseDTO {
  */
 export interface UpdateCommentStatusPayloadDTO {
     commentId: EntityId;
-    status: Exclude<COMMENT_STATUS, COMMENT_STATUS.PENDING>; // approve or reject
+    status: Exclude<CommentStatus, COMMENT_STATUS.PENDING>; // approve or reject
     reason?: string | null; // optional moderation note
 }
 
@@ -307,6 +292,37 @@ export interface ToggleLikeResponseDTO {
         commentId: EntityId;
         likes: number;
     };
+}
+
+/* ========================================================================== */
+/* Delete & Restore                                                          */
+/* ========================================================================== */
+
+/**
+ * Delete a comment (soft delete or hard delete based on backend)
+ */
+export interface DeleteCommentPayloadDTO {
+    commentId: EntityId;
+    reason?: string | null; // Optional deletion reason
+}
+
+export interface DeleteCommentResponseDTO {
+    data: {
+        commentId: EntityId;
+        deletedAt: IsoDateTime;
+        status: CommentStatus;
+    };
+}
+
+/**
+ * Restore a soft-deleted comment
+ */
+export interface RestoreCommentPayloadDTO {
+    commentId: EntityId;
+}
+
+export interface RestoreCommentResponseDTO {
+    data: CommentDetailDTO;
 }
 
 /* ========================================================================== */
@@ -395,9 +411,9 @@ export interface GetChildCommentsRequestDTO {
  */
 export type RowBadgeVariant = 'default' | 'positive' | 'warning' | 'danger';
 
-export const isPendingStatus = (s: COMMENT_STATUS): boolean => s === COMMENT_STATUS.PENDING;
-export const isApprovedStatus = (s: COMMENT_STATUS): boolean => s === COMMENT_STATUS.APPROVED;
-export const isRejectedStatus = (s: COMMENT_STATUS): boolean => s === COMMENT_STATUS.REJECTED;
+export const isPendingStatus = (s: CommentStatus): boolean => s === COMMENT_STATUS.PENDING;
+export const isApprovedStatus = (s: CommentStatus): boolean => s === COMMENT_STATUS.APPROVED;
+export const isRejectedStatus = (s: CommentStatus): boolean => s === COMMENT_STATUS.REJECTED;
 
 /**
  * Helpers to ensure safe pagination math in the store.
@@ -456,7 +472,7 @@ export interface AdminCommentNodeVM {
     authorRole: UserPreviewDTO['role'];
     content: string;
     likes: number;
-    status: COMMENT_STATUS;
+    status: CommentStatus;
     createdAt: IsoDateTime;
     updatedAt: IsoDateTime;
     parentId?: EntityId | null;

@@ -10,6 +10,7 @@ import {
     FoodRecoSpiceType,
     ArticleType,
     ArticleStatus,
+    FaqCategory,
 } from '@/constants/article.const';
 import { TOUR_CATEGORIES, DIVISION, DISTRICT, Division, District, TourCategories } from '@/constants/tour.const';
 
@@ -48,6 +49,7 @@ const localFestivalSchema = Yup.object({
 });
 
 const destinationBlockSchema = Yup.object({
+    id: Yup.string().optional(),// null/undefined for create and valid for updating
     division: Yup.mixed<Division>()
         .oneOf(Object.values(DIVISION))
         .required('Division is required'),
@@ -56,7 +58,7 @@ const destinationBlockSchema = Yup.object({
         .required('District is required'),
     area: Yup.string().nullable(),
     description: Yup.string().required('Description is required'),
-    content: Yup.array().of(richTextBlockSchema).required('Content is required'),
+    content: Yup.array().of(richTextBlockSchema).min(1, 'Content blocks are required').required('Content is required'),
     highlights: Yup.array().of(Yup.string().trim()).required('Highlights are required'),
     foodRecommendations: Yup.array().of(foodRecommendationSchema).required('Food recommendations are required'),
     localFestivals: Yup.array().of(localFestivalSchema).required('Local festivals are required'),
@@ -64,8 +66,14 @@ const destinationBlockSchema = Yup.object({
     transportOptions: Yup.array().of(Yup.string().trim()).required('Transport options are required'),
     accommodationTips: Yup.array().of(Yup.string().trim()).required('Accommodation tips are required'),
     coordinates: Yup.object({
-        lat: Yup.number().required(),
-        lng: Yup.number().required(),
+        lat: Yup.number()
+            .required('Latitude is required')
+            .min(20.7, 'Latitude must be within Bangladesh')
+            .max(26.6, 'Latitude must be within Bangladesh'),
+        lng: Yup.number()
+            .required('Longitude is required')
+            .min(88.0, 'Longitude must be within Bangladesh')
+            .max(92.7, 'Longitude must be within Bangladesh'),
     }).required('Coordinates are required'),
     imageAsset: Yup.object({
         title: Yup.string().required('Image title is required'),
@@ -78,9 +86,9 @@ const destinationBlockSchema = Yup.object({
 const faqSchema = Yup.object({
     question: Yup.string().required('Question is required'),
     answer: Yup.string().required('Answer is required'),
-    category: Yup.string()
-        .oneOf(Object.values(FAQ_CATEGORY))
-        .nullable(),
+    category: Yup.mixed<FaqCategory>().oneOf(
+        Object.values(FAQ_CATEGORY) as FaqCategory[]
+    ),
 });
 
 export const createArticleSchema = Yup.object().shape({
@@ -102,7 +110,7 @@ export const createArticleSchema = Yup.object().shape({
         .max(300, 'Summary must be under 300 characters')
         .required('Summary is required'),
     heroImage: Yup.string().nullable(),
-    destinations: Yup.array().of(destinationBlockSchema).min(1, 'At least one content block is required').required(),
+    destinations: Yup.array().of(destinationBlockSchema).min(1, 'At least one content block is required').required('Destinations are required'),
     categories: Yup.array()
         .of(
             Yup.mixed<TourCategories>().oneOf(
@@ -117,7 +125,17 @@ export const createArticleSchema = Yup.object().shape({
         metaDescription: Yup.string()
             .min(10)
             .required('Meta description is required'),
-        ogImage: Yup.string().nullable(),
+        ogImage: Yup.string()
+            .nullable()
+            .test(
+                'og-image',
+                'Invalid image',
+                (value) =>
+                    !value ||
+                    value.startsWith('http') ||
+                    value.startsWith('data:image')
+            )
+        ,
     }).required(),
     faqs: Yup.array().of(faqSchema).required('FAQs are required'),
     allowComments: Yup.boolean().default(true),

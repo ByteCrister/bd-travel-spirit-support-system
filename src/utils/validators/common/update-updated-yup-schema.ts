@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ApiError } from "@/lib/helpers/withErrorHandler";
 import { ValidationError, AnyObjectSchema } from "yup";
 
 /**
@@ -18,20 +18,12 @@ export function validateUpdatedYupSchema<T>(
         }) as T;
     } catch (err) {
         if (err instanceof ValidationError) {
-            throw NextResponse.json(
-                {
-                    success: false,
-                    message: "Validation failed",
-                    errors: err.inner.reduce((acc, e) => {
-                        if (e.path) acc[e.path] = e.message;
-                        return acc;
-                    }, {} as Record<string, string>),
-                },
-                { status: 400 }
-            );
+            const firstError = err.inner[0] ?? err;
+
+            throw new ApiError(firstError.message, 400);
         }
 
-        // Unexpected error
         throw err;
     }
+
 }

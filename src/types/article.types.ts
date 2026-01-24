@@ -86,7 +86,7 @@ export interface FaqItem {
 export interface ArticleListItem {
     id: ID;
     title: string;
-    banglaTitle?: string; // Title in Bengali
+    banglaTitle: string; // Title in Bengali
     slug: string;
     status: ArticleStatus;
     articleType: ArticleType;
@@ -273,7 +273,7 @@ export interface CreateArticleInput {
     allowComments?: boolean;
 }
 
-export interface UpdateArticleInput extends Partial<CreateArticleInput> {
+export interface UpdateArticleInput extends CreateArticleInput {
     id: ID;
 }
 

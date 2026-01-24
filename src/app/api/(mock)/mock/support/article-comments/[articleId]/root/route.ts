@@ -1,4 +1,4 @@
-// app/api/articles/comments/[articleId]/root/route.ts
+// api/mock/support/article-comments/[articleId]/root/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import {
     type CommentThreadSegmentDTO,
@@ -6,9 +6,9 @@ import {
     type CommentSortKey,
     type CommentFiltersDTO,
 } from '@/types/article-comment.types';
-import { queryRootComments } from '../../_lib/mock';
+import { queryRootComments } from '@/lib/mocks/article-comments.mock';
 
-export async function GET(req: NextRequest, { params }: { params: { articleId: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ articleId: string }> }) {
     const url = new URL(req.url);
     const pageSize = Number(url.searchParams.get('pageSize') ?? 100);
     const sortKey = (url.searchParams.get('sortKey') ?? 'createdAt') as CommentSortKey;
@@ -16,6 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: { articleId: s
     const cursor = url.searchParams.get('cursor');
 
     const filters: CommentFiltersDTO = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         status: (url.searchParams.get('status') as any) ?? 'any',
         minLikes: url.searchParams.get('minLikes') ? Number(url.searchParams.get('minLikes')) : null,
         hasReplies: url.searchParams.get('hasReplies') ? url.searchParams.get('hasReplies') === 'true' : null,
@@ -24,7 +25,9 @@ export async function GET(req: NextRequest, { params }: { params: { articleId: s
     };
 
     const sort: SortDTO<CommentSortKey> = { key: sortKey, direction: sortDir };
-    const { nodes, meta } = queryRootComments(params.articleId, cursor, pageSize, sort, filters);
+    
+    // Always return some data for mock API, regardless of ID
+    const { nodes, meta } = queryRootComments((await params).articleId, cursor, pageSize, sort, filters);
 
     const response: CommentThreadSegmentDTO = {
         nodes,
@@ -32,9 +35,9 @@ export async function GET(req: NextRequest, { params }: { params: { articleId: s
             pagination: meta,
             sort,
             filtersApplied: filters,
-            scope: { articleId: params.articleId, parentId: null, depthMax: null },
+            scope: { articleId: (await params).articleId, parentId: null, depthMax: null },
         },
     };
 
-    return NextResponse.json(response, { status: 200 });
+    return NextResponse.json({ data: response }, { status: 200 });
 }

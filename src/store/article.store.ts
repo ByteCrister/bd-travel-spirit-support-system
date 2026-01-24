@@ -34,7 +34,8 @@ import api from '@/utils/axios';
 import { extractErrorMessage } from '@/utils/axios/extract-error-message';
 import { ARTICLE_STATUS } from '@/constants/article.const';
 
-const URL_AFTER_API = '/mock/articles';
+// const URL_AFTER_API = '/mock/support/articles';
+const URL_AFTER_API = '/support/articles/v1';
 
 // TTL: ms
 const DEFAULT_TTL =
@@ -509,7 +510,7 @@ export const useArticleStore = create<ArticleStore>((set, get) => ({
 
         try {
             // Typically restore would be a PATCH or POST to a restore endpoint
-            const { data } = await api.post<RestoreArticleApi>(`${URL_AFTER_API}/${id}/restore`);
+            const { data } = await api.patch<RestoreArticleApi>(`${URL_AFTER_API}/${id}`);
 
             if (!data || !data.data) throw new Error('Failed to restore article');
 

@@ -69,7 +69,7 @@ function makeListItem(seed: string | number): ArticleListItem {
   return {
     id: faker.string.uuid(),
     title,
-    banglaTitle: Math.random() > 0.7 ? faker.lorem.sentence() : undefined, // Added banglaTitle
+    banglaTitle: Math.random() > 0.7 ? faker.lorem.sentence() : '', // Added banglaTitle
     slug: faker.helpers.slugify(title).toLowerCase(),
     status: randChoice(Object.values(ARTICLE_STATUS)),
     articleType: randChoice(Object.values(ARTICLE_TYPE)),

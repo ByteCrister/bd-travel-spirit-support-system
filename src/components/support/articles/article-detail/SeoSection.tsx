@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useFormikContext, FormikErrors, FormikTouched } from 'formik';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -15,9 +15,16 @@ import {
     FiAlertCircle,
     FiInfo,
     FiX,
-    FiEye
+    FiEye,
+    FiUpload
 } from 'react-icons/fi';
 import Image from 'next/image';
+// Import file conversion utilities
+import {
+    fileToBase64,
+    IMAGE_EXTENSIONS,
+} from '@/utils/helpers/file-conversion';
+import { showToast } from '@/components/global/showToast';
 
 type SeoValues = {
     metaTitle?: string;
@@ -187,18 +194,21 @@ const SeoPreview = ({ title, description, image, url }: {
                 <p className="text-xs font-medium text-gray-500">Social Media Preview</p>
                 <div className="border border-gray-300 rounded-lg overflow-hidden">
                     {image ? (
-                        <Image
-                            src={image}
-                            alt="OG Preview"
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 768px) 100vw, 50vw"
-                            unoptimized
-                            onError={(e) => {
-                                const target = e.currentTarget as HTMLImageElement;
-                                target.src = '/fallback-image.jpg'; // optional fallback
-                            }}
-                        />) : (
+                        <div className="relative h-48 w-full">
+                            <Image
+                                src={image}
+                                alt="OG Preview"
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, 50vw"
+                                unoptimized
+                                onError={(e) => {
+                                    const target = e.currentTarget as HTMLImageElement;
+                                    target.style.display = 'none';
+                                }}
+                            />
+                        </div>
+                    ) : (
                         <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
                             <FiImage className="h-12 w-12 text-gray-400" />
                         </div>
@@ -221,15 +231,53 @@ const SeoPreview = ({ title, description, image, url }: {
 export function SeoSection() {
     const { values, setFieldValue, errors, touched } = useFormikContext<Values>();
     const [imagePreview, setImagePreview] = useState<string | null>(values.seo?.ogImage ?? null);
+    const [imageError, setImageError] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const metaTitle = values.seo?.metaTitle ?? '';
     const metaDescription = values.seo?.metaDescription ?? '';
     const ogImage = values.seo?.ogImage ?? null;
 
-    const handleImageChange = (url: string) => {
-        const trimmedUrl = url.trim() || null;
-        setFieldValue('seo.ogImage', trimmedUrl);
-        setImagePreview(trimmedUrl);
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Reset error
+        setImageError(null);
+        setIsUploading(true);
+
+        try {
+            // Convert file to base64 using the utility function
+            const base64String = await fileToBase64(file, {
+                compressImages: true,
+                maxWidth: 1200, // OG image standard width
+                quality: 0.8,
+                maxFileBytes: 5 * 1024 * 1024, // 5MB
+                allowedExtensions: IMAGE_EXTENSIONS
+            });
+
+            // Set the base64 string as the OG image value
+            setFieldValue('seo.ogImage', base64String);
+            setImagePreview(base64String);
+        } catch (error) {
+            setImageError(error instanceof Error ? error.message : 'Failed to upload image');
+            showToast.warning('Failed to upload seo og image', error instanceof Error ? error.message : 'Failed to upload image')
+            setImagePreview(null);
+            setFieldValue('seo.ogImage', null);
+        } finally {
+            setIsUploading(false);
+            // Clear the file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setImagePreview(null);
+        setFieldValue('seo.ogImage', null);
+        setImageError(null);
     };
 
     // SEO Score Calculator
@@ -411,42 +459,79 @@ export function SeoSection() {
                             <SeoField
                                 label="Open Graph Image"
                                 icon={FiImage}
-                                error={getSeoError(errors, 'ogImage')}
+                                error={imageError || getSeoError(errors, 'ogImage')}
                                 touched={getSeoTouched(touched, 'ogImage')}
-                                description="For social sharing"
+                                description="For social sharing, 1200×630px recommended"
                             >
                                 <div className="space-y-3">
-                                    <Input
-                                        value={ogImage ?? ''}
-                                        onChange={(e) => handleImageChange(e.target.value)}
-                                        placeholder="https://example.com/image.jpg"
-                                        className="focus:ring-green-500"
-                                    />
-                                    {imagePreview && (
+                                    {!imagePreview ? (
+                                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-green-400 transition-colors">
+                                            <FiUpload className="h-8 w-8 text-gray-400 mb-3" />
+                                            <p className="text-sm text-gray-600 mb-4 text-center">
+                                                Click to upload or drag and drop
+                                                <br />
+                                                <span className="text-xs text-gray-500">Recommended: 1200×630px</span>
+                                            </p>
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                accept={IMAGE_EXTENSIONS.map(ext => `.${ext}`).join(',')}
+                                                onChange={handleImageUpload}
+                                                className="hidden"
+                                                id="og-image-upload"
+                                            />
+                                            <label htmlFor="og-image-upload">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                                                    disabled={isUploading}
+                                                >
+                                                    {isUploading ? (
+                                                        <>Uploading...</>
+                                                    ) : (
+                                                        <>
+                                                            <FiImage className="h-4 w-4" />
+                                                            Choose Image
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </label>
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                {IMAGE_EXTENSIONS.join(', ').toUpperCase()}, max 5MB
+                                            </p>
+                                        </div>
+                                    ) : (
                                         <motion.div
                                             initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             className="relative rounded-lg overflow-hidden border-2 border-gray-200"
                                         >
-                                            <Image
-                                                src={imagePreview}
-                                                alt="OG Preview"
-                                                fill
-                                                className="object-cover"
-                                                sizes="(max-width: 768px) 100vw, 50vw"
-                                                unoptimized
-                                                onError={() => setImagePreview(null)}
-                                            />
+                                            <div className="relative h-64 w-full">
+                                                <Image
+                                                    src={imagePreview}
+                                                    alt="OG Preview"
+                                                    fill
+                                                    className="object-cover"
+                                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                                    unoptimized
+                                                    onError={() => {
+                                                        setImageError('Failed to load image');
+                                                        setImagePreview(null);
+                                                    }}
+                                                />
+                                            </div>
                                             <div className="absolute top-2 right-2">
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleImageChange('')}
+                                                    onClick={handleRemoveImage}
                                                     className="h-8 w-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-all"
+                                                    disabled={isUploading}
                                                 >
                                                     <FiX className="h-4 w-4" />
                                                 </button>
                                             </div>
-                                            <div className="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-sm rounded px-2 py-1 text-xs text-white">
+                                            <div className="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-sm rounded px-2 py-1 text-xs text-white text-center">
                                                 Recommended: 1200×630px
                                             </div>
                                         </motion.div>

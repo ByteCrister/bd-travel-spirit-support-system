@@ -63,3 +63,29 @@ export function slugify(
 
   return slug;
 }
+
+
+export function generateSlug(title: string, existingSlugs: string[] = []): string {
+  const slugOptions = {
+    maxLength: 60,
+    locale: 'en',
+    fallback: 'article'
+  };
+
+  const baseSlug = slugify(title, slugOptions);
+  let finalSlug = baseSlug;
+  let counter = 1;
+
+  // Check against existing slugs
+  while (existingSlugs.includes(finalSlug)) {
+    finalSlug = `${baseSlug}-${counter}`;
+    counter++;
+
+    if (counter > 100) {
+      finalSlug = `${baseSlug}-${Date.now()}`;
+      break;
+    }
+  }
+
+  return finalSlug;
+}

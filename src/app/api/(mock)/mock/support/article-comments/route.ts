@@ -1,4 +1,4 @@
-// app/api/articles/comments/articles/route.ts
+// api/mock/support/article-comments/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import {
     type ArticleCommentSummaryListResponseDTO,
@@ -6,10 +6,11 @@ import {
     type ArticleSortKey,
     type ArticleFiltersDTO,
 } from '@/types/article-comment.types';
-import { queryArticleSummary } from '../_lib/mock';
-import { COMMENT_STATUS } from '@/constants/articleComment.const';
+import { queryArticleSummary } from '@/lib/mocks/article-comments.mock';
+import { CommentStatus } from '@/constants/articleComment.const';
 
 export async function GET(req: NextRequest) {
+
     const url = new URL(req.url);
     const page = Number(url.searchParams.get('page') ?? 1);
     const pageSize = Number(url.searchParams.get('pageSize') ?? 20);
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     const filters: ArticleFiltersDTO = {
         searchQuery: url.searchParams.get('searchQuery'),
-        status: (url.searchParams.get('status') as COMMENT_STATUS | 'any') ?? 'any',
+        status: (url.searchParams.get('status') as CommentStatus | 'any') ?? 'any',
         authorId: url.searchParams.get('authorId'),
         taggedRegion: url.searchParams.get('taggedRegion'),
     };
@@ -35,5 +36,5 @@ export async function GET(req: NextRequest) {
         },
     };
 
-    return NextResponse.json(response, { status: 200 });
+    return NextResponse.json({ data: response }, { status: 200 });
 }

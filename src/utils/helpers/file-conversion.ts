@@ -142,7 +142,7 @@ export async function fileToBase64(
   }
   if (file.size > maxFileBytes) {
     throw new Error(
-      `File too large (>${Math.round(maxFileBytes / 1024)} KB): ${file.name}`
+      `File too large (>${Math.round(maxFileBytes / (1024 * 1024))} MB): ${file.name}`
     );
   }
 

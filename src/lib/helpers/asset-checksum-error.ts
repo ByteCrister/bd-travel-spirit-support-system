@@ -1,4 +1,5 @@
 // src/lib/helpers/asset-checksum.ts
+import { CloudinaryUploadError } from "../cloudinary/cloudinary.types";
 import { ApiError } from "./withErrorHandler";
 
 export interface MongoDuplicateKeyError {
@@ -27,4 +28,16 @@ export class DuplicateAssetChecksumError extends ApiError {
             409
         );
     }
+}
+
+export function isCloudinary409Error(
+    err: unknown
+): err is CloudinaryUploadError {
+    if (typeof err !== "object" || err === null) return false;
+
+    if (!("error" in err)) return false;
+
+    const cloudErr = err as CloudinaryUploadError;
+
+    return cloudErr.error?.http_code === 409;
 }

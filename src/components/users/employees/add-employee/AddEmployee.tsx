@@ -11,13 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
     Plus, Trash2, RefreshCw, Upload, File, Image as ImageIcon, X, AlertCircle,
     Loader2, User, Mail, Phone, Calendar, DollarSign, Briefcase, Clock,
-    FileText, Shield, Heart, Sparkles, CheckCircle2
+    FileText, Shield, Heart, Sparkles, CheckCircle2,
+    CreditCard,
+    Info
 } from "lucide-react";
 import Image from "next/image";
 
 import { CreateEmployeeFormValues, createEmployeeValidationSchema } from "@/utils/validators/employee/employee.validator";
 import { CreateEmployeePayload, ShiftDTO, DayOfWeek, DocumentDTO } from "@/types/employee.types";
-import { EMPLOYMENT_TYPE } from "@/constants/employee.const";
+import { EMPLOYMENT_TYPE, SALARY_PAYMENT_MODE, SalaryPaymentMode } from "@/constants/employee.const";
 import { CURRENCY } from "@/constants/tour.const";
 import {
     fileToDocumentDTO,
@@ -28,11 +30,12 @@ import {
     removeDocumentAt
 } from "@/utils/helpers/file-conversion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useEmployeeStore } from "@/store/employee.store";
 import { useRouter } from "next/navigation";
-import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 import { showToast } from "@/components/global/showToast";
+import generateStrongPassword from "@/utils/helpers/generate-strong-password";
+import { useEmployeeStore } from "@/store/employee.store";
+import { cn } from "@/lib/utils";
 
 // Constants
 const DAYS_OF_WEEK: DayOfWeek[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -59,6 +62,7 @@ const getInitialValues = (): CreateEmployeeFormValues => ({
     avatar: null,
     salary: null,
     currency: CURRENCY.BDT,
+    paymentMode: SALARY_PAYMENT_MODE.AUTO,
     dateOfJoining: new Date(),
     contactInfo: { phone: "", email: "", emergencyContact: { name: "", phone: "", relation: "" } },
     shifts: [],
@@ -187,6 +191,7 @@ export default function AddEmployeePage() {
                 avatar: values.avatar ?? "",
                 salary: values.salary,
                 currency: values.currency,
+                paymentMode: values.paymentMode,
                 dateOfJoining: values.dateOfJoining.toISOString(),
                 contactInfo: values.contactInfo,
                 shifts: values.shifts,
@@ -457,6 +462,62 @@ export default function AddEmployeePage() {
                                                 </Field>
                                                 <FormMessage>{touched.dateOfJoining && errors.dateOfJoining && String(errors.dateOfJoining)}</FormMessage>
                                             </FormItem>
+
+                                            <div className="md:col-span-2">
+                                                <FormItem>
+                                                    <FormLabel icon={<CreditCard className="h-4 w-4" />}>Payment Mode *</FormLabel>
+                                                    <Field name="paymentMode">
+                                                        {({ field }: FieldProps<SalaryPaymentMode>) => (
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                {Object.values(SALARY_PAYMENT_MODE).map((mode) => (
+                                                                    <div
+                                                                        key={mode}
+                                                                        className={cn(
+                                                                            "relative flex items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer",
+                                                                            field.value === mode
+                                                                                ? "bg-green-100 border-green-500 shadow-sm"
+                                                                                : "bg-white/80 border-green-200 hover:border-green-300"
+                                                                        )}
+                                                                        onClick={() => setFieldValue("paymentMode", mode)}
+                                                                    >
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className={cn(
+                                                                                "h-5 w-5 rounded-full border-2 flex items-center justify-center",
+                                                                                field.value === mode
+                                                                                    ? "border-green-500 bg-green-500"
+                                                                                    : "border-gray-300"
+                                                                            )}>
+                                                                                {field.value === mode && (
+                                                                                    <div className="h-2 w-2 rounded-full bg-white" />
+                                                                                )}
+                                                                            </div>
+                                                                            <span className="font-medium text-gray-700">
+                                                                                {mode === SALARY_PAYMENT_MODE.AUTO ? "Automatic" : "Manual"}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        {mode === SALARY_PAYMENT_MODE.AUTO && (
+                                                                            <div className="absolute -top-1 -right-1">
+                                                                                <div className="px-2 py-0.5 text-[10px] font-semibold bg-amber-500 text-white rounded-full">
+                                                                                    Recommended
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </Field>
+                                                    <div className="mt-3 flex items-start gap-2 text-sm text-gray-600">
+                                                        <Info className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                                        <span>
+                                                            <strong>Automatic:</strong> Salary is paid automatically on the set date.{" "}
+                                                            <strong>Manual:</strong> Requires manual approval and processing for each payment.
+                                                        </span>
+                                                    </div>
+                                                    <FormMessage>{touched.paymentMode && errors.paymentMode}</FormMessage>
+                                                </FormItem>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

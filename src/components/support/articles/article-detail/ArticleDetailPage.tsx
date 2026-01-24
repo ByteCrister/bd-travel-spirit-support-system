@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion, Variants } from 'framer-motion';
 import { Formik, Form, FormikHelpers } from 'formik';
-import * as Yup from 'yup';
 import {
     FiSave,
     FiTrash2,
@@ -15,7 +14,9 @@ import {
     FiSearch,
     FiHelpCircle,
     FiSettings,
-    FiCalendar
+    FiCalendar,
+    FiLink,
+    FiRefreshCw
 } from 'react-icons/fi';
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -39,6 +40,7 @@ import {
     UpdateArticleInput,
     DeleteArticleInput,
     ID,
+    DestinationBlock,
 } from '@/types/article.types';
 import { useArticleStore } from '@/store/article.store';
 import { showToast } from '@/components/global/showToast';
@@ -49,10 +51,12 @@ import { ContentSection } from './ContentSection';
 import { SeoSection } from './SeoSection';
 import { FaqsSection } from './FaqsSection';
 import { SettingsSection } from './SettingsSection';
-import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
-import { decodeId, encodeId } from '@/utils/helpers/mongodb-id-conversions';
+import { ARTICLE_STATUS, ArticleStatus } from '@/constants/article.const';
+import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 import { Breadcrumbs } from '@/components/global/Breadcrumbs';
 import { CreateArticleFormValues, createArticleSchema } from '@/utils/validators/article.create.validator';
+import { TOUR_CATEGORIES } from '@/constants/tour.const';
+import { showFormikSubmitErrors } from '@/utils/validators/common/formik-errors';
 
 
 // ---------------------
@@ -78,63 +82,6 @@ const itemVariants: Variants = {
     }
 };
 
-const tabContentVariants: Variants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: {
-        opacity: 1,
-        x: 0,
-        transition: { type: 'spring', stiffness: 120, damping: 20 }
-    },
-    exit: { opacity: 0, x: 20, transition: { duration: 0.15 } }
-};
-
-// ---------------------
-// Update schema for partial updates
-// ---------------------
-const updateArticleSchema = createArticleSchema
-    .clone()
-    .shape({
-        title: Yup.string().min(5, 'Title must be at least 5 characters').optional(),
-        banglaTitle: Yup.string().min(5, 'Bangla title must be at least 5 characters').optional(), // Added banglaTitle
-        slug: Yup.string()
-            .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be kebab-case')
-            .optional(),
-        status: Yup.mixed<ARTICLE_STATUS>().oneOf(Object.values(ARTICLE_STATUS)).optional(),
-        articleType: Yup.mixed<ARTICLE_TYPE>().oneOf(Object.values(ARTICLE_TYPE)).optional(),
-        authorBio: Yup.string().nullable().optional(),
-        summary: Yup.string().min(10, 'Summary must be at least 10 characters').max(300, 'Summary must be under 300 characters').optional(),
-        heroImage: Yup.string().nullable().optional(),
-        destinations: Yup.array().optional(),
-        categories: Yup.array().optional(),
-        tags: Yup.array().optional(),
-        seo: Yup.object({
-            metaTitle: Yup.string().min(5).optional(),
-            metaDescription: Yup.string().min(10).optional(),
-            ogImage: Yup.string().nullable().optional(),
-        })
-            .optional(),
-        faqs: Yup.array().optional(),
-        allowComments: Yup.boolean().optional(),
-    })
-    .test(
-        'destinations-required-update',
-        'At least one destination is required for destination articles',
-        (val) => {
-            if (
-                val?.articleType === ARTICLE_TYPE.SINGLE_DESTINATION ||
-                val?.articleType === ARTICLE_TYPE.MULTI_DESTINATION ||
-                val?.articleType === ARTICLE_TYPE.CITY_GUIDE ||
-                val?.articleType === ARTICLE_TYPE.HILL_STATION ||
-                val?.articleType === ARTICLE_TYPE.BEACH_DESTINATION ||
-                val?.articleType === ARTICLE_TYPE.HISTORICAL_SITE
-            ) {
-                if (val?.destinations === undefined) return true;
-                return Array.isArray(val?.destinations) && val.destinations.length > 0;
-            }
-            return true;
-        }
-    );
-
 // ---------------------
 // Helpers
 // ---------------------
@@ -146,11 +93,10 @@ function normalizeOgImage(input: unknown): string | null {
 function mapDetailToFormValues(detail: ArticleDetail): CreateArticleFormValues {
     return {
         title: detail.title,
-        banglaTitle: detail.banglaTitle || '', // Added banglaTitle
-        slug: detail.slug,
+        banglaTitle: detail.banglaTitle || '',
         status: detail.status,
         articleType: detail.articleType,
-        authorBio: detail.authorBio || '', // Added authorBio
+        authorBio: detail.authorBio || '',
         summary: detail.summary,
         heroImage: detail.heroImage ?? '',
         destinations: (detail.destinations ?? []).map(d => ({
@@ -185,39 +131,10 @@ function mapDetailToFormValues(detail: ArticleDetail): CreateArticleFormValues {
     };
 }
 
-function isEqual(a: unknown, b: unknown): boolean {
-    try {
-        return JSON.stringify(a) === JSON.stringify(b);
-    } catch {
-        return a === b;
-    }
-}
-
-function computeDiff(
-    initial: Partial<CreateArticleFormValues>,
-    current: Partial<CreateArticleFormValues>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Partial<Record<keyof CreateArticleFormValues, any>> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const diff: Partial<Record<keyof CreateArticleFormValues, any>> = {};
-    const keys = new Set([...Object.keys(initial ?? {}), ...Object.keys(current ?? {})]);
-
-    keys.forEach((key) => {
-        const k = key as keyof CreateArticleFormValues;
-        const iv = initial[k];
-        const cv = current[k];
-        if (!isEqual(iv, cv)) {
-            diff[k] = cv;
-        }
-    });
-
-    return diff;
-}
-
 // ---------------------
 // Status Badge Component
 // ---------------------
-const StatusBadge = ({ status }: { status: ARTICLE_STATUS }) => {
+const StatusBadge = ({ status }: { status: ArticleStatus }) => {
     const statusConfig = {
         [ARTICLE_STATUS.DRAFT]: { color: 'bg-gray-100 text-gray-700 border-gray-200', label: 'Draft' },
         [ARTICLE_STATUS.PUBLISHED]: { color: 'bg-green-100 text-green-700 border-green-200', label: 'Published' },
@@ -257,6 +174,7 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
     const {
         fetchArticleDetails,
         updateArticle,
+        restoreArticle,
         deleteArticle,
         loading,
         error,
@@ -268,18 +186,21 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
     const [activeTab, setActiveTab] = useState<string>('overview');
     const [headerPulse, setHeaderPulse] = useState<boolean>(false);
     const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [initialFormValues, setInitialFormValues] = useState<CreateArticleFormValues | undefined>(undefined);
 
     // Fetch article detail on mount and when id changes
     useEffect(() => {
         if (articleId && !detail) {
-            fetchArticleDetails(decodeId(decodeURIComponent(articleId)) as ID).catch(() => { });
+            fetchArticleDetails(articleId as ID).catch(() => { });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [articleId]);
+    }, [articleId, detail, fetchArticleDetails]);
 
-    const initialValues = useMemo(() => {
-        return detail ? mapDetailToFormValues(detail) : undefined;
-    }, [detail]);
+    // Set initial form values only once when detail loads
+    useEffect(() => {
+        if (detail && !initialFormValues) {
+            setInitialFormValues(mapDetailToFormValues(detail));
+        }
+    }, [detail, initialFormValues]);
 
     // Retry handler for errors
     const handleRetry = useCallback(() => {
@@ -295,14 +216,99 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
             if (!detail) return;
             setIsSaving(true);
 
-            const payloadDiff = computeDiff(initialValues ?? {}, values);
-            const payload: UpdateArticleInput = { id: detail.id, ...payloadDiff };
+            const destinations: DestinationBlock[] = values.destinations.map(dest => ({
+                id: dest.id,
+                division: dest.division,
+                district: dest.district,
+                area: dest.area || undefined,
+                description: dest.description,
+
+                content: dest.content.map(block => ({
+                    type: block.type,
+                    text: block.text || undefined,
+                    href: block.href || undefined,
+                })),
+
+                highlights: dest.highlights.filter(
+                    (h): h is string => typeof h === 'string'
+                ),
+
+                foodRecommendations: dest.foodRecommendations.map(food => ({
+                    dishName: food.dishName,
+                    description: food.description,
+                    bestPlaceToTry: food.bestPlaceToTry || undefined,
+                    approximatePrice: food.approximatePrice || undefined,
+                    spiceLevel: food.spiceLevel || undefined,
+                })),
+
+                localFestivals: dest.localFestivals.map(festival => ({
+                    name: festival.name,
+                    description: festival.description,
+                    timeOfYear: festival.timeOfYear,
+                    location: festival.location,
+                    significance: festival.significance || undefined,
+                })),
+
+                localTips: dest.localTips.filter(
+                    (t): t is string => typeof t === 'string'
+                ),
+
+                transportOptions: dest.transportOptions.filter(
+                    (t): t is string => typeof t === 'string'
+                ),
+
+                accommodationTips: dest.accommodationTips.filter(
+                    (t): t is string => typeof t === 'string'
+                ),
+
+                coordinates: {
+                    lat: dest.coordinates.lat,
+                    lng: dest.coordinates.lng,
+                },
+
+                imageAsset: dest.imageAsset,
+            }));
+
+            const payload: UpdateArticleInput = {
+                id: detail.id,
+                title: values.title,
+                banglaTitle: values.banglaTitle,
+                status: values.status,
+                articleType: values.articleType,
+                authorBio: values.authorBio || undefined,
+                summary: values.summary,
+                heroImage: values.heroImage,
+
+                destinations,
+
+                categories: values.categories.filter(
+                    (c): c is TOUR_CATEGORIES => Boolean(c)
+                ),
+
+                tags: values.tags.filter((t): t is string => Boolean(t)),
+
+                seo: {
+                    metaTitle: values.seo.metaTitle,
+                    metaDescription: values.seo.metaDescription,
+                    ogImage: values.seo.ogImage || undefined,
+                },
+
+                faqs: values.faqs.map(faq => ({
+                    question: faq.question,
+                    answer: faq.answer,
+                    category: faq.category || undefined,
+                })),
+
+                allowComments: values.allowComments,
+            };
 
             try {
                 const res = await updateArticle(payload);
-                if (res.success) {
+                if (res.success && res.article) {
                     showToast.success('Article saved', 'Your changes have been saved successfully.');
-                    formikHelpers.resetForm({ values });
+                    // Update initial values to current values after successful save
+                    setInitialFormValues((mapDetailToFormValues(res.article)));
+                    formikHelpers.resetForm((mapDetailToFormValues(res.article)));
                     setHeaderPulse(true);
                     setTimeout(() => setHeaderPulse(false), 900);
                 } else {
@@ -314,8 +320,33 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
                 setIsSaving(false);
             }
         },
-        [detail, initialValues, updateArticle]
+        [detail, updateArticle]
     );
+
+    // Restore handler (from archived to draft)
+    const handleRestore = useCallback(async () => {
+        if (!detail) return;
+        setIsSaving(true);
+
+        const payload = {
+            id: detail.id,
+        };
+
+        try {
+            const res = await restoreArticle(payload);
+            if (res.success) {
+                showToast.success('Article restored', 'The article has been restored from archived.');
+                // Refresh article details
+                await fetchArticleDetails(articleId as ID, true);
+            } else {
+                showToast.error('Restore failed', res.message ?? 'Unknown error');
+            }
+        } catch {
+            showToast.error('Restore failed', 'An unexpected error occurred.');
+        } finally {
+            setIsSaving(false);
+        }
+    }, [detail, restoreArticle, fetchArticleDetails, articleId]);
 
     // Delete handler
     const handleDelete = useCallback(async () => {
@@ -334,8 +365,30 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
         }
     }, [detail, deleteArticle, router]);
 
+    // Get status toggle button label and action
+    const getStatusToggleConfig = useCallback((currentStatus: ArticleStatus) => {
+        if (currentStatus === ARTICLE_STATUS.DRAFT) {
+            return {
+                label: "Publish",
+                newStatus: ARTICLE_STATUS.PUBLISHED,
+                variant: "success" as const,
+                icon: FiEye
+            };
+        } else if (currentStatus === ARTICLE_STATUS.PUBLISHED) {
+            return {
+                label: "Revert to Draft",
+                newStatus: ARTICLE_STATUS.DRAFT,
+                variant: "outline" as const,
+                icon: FiRotateCw
+            };
+        }
+        return null;
+    }, []);
+
     // Render
     const isLoading = loading.isLoadingDetail && !detail;
+    const isArchived = detail?.status === ARTICLE_STATUS.ARCHIVED;
+    const statusToggleConfig = detail ? getStatusToggleConfig(detail.status) : null;
 
     const breadcrumbItems = useMemo(
         () => [
@@ -414,172 +467,259 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
                 )}
 
                 {/* Main Content */}
-                {detail && initialValues ? (
+                {detail && initialFormValues ? (
                     <Formik
-                        initialValues={initialValues}
-                        enableReinitialize
-                        validationSchema={updateArticleSchema}
+                        key={detail.id} // Add key to force re-initialization when detail changes
+                        initialValues={initialFormValues}
+                        enableReinitialize={true}
+                        validationSchema={createArticleSchema}
                         onSubmit={handleSubmit}
                     >
-                        {({ isSubmitting, submitForm, dirty }) => (
-                            <Form>
-                                <motion.div
-                                    variants={containerVariants}
-                                    initial="hidden"
-                                    animate="visible"
-                                    className="space-y-6"
-                                >
-                                    {/* Action Bar */}
-                                    <motion.div variants={itemVariants}>
-                                        <Card className="p-5 rounded-xl border border-gray-200/70 bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-slate-950 shadow-sm backdrop-blur-md">
-                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                        {({ isSubmitting, submitForm, validateForm, dirty, setFieldValue }) => {
+                            const handleSafeSubmit = async () => {
+                                const validationErrors = await validateForm();
 
-                                                {/* Left Section */}
-                                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-wrap">
-                                                    <StatusBadge status={detail.status} />
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="font-medium text-sm px-3 py-1 rounded-md border-gray-300/70"
-                                                    >
-                                                        {detail.articleType}
-                                                    </Badge>
-                                                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                                        <FiCalendar className="h-4 w-4 text-gray-500" />
-                                                        <span>
-                                                            {new Date(detail.updatedAt).toLocaleDateString('en-US', {
-                                                                month: 'short',
-                                                                day: 'numeric',
-                                                                year: 'numeric',
-                                                                hour: '2-digit',
-                                                                minute: '2-digit',
-                                                            })}
-                                                        </span>
+                                if (Object.keys(validationErrors).length > 0) {
+                                    showFormikSubmitErrors(validationErrors);
+                                    return;
+                                }
+
+                                submitForm();
+                            };
+                            // Function to handle status toggle
+                            const handleStatusToggle = async () => {
+                                if (!statusToggleConfig || isSaving) return;
+
+                                // Update the form's status field
+                                await setFieldValue('status', statusToggleConfig.newStatus);
+
+                                // Submit the form to save the status change
+                                submitForm();
+                            };
+
+                            return (
+                                <Form>
+                                    <motion.div
+                                        variants={containerVariants}
+                                        initial="hidden"
+                                        animate="visible"
+                                        className="space-y-6"
+                                    >
+                                        {/* Action Bar */}
+                                        <motion.div variants={itemVariants}>
+                                            <Card className="p-5 rounded-xl border border-gray-200/70 bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-slate-950 shadow-sm backdrop-blur-md">
+                                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+
+                                                    {/* Left Section */}
+                                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-wrap">
+                                                        <StatusBadge status={detail.status} />
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="font-medium text-sm px-3 py-1 rounded-md border-gray-300/70"
+                                                        >
+                                                            {detail.articleType}
+                                                        </Badge>
+                                                        {/* Display slug field - read only */}
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="font-medium text-sm px-3 py-1 rounded-md border-blue-200 bg-blue-50 text-blue-700 flex items-center gap-1.5"
+                                                        >
+                                                            <FiLink className="h-3 w-3" />
+                                                            {detail.slug || 'No slug'}
+                                                        </Badge>
+                                                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                                            <FiCalendar className="h-4 w-4 text-gray-500" />
+                                                            <span>
+                                                                {new Date(detail.updatedAt).toLocaleDateString('en-US', {
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    year: 'numeric',
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit',
+                                                                })}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                </div>
 
-                                                {/* Right Section */}
-                                                <div className="flex items-center gap-3 w-full sm:w-auto">
-                                                    <Button
-                                                        type="button"
-                                                        variant="default"
-                                                        onClick={submitForm}
-                                                        disabled={isSubmitting || isSaving || !dirty}
-                                                        className="gap-2 flex-1 sm:flex-initial bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md rounded-lg"
-                                                    >
-                                                        {isSaving ? (
+                                                    {/* Right Section - Conditional based on status */}
+                                                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                                                        {/* For draft/published articles */}
+                                                        {!isArchived && (
                                                             <>
-                                                                <FiRotateCw className="h-4 w-4 animate-spin" />
-                                                                Saving...
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <FiSave className="h-4 w-4" />
-                                                                Save
+                                                                {/* Status Toggle Button */}
+                                                                {statusToggleConfig && (
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant={"secondary"}
+                                                                        onClick={handleStatusToggle}
+                                                                        disabled={isSaving}
+                                                                        className={`gap-2 flex-1 sm:flex-initial ${statusToggleConfig.variant === 'success'
+                                                                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                                                                            : 'border-gray-300'
+                                                                            }`}
+                                                                    >
+                                                                        {isSaving ? (
+                                                                            <FiRotateCw className="h-4 w-4 animate-spin" />
+                                                                        ) : (
+                                                                            <>
+                                                                                {statusToggleConfig.icon && (
+                                                                                    <statusToggleConfig.icon className="h-4 w-4" />
+                                                                                )}
+                                                                                {statusToggleConfig.label}
+                                                                            </>
+                                                                        )}
+                                                                    </Button>
+                                                                )}
+
+                                                                {/* Save Button (only for dirty forms) */}
+                                                                {dirty && (
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="default"
+                                                                        onClick={handleSafeSubmit}
+                                                                        disabled={isSubmitting || isSaving}
+                                                                        className="gap-2 flex-1 sm:flex-initial bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md rounded-lg"
+                                                                    >
+                                                                        {isSaving ? (
+                                                                            <>
+                                                                                <FiRotateCw className="h-4 w-4 animate-spin" />
+                                                                                Saving...
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <FiSave className="h-4 w-4" />
+                                                                                Save Changes
+                                                                            </>
+                                                                        )}
+                                                                    </Button>
+                                                                )}
                                                             </>
                                                         )}
-                                                    </Button>
 
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
+                                                        {/* For archived articles - Show Restore button only */}
+                                                        {isArchived && (
                                                             <Button
                                                                 type="button"
-                                                                variant="destructive"
-                                                                className="gap-2 bg-red-600 hover:bg-red-700 text-white shadow-sm rounded-lg"
+                                                                variant="outline"
+                                                                onClick={handleRestore}
+                                                                disabled={isSaving}
+                                                                className="gap-2 flex-1 sm:flex-initial bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                                                             >
-                                                                <FiTrash2 className="h-4 w-4" />
-                                                                <span className="hidden sm:inline">Delete</span>
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent className="max-w-md rounded-xl">
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle className="flex items-center gap-2 text-lg font-semibold">
-                                                                    <FiAlertCircle className="h-5 w-5 text-red-600" />
-                                                                    Delete this article?
-                                                                </AlertDialogTitle>
-                                                                <AlertDialogDescription className="text-sm pt-2 text-gray-600 dark:text-gray-400">
-                                                                    This action cannot be undone. This will permanently delete
-                                                                    <span className="font-semibold text-gray-900 dark:text-gray-100">
-                                                                        {" "}
-                                                                        &quot;{detail.title}&quot;{" "}
-                                                                    </span>
-                                                                    and remove all associated data.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel className="rounded-md">Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction
-                                                                    className="bg-red-600 hover:bg-red-700 focus:ring-red-600 rounded-md"
-                                                                    onClick={handleDelete}
-                                                                >
-                                                                    <FiTrash2 className="h-4 w-4 mr-2" />
-                                                                    Delete Article
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    </motion.div>
-
-                                    {/* Tabs */}
-                                    <motion.div variants={itemVariants}>
-                                        <Tabs
-                                            value={activeTab}
-                                            onValueChange={setActiveTab}
-                                            className="space-y-6"
-                                        >
-                                            <Card>
-                                                <TabsList className="grid w-full grid-cols-5 gap-1 bg-gray-100/50 p-1 h-auto">
-                                                    {TAB_CONFIG.map((tab) => {
-                                                        const Icon = tab.icon;
-                                                        const isActive = activeTab === tab.value;
-
-                                                        return (
-                                                            <TabsTrigger
-                                                                key={tab.value}
-                                                                value={tab.value}
-                                                                className={`
-                                                                    relative flex items-center justify-center gap-2 px-3 py-2.5 
-                                                                    rounded-md transition-all duration-200
-                                                                    data-[state=active]:bg-white 
-                                                                    data-[state=active]:shadow-sm
-                                                                    data-[state=active]:text-blue-600
-                                                                    hover:bg-white/50
-                                                                `}
-                                                            >
-                                                                <Icon className={`h-4 w-4 ${isActive ? 'text-blue-600' : 'text-gray-600'}`} />
-                                                                <span className="hidden sm:inline font-medium text-sm">
-                                                                    {tab.label}
-                                                                </span>
-                                                                {isActive && (
-                                                                    <motion.div
-                                                                        layoutId="activeTab"
-                                                                        className="absolute inset-0 bg-white rounded-md shadow-sm -z-10"
-                                                                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                                                    />
+                                                                {isSaving ? (
+                                                                    <FiRotateCw className="h-4 w-4 animate-spin" />
+                                                                ) : (
+                                                                    <>
+                                                                        <FiRefreshCw className="h-4 w-4" />
+                                                                        Restore from Archive
+                                                                    </>
                                                                 )}
-                                                            </TabsTrigger>
-                                                        );
-                                                    })}
-                                                </TabsList>
-                                            </Card>
+                                                            </Button>
+                                                        )}
 
-                                            <AnimatePresence mode="wait">
+                                                        {/* Delete Button (for all statuses) */}
+                                                        {
+                                                            !isArchived && <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="destructive"
+                                                                        className="gap-2 bg-red-600 hover:bg-red-700 text-white shadow-sm rounded-lg"
+                                                                    >
+                                                                        <FiTrash2 className="h-4 w-4" />
+                                                                        <span className="hidden sm:inline">
+                                                                            Delete
+                                                                        </span>
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent className="max-w-md rounded-xl">
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle className="flex items-center gap-2 text-lg font-semibold">
+                                                                            <FiAlertCircle className="h-5 w-5 text-red-600" />
+                                                                            {isArchived
+                                                                                ? 'Delete this article permanently?'
+                                                                                : 'Delete this article?'}
+                                                                        </AlertDialogTitle>
+                                                                        <AlertDialogDescription className="text-sm pt-2 text-gray-600 dark:text-gray-400">
+                                                                            {isArchived
+                                                                                ? `This action cannot be undone. This will permanently delete
+                                                                                <span class="font-semibold text-gray-900 dark:text-gray-100">
+                                                                                    " ${detail.title} "
+                                                                                </span>
+                                                                                and remove all associated data.`
+                                                                                : `This action will move the article to archived status. You can restore it later from the archives.`}
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel className="rounded-md">Cancel</AlertDialogCancel>
+                                                                        <AlertDialogAction
+                                                                            className="bg-red-600 hover:bg-red-700 focus:ring-red-600 rounded-md"
+                                                                            onClick={handleDelete}
+                                                                        >
+                                                                            <FiTrash2 className="h-4 w-4 mr-2" />
+                                                                            {isArchived ? 'Delete Permanently' : 'Archive'}
+                                                                        </AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        }
+
+                                                    </div>
+                                                </div>
+                                            </Card>
+                                        </motion.div>
+
+                                        {/* Tabs - Disabled when archived */}
+                                        <motion.div variants={itemVariants}>
+                                            <Tabs
+                                                value={activeTab}
+                                                onValueChange={setActiveTab}
+                                                className="space-y-6"
+                                            >
+                                                <Card>
+                                                    <TabsList className="grid w-full grid-cols-5 gap-1 bg-gray-100/50 p-1 h-auto">
+                                                        {TAB_CONFIG.map((tab) => {
+                                                            const Icon = tab.icon;
+                                                            const isActive = activeTab === tab.value;
+
+                                                            return (
+                                                                <TabsTrigger
+                                                                    key={tab.value}
+                                                                    value={tab.value}
+                                                                    className={`
+                                                                        relative flex items-center justify-center gap-2 px-3 py-2.5 
+                                                                        rounded-md transition-all duration-200
+                                                                        data-[state=active]:bg-white 
+                                                                        data-[state=active]:shadow-sm
+                                                                        data-[state=active]:text-blue-600
+                                                                        hover:bg-white/50
+                                                                        ${isArchived ? 'opacity-50 cursor-not-allowed' : ''}
+                                                                    `}
+                                                                    disabled={isArchived}
+                                                                >
+                                                                    <Icon className={`h-4 w-4 ${isActive ? 'text-blue-600' : 'text-gray-600'}`} />
+                                                                    <span className="hidden sm:inline font-medium text-sm">
+                                                                        {tab.label}
+                                                                    </span>
+                                                                    {isActive && (
+                                                                        <motion.div
+                                                                            layoutId="activeTab"
+                                                                            className="absolute inset-0 bg-white rounded-md shadow-sm -z-10"
+                                                                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                                                        />
+                                                                    )}
+                                                                </TabsTrigger>
+                                                            );
+                                                        })}
+                                                    </TabsList>
+                                                </Card>
+
+                                                {/* Simplified tabs content without excessive animations */}
                                                 <TabsContent
                                                     key={"overview"}
                                                     value="overview"
                                                     className={activeTab !== 'overview' ? 'hidden' : ''}
                                                 >
-                                                    <motion.div
-                                                        key="overview"
-                                                        variants={tabContentVariants}
-                                                        initial="hidden"
-                                                        animate="visible"
-                                                        exit="exit"
-                                                    >
-                                                        <OverviewSection />
-                                                    </motion.div>
+                                                    <OverviewSection />
                                                 </TabsContent>
 
                                                 <TabsContent
@@ -587,15 +727,7 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
                                                     value="content"
                                                     className={activeTab !== 'content' ? 'hidden' : ''}
                                                 >
-                                                    <motion.div
-                                                        key="content"
-                                                        variants={tabContentVariants}
-                                                        initial="hidden"
-                                                        animate="visible"
-                                                        exit="exit"
-                                                    >
-                                                        <ContentSection />
-                                                    </motion.div>
+                                                    <ContentSection />
                                                 </TabsContent>
 
                                                 <TabsContent
@@ -603,15 +735,7 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
                                                     value="seo"
                                                     className={activeTab !== 'seo' ? 'hidden' : ''}
                                                 >
-                                                    <motion.div
-                                                        key="seo"
-                                                        variants={tabContentVariants}
-                                                        initial="hidden"
-                                                        animate="visible"
-                                                        exit="exit"
-                                                    >
-                                                        <SeoSection />
-                                                    </motion.div>
+                                                    <SeoSection />
                                                 </TabsContent>
 
                                                 <TabsContent
@@ -619,15 +743,7 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
                                                     value="faqs"
                                                     className={activeTab !== 'faqs' ? 'hidden' : ''}
                                                 >
-                                                    <motion.div
-                                                        key="faqs"
-                                                        variants={tabContentVariants}
-                                                        initial="hidden"
-                                                        animate="visible"
-                                                        exit="exit"
-                                                    >
-                                                        <FaqsSection />
-                                                    </motion.div>
+                                                    <FaqsSection />
                                                 </TabsContent>
 
                                                 <TabsContent
@@ -635,28 +751,21 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
                                                     value="settings"
                                                     className={activeTab !== 'settings' ? 'hidden' : ''}
                                                 >
-                                                    <motion.div
-                                                        key="settings"
-                                                        variants={tabContentVariants}
-                                                        initial="hidden"
-                                                        animate="visible"
-                                                        exit="exit"
-                                                    >
-                                                        <SettingsSection
-                                                            metrics={{
-                                                                viewCount: detail.viewCount,
-                                                                likeCount: detail.likeCount,
-                                                                shareCount: detail.shareCount,
-                                                            }}
-                                                        />
-                                                    </motion.div>
+                                                    <SettingsSection
+                                                        metrics={{
+                                                            viewCount: detail.viewCount,
+                                                            likeCount: detail.likeCount,
+                                                            shareCount: detail.shareCount,
+                                                        }}
+
+                                                    />
                                                 </TabsContent>
-                                            </AnimatePresence>
-                                        </Tabs>
+                                            </Tabs>
+                                        </motion.div>
                                     </motion.div>
-                                </motion.div>
-                            </Form>
-                        )}
+                                </Form>
+                            );
+                        }}
                     </Formik>
                 ) : null}
             </div>

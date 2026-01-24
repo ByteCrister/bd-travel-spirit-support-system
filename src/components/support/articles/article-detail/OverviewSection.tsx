@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useRef } from 'react';
 import { useFormikContext } from 'formik';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { Card } from '@/components/ui/card';
@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import {
     FiFileText,
-    FiLink,
     FiAlignLeft,
     FiImage,
     FiCheckCircle,
@@ -20,7 +19,6 @@ import {
     FiX,
     FiPlus,
     FiInfo,
-    FiArchive,
     FiMapPin,
     FiGlobe,
     FiBook,
@@ -31,13 +29,20 @@ import {
     FiUsers,
     FiCalendar,
     FiCoffee,
-    FiCompass
+    FiCompass,
+    FiUpload
 } from 'react-icons/fi';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
+import { ARTICLE_TYPE } from '@/constants/article.const';
 import { TOUR_CATEGORIES } from '@/constants/tour.const';
 import { CreateArticleFormValues } from '@/utils/validators/article.create.validator';
+// Import file conversion utilities
+import {
+    fileToBase64,
+    IMAGE_EXTENSIONS,
+} from '@/utils/helpers/file-conversion';
+import { showToast } from '@/components/global/showToast';
 
 // Use the imported type from validator
 type Values = CreateArticleFormValues;
@@ -59,25 +64,6 @@ const itemVariants: Variants = {
         opacity: 1,
         y: 0,
         transition: { type: 'spring', stiffness: 100, damping: 15 }
-    }
-};
-
-/** Status configuration (unchanged) */
-const STATUS_CONFIG: Record<ARTICLE_STATUS, { color: string; icon: ReactNode; description: string }> = {
-    [ARTICLE_STATUS.DRAFT]: {
-        color: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
-        icon: <FiEdit3 className="h-4 w-4" />,
-        description: 'Work in progress'
-    },
-    [ARTICLE_STATUS.PUBLISHED]: {
-        color: 'bg-green-100 text-green-700 hover:bg-green-200',
-        icon: <FiCheckCircle className="h-4 w-4" />,
-        description: 'Live and visible'
-    },
-    [ARTICLE_STATUS.ARCHIVED]: {
-        color: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
-        icon: <FiArchive className="h-4 w-4" />,
-        description: 'No longer active'
     }
 };
 
@@ -147,11 +133,52 @@ const FormField = ({
 export function OverviewSection() {
     const { values, errors, touched, setFieldValue } = useFormikContext<Values>();
     const [tagInput, setTagInput] = useState('');
-    const [imagePreview, setImagePreview] = useState<string | null>(values.heroImage);
+    const [imagePreview, setImagePreview] = useState<string | null>(values.heroImage ?? null);
+    const [imageError, setImageError] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
-    const handleImageChange = (url: string) => {
-        setFieldValue('heroImage', url || null);
-        setImagePreview(url || null);
+    // Ref for file input
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Reset error
+        setImageError(null);
+        setIsUploading(true);
+
+        try {
+            // Convert file to base64 using the utility function
+            const base64String = await fileToBase64(file, {
+                compressImages: true,
+                maxWidth: 1600,
+                quality: 0.8,
+                maxFileBytes: 5 * 1024 * 1024, // 5MB
+                allowedExtensions: IMAGE_EXTENSIONS
+            });
+
+            // Set the base64 string as the hero image value
+            setFieldValue('heroImage', base64String);
+            setImagePreview(base64String);
+        } catch (error) {
+            setImageError(error instanceof Error ? error.message : 'Failed to upload image');
+            showToast.warning('Failed to upload hero image', error instanceof Error ? error.message : '')
+            setImagePreview(null);
+            setFieldValue('heroImage', null);
+        } finally {
+            setIsUploading(false);
+            // Clear the file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setImagePreview(null);
+        setFieldValue('heroImage', null);
+        setImageError(null);
     };
 
     const [editingTag, setEditingTag] = useState<{ original: string; value: string } | null>(null);
@@ -338,29 +365,8 @@ export function OverviewSection() {
                                         ? 'border-red-300 focus:ring-red-500'
                                         : 'focus:ring-blue-500'
                                         }`}
-                                    dir="rtl"
+                                    required
                                 />
-                            </FormField>
-
-                            <FormField
-                                label="URL Slug"
-                                icon={FiLink}
-                                error={errors.slug}
-                                touched={touched.slug}
-                                required
-                                description="kebab-case"
-                            >
-                                <div className="relative">
-                                    <Input
-                                        value={values.slug}
-                                        onChange={(e) => setFieldValue('slug', e.target.value)}
-                                        placeholder="article-url-slug"
-                                        className={`font-mono text-sm ${touched.slug && errors.slug
-                                            ? 'border-red-300 focus:ring-red-500'
-                                            : 'focus:ring-blue-500'
-                                            }`}
-                                    />
-                                </div>
                             </FormField>
 
                             <FormField
@@ -400,89 +406,101 @@ export function OverviewSection() {
                                 </div>
                             </FormField>
 
-                            {imagePreview && (
-                                <FormField
-                                    label="Hero Image"
-                                    icon={FiImage}
-                                    error={errors.heroImage}
-                                    touched={touched.heroImage}
-                                >
-                                    <div className="space-y-3">
+                            {/* Hero Image Upload - UPDATED */}
+                            <FormField
+                                label="Hero Image"
+                                icon={FiImage}
+                                error={imageError || errors.heroImage}
+                                touched={touched.heroImage}
+                                description="Recommended: 1200x630px, JPG/PNG/WebP, max 5MB"
+                            >
+                                <div className="space-y-3">
+                                    {!imagePreview ? (
+                                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-blue-400 transition-colors">
+                                            <FiUpload className="h-10 w-10 text-gray-400 mb-3" />
+                                            <p className="text-sm text-gray-600 mb-4">
+                                                Click to upload or drag and drop
+                                            </p>
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                accept={IMAGE_EXTENSIONS.map(ext => `.${ext}`).join(',')}
+                                                onChange={handleImageUpload}
+                                                className="hidden"
+                                                id="hero-image-upload"
+                                            />
+                                            <label htmlFor="hero-image-upload" className="cursor-pointer" >
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    className="gap-2"
+                                                    disabled={isUploading}
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                >
+                                                    {isUploading ? (
+                                                        <>Uploading...</>
+                                                    ) : (
+                                                        <>
+                                                            <FiImage className="h-4 w-4" />
+                                                            Choose Image
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </label>
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                {IMAGE_EXTENSIONS.join(', ').toUpperCase()}, max 5MB
+                                            </p>
+                                        </div>
+                                    ) : (
                                         <motion.div
                                             initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             className="relative rounded-lg overflow-hidden border-2 border-gray-200"
                                         >
-                                            <Image
-                                                src={imagePreview}
-                                                alt="Hero preview"
-                                                fill
-                                                className="object-cover rounded-md"
-                                                onError={() => setImagePreview(null)}
-                                                unoptimized // <-- optional: allow dynamic URLs (like blob: or data:)
-                                            />
+                                            <div className="relative h-64 w-full">
+                                                <Image
+                                                    src={imagePreview}
+                                                    alt="Hero preview"
+                                                    fill
+                                                    className="object-cover rounded-md"
+                                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                    onError={() => {
+                                                        setImageError('Failed to load image');
+                                                        setImagePreview(null);
+                                                    }}
+                                                    unoptimized
+                                                />
+                                            </div>
                                             <div className="absolute top-2 right-2">
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleImageChange('')}
+                                                    onClick={handleRemoveImage}
                                                     className="h-8 w-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-all"
+                                                    disabled={isUploading}
                                                 >
                                                     <FiX className="h-4 w-4" />
                                                 </button>
                                             </div>
                                         </motion.div>
-
-                                    </div>
-                                </FormField>
-                            )}
+                                    )}
+                                </div>
+                            </FormField>
                         </div>
                     </Card>
                 </motion.div>
 
                 {/* Right Column - Settings & Metadata */}
                 <motion.div variants={itemVariants} className="space-y-6">
-                    {/* Status & Type */}
+                    {/* Article Types */}
                     <Card className="p-6 shadow-sm border-gray-200/60">
                         <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                             <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
                                 <FiCheckCircle className="h-4 w-4 text-purple-600" />
                             </div>
-                            Status & Type
+                            Article Types
                         </h3>
 
                         <div className="space-y-4">
-                            <FormField
-                                label="Publication Status"
-                                icon={FiCheckCircle}
-                                error={errors.status}
-                                touched={touched.status}
-                                required
-                            >
-                                <Select value={values.status} onValueChange={(v) => setFieldValue('status', v)}>
-                                    <SelectTrigger className="h-11">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {Object.values(ARTICLE_STATUS).map((s) => {
-                                            const config = STATUS_CONFIG[s];
-                                            return (
-                                                <SelectItem key={s} value={s}>
-                                                    <div className="flex items-center gap-3">
-                                                        <span className={`inline-flex items-center justify-center rounded ${config.color} h-8 w-8`}>
-                                                            {config.icon}
-                                                        </span>
-                                                        <div>
-                                                            <div className="font-medium">{s}</div>
-                                                            <div className="text-xs text-muted-foreground">{config.description}</div>
-                                                        </div>
-                                                    </div>
-                                                </SelectItem>
-                                            );
-                                        })}
-                                    </SelectContent>
-                                </Select>
-                            </FormField>
-
                             <FormField
                                 label="Article Type"
                                 icon={FiGrid}

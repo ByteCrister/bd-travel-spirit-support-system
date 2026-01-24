@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { TagInput } from './TagInput';
 import { FormikErrors, FormikTouched } from 'formik';
 import { CreateArticleFormValues } from '@/utils/validators/article.create.validator';
 import { ARTICLE_TYPE } from '@/constants/article.const';
@@ -53,6 +52,8 @@ export function ArticleBasics({
   const tags = values.tags ?? [];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  const [currentTag, setCurrentTag] = useState('');
 
   const titleError = fieldError(errors, touched, 'title');
   const articleTypeError = fieldError(errors, touched, 'articleType');
@@ -299,14 +300,75 @@ export function ArticleBasics({
             Tags
           </label>
           <div className="p-4 bg-gradient-to-br from-slate-50 to-blue-50 rounded-lg border border-slate-200">
-            <TagInput
-              value={tags?.filter((tag): tag is string => typeof tag === 'string')}
-              onChange={(next) => setFieldValue('tags', next)}
-            />
-            <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
-              <span className="inline-block w-1 h-1 rounded-full bg-slate-400" />
-              Press Enter to add tags
-            </p>
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2 mb-2">
+                <AnimatePresence>
+                  {tags.map((tag, index) => (
+                    <motion.div
+                      key={tag}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Badge
+                        variant="outline"
+                        className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border-slate-300"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newTags = tags.filter((_, i) => i !== index);
+                            setFieldValue('tags', newTags);
+                          }}
+                          className="ml-2 text-xs font-bold hover:text-red-700"
+                        >
+                          ✕
+                        </button>
+                      </Badge>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+              <Input
+                value={currentTag}
+                onChange={(e) => setCurrentTag(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    // Validate and add tag
+                    if (currentTag.trim()) {
+                      // Check for duplicates
+                      if (tags.includes(currentTag.trim())) {
+                        showToast.error('Duplicate tag', 'This tag already exists.');
+                        return;
+                      }
+                      // Validate tag format
+                      const tagRegex = /^[a-zA-Z0-9 ]{1,20}$/;
+                      if (!tagRegex.test(currentTag.trim())) {
+                        showToast.error('Invalid tag', 'Tag must be alphanumeric and spaces, up to 20 characters.');
+                        return;
+                      }
+                      // Check maximum tags
+                      if (tags.length >= 5) {
+                        showToast.error('Maximum tags reached', 'You can only add up to 5 tags.');
+                        return;
+                      }
+                      setFieldValue('tags', [...tags, currentTag.trim()]);
+                      setCurrentTag('');
+                    }
+                  }
+                }}
+                placeholder={tags.length < 5 ? "Type a tag and press Enter" : "Maximum 5 tags reached"}
+                disabled={tags.length >= 5}
+                className="w-full border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              />
+              <p className="text-xs text-slate-500 flex items-center gap-1">
+                <span className="inline-block w-1 h-1 rounded-full bg-slate-400" />
+                {tags.length}/5 tags. Tags must be alphanumeric and spaces, up to 20 characters each.
+              </p>
+            </div>
           </div>
         </FieldWrapper>
       </motion.div>

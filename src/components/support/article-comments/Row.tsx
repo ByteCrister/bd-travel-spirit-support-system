@@ -1,6 +1,7 @@
 'use client';
 
 import { AdminArticleRowVM } from '@/types/article-comment.types';
+import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -21,7 +22,7 @@ const Row = ({ row }: { row: AdminArticleRowVM }) => {
                         {row.title}
                     </span>
                     <Link
-                        href={`/articles/${row.id}`}
+                        href={`/support/articles/${encodeId(encodeURIComponent(row.id))}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-shrink-0 p-1 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"

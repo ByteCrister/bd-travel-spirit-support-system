@@ -53,6 +53,7 @@
     "dayjs": "^1.11.13",
     "formik": "^2.4.6",
     "framer-motion": "^12.23.7",
+    "http-status": "^2.1.0",
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.525.0",

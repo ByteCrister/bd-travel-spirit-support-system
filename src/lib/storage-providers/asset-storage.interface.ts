@@ -1,6 +1,7 @@
 // src/lib/storage-providers/asset-storage.interface.ts
 
 import { AssetType } from "@/constants/asset.const";
+import { CloudinaryApiResource } from "../cloudinary/cloudinary.types";
 
 /**
  * Represents the normalized metadata returned by any asset storage provider
@@ -33,8 +34,14 @@ export interface AssetStorageProvider {
     /**
      * Uploads a new asset to the storage backend.
      */
-    create(base64: string, fileName?: string): Promise<UploadedAsset>;
+    create(base64: string, options?: {
+        checksum?: string;
+        fileName?: string;
+        publicId?: string; // Optional explicit public_id
+    }): Promise<UploadedAsset>;
 
+    getAssetByChecksum(checksum: string): Promise<CloudinaryApiResource>;
+    
     /**
      * Replaces an existing asset in the storage backend.
      */

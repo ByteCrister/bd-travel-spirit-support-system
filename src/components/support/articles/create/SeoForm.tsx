@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { CreateArticleFormValues } from '@/utils/validators/article.create.validator';
 import { FormikErrors, FormikHelpers, FormikTouched } from 'formik';
-import { Search, Eye, AlertCircle, CheckCircle2, X, Upload } from 'lucide-react';
+import { Search, Eye, AlertCircle, CheckCircle2, X, Upload, RefreshCw } from 'lucide-react';
 import { inter, playfair } from '@/styles/fonts';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { fileToBase64, IMAGE_EXTENSIONS } from '@/utils/helpers/file-conversion';
 import Image from 'next/image';
 
@@ -25,7 +25,9 @@ export function SeoForm({ values, setFieldValue, errors, touched }: SeoFormProps
 
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isReplacing, setIsReplacing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const dropZoneRef = useRef<HTMLDivElement>(null);
 
     // SEO Score calculation
     const calculateSeoScore = () => {
@@ -80,6 +82,7 @@ export function SeoForm({ values, setFieldValue, errors, touched }: SeoFormProps
             console.error('Image upload error:', error);
         } finally {
             setIsUploading(false);
+            setIsReplacing(false);
         }
     };
 
@@ -117,10 +120,36 @@ export function SeoForm({ values, setFieldValue, errors, touched }: SeoFormProps
         }
     };
 
+    // Start image replacement
+    const startReplaceImage = () => {
+        setIsReplacing(true);
+    };
+
+    // Cancel image replacement
+    const cancelReplaceImage = () => {
+        setIsReplacing(false);
+    };
+
     // Trigger file input click
     const triggerFileInput = () => {
         fileInputRef.current?.click();
     };
+
+    // Handle click outside when in replace mode
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (isReplacing && 
+                dropZoneRef.current && 
+                !dropZoneRef.current.contains(event.target as Node)) {
+                setIsReplacing(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isReplacing]);
 
     return (
         <div className="space-y-6">
@@ -341,64 +370,95 @@ export function SeoForm({ values, setFieldValue, errors, touched }: SeoFormProps
                         className="hidden"
                     />
 
-                    {seo.ogImage ? (
-                        <div className="relative group">
-                            <div className="rounded-lg border border-slate-200 p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-16 h-16 flex items-center justify-center rounded-lg bg-slate-100 overflow-hidden">
-                                        <Image
-                                            src={seo.ogImage}
-                                            alt="Open Graph preview"
-                                            fill
-                                            className="object-cover"
-                                            sizes="100vw"
-                                        />
+                    {seo.ogImage && !isReplacing ? (
+                        <div className="space-y-4">
+                            {/* Existing image display */}
+                            <div className="relative group">
+                                <div className="rounded-lg border border-slate-200 p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative w-16 h-16 flex items-center justify-center rounded-lg bg-slate-100 overflow-hidden">
+                                            <Image
+                                                src={seo.ogImage}
+                                                alt="Open Graph preview"
+                                                fill
+                                                className="object-cover"
+                                                sizes="100vw"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className={`${inter.className} text-sm font-medium text-slate-900`}>
+                                                Image uploaded successfully
+                                            </p>
+                                            <p className={`${inter.className} text-xs text-slate-500 mt-1`}>
+                                                Ready for social media sharing
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {/* Update/Replace button */}
+                                            <button
+                                                type="button"
+                                                onClick={startReplaceImage}
+                                                className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-colors"
+                                                aria-label="Replace image"
+                                            >
+                                                <RefreshCw className="w-4 h-4" />
+                                            </button>
+                                            {/* Remove button */}
+                                            <button
+                                                type="button"
+                                                onClick={removeImage}
+                                                className="p-2 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-600 transition-colors"
+                                                aria-label="Remove image"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="flex-1">
-                                        <p className={`${inter.className} text-sm font-medium text-slate-900`}>
-                                            Image uploaded successfully
-                                        </p>
-                                        <p className={`${inter.className} text-xs text-slate-500 mt-1`}>
-                                            Ready for social media sharing
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={removeImage}
-                                        className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-red-600 transition-colors"
-                                        aria-label="Remove image"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
                                 </div>
+                            </div>
+                            
+                            {/* Replace instructions */}
+                            <div className="text-center">
+                                <button
+                                    type="button"
+                                    onClick={startReplaceImage}
+                                    className={`${inter.className} text-sm text-blue-600 hover:text-blue-700 font-medium`}
+                                >
+                                    Click here to replace with a different image
+                                </button>
                             </div>
                         </div>
                     ) : (
                         <div
+                            ref={dropZoneRef}
                             onDrop={handleDrop}
                             onDragOver={handleDragOver}
                             onClick={triggerFileInput}
                             className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${isUploading
                                 ? 'border-blue-300 bg-blue-50'
                                 : 'border-slate-300 hover:border-blue-400 hover:bg-blue-50'
-                                }`}
+                                } ${isReplacing ? 'border-blue-400 bg-blue-50' : ''}`}
                         >
                             <div className="flex flex-col items-center gap-3">
                                 {isUploading ? (
                                     <>
                                         <div className="w-12 h-12 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
                                         <p className={`${inter.className} text-sm text-blue-700`}>
-                                            Uploading image...
+                                            {isReplacing ? 'Replacing image...' : 'Uploading image...'}
                                         </p>
                                     </>
                                 ) : (
                                     <>
                                         <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                                            <Upload className="w-6 h-6 text-blue-600" />
+                                            {isReplacing ? (
+                                                <RefreshCw className="w-6 h-6 text-blue-600" />
+                                            ) : (
+                                                <Upload className="w-6 h-6 text-blue-600" />
+                                            )}
                                         </div>
                                         <div>
                                             <p className={`${inter.className} text-sm font-medium text-slate-900`}>
-                                                Upload Open Graph Image
+                                                {isReplacing ? 'Replace Open Graph Image' : 'Upload Open Graph Image'}
                                             </p>
                                             <p className={`${inter.className} text-xs text-slate-500 mt-1`}>
                                                 Drag & drop or click to browse
@@ -407,6 +467,23 @@ export function SeoForm({ values, setFieldValue, errors, touched }: SeoFormProps
                                                 Supports {IMAGE_EXTENSIONS.join(', ')} • Max 5MB
                                             </p>
                                         </div>
+                                        
+                                        {/* Cancel button when in replace mode */}
+                                        {isReplacing && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="mt-3"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    onClick={cancelReplaceImage}
+                                                    className={`${inter.className} text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors`}
+                                                >
+                                                    Cancel replacement
+                                                </button>
+                                            </motion.div>
+                                        )}
                                     </>
                                 )}
                             </div>

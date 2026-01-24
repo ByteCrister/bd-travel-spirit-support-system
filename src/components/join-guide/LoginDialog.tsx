@@ -89,7 +89,7 @@ export default function LoginDialog() {
         redirect: true,
         email: values.email,
         password: values.password,
-        callbackUrl: "/overview/dashboard",
+        callbackUrl: "/dashboard/overview",
       });
 
     } catch (error: unknown) {
@@ -106,7 +106,7 @@ export default function LoginDialog() {
     try {
       const res = await signIn("google", {
         redirect: false,
-        callbackUrl: "/overview/dashboard"
+        callbackUrl: "/dashboard/overview"
       });
 
       if (res?.error) {
@@ -114,7 +114,7 @@ export default function LoginDialog() {
       } else {
         showToast.success("Login successful", "Redirecting to dashboard...");
         // Redirect after successful login
-        window.location.href = res?.url || "/overview/dashboard";
+        window.location.href = res?.url || "/dashboard/overview";
       }
     } catch {
       showToast.error("Google Login Error", "Failed to sign in with Google. Please try again.");

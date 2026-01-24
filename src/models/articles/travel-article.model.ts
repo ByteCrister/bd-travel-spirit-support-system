@@ -20,7 +20,7 @@ import {
   TourCategories
 } from "@/constants/tour.const";
 import { defineModel } from "@/lib/helpers/defineModel";
-import { slugify } from "@/lib/helpers/slugify";
+import { SlugService } from "@/lib/helpers/slug-services";
 import { Query } from "mongoose";
 import { Schema, Types, Document, Model, ClientSession, FilterQuery, QueryOptions } from "mongoose";
 
@@ -135,7 +135,7 @@ export interface ITravelArticleModel extends Model<ITravelArticle> {
     filter: FilterQuery<ITravelArticle>,
     options?: QueryOptions,
     session?: ClientSession
-  ): Promise<ITravelArticle | null>;
+  ): Query<ITravelArticle | null, ITravelArticle>;
 
   findByIdWithDeleted(
     id: Types.ObjectId | string,
@@ -323,50 +323,65 @@ TravelArticleSchema.pre(/^find/, function (this: Query<ITravelArticle[], ITravel
   next();
 });
 
-// Enhanced pre-save middleware with uniqueness check
+// Enhanced pre-save middleware with logging
 TravelArticleSchema.pre('save', async function (next) {
-  if (this.isNew || this.isModified('title')) {
-    const slugOptions = {
-      maxLength: 60,
-      locale: 'en',
-      fallback: 'article'
-    };
+  try {
+    console.log(
+      'Pre-save middleware triggered.',
+      'isNew:', this.isNew,
+      'isModified(title):', this.isModified('title')
+    );
 
-    const titleToSlugify = this.title || this.banglaTitle || '';
-    const baseSlug = titleToSlugify ? slugify(titleToSlugify, slugOptions) : `article-${Date.now()}`;
-    let finalSlug = baseSlug;
-    let counter = 1;
+    if (this.isNew || this.isModified('title')) {
+      const titleToSlugify = this.title || this.banglaTitle;
 
-    // Get the model from the document's constructor
-    const Model = this.constructor as Model<ITravelArticle>;
-
-    while (true) {
-      const existing = await Model.findOne({
-        slug: finalSlug,
-        _id: { $ne: this._id }
-      } as FilterQuery<ITravelArticle>);
-
-      if (!existing) {
-        break;
+      if (!titleToSlugify) {
+        return next();
       }
 
-      // Append counter to make it unique
-      finalSlug = `${baseSlug}-${counter}`;
-      counter++;
+      this.slug = await SlugService.generateUniqueSlug(
+        titleToSlugify,
+        !this.isNew ? this.slug : undefined
+      );
 
-      // Safety break to prevent infinite loop
-      if (counter > 100) {
-        finalSlug = `${baseSlug}-${Date.now()}`;
-        break;
-      }
+      console.log('Generated slug:', this.slug);
     }
 
-    this.slug = finalSlug;
+    next();
+  } catch (err) {
+    next(err as Error);
   }
-  next();
 });
 
+TravelArticleSchema.set('toJSON', {
+  virtuals: true,
+  versionKey: false,
+  transform: (_doc, ret) => {
+    ret.id = ret._id;
+  },
+});
+
+TravelArticleSchema.set('toObject', {
+  virtuals: true,
+});
 // Static Methods Implementation
+
+/**
+ * Find one document including deleted ones
+ */
+TravelArticleSchema.statics.findOneWithDeleted = function (
+  filter: FilterQuery<ITravelArticle>,
+  options: QueryOptions = {},
+  session?: ClientSession
+) {
+  // Explicitly include deleted documents by not filtering on deleted field
+  // OR explicitly set deleted to include both true and false
+  const modifiedFilter = { ...filter };
+  if (modifiedFilter.deleted === undefined) {
+    modifiedFilter.deleted = { $in: [true, false] }; // Include both deleted and non-deleted
+  }
+  return this.findOne(modifiedFilter, null, { ...options, session });
+};
 
 /**
  * Find documents including deleted ones
@@ -376,18 +391,11 @@ TravelArticleSchema.statics.findWithDeleted = async function (
   options: QueryOptions = {},
   session?: ClientSession
 ): Promise<ITravelArticle[]> {
-  return this.find(filter, null, { ...options, session });
-};
-
-/**
- * Find one document including deleted ones
- */
-TravelArticleSchema.statics.findOneWithDeleted = async function (
-  filter: FilterQuery<ITravelArticle>,
-  options: QueryOptions = {},
-  session?: ClientSession
-): Promise<ITravelArticle | null> {
-  return this.findOne(filter, null, { ...options, session });
+  const modifiedFilter = { ...filter };
+  if (modifiedFilter.deleted === undefined) {
+    modifiedFilter.deleted = { $in: [true, false] };
+  }
+  return this.find(modifiedFilter, null, { ...options, session });
 };
 
 /**
@@ -398,7 +406,11 @@ TravelArticleSchema.statics.findByIdWithDeleted = async function (
   options: QueryOptions = {},
   session?: ClientSession
 ): Promise<ITravelArticle | null> {
-  return this.findOne({ _id: id }, null, { ...options, session });
+  const filter: FilterQuery<ITravelArticle> = {
+    _id: id,
+    deleted: { $in: [true, false] }  // Explicitly include both
+  };
+  return this.findOne(filter, null, { ...options, session });
 };
 
 /**
@@ -428,18 +440,16 @@ TravelArticleSchema.statics.restoreById = async function (
   id: Types.ObjectId | string,
   session?: ClientSession
 ): Promise<ITravelArticle | null> {
-  return this.findByIdAndUpdate(
-    id,
-    {
-      $set: {
-        status: ARTICLE_STATUS.DRAFT,
-        deleted: false,
-        deletedAt: null,
-        deletedBy: null,
-      },
-    },
-    { new: true, session }
-  );
+  const article = await this.findByIdWithDeleted(id, {}, session);
+  if (!article) return null;
+
+  article.status = ARTICLE_STATUS.DRAFT;
+  article.deleted = false;
+  article.deletedAt = undefined;
+  article.deletedBy = undefined;
+
+  await article.save({ session });
+  return article;
 };
 
 /**

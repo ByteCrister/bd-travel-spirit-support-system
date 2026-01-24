@@ -5,9 +5,9 @@ import ConnectDB from "@/config/db";
 import ResetPasswordRequestModel, { IResetPasswordRequest } from "@/models/employees/reset-password-request.model";
 import UserModel from "@/models/user.model";
 import EmployeeModel from "@/models/employees/employees.model";
-import { FilterQuery } from "mongoose";
+import { FilterQuery, PipelineStage } from "mongoose";
 import { REQUEST_STATUS, RequestStatus } from "@/constants/reset-password-request.const";
-import { ResetPasswordRequestPopulated } from "@/types/employee-password-request.types.server";
+// import { ResetPasswordRequestPopulated } from "@/types/employee-password-request.types.server";
 import { authRateLimit } from "@/lib/upstash-redis/auth-rate-limit";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { USER_ROLE } from "@/constants/user.const";
@@ -50,37 +50,60 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     const skip = (pageNum - 1) * limitNum;
 
     /* -----------------------------------------
-       Base query (typed)
+       Base query - first filter by support users
     ------------------------------------------ */
 
-    const query: FilterQuery<IResetPasswordRequest> = {};
+    // First, get all support user IDs
+    const supportUsers = await UserModel.find({
+        role: USER_ROLE.SUPPORT
+    }).select("_id").lean();
+
+    const supportUserIds = supportUsers.map(user => user._id);
+
+    const query: FilterQuery<IResetPasswordRequest> = {
+        user: { $in: supportUserIds }
+    };
 
     if (status && status !== "all") {
         query.status = status;
     }
 
     /* -----------------------------------------
-       Search
+       Search within support users
     ------------------------------------------ */
-
     if (search) {
         const regex = new RegExp(search, "i");
 
-        const [users, employees] = await Promise.all([
-            UserModel.find({ $or: [{ email: regex }, { name: regex }] }).select("_id"),
-            EmployeeModel.find({
-                $or: [
-                    { "contactInfo.phone": regex },
-                    { "contactInfo.email": regex },
-                ],
-            }).select("_id"),
-        ]);
+        // Get support users matching search
+        const matchingSupportUsers = await UserModel.find({
+            _id: { $in: supportUserIds },
+            $or: [{ email: regex }, { name: regex }]
+        }).select("_id").lean();
 
-        query.$or = [
-            ...(users.length ? [{ user: { $in: users.map(u => u._id) } }] : []),
-            ...(employees.length ? [{ employee: { $in: employees.map(e => e._id) } }] : []),
-            { description: regex },
-        ];
+        // Get employees of support users matching search
+        const matchingEmployees = await EmployeeModel.find({
+            user: { $in: supportUserIds },
+            $or: [
+                { "contactInfo.phone": regex },
+                { "contactInfo.email": regex },
+            ],
+        }).select("_id").lean();
+
+        const searchConditions = [];
+
+        if (matchingSupportUsers.length > 0) {
+            searchConditions.push({ user: { $in: matchingSupportUsers.map(u => u._id) } });
+        }
+
+        if (matchingEmployees.length > 0) {
+            searchConditions.push({ employee: { $in: matchingEmployees.map(e => e._id) } });
+        }
+
+        searchConditions.push({ description: regex });
+
+        if (searchConditions.length > 0) {
+            query.$or = searchConditions;
+        }
     }
 
     /* -----------------------------------------
@@ -100,31 +123,65 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     const sortOrder = sortDir === "asc" ? 1 : -1;
 
     /* -----------------------------------------
-       Query execution
+       Query execution with aggregation for better control
     ------------------------------------------ */
 
-    const [total, requests] = await Promise.all([
-        ResetPasswordRequestModel.countDocuments(query),
-        ResetPasswordRequestModel.find(query)
-            .populate({
-                path: "user",
-                select: "email name role",
-                model: UserModel,
-                // this is for main admin dashboard so I have to get only "support" employees 
-                match: {
-                    role: USER_ROLE.SUPPORT,
-                },
-            })
-            .populate({
-                path: "employee",
-                select: "contactInfo status",
-                model: EmployeeModel,
-            })
-            .sort({ [sortField]: sortOrder })
-            .skip(skip)
-            .limit(limitNum)
-            .lean<ResetPasswordRequestPopulated[]>(),
+    // Use aggregation to properly handle population and filtering
+    const aggregationPipeline: PipelineStage[] = [
+        { $match: query },
+        {
+            $lookup: {
+                from: "users",
+                localField: "user",
+                foreignField: "_id",
+                as: "userInfo"
+            }
+        },
+        { $unwind: "$userInfo" },
+        {
+            $lookup: {
+                from: "employees",
+                localField: "employee",
+                foreignField: "_id",
+                as: "employeeInfo"
+            }
+        },
+        { $unwind: { path: "$employeeInfo", preserveNullAndEmptyArrays: true } },
+        {
+            $match: {
+                "userInfo.role": USER_ROLE.SUPPORT
+            }
+        },
+        { $sort: { [sortField]: sortOrder } },
+        { $skip: skip },
+        { $limit: limitNum }
+    ];
+
+    const countPipeline = [
+        { $match: query },
+        {
+            $lookup: {
+                from: "users",
+                localField: "user",
+                foreignField: "_id",
+                as: "userInfo"
+            }
+        },
+        { $unwind: "$userInfo" },
+        {
+            $match: {
+                "userInfo.role": USER_ROLE.SUPPORT
+            }
+        },
+        { $count: "total" }
+    ];
+
+    const [requests, countResult] = await Promise.all([
+        ResetPasswordRequestModel.aggregate(aggregationPipeline),
+        ResetPasswordRequestModel.aggregate(countPipeline)
     ]);
+
+    const total = countResult[0]?.total || 0;
 
     /* -----------------------------------------
        DTO transformation (frontend-safe)
@@ -132,20 +189,22 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
     const data = requests.map((req) => ({
         _id: req._id.toString(),
-        requesterEmail: req.user.email,
-        requesterName: req.user.name,
-        requesterMobile: req.employee?.contactInfo?.phone,
+        requesterEmail: req.userInfo?.email || "",
+        requesterName: req.userInfo?.name || "",
+        requesterMobile: req.employeeInfo?.contactInfo?.phone || "",
         description: req.description,
         reason: req.denialReason,
         status: req.status,
-        requestedAt: req.requestedAt.toISOString(),
+        requestedAt: req.requestedAt?.toISOString(),
         reviewedAt: req.reviewedAt?.toISOString(),
         fulfilledAt: req.fulfilledAt?.toISOString(),
         requestedFromIP: req.requestedFromIP,
         requestedAgent: req.requestedAgent,
-        createdAt: req.createdAt.toISOString(),
-        updatedAt: req.updatedAt.toISOString(),
+        createdAt: req.createdAt?.toISOString(),
+        updatedAt: req.updatedAt?.toISOString(),
     }));
+
+    console.log(requests);
 
     return {
         data: {

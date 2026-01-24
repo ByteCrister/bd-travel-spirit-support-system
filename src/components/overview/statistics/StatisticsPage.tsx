@@ -18,8 +18,8 @@ import { BarChart3, Sparkles } from 'lucide-react';
 
 const breadcrumbItems = [
     { label: "Home", href: '/' },
-    { label: "Dashboard", href: "/overview/dashboard" },
-    { label: "Statistics", href: "/overview/statistics" },
+    { label: "Dashboard", href: "/dashboard/overview" },
+    { label: "Statistics", href: "/dashboard/statistics" },
 ];
 
 export function StatisticsPage() {

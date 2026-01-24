@@ -198,8 +198,8 @@ const filterArticleRows = (
             }
         });
     }
-    if (filters.authorId) {
-        filtered = filtered.filter((r) => r.article.author.id === filters.authorId);
+    if (filters.authorName) {
+        filtered = filtered.filter((r) => r.article.author.id === filters.authorName);
     }
     if (filters.taggedRegion) {
         // since we don't have real regions, emulate with slug prefix match
@@ -219,8 +219,8 @@ const filterComments = (nodes: CommentTreeNodeDTO[], filters: CommentFiltersDTO)
     if (filters.hasReplies != null) {
         filtered = filtered.filter((n) => (filters.hasReplies ? n.replyCount > 0 : n.replyCount === 0));
     }
-    if (filters.authorId) {
-        filtered = filtered.filter((n) => n.author.id === filters.authorId);
+    if (filters.authorName) {
+        filtered = filtered.filter((n) => n.author.id === filters.authorName);
     }
     if (filters.searchQuery) {
         const q = filters.searchQuery.toLowerCase();
@@ -330,7 +330,17 @@ export const queryRootComments = (
     sort: SortDTO<CommentSortKey>,
     filters: CommentFiltersDTO
 ) => {
-    const all = byArticleId[articleId]?.root ?? [];
+    // If no data for this articleId, use the first available article
+    if (!byArticleId[articleId]) {
+        const availableIds = Object.keys(byArticleId);
+        if (availableIds.length === 0) {
+            // No articles generated at all, return empty
+            return { nodes: [], meta: { cursor: null, nextCursor: null, pageSize, hasNextPage: false } };
+        }
+        articleId = availableIds[0]; // Use first article as fallback
+    }
+
+    const all = byArticleId[articleId].root ?? [];
     const filtered = filterComments(all, filters);
     sortComments(filtered, sort);
     const { slice, meta } = makeCursorSlice(filtered, cursor, pageSize);
@@ -345,9 +355,55 @@ export const queryChildComments = (
     sort: SortDTO<CommentSortKey>,
     filters: CommentFiltersDTO
 ) => {
-    const all = byArticleId[articleId]?.children[parentId] ?? [];
+    // First, try to get children for the requested parentId
+    let all = byArticleId[articleId]?.children[parentId] ?? [];
+    
+    // If no children found for this parentId, find some children from this article
+    if (all.length === 0) {
+        // Fallback 1: Try to find ANY children in this article
+        const articleData = byArticleId[articleId];
+        if (articleData) {
+            // Get all children from all parent comments
+            const allChildren = Object.values(articleData.children).flat();
+            if (allChildren.length > 0) {
+                all = allChildren.slice(0, Math.min(pageSize, allChildren.length));
+            } else {
+                // Fallback 2: Generate mock children on the fly
+                all = generateMockChildren(articleId, parentId, pageSize);
+            }
+        } else {
+            // Fallback 3: Article doesn't exist, generate mock children
+            all = generateMockChildren(articleId, parentId, pageSize);
+        }
+    }
+    
     const filtered = filterComments(all, filters);
     sortComments(filtered, sort);
     const { slice, meta } = makeCursorSlice(filtered, cursor, pageSize);
     return { nodes: slice, meta };
+};
+
+// Add this helper function to generate mock children on demand
+const generateMockChildren = (
+    articleId: string, 
+    parentId: string, 
+    count: number
+): CommentTreeNodeDTO[] => {
+    return Array.from({ length: count }).map(() => {
+        const createdAt = faker.date.recent({ days: 20 });
+        const updatedAt = faker.date.recent({ days: 10 });
+        return {
+            id: faker.string.uuid(),
+            articleId,
+            parentId,
+            author: mockUser(),
+            content: faker.lorem.paragraph({ min: 1, max: 3 }),
+            likes: faker.number.int({ min: 0, max: 80 }),
+            status: randomStatus(),
+            replyCount: 0,
+            createdAt: iso(createdAt),
+            updatedAt: iso(updatedAt),
+            children: undefined,
+        };
+    });
 };

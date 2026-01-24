@@ -41,11 +41,14 @@ import {
     FOOD_RECO_SPICE_TYPE,
     FoodRecoSpiceType,
 } from '@/constants/article.const';
-import { DIVISION, DISTRICT, Division, District } from '@/constants/tour.const';
+import { DIVISION, Division, District } from '@/constants/tour.const';
 import { fileToBase64 } from '@/utils/helpers/file-conversion';
 import { CreateArticleFormValues } from '@/utils/validators/article.create.validator';
 import { DestinationBlock } from '@/types/article.types';
 import { MapPickerDialog } from '@/components/settings/footer/MapPickerDialog';
+import { showToast } from '@/components/global/showToast';
+import { extractErrorMessage } from '@/utils/axios/extract-error-message';
+import { getDistrictsByDivision } from '@/utils/helpers/conversions.tour';
 
 // Animation variants
 const containerVariants: Variants = {
@@ -79,6 +82,14 @@ const listItemVariants: Variants = {
     }
 };
 
+const getDistrictOptionsForDivision = (division: Division) => {
+  const districts = getDistrictsByDivision(division);
+  return districts.map(district => ({
+    value: district,
+    label: district
+  }));
+};
+
 type Values = Pick<CreateArticleFormValues, 'destinations'>;
 
 export function ContentSection() {
@@ -93,11 +104,6 @@ export function ContentSection() {
     const divisionOptions = Object.values(DIVISION).map(value => ({
         label: value,
         value: value as Division
-    }));
-
-    const districtOptions = Object.values(DISTRICT).map(value => ({
-        label: value,
-        value: value as District
     }));
 
     const spiceLevelOptions = Object.values(FOOD_RECO_SPICE_TYPE).map(value => ({
@@ -187,9 +193,9 @@ export function ContentSection() {
                 assetId: `temp-${Date.now()}`,
                 url: base64
             });
-        } catch (error) {
-            console.error('Image upload failed:', error);
-            // You might want to show a toast notification here
+        } catch (error: unknown) {
+            console.log(error);
+            showToast.warning('Image upload failed', extractErrorMessage(error))
         }
     };
 
@@ -264,6 +270,21 @@ export function ContentSection() {
         setFieldValue(`destinations.${index}.coordinates.lat`, lat);
         setFieldValue(`destinations.${index}.coordinates.lng`, lng);
     };
+
+    const handleDivisionChange = (destIndex: number, newDivision: Division) => {
+
+        setFieldValue(`destinations.${destIndex}.division`, newDivision)
+
+        // Get districts for the new division
+        const districtsForDivision = getDistrictsByDivision(newDivision);
+
+        // Check if current district belongs to the new division
+        const isCurrentDistrictValid = districtsForDivision.includes(values.destinations[destIndex].district as District);
+
+        // Update with new division and possibly reset district
+        setFieldValue(`destinations.${destIndex}.district`, isCurrentDistrictValid ? values.destinations[destIndex].district : (districtsForDivision[0] || ''))
+    };
+
 
     return (
         <motion.div
@@ -406,7 +427,8 @@ export function ContentSection() {
                                                                     <ComboBox
                                                                         options={divisionOptions}
                                                                         value={dest.division}
-                                                                        onChange={(value) => setFieldValue(`destinations.${idx}.division`, value)}
+                                                                        // onChange={(value) => setFieldValue(`destinations.${idx}.division`, value)}
+                                                                        onChange={(value) => handleDivisionChange(idx, value as Division)}
                                                                         placeholder="Select division"
                                                                     />
                                                                 </div>
@@ -416,7 +438,7 @@ export function ContentSection() {
                                                                         District
                                                                     </label>
                                                                     <ComboBox
-                                                                        options={districtOptions}
+                                                                        options={getDistrictOptionsForDivision(dest.division as Division)}
                                                                         value={dest.district}
                                                                         onChange={(value) => setFieldValue(`destinations.${idx}.district`, value)}
                                                                         placeholder="Select district"

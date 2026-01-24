@@ -1,12 +1,7 @@
 // app/api/articles/stats/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
 import { ArticleDashboardStats, UserRef } from '@/types/article.types';
-
-/** Random array choice helper */
-function randChoice<T>(arr: T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
 
 /** Create a fake user reference */
 function makeUserRef(seed?: string): UserRef {
@@ -66,7 +61,7 @@ function makeDashboardStats(): ArticleDashboardStats {
     };
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
     try {
         const stats: ArticleDashboardStats = makeDashboardStats();
         return NextResponse.json({ ok: true, data: stats });

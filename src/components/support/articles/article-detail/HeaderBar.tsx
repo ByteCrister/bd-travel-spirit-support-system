@@ -1,13 +1,12 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { ARTICLE_STATUS } from '@/constants/article.const';
+import { ARTICLE_STATUS, ArticleStatus } from '@/constants/article.const';
 
 type Props = {
     title: string;
-    status: ARTICLE_STATUS;
+    status: ArticleStatus;
     updatedAt: string;
     commentCount?: number;
     pendingCommentCount?: number;

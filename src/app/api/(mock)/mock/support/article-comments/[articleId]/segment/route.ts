@@ -1,4 +1,4 @@
-// app/api/articles/comments/[articleId]/segment/route.ts
+// api/mock/support/article-comments/[articleId]/segment/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import {
     type LoadMoreCommentsResponseDTO,
@@ -6,9 +6,9 @@ import {
     type CommentSortKey,
     type CommentFiltersDTO,
 } from '@/types/article-comment.types';
-import { queryRootComments, queryChildComments } from '../../_lib/mock';
+import { queryRootComments, queryChildComments } from '@/lib/mocks/article-comments.mock';
 
-export async function GET(req: NextRequest, { params }: { params: { articleId: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ articleId: string }> }) {
     const url = new URL(req.url);
     const parentId = url.searchParams.get('parentId');
     const cursor = url.searchParams.get('cursor');
@@ -17,6 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { articleId: s
     const sortDir = (url.searchParams.get('sortDir') ?? 'desc') as SortDTO<CommentSortKey>['direction'];
 
     const filters: CommentFiltersDTO = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         status: (url.searchParams.get('status') as any) ?? 'any',
         minLikes: url.searchParams.get('minLikes') ? Number(url.searchParams.get('minLikes')) : null,
         hasReplies: url.searchParams.get('hasReplies') ? url.searchParams.get('hasReplies') === 'true' : null,
@@ -27,8 +28,8 @@ export async function GET(req: NextRequest, { params }: { params: { articleId: s
     const sort: SortDTO<CommentSortKey> = { key: sortKey, direction: sortDir };
 
     const result = parentId
-        ? queryChildComments(params.articleId, parentId, cursor, pageSize, sort, filters)
-        : queryRootComments(params.articleId, cursor, pageSize, sort, filters);
+        ? queryChildComments((await params).articleId, parentId, cursor, pageSize, sort, filters)
+        : queryRootComments((await params).articleId, cursor, pageSize, sort, filters);
 
     const response: LoadMoreCommentsResponseDTO = {
         nodes: result.nodes,
@@ -36,9 +37,9 @@ export async function GET(req: NextRequest, { params }: { params: { articleId: s
             pagination: result.meta,
             sort,
             filtersApplied: filters,
-            scope: { articleId: params.articleId, parentId: parentId ?? null, depthMax: null },
+            scope: { articleId: (await params).articleId, parentId: parentId ?? null, depthMax: null },
         },
     };
 
-    return NextResponse.json(response, { status: 200 });
+    return NextResponse.json({ data: response }, { status: 200 });
 }

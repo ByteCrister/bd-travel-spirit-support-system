@@ -13,10 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -49,27 +45,6 @@ const DEFAULTS = {
 // ---------------------------------------------------------------------------
 export function Toolbar() {
     const store = useArticleCommentsStore();
-
-    // Persist visible columns in localStorage
-    const [visibleCols, setVisibleCols] = useState<Record<string, boolean>>(() => {
-        if (typeof window === 'undefined') {
-            return { article: true, metrics: true, actions: true };
-        }
-        try {
-            const parsed = JSON.parse(localStorage.getItem('ac.table.cols') || '{}');
-            return parsed && Object.keys(parsed).length > 0
-                ? parsed
-                : { article: true, metrics: true, actions: true };
-        } catch {
-            return { article: true, metrics: true, actions: true };
-        }
-    });
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('ac.table.cols', JSON.stringify(visibleCols));
-        }
-    }, [visibleCols]);
 
     // -----------------------------------------------------------------------
     // Search + debounce
@@ -201,25 +176,6 @@ export function Toolbar() {
                                 <HiChevronDown className="h-3 w-3 opacity-50" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuLabel className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                Visible Columns
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {(['article', 'metrics', 'actions'] as const).map((col) => (
-                                <DropdownMenuCheckboxItem
-                                    key={col}
-                                    checked={visibleCols[col] ?? true}
-                                    onCheckedChange={(checked) =>
-                                        setVisibleCols((s) => ({ ...s, [col]: !!checked }))
-                                    }
-                                    aria-label={`Toggle ${col} column`}
-                                    className="capitalize text-sm"
-                                >
-                                    {col}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                        </DropdownMenuContent>
                     </DropdownMenu>
 
                     {/* Reset button */}

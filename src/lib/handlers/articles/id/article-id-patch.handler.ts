@@ -1,20 +1,23 @@
 import { NextRequest } from "next/server";
-import { withErrorHandler, ApiError } from "@/lib/helpers/withErrorHandler";
+import { ApiError } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { TravelArticleModel } from "@/models/articles/travel-article.model";
 import { buildTourArticleDto } from "@/lib/build-responses/build-tour-article-dt";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
+import ConnectDB from "@/config/db";
+import { validateUser } from "@/lib/auth/validateUser";
+import { USER_ROLE } from "@/constants/user.const";
 
 /**
- * POST /api/support/articles/v1/[articleId]/restore
+ * PATCH /api/support/articles/v1/[articleId]
  * Restores a previously deleted (archived) article
  */
 
-export const POST = withErrorHandler(async (
+export default async function ArticlePatchHandler(
     _request: NextRequest,
     { params }: { params: Promise<{ articleId: string }> }
-) => {
+) {
     const currentUserId = await getUserIdFromSession();
 
     if (!currentUserId) {
@@ -23,7 +26,14 @@ export const POST = withErrorHandler(async (
 
     const articleId = resolveMongoId((await params).articleId);
 
-    const restoredArticle = await withTransaction(async (session) => {
+    await ConnectDB();
+
+    // Check if user has 'support' role
+    await validateUser(currentUserId, USER_ROLE.SUPPORT, {
+        errorMessages: { invalidRole: "Only support users can create articles" }
+    })
+
+    const article = await withTransaction(async (session) => {
         // Restore using model method
         const article = await TravelArticleModel.restoreById(articleId, session);
 
@@ -35,11 +45,18 @@ export const POST = withErrorHandler(async (
         }
 
         // Build response DTO (include deleted if needed)
-        return buildTourArticleDto(articleId, true, session);
+        const dto = await buildTourArticleDto(articleId, true, session)
+
+        if (!dto) {
+            throw new ApiError("Failed to fetch article DTO", 500);
+        }
+
+        return dto;
     });
 
+
     return {
-        data: restoredArticle,
+        data: { article, success: true, message: "Article restored successfully" },
         status: 200,
     };
-});
+};

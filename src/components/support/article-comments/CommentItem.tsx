@@ -1,31 +1,48 @@
 'use client';
 
 import { memo, useState } from 'react';
-import { CommentDetailDTO } from '@/types/article-comment.types';
+import { CommentDetailDTO, CommentFiltersDTO } from '@/types/article-comment.types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { HiHeart, HiArrowUturnLeft, HiCheckCircle, HiXCircle, HiChevronDown, HiEllipsisHorizontal } from 'react-icons/hi2';
+import { HiHeart, HiArrowUturnLeft, HiCheckCircle, HiXCircle, HiChevronDown, HiEllipsisHorizontal, HiArrowPath } from 'react-icons/hi2';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { ReplyEditor } from './ReplyEditor';
 import { ModerationReasonDialog } from './ModerationReasonDialog';
 import { useArticleCommentsStore } from '@/store/article-comment.store';
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
+import { HiTrash } from 'react-icons/hi';
 
 export const CommentItem = memo(function CommentItem({
     node,
     articleId,
+    filters = {},
 }: {
     node: CommentDetailDTO;
     articleId: string;
+    filters?: CommentFiltersDTO;
 }) {
-    const store = useArticleCommentsStore();
+    const {
+        threadKeyOf,
+        selectThreadByKey,
+        fetchChildComments,
+        toggleLike,
+        updateStatus,
+        createReply,
+        deleteComment,
+        restoreComment,
+        loadMoreComments,
+        threadLoading
+    } = useArticleCommentsStore();
     const [replyOpen, setReplyOpen] = useState(false);
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-    const threadKeyChildren = store.threadKeyOf(articleId, node.id);
-    const childCache = store.selectThreadByKey(threadKeyChildren);
-    const childLoading = store.threadLoading[threadKeyChildren];
+    const threadKeyChildren = threadKeyOf(articleId, node.id);
+    const childCache = selectThreadByKey(threadKeyChildren);
+    const childLoading = threadLoading[threadKeyChildren];
+    const [loadingMore, setLoadingMore] = useState(false);
+
+    const [toggleShow, setToggleShow] = useState<boolean>(false);
 
     const statusConfig = {
         [COMMENT_STATUS.APPROVED]: {
@@ -47,6 +64,24 @@ export const CommentItem = memo(function CommentItem({
 
     const currentStatus = statusConfig[node.status];
     const isPending = node.status === COMMENT_STATUS.PENDING;
+
+    const handleToggleShow = async () => {
+        if (toggleShow) {
+            setToggleShow(false);
+            return;
+        }
+
+        setToggleShow(true);
+
+        if (!childCache) {
+            await fetchChildComments({
+                articleId,
+                parentId: node.id,
+                pageSize: 10,
+                sort: { key: 'createdAt', direction: 'asc' },
+            });
+        }
+    };
 
     return (
         <>
@@ -106,7 +141,7 @@ export const CommentItem = memo(function CommentItem({
                             <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => store.toggleLike({ commentId: node.id, like: true })}
+                                onClick={async () => await toggleLike({ commentId: node.id, like: true })}
                                 className="text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 gap-1"
                                 title="Like comment"
                             >
@@ -115,38 +150,38 @@ export const CommentItem = memo(function CommentItem({
                             </Button>
 
                             {/* Moderation buttons - only for pending */}
-                         {isPending && (
-  <div className="flex gap-2">
-    <Button
-      size="sm"
-      onClick={() =>
-        store.updateStatus({ commentId: node.id, status: COMMENT_STATUS.APPROVED })
-      }
-      className="flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-1.5 
+                            {isPending && (
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        onClick={async () =>
+                                            await updateStatus({ commentId: node.id, status: COMMENT_STATUS.APPROVED })
+                                        }
+                                        className="flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-1.5 
                  text-sm font-medium text-white shadow-sm 
                  hover:bg-emerald-700 focus:outline-none 
                  focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 
                  dark:bg-emerald-700 dark:hover:bg-emerald-800"
-    >
-      <HiCheckCircle className="h-4 w-4" />
-      Approve
-    </Button>
+                                    >
+                                        <HiCheckCircle className="h-4 w-4" />
+                                        Approve
+                                    </Button>
 
-    <Button
-      size="sm"
-      variant="destructive"
-      onClick={() => setRejectDialogOpen(true)}
-      className="flex items-center gap-2 rounded-md bg-red-600 px-3 py-1.5 
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => setRejectDialogOpen(true)}
+                                        className="flex items-center gap-2 rounded-md bg-red-600 px-3 py-1.5 
                  text-sm font-medium text-white shadow-sm 
                  hover:bg-red-700 focus:outline-none 
                  focus:ring-2 focus:ring-red-500 focus:ring-offset-1 
                  dark:bg-red-700 dark:hover:bg-red-800"
-    >
-      <HiXCircle className="h-4 w-4" />
-      Reject
-    </Button>
-  </div>
-)}
+                                    >
+                                        <HiXCircle className="h-4 w-4" />
+                                        Reject
+                                    </Button>
+                                </div>
+                            )}
 
 
                             {/* Reply button */}
@@ -165,20 +200,13 @@ export const CommentItem = memo(function CommentItem({
                                 <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() =>
-                                        store.fetchChildComments({
-                                            articleId,
-                                            parentId: node.id,
-                                            pageSize: 100,
-                                            sort: { key: 'createdAt', direction: 'asc' },
-                                        })
-                                    }
+                                    onClick={handleToggleShow}
                                     className="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 gap-1"
-                                    aria-expanded={!!childCache}
+                                    aria-expanded={!!toggleShow}
                                 >
-                                    <HiChevronDown className={`h-4 w-4 transition-transform ${childCache ? 'rotate-180' : ''}`} />
+                                    <HiChevronDown className={`h-4 w-4 transition-transform ${toggleShow ? 'rotate-180' : ''}`} />
                                     <span className="text-xs">
-                                        {childCache ? 'Hide' : 'Show'} replies ({node.replyCount})
+                                        {toggleShow ? 'Hide' : 'Show'} replies ({node.replyCount})
                                     </span>
                                 </Button>
                             )}
@@ -197,20 +225,49 @@ export const CommentItem = memo(function CommentItem({
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem
-                                        onClick={() => navigator.clipboard.writeText(`/articles/${articleId}#comment-${node.id}`)}
-                                        className="text-sm cursor-pointer"
-                                    >
-                                        Copy link
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
                                         onClick={() => alert(JSON.stringify(node, null, 2))}
                                         className="text-sm cursor-pointer"
                                     >
                                         View JSON
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem disabled className="text-sm opacity-50">
-                                        Report (coming soon)
+
+                                    {/* Add Delete option */}
+                                    <DropdownMenuItem
+                                        onClick={async () => {
+                                            if (confirm(`Delete comment by ${node.author.name}?`)) {
+                                                try {
+                                                    await deleteComment({ commentId: node.id });
+                                                    // You might want to add a toast notification here
+                                                } catch (error) {
+                                                    console.error('Failed to delete comment:', error);
+                                                }
+                                            }
+                                        }}
+                                        className="text-sm cursor-pointer text-red-600 dark:text-red-400"
+                                    >
+                                        <HiTrash className="h-4 w-4 mr-2" />
+                                        Delete Comment
                                     </DropdownMenuItem>
+
+                                    {/* Add Restore option (only show if comment is deleted) */}
+                                    {node.status === COMMENT_STATUS.REJECTED && (
+                                        <DropdownMenuItem
+                                            onClick={async () => {
+                                                if (confirm(`Restore comment by ${node.author.name}?`)) {
+                                                    try {
+                                                        await restoreComment({ commentId: node.id });
+                                                        // You might want to add a toast notification here
+                                                    } catch (error) {
+                                                        console.error('Failed to restore comment:', error);
+                                                    }
+                                                }
+                                            }}
+                                            className="text-sm cursor-pointer text-green-600 dark:text-green-400"
+                                        >
+                                            <HiArrowPath className="h-4 w-4 mr-2" />
+                                            Restore Comment
+                                        </DropdownMenuItem>
+                                    )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
@@ -225,7 +282,7 @@ export const CommentItem = memo(function CommentItem({
                             >
                                 <ReplyEditor
                                     onSubmit={async (content) => {
-                                        await store.createReply({ articleId, parentId: node.id, content });
+                                        await createReply({ articleId, parentId: node.id, content });
                                         setReplyOpen(false);
                                     }}
                                     onCancel={() => setReplyOpen(false)}
@@ -249,31 +306,35 @@ export const CommentItem = memo(function CommentItem({
                         )}
 
                         {/* Children list */}
-                        {childCache?.nodes?.length ? (
+                        {toggleShow && childCache?.nodes?.length ? (
                             <div className="mt-4 space-y-3 pl-4 border-l-2 border-slate-300 dark:border-slate-700">
                                 {childCache.nodes.map((child) => (
                                     <CommentItem key={child.id} node={child} articleId={articleId} />
                                 ))}
 
-                                {childCache.meta.pagination.hasNextPage && (
+                                {childCache?.meta.pagination.hasNextPage && (
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() =>
-                                            store.loadMoreComments({
+                                        onClick={async () => {
+                                            setLoadingMore(true);
+                                            await loadMoreComments({
                                                 articleId,
                                                 parentId: node.id,
                                                 cursor: childCache.meta.pagination.nextCursor ?? null,
-                                                pageSize: 100,
-                                            })
-                                        }
-                                        className="mt-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                pageSize: 10,
+                                                ...filters,
+                                            });
+                                            setLoadingMore(false);
+                                        }}
+                                        disabled={loadingMore}
                                     >
-                                        Load more replies
+                                        {loadingMore ? 'Loading...' : 'Load more replies'}
                                     </Button>
                                 )}
                             </div>
                         ) : null}
+
                     </div>
                 </div>
             </motion.div>

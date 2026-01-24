@@ -221,7 +221,7 @@ function makeDetail(idSeed: string): ArticleDetail {
   const detail: ArticleDetail = {
     id: idSeed,
     title,
-    banglaTitle: Math.random() > 0.5 ? faker.lorem.sentence() : undefined,
+    banglaTitle: Math.random() > 0.5 ? faker.lorem.sentence() : '',
     slug: faker.helpers.slugify(title).toLowerCase(),
     status: randChoice(Object.values(ARTICLE_STATUS)),
     articleType: randChoice(Object.values(ARTICLE_TYPE)),

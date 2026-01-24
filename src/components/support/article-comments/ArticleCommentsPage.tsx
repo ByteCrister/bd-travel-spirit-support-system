@@ -9,6 +9,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useArticleCommentsStore } from '@/store/article-comment.store';
 import { HiExclamationTriangle, HiArrowPath } from 'react-icons/hi2';
+import { Breadcrumbs } from '@/components/global/Breadcrumbs';
+
+const breadcrumbItems = [
+    { label: "Home", href: '/' },
+    { label: "Articles Comments", href: "/support/article-comments" },
+];
 
 export default function ArticleCommentsPage() {
     const store = useArticleCommentsStore();
@@ -25,7 +31,8 @@ export default function ArticleCommentsPage() {
 
     return (
         <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <Breadcrumbs items={breadcrumbItems} />
+            <div className="mx-auto max-w-7xl px-1 py-2">
                 {/* Header */}
                 <div className="mb-8 space-y-2">
                     <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">

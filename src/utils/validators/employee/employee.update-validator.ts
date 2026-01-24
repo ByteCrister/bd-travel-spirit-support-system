@@ -5,11 +5,7 @@ import {
     DocumentDTO,
     ContactInfoDTO,
 } from "@/types/employee.types";
-import {
-    contactInfoValidationSchema,
-    shiftValidationSchema,
-    documentValidationSchema,
-} from "../employee.validator";
+
 import {
     EMPLOYEE_STATUS,
     EMPLOYMENT_TYPE,
@@ -17,6 +13,7 @@ import {
 } from "@/constants/employee.const";
 import { CURRENCY } from "@/constants/tour.const";
 import { showToast } from "@/components/global/showToast";
+import { contactInfoValidationSchema, documentValidationSchema, shiftValidationSchema } from "./employee.validator";
 
 /* ------------------------------------------------------------------
   Helper: show yup errors nicely

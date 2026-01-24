@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import  { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useEmployeeStore } from "@/store/employee.store";
 import {
     EmployeeDetailDTO,
     UpdateEmployeePayload,
@@ -11,7 +10,7 @@ import {
     ShiftDTO,
     DocumentDTO,
 } from "@/types/employee.types";
-import { EMPLOYEE_STATUS, EMPLOYMENT_TYPE, EMPLOYEE_ROLE, EmployeeStatus, EmploymentType } from "@/constants/employee.const";
+import { EMPLOYEE_STATUS, EMPLOYMENT_TYPE, EMPLOYEE_ROLE, EmployeeStatus, EmploymentType, SALARY_PAYMENT_MODE, SalaryPaymentMode } from "@/constants/employee.const";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,8 +40,8 @@ import {
     Check,
     Copy,
     Loader2,
+    CreditCard,
 } from "lucide-react";
-import { formatDate, latestEffectiveFrom } from "@/utils/helpers/employees.details";
 import { showToast } from "@/components/global/showToast";
 import InfoCard from "./InfoCard";
 import InfoField from "./InfoField";
@@ -54,16 +53,18 @@ import {
     filesToDocumentDTOs,
     getFileExtension,
 } from "@/utils/helpers/file-conversion";
-import generateStrongPassword from "@/utils/helpers/generate-strong-password";
-import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { CURRENCY } from "@/constants/tour.const";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from "next/image";
-import { validateUpdateEmployeePayload } from "@/utils/validators/employee/employee.update-validator";
-import { updateEmployeePassword } from "@/utils/api/update-employee-pass.api";
 import ConfirmationDialog from "./ConfirmationDialog";
 import EmployeeDetailSkeleton from "./EmployeeDetailSkeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useEmployeeStore } from "@/store/employee.store";
+import { extractErrorMessage } from "@/utils/axios/extract-error-message";
+import { validateUpdateEmployeePayload } from "@/utils/validators/employee/employee.update-validator";
+import generateStrongPassword from "@/utils/helpers/generate-strong-password";
+import { updateEmployeePassword } from "@/utils/api/update-employee-pass.api";
+import { formatDate, latestEffectiveFrom } from "@/utils/helpers/employees.details";
 
 /* --------------------------------------------
   Form type: lightweight and focused on fields edited in UI
@@ -85,6 +86,7 @@ type UpdateEmployeeForm = Partial<
         | "documents"
         | "salary"
         | "currency"
+        | "paymentMode"
     >
 >;
 
@@ -157,13 +159,15 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                     name: d.user.name,
                     status: d.status,
                     employmentType: d.employmentType,
-                    contactInfo: d.contactInfo,
-                    shifts: d.shifts,
-                    notes: d.notes,
                     avatar: d.avatar,
+                    salary: d.salary,
+                    paymentMode: d.paymentMode,
                     dateOfJoining: d.dateOfJoining,
                     dateOfLeaving: d.dateOfLeaving,
+                    contactInfo: d.contactInfo,
+                    shifts: d.shifts,
                     documents: d.documents,
+                    notes: d.notes,
                 });
                 // set avatar preview if avatar is a data URL
                 if (d.avatar && typeof d.avatar === "string") {
@@ -865,7 +869,7 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                         {/* Compensation */}
                         <TabsContent value="compensation" className="space-y-6 mt-6">
                             <InfoCard icon={DollarSign} title="Current Compensation">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <FormRow label="Current Salary" icon={DollarSign}>
                                         <Input
                                             type="text"
@@ -919,6 +923,25 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                                                 {Object.values(CURRENCY).map((currency) => (
                                                     <SelectItem key={currency} value={currency}>
                                                         {currency}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormRow>
+
+                                    <FormRow label="Payment Mode" icon={CreditCard}>
+                                        <Select
+                                            value={form?.paymentMode ?? SALARY_PAYMENT_MODE.MANUAL}
+                                            onValueChange={(value) => setField("paymentMode", value as SalaryPaymentMode)}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Select payment mode" />
+                                            </SelectTrigger>
+
+                                            <SelectContent>
+                                                {Object.values(SALARY_PAYMENT_MODE).map((mode) => (
+                                                    <SelectItem key={mode} value={mode}>
+                                                        {mode === SALARY_PAYMENT_MODE.AUTO ? "Auto" : "Manual"}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
