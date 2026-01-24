@@ -21,7 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ arti
         status: (url.searchParams.get('status') as any) ?? 'any',
         minLikes: url.searchParams.get('minLikes') ? Number(url.searchParams.get('minLikes')) : null,
         hasReplies: url.searchParams.get('hasReplies') ? url.searchParams.get('hasReplies') === 'true' : null,
-        authorId: url.searchParams.get('authorId'),
+        authorName: url.searchParams.get('authorName'),
         searchQuery: url.searchParams.get('searchQuery'),
     };
 

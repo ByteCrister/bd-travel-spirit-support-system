@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const filters: ArticleFiltersDTO = {
         searchQuery: url.searchParams.get('searchQuery'),
         status: (url.searchParams.get('status') as CommentStatus | 'any') ?? 'any',
-        authorId: url.searchParams.get('authorId'),
+        authorName: url.searchParams.get('authorName'),
         taggedRegion: url.searchParams.get('taggedRegion'),
     };
 

@@ -33,7 +33,7 @@ import { COMMENT_STATUS } from '@/constants/articleComment.const';
 const DEFAULTS = {
     status: 'any' as 'any' | COMMENT_STATUS,
     searchQuery: null as string | null,
-    authorId: null as string | null,
+    authorName: null as string | null,
     taggedRegion: null as string | null,
     sort: { key: 'createdAt' as ArticleSortKey, direction: 'desc' as const },
     page: 1,
@@ -72,7 +72,7 @@ export function Toolbar() {
             filters: {
                 status: DEFAULTS.status,
                 searchQuery: DEFAULTS.searchQuery,
-                authorId: DEFAULTS.authorId,
+                authorName: DEFAULTS.authorName,
                 taggedRegion: DEFAULTS.taggedRegion,
             },
             sort: DEFAULTS.sort,
