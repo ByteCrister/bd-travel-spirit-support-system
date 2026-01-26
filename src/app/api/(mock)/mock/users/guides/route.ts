@@ -44,6 +44,7 @@ function mapUserToGuide(user: any, index: number): PendingGuideDTO {
         reviewComment: index % 3 === 2 ? "Verification failed" : undefined,
         reviewer: index % 3 === 2 ? "admin123" : undefined,
         reviewedAt: index % 3 === 2 ? isoNow() : undefined,
+        suspensionReason: '',
         appliedAt,
         createdAt: appliedAt,
         updatedAt: isoNow(),

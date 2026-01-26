@@ -107,7 +107,7 @@ export function useCompanyOverview(companyId: string) {
         if (!search.trim()) return items;
         const q = search.toLowerCase();
         return items.filter((t) =>
-            [t.title, t.slug, t.category, t.subCategory]
+            [t.title, t.slug]
                 .filter(Boolean)
                 .some((v) => String(v).toLowerCase().includes(q))
         );

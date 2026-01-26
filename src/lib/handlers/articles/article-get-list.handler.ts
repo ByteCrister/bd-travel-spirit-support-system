@@ -396,7 +396,7 @@ export default async function ArticleGetListHandler(request: NextRequest) {
             return {
                 id: article._id.toString(),
                 title: article.title,
-                banglaTitle: article.banglaTitle,
+                banglaTitle: article.banglaTitle??'-',
                 slug: article.slug,
                 status: article.status,
                 articleType: article.articleType,

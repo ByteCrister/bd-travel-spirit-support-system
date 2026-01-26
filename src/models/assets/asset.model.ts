@@ -132,18 +132,19 @@ AssetSchema.query.notDeleted = function () {
  * ======================================================= */
 
 AssetSchema.pre("save", async function () {
-    const session = this.$session() ?? undefined; // convert null to undefined
+    const session = this.$session() ?? undefined;
 
     if (this.isNew) {
-        const assetFile = await AssetFileModel.findById(this.file).session(session ?? null);
-        if (assetFile && assetFile.refCount > 1) return; // already counted
-        if (assetFile && assetFile.refCount === 1) return; // newly created, don't increment
-        // Only increment if refCount > 1 is not the case
-        await AssetFileModel.incrementRef(this.file.toString(), session);
+        // Only increment if this is a new Asset document
+        // The AssetFile refCount was already incremented in upload.cloudinary.ts
+        // when we did findOneAndUpdate with $inc: { refCount: 1 }
+        return;
     } else if (this.isModified("deletedAt")) {
         if (this.deletedAt) {
+            // Asset is being soft deleted - decrement refCount
             await AssetFileModel.decrementRef(this.file.toString(), session);
         } else {
+            // Asset is being restored - increment refCount
             await AssetFileModel.incrementRef(this.file.toString(), session);
         }
     }

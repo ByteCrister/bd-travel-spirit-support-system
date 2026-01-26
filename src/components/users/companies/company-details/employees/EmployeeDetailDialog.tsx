@@ -16,6 +16,7 @@ import {
     MdDescription,
     MdContactEmergency,
     MdHistory,
+    MdPayment,
 } from "react-icons/md";
 import { EmployeeDetailDialogSkeleton } from "./EmployeeDetailDialogSkeleton";
 import Image from "next/image";
@@ -61,8 +62,22 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                 return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50";
             case "onLeave":
                 return "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800/50";
+            case "suspended":
+                return "bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300 border-orange-200 dark:border-orange-800/50";
             case "terminated":
-            case "inactive":
+                return "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border-rose-200 dark:border-rose-800/50";
+            default:
+                return "bg-slate-50 text-slate-700 dark:bg-slate-950/50 dark:text-slate-300 border-slate-200 dark:border-slate-800/50";
+        }
+    };
+
+    const getPaymentStatusColor = (status: string | undefined) => {
+        switch (status) {
+            case "paid":
+                return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50";
+            case "pending":
+                return "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800/50";
+            case "failed":
                 return "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border-rose-200 dark:border-rose-800/50";
             default:
                 return "bg-slate-50 text-slate-700 dark:bg-slate-950/50 dark:text-slate-300 border-slate-200 dark:border-slate-800/50";
@@ -71,7 +86,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
 
     const formatStatus = (status: string | undefined): string => {
         if (!status) return "—";
-        return status.replace(/([A-Z])/g, " $1").trim();
+        return status.charAt(0).toUpperCase() + status.slice(1).replace(/([A-Z])/g, " $1").trim();
     };
 
     const renderAvatar = (name?: string, avatarId?: string | undefined) => {
@@ -85,7 +100,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                         width={80}
                         height={80}
                         className="object-cover"
-                        unoptimized // optional: remove if you configure external domains in next.config.js
+                        unoptimized
                         priority={false}
                     />
                 </div>
@@ -98,7 +113,6 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
             </div>
         );
     };
-
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,14 +151,14 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                         {/* Employment type badge */}
                                         {employee.employmentType && (
                                             <Badge className="bg-primary/10 text-primary border-primary/20">
-                                                {employee.employmentType}
+                                                {employee.employmentType.replace('_', ' ')}
                                             </Badge>
                                         )}
 
-                                        {/* Account status if available on user */}
-                                        {employee.user?.accountStatus && (
-                                            <Badge className="bg-slate-50 text-slate-700 border-slate-200">
-                                                {employee.user.accountStatus}
+                                        {/* Payment mode badge */}
+                                        {employee.paymentMode && (
+                                            <Badge className="bg-blue-50 text-blue-700 border-blue-200">
+                                                {employee.paymentMode === 'auto' ? 'Auto Pay' : 'Manual Pay'}
                                             </Badge>
                                         )}
                                     </div>
@@ -165,14 +179,8 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                 <Section icon={MdPerson} title="Contact Information">
                                     <InfoGrid>
                                         <InfoItem label="Full name" value={employee.user?.name ?? "—"} icon={MdPerson} />
-                                        <InfoItem label="Email" value={employee.user?.email ?? "—"} icon={MdEmail} />
+                                        <InfoItem label="Email" value={employee.contactInfo?.email ?? employee.user?.email ?? "—"} icon={MdEmail} />
                                         <InfoItem label="Phone" value={employee.contactInfo?.phone ?? employee.user?.phone ?? "—"} icon={MdPhone} />
-                                        {employee.contactInfo?.firstName || employee.contactInfo?.lastName ? (
-                                            <InfoItem
-                                                label="Given name"
-                                                value={`${employee.contactInfo?.firstName ?? ""} ${employee.contactInfo?.lastName ?? ""}`.trim() || "—"}
-                                            />
-                                        ) : null}
                                     </InfoGrid>
                                 </Section>
 
@@ -191,7 +199,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                 <Section icon={MdWork} title="Employment Details">
                                     <InfoGrid>
                                         {employee.employmentType && (
-                                            <InfoItem label="Employment Type" value={employee.employmentType} capitalize />
+                                            <InfoItem label="Employment Type" value={employee.employmentType.replace('_', ' ')} capitalize />
                                         )}
                                         <InfoItem label="Date of Joining" value={formatDate(employee.dateOfJoining)} icon={MdCalendarToday} />
                                         {employee.dateOfLeaving && (
@@ -199,10 +207,84 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                         )}
                                         <InfoItem label="Base Salary" value={formatCurrency(employee.salary, employee.currency)} icon={MdAttachMoney} />
                                         <InfoItem label="Last Login" value={employee.lastLogin ? formatDate(employee.lastLogin) : "—"} icon={MdHistory} />
-                                        <InfoItem label="Company" value={employee.companyId ?? "—"} />
-                                        <InfoItem label="Role" value={employee.role ?? "—"} icon={MdWork} />
+                                        {employee.companyId && (
+                                            <InfoItem label="Company ID" value={employee.companyId} />
+                                        )}
                                     </InfoGrid>
                                 </Section>
+
+                                {/* Current Month Payment Status */}
+                                {employee.currentMonthPayment && (
+                                    <Section icon={MdPayment} title="Current Month Payment">
+                                        <div className="p-4 rounded-lg border border-border/40 bg-muted/20">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge className={getPaymentStatusColor(employee.currentMonthPayment.status)}>
+                                                            {formatStatus(employee.currentMonthPayment.status)}
+                                                        </Badge>
+                                                        <span className="font-semibold">
+                                                            {formatCurrency(employee.currentMonthPayment.amount, employee.currentMonthPayment.currency)}
+                                                        </span>
+                                                    </div>
+                                                    {employee.currentMonthPayment.dueDate && (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Due: {formatDate(employee.currentMonthPayment.dueDate)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="text-sm space-y-1">
+                                                    {employee.currentMonthPayment.paidAt && (
+                                                        <p className="text-muted-foreground">
+                                                            Paid: {formatDate(employee.currentMonthPayment.paidAt)}
+                                                        </p>
+                                                    )}
+                                                    {employee.currentMonthPayment.transactionRef && (
+                                                        <p className="text-muted-foreground">
+                                                            Ref: {employee.currentMonthPayment.transactionRef}
+                                                        </p>
+                                                    )}
+                                                    {employee.currentMonthPayment.failureReason && (
+                                                        <p className="text-rose-600">
+                                                            {employee.currentMonthPayment.failureReason}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Section>
+                                )}
+
+                                {/* Salary History */}
+                                {employee.salaryHistory && employee.salaryHistory.length > 0 && (
+                                    <Section icon={MdAttachMoney} title="Salary History">
+                                        <div className="space-y-3">
+                                            {employee.salaryHistory
+                                                .slice()
+                                                .sort((a, b) => new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime())
+                                                .map((history, idx) => (
+                                                    <div key={idx} className="p-4 rounded-lg border border-border/40 bg-muted/20">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="font-semibold">
+                                                                {formatCurrency(history.amount, history.currency)}
+                                                            </span>
+                                                            <span className="text-sm text-muted-foreground">
+                                                                {formatDate(history.effectiveFrom)}
+                                                            </span>
+                                                        </div>
+                                                        {history.effectiveTo && (
+                                                            <p className="text-sm text-muted-foreground mb-2">
+                                                                Effective to: {formatDate(history.effectiveTo)}
+                                                            </p>
+                                                        )}
+                                                        {history.reason && (
+                                                            <p className="text-sm">{history.reason}</p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </Section>
+                                )}
 
                                 {/* Work Shifts */}
                                 {employee.shifts && employee.shifts.length > 0 && (
@@ -259,24 +341,32 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
 
                                 {/* Payroll */}
                                 {employee.payroll && employee.payroll.length > 0 && (
-                                    <Section icon={MdAttachMoney} title="Payroll">
+                                    <Section icon={MdAttachMoney} title="Payroll History">
                                         <div className="space-y-2">
                                             {employee.payroll
                                                 .slice()
-                                                .sort((a, b) => (a.year - b.year) || (a.month - b.month))
+                                                .sort((a, b) => (b.year - a.year) || (b.month - a.month))
                                                 .map((p: PayrollRecordDTO, i: number) => (
                                                     <div key={i} className="p-3 rounded-lg border border-border/40 bg-muted/10">
                                                         <div className="flex items-start justify-between gap-4">
                                                             <div>
-                                                                <p className="font-medium">
-                                                                    {p.year}/{String(p.month).padStart(2, "0")}
-                                                                </p>
-                                                                <p className="text-xs text-muted-foreground">{p.status}</p>
-                                                                {p.failureReason && <p className="text-xs text-rose-600 mt-1">Failure: {p.failureReason}</p>}
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <Badge className={getPaymentStatusColor(p.status)}>
+                                                                        {formatStatus(p.status)}
+                                                                    </Badge>
+                                                                    <p className="font-medium">
+                                                                        {p.year}/{String(p.month).padStart(2, "0")}
+                                                                    </p>
+                                                                </div>
+                                                                {p.failureReason && (
+                                                                    <p className="text-xs text-rose-600 mt-1">Failure: {p.failureReason}</p>
+                                                                )}
                                                             </div>
                                                             <div className="text-right">
                                                                 <p className="font-semibold">{formatCurrency(p.amount, p.currency)}</p>
-                                                                <p className="text-xs text-muted-foreground">{p.transactionRef ?? "—"}</p>
+                                                                {p.transactionRef && (
+                                                                    <p className="text-xs text-muted-foreground">Ref: {p.transactionRef}</p>
+                                                                )}
                                                                 {p.paidAt && <p className="text-xs text-muted-foreground">Paid {formatDate(p.paidAt)}</p>}
                                                             </div>
                                                         </div>
@@ -293,8 +383,8 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                             {employee.audit
                                                 .slice()
                                                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                                                .map((a) => (
-                                                    <div key={a._id ?? `${a.action}-${a.createdAt}`} className="p-3 rounded-lg border border-border/40 bg-muted/10">
+                                                .map((a, index) => (
+                                                    <div key={index} className="p-3 rounded-lg border border-border/40 bg-muted/10">
                                                         <div className="flex items-center justify-between">
                                                             <div>
                                                                 <p className="text-sm font-medium">
@@ -334,6 +424,23 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                         </div>
                                     </Section>
                                 )}
+
+                                {/* Metadata */}
+                                <Section title="Metadata">
+                                    <InfoGrid>
+                                        <InfoItem label="Created At" value={formatDate(employee.createdAt)} />
+                                        <InfoItem label="Updated At" value={formatDate(employee.updatedAt)} />
+                                        <InfoItem label="Employee ID" value={employee.id} />
+                                        {employee.userId && (
+                                            <InfoItem label="User ID" value={employee.userId} />
+                                        )}
+                                        <InfoItem
+                                            label="Status"
+                                            value={employee.isDeleted ? "Deleted" : "Active"}
+                                            capitalize
+                                        />
+                                    </InfoGrid>
+                                </Section>
                             </div>
                         </ScrollArea>
                     </>

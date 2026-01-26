@@ -105,10 +105,10 @@ export const PUT = withErrorHandler(async (req: NextRequest) => {
  * Response: { data: AdvertisingPriceDTO } with status 200.
  */
 export const DELETE = withErrorHandler(
-    async (req: NextRequest, { params }: { params: { id?: string } }) => {
+    async (req: NextRequest, { params }: { params: Promise<{ id?: string }> }) => {
         await ConnectDB();
 
-        const rawId = params?.id;
+        const rawId = (await params)?.id;
         if (!rawId) throw new ApiError("Missing id parameter", 400);
         const id = decodeURIComponent(rawId);
 

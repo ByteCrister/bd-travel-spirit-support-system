@@ -2,7 +2,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
-import { decodeId, encodeId } from "@/utils/helpers/mongodb-id-conversions";
 
 /**
  * Mock moderation statuses used by the frontend types.
@@ -137,9 +136,9 @@ const makeFaq = (tourId: string, order: number): TourFAQDTO => {
  */
 export async function GET(
     req: NextRequest,
-    { params }: { params: { companyId: string; tourId: string } }
+    { params }: { params: Promise<{ companyId: string; tourId: string }> }
 ) {
-    const { companyId, tourId } = await params;
+    const {  tourId } = await params;
     const url = new URL(req.url);
 
     const page = Math.max(1, Number(url.searchParams.get("page") ?? "1"));

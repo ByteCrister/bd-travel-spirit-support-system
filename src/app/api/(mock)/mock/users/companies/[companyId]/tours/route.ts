@@ -130,7 +130,7 @@ function getNestedValue(obj: any, path: string) {
 // --- Handler ---
 export async function GET(
   req: NextRequest,
-  { params }: { params: { companyId: string } }
+  { params }: { params: Promise<{ companyId: string }> }
 ) {
   const { searchParams } = new URL(req.url);
   const { companyId } = await params;

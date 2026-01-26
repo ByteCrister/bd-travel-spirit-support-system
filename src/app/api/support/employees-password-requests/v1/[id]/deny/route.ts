@@ -8,7 +8,7 @@ import ResetPasswordRequestModel from "@/models/employees/reset-password-request
 import { REQUEST_STATUS } from "@/constants/reset-password-request.const";
 import { DenyResetRequestPayload, ResetPasswordRequestDTO } from "@/types/password-reset.types";
 import { ResetPasswordRequestPopulated } from "@/types/employee-password-request.types.server";
-import { ApiError } from "@/lib/helpers/withErrorHandler";
+import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import ConnectDB from "@/config/db";
 import { withTransaction } from "@/lib/helpers/withTransaction";
@@ -17,7 +17,7 @@ import { USER_ROLE } from "@/constants/user.const";
 /**
  * Post deny action for employee's password update request
  */
-export const POST = async (
+export const POST = withErrorHandler(async (
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) => {
@@ -142,4 +142,4 @@ export const POST = async (
         data: responseDTO,
         status: 200
     };
-};
+});

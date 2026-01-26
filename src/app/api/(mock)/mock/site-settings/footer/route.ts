@@ -29,6 +29,7 @@ export async function GET() {
         const region = faker.location.state();
         const country = faker.location.country();
         return {
+            id: faker.database.mongodbObjectId(),
             key: faker.helpers.slugify(`${city}-${region}`).toLowerCase(),
             country,
             region,

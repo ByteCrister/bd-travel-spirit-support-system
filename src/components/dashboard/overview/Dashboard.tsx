@@ -3,17 +3,17 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useDashboardStore } from "@/store/dashboard.store";
-import { StatsCard } from "@/components/overview/dashboard/StatsCard";
-import { RecentActivity } from "@/components/overview/dashboard/RecentActivity";
-import { PendingActions } from "@/components/overview/dashboard/PendingActions";
-import { RecentBookings } from "@/components/overview/dashboard/RecentBookings";
-import { RolePieChart } from "@/components/overview/dashboard/RolePieChart";
-import { AdminNotifications } from "@/components/overview/dashboard/AdminNotifications";
-import { AnnouncementBoard } from "@/components/overview/dashboard/AnnouncementBoard";
-import { QuickActions } from "@/components/overview/dashboard/QuickActions";
-import { StatsCardSkeleton } from "@/components/overview/dashboard/skeletons/StatsCardSkeleton";
-import { ListCardSkeleton } from "@/components/overview/dashboard/skeletons/ListCardSkeleton";
-import { ChartsSkeleton } from "@/components/overview/dashboard/skeletons/ChartsSkeleton";
+import { StatsCard } from "@/components/dashboard/overview/StatsCard";
+import { RecentActivity } from "@/components/dashboard/overview/RecentActivity";
+import { PendingActions } from "@/components/dashboard/overview/PendingActions";
+import { RecentBookings } from "@/components/dashboard/overview/RecentBookings";
+import { RolePieChart } from "@/components/dashboard/overview/RolePieChart";
+import { AdminNotifications } from "@/components/dashboard/overview/AdminNotifications";
+import { AnnouncementBoard } from "@/components/dashboard/overview/AnnouncementBoard";
+import { QuickActions } from "@/components/dashboard/overview/QuickActions";
+import { StatsCardSkeleton } from "@/components/dashboard/overview/skeletons/StatsCardSkeleton";
+import { ListCardSkeleton } from "@/components/dashboard/overview/skeletons/ListCardSkeleton";
+import { ChartsSkeleton } from "@/components/dashboard/overview/skeletons/ChartsSkeleton";
 import {
     FiUsers,
     FiUserCheck,
@@ -26,15 +26,15 @@ import {
     FiTrendingUp,
     FiRefreshCw
 } from "react-icons/fi";
-import { BookingsLineChart } from "@/components/overview/dashboard/Charts/BookingsLineChart";
-import { UsersAreaChart } from "@/components/overview/dashboard/Charts/UsersAreaChart";
-import { RevenueMiniChart } from "@/components/overview/dashboard/Charts/RevenueMiniChart";
+import { BookingsLineChart } from "@/components/dashboard/overview/Charts/BookingsLineChart";
+import { UsersAreaChart } from "@/components/dashboard/overview/Charts/UsersAreaChart";
+import { RevenueMiniChart } from "@/components/dashboard/overview/Charts/RevenueMiniChart";
 import { Breadcrumbs } from "../../global/Breadcrumbs";
 import { USER_ROLE } from "@/constants/user.const";
 
 const breadcrumbItems = [
     { label: "Home", href: '/' },
-    { label: "Dashboard", href: "/overview/dashboard" },
+    { label: "Dashboard", href: "/dashboard/overview" },
 ];
 
 export default function Dashboard() {

@@ -57,23 +57,23 @@ function makeUserRef(seed?: string): UserRef {
 function makeRichTextBlocks(count: number = 3): RichTextBlock[] {
   const blocks: RichTextBlock[] = [];
   const types: RichTextBlock['type'][] = ['paragraph', 'heading', 'important', 'link'];
-  
+
   for (let i = 0; i < count; i++) {
     const type = randChoice(types);
     const block: RichTextBlock = { type };
-    
+
     if (type === 'paragraph' || type === 'heading' || type === 'important') {
       block.text = faker.lorem.paragraph();
     }
-    
+
     if (type === 'link') {
       block.text = faker.lorem.sentence();
       block.href = faker.internet.url();
     }
-    
+
     blocks.push(block);
   }
-  
+
   return blocks;
 }
 
@@ -112,9 +112,9 @@ function makeLocalFestival(): LocalFestival {
 function makeDestinationBlock(): DestinationBlock {
   // Sample Bangladesh divisions and districts
   const bangladeshDivisions: Division[] = Object.values(DIVISION);
-  
+
   const bangladeshDistricts: District[] = Object.values(DISTRICT);
-  
+
   return {
     id: faker.string.uuid(),
     division: randChoice(bangladeshDivisions),
@@ -124,21 +124,21 @@ function makeDestinationBlock(): DestinationBlock {
     content: makeRichTextBlocks(),
     highlights: faker.helpers.arrayElements(
       [
-        "Beautiful scenery", "Local cuisine", "Cultural heritage", 
+        "Beautiful scenery", "Local cuisine", "Cultural heritage",
         "Adventure activities", "Historical sites", "Friendly locals"
       ],
       faker.number.int({ min: 2, max: 5 })
     ),
-    foodRecommendations: Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () => 
+    foodRecommendations: Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () =>
       makeFoodRecommendation()
     ),
-    localFestivals: Array.from({ length: faker.number.int({ min: 1, max: 2 }) }, () => 
+    localFestivals: Array.from({ length: faker.number.int({ min: 1, max: 2 }) }, () =>
       makeLocalFestival()
     ),
     localTips: faker.helpers.arrayElements(
       [
-        "Carry cash as ATMs are limited", 
-        "Bargain in local markets", 
+        "Carry cash as ATMs are limited",
+        "Bargain in local markets",
         "Respect local customs and dress modestly",
         "Try the local street food",
         "Hire a local guide for better experience"
@@ -151,7 +151,7 @@ function makeDestinationBlock(): DestinationBlock {
     ),
     accommodationTips: faker.helpers.arrayElements(
       [
-        "Book in advance during peak season", 
+        "Book in advance during peak season",
         "Stay near the city center for convenience",
         "Consider homestays for authentic experience",
         "Check for AC availability in summer"
@@ -200,16 +200,16 @@ function makeDetail(idSeed: string): ArticleDetail {
 
   const destinations: DestinationBlock[] | undefined =
     Math.random() > 0.3
-      ? Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () => 
-          makeDestinationBlock()
-        )
+      ? Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () =>
+        makeDestinationBlock()
+      )
       : undefined;
 
   const faqs: FaqItem[] | undefined =
     Math.random() > 0.6
-      ? Array.from({ length: faker.number.int({ min: 2, max: 5 }) }, () => 
-          makeFaqItem()
-        )
+      ? Array.from({ length: faker.number.int({ min: 2, max: 5 }) }, () =>
+        makeFaqItem()
+      )
       : undefined;
 
   const seo: ArticleDetail["seo"] = {
@@ -232,13 +232,13 @@ function makeDetail(idSeed: string): ArticleDetail {
     categories:
       Math.random() > 0.5
         ? faker.helpers.arrayElements(
-            Object.values(TOUR_CATEGORIES),
-            faker.number.int({ min: 1, max: 3 })
-          )
+          Object.values(TOUR_CATEGORIES),
+          faker.number.int({ min: 1, max: 3 })
+        )
         : undefined,
     tags: faker.helpers.arrayElements(
       [
-        "beach", "city", "food", "budget", "luxury", "family", 
+        "beach", "city", "food", "budget", "luxury", "family",
         "adventure", "cultural", "historical", "nature", "hiking"
       ],
       faker.number.int({ min: 1, max: 4 })
@@ -268,11 +268,10 @@ function makeDetail(idSeed: string): ArticleDetail {
 
 export async function GET(
   _req: NextRequest,
-  context: { params: { id?: string } }
+  { params }: { params: Promise<{ id?: string }> }
 ): Promise<NextResponse<ArticleDetailApi>> {
   try {
-    const params = await context.params;
-    const id = params.id;
+    const id = (await params).id;
 
     if (!id) {
       return NextResponse.json(

@@ -2,7 +2,7 @@
 import { NextRequest } from "next/server";
 import mongoose from "mongoose";
 import ConnectDB from "@/config/db";
-import AssetModel from "@/models/asset.model";
+import AssetModel from "@/models/assets/asset.model";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 

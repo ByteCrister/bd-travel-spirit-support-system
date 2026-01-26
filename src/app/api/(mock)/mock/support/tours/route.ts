@@ -7,8 +7,8 @@ import {
 import {
     TourApprovalList,
     TourApprovalStats,
-    TourApprovalResponse,
-    TourApprovalRequest,
+    // TourApprovalResponse,
+    // TourApprovalRequest,
 } from "@/types/tour-approval.types";
 import {
     MODERATION_STATUS,
@@ -583,106 +583,106 @@ function initializeMockDatabase(count: number = 100): void {
 }
 
 // POST handler for approval actions
-export async function POST(
-    req: NextRequest,
-    { params }: { params: { tourId: string } }
-) {
-    try {
-        const { tourId } = params;
-        const body = await req.json();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { action, reason, suspensionDuration }: TourApprovalRequest = body;
+// export async function POST(
+//     req: NextRequest,
+//     { params }: { params: { tourId: string } }
+// ) {
+//     try {
+//         const { tourId } = params;
+//         const body = await req.json();
+//         // eslint-disable-next-line @typescript-eslint/no-unused-vars
+//         const { action, reason, suspensionDuration }: TourApprovalRequest = body;
 
-        // Initialize mock DB once
-        if (mockToursDatabase.length === 0) {
-            initializeMockDatabase();
-        }
+//         // Initialize mock DB once
+//         if (mockToursDatabase.length === 0) {
+//             initializeMockDatabase();
+//         }
 
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 400));
+//         // Simulate network delay
+//         await new Promise((resolve) => setTimeout(resolve, 400));
 
-        const index = mockToursDatabase.findIndex((t) => t.id === tourId);
+//         const index = mockToursDatabase.findIndex((t) => t.id === tourId);
 
-        if (index === -1) {
-            return NextResponse.json(
-                { error: `Tour with ID ${tourId} not found` },
-                { status: 404 }
-            );
-        }
+//         if (index === -1) {
+//             return NextResponse.json(
+//                 { error: `Tour with ID ${tourId} not found` },
+//                 { status: 404 }
+//             );
+//         }
 
-        const tour = mockToursDatabase[index];
-        let updatedTour = { ...tour };
+//         const tour = mockToursDatabase[index];
+//         let updatedTour = { ...tour };
 
-        // Update based on action
-        switch (action) {
-            case MODERATION_STATUS.APPROVED:
-                updatedTour = {
-                    ...tour,
-                    moderationStatus: MODERATION_STATUS.APPROVED,
-                    status: TOUR_STATUS.ACTIVE,
-                    rejectionReason: undefined,
-                    updatedAt: new Date().toISOString(),
-                    publishedAt: tour.publishedAt || new Date().toISOString(),
-                };
-                break;
+//         // Update based on action
+//         switch (action) {
+//             case MODERATION_STATUS.APPROVED:
+//                 updatedTour = {
+//                     ...tour,
+//                     moderationStatus: MODERATION_STATUS.APPROVED,
+//                     status: TOUR_STATUS.ACTIVE,
+//                     rejectionReason: undefined,
+//                     updatedAt: new Date().toISOString(),
+//                     publishedAt: tour.publishedAt || new Date().toISOString(),
+//                 };
+//                 break;
 
-            case MODERATION_STATUS.DENIED:
-                if (!reason?.trim()) {
-                    return NextResponse.json(
-                        { error: "Rejection reason is required" },
-                        { status: 400 }
-                    );
-                }
-                updatedTour = {
-                    ...tour,
-                    moderationStatus: MODERATION_STATUS.DENIED,
-                    rejectionReason: reason,
-                    updatedAt: new Date().toISOString(),
-                };
-                break;
+//             case MODERATION_STATUS.DENIED:
+//                 if (!reason?.trim()) {
+//                     return NextResponse.json(
+//                         { error: "Rejection reason is required" },
+//                         { status: 400 }
+//                     );
+//                 }
+//                 updatedTour = {
+//                     ...tour,
+//                     moderationStatus: MODERATION_STATUS.DENIED,
+//                     rejectionReason: reason,
+//                     updatedAt: new Date().toISOString(),
+//                 };
+//                 break;
 
-            case MODERATION_STATUS.SUSPENDED:
-                if (!reason?.trim()) {
-                    return NextResponse.json(
-                        { error: "Suspension reason is required" },
-                        { status: 400 }
-                    );
-                }
-                updatedTour = {
-                    ...tour,
-                    moderationStatus: MODERATION_STATUS.SUSPENDED,
-                    rejectionReason: reason,
-                    updatedAt: new Date().toISOString(),
-                };
-                break;
+//             case MODERATION_STATUS.SUSPENDED:
+//                 if (!reason?.trim()) {
+//                     return NextResponse.json(
+//                         { error: "Suspension reason is required" },
+//                         { status: 400 }
+//                     );
+//                 }
+//                 updatedTour = {
+//                     ...tour,
+//                     moderationStatus: MODERATION_STATUS.SUSPENDED,
+//                     rejectionReason: reason,
+//                     updatedAt: new Date().toISOString(),
+//                 };
+//                 break;
 
-            default:
-                return NextResponse.json(
-                    { error: `Invalid action: ${action}` },
-                    { status: 400 }
-                );
-        }
+//             default:
+//                 return NextResponse.json(
+//                     { error: `Invalid action: ${action}` },
+//                     { status: 400 }
+//                 );
+//         }
 
-        // Update in database
-        mockToursDatabase[index] = updatedTour;
+//         // Update in database
+//         mockToursDatabase[index] = updatedTour;
 
-        const response: TourApprovalResponse = {
-            success: true,
-            message: `Tour "${tour.title}" has been ${action}${reason ? `: ${reason}` : ""
-                }`,
-            tour: updatedTour,
-            updatedAt: new Date(),
-        };
+//         const response: TourApprovalResponse = {
+//             success: true,
+//             message: `Tour "${tour.title}" has been ${action}${reason ? `: ${reason}` : ""
+//                 }`,
+//             tour: updatedTour,
+//             updatedAt: new Date(),
+//         };
 
-        return NextResponse.json({ data: response });
-    } catch (error) {
-        console.error("Error in POST handler:", error);
-        return NextResponse.json(
-            { error: "Internal server error" },
-            { status: 500 }
-        );
-    }
-}
+//         return NextResponse.json({ data: response });
+//     } catch (error) {
+//         console.error("Error in POST handler:", error);
+//         return NextResponse.json(
+//             { error: "Internal server error" },
+//             { status: 500 }
+//         );
+//     }
+// }
 
 // GET handler for fetching tours with filters
 export async function GET(req: NextRequest) {

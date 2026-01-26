@@ -9,7 +9,7 @@ import {
 import {
     EMPLOYEE_STATUS,
     EMPLOYMENT_TYPE,
-    EMPLOYEE_ROLE,
+    SALARY_PAYMENT_MODE,
 } from "@/constants/employee.const";
 
 /**
@@ -18,7 +18,6 @@ import {
 function generateFakeEmployee(): EmployeeListItemDTO {
     const status = faker.helpers.arrayElement(Object.values(EMPLOYEE_STATUS));
     const employmentType = faker.helpers.arrayElement(Object.values(EMPLOYMENT_TYPE));
-    const role = faker.helpers.arrayElement(Object.values(EMPLOYEE_ROLE));
 
     const fullName = faker.person.fullName();
     const email = faker.internet.email();
@@ -38,6 +37,9 @@ function generateFakeEmployee(): EmployeeListItemDTO {
         label: String(status),
         tone: status === EMPLOYEE_STATUS.ACTIVE ? "positive" : status === EMPLOYEE_STATUS.ON_LEAVE ? "warning" : "muted",
     } as const;
+
+    const paymentMode = faker.helpers.arrayElement(Object.values(SALARY_PAYMENT_MODE));
+
 
     return {
         id: faker.database.mongodbObjectId(),
@@ -60,6 +62,7 @@ function generateFakeEmployee(): EmployeeListItemDTO {
         // compensation summary
         salary,
         currency,
+        paymentMode,
 
         // dates
         dateOfJoining,
@@ -112,7 +115,7 @@ function getSortValue(employee: EmployeeListItemDTO, field: EmployeeTableColumn)
 
 export async function GET(
     req: Request,
-    { params }: { params: { companyId: string } }
+    { params }: { params: Promise<{ companyId: string }> }
 ) {
     const { searchParams } = new URL(req.url);
 
@@ -153,7 +156,7 @@ export async function GET(
     const pagedEmployees = employees.slice(start, end);
 
     return NextResponse.json({
-        companyId: params.companyId,
+        companyId: (await params).companyId,
         data: {
             docs: pagedEmployees,
             total,

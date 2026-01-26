@@ -7,7 +7,7 @@ import { getSiteSettings, upsertTier } from "@/lib/mocks/guideSubscriptionsSetti
  * GET — return the singleton site settings guideSubscriptions slice
  * Response: { guideSubscriptions, version, updatedAt }
  */
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const settings = getSiteSettings();
   return NextResponse.json(
     {
@@ -51,9 +51,9 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(
       {
-        tier: result.data.tier,
-        version: result.data.version,
-        updatedAt: result.data.updatedAt,
+        tier: result?.data?.tier,
+        version: result?.data?.version,
+        updatedAt: result?.data?.updatedAt,
       },
       { status: 200 }
     );

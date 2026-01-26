@@ -19,7 +19,7 @@ import {
   FiGlobe
 } from "react-icons/fi";
 import { FaComments, FaUsers } from "react-icons/fa";
-import { HiOutlineChartSquareBar } from 'react-icons/hi';
+import { HiOutlineChartSquareBar, HiOutlineUser } from 'react-icons/hi';
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -57,6 +57,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { href: "/dashboard/overview", label: "Dashboard", icon: FiHome },
       { href: "/dashboard/statistics", label: "Statistics", icon: HiOutlineChartSquareBar, adminOnly: true },
+      { href: "/dashboard/profile", label: "Profile", icon: HiOutlineUser },
     ],
   },
   {

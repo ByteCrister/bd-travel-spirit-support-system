@@ -1,4 +1,5 @@
 // audit.model.ts
+import { AUDIT_ACTION, AuditAction } from "@/constants/audit-action.const";
 import { defineModel } from "@/lib/helpers/defineModel";
 import {
     Schema,
@@ -22,7 +23,7 @@ export interface IAuditDoc extends Document {
     actor?: Types.ObjectId;
     actorModel?: string;
 
-    action: string;
+    action: AuditAction;
 
     note?: string;
     ip?: string;
@@ -61,7 +62,11 @@ const AuditSchema = new Schema<IAuditDoc>(
         actor: { type: Schema.Types.ObjectId, refPath: "actorModel" },
         actorModel: { type: String },
 
-        action: { type: String, required: true },
+        action: {
+            type: String,
+            enum: Object.values(AUDIT_ACTION),
+            default: AUDIT_ACTION.CREATE,
+        },
 
         note: { type: String },
         ip: { type: String },

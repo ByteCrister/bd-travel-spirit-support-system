@@ -7,6 +7,7 @@ import { Types } from "mongoose";
 import type { JWT as DefaultJWT } from "next-auth/jwt";
 import ConnectDB from "@/config/db";
 import UserModel from "@/models/user.model";
+import { USER_ROLE } from "@/constants/user.const";
 
 interface MyJWT extends DefaultJWT {
     id: string;
@@ -45,6 +46,13 @@ export const authConfig: NextAuthConfig = {
                 );
                 if (!user) return null;
 
+                if (
+                    user.role !== USER_ROLE.ADMIN &&
+                    user.role !== USER_ROLE.SUPPORT
+                ) {
+                    return null;
+                }
+
                 const isPasswordCorrect = await compare(password, user.password);
                 if (!isPasswordCorrect) return null;
 
@@ -72,7 +80,7 @@ export const authConfig: NextAuthConfig = {
                 if (!existingUser) return false;
 
                 user.id = (existingUser._id as Types.ObjectId).toString();
-                user.role = existingUser.role;
+                user.role = existingUser.role as (USER_ROLE.ADMIN | USER_ROLE.SUPPORT);
                 user.email = existingUser.email;
             }
 

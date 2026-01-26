@@ -1,5 +1,5 @@
+import { StatisticsPage } from "@/components/dashboard/statistics/StatisticsPage";
 import { ClientOnlyStatistics } from "@/components/wrappers/ClientOnlyStatistics";
-import { StatisticsPage } from "@/components/overview/statistics/StatisticsPage";
 
 
 const page = () => {

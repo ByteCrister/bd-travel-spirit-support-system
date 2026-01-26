@@ -26,9 +26,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       {
-        tier: result.data.tier,
-        version: result.data.version,
-        updatedAt: result.data.updatedAt,
+        tier: result?.data?.tier,
+        version: result?.data?.version,
+        updatedAt: result?.data?.updatedAt,
       },
       { status: 200 }
     );

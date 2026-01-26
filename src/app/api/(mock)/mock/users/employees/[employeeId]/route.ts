@@ -15,10 +15,11 @@ import {
 } from "@/constants/employee.const";
 import { decodeId } from "@/utils/helpers/mongodb-id-conversions";
 import { calculateCurrentMonthPayment, getActualPaymentStatus } from "@/lib/helpers/payment-calculator";
+import { AUDIT_ACTION } from "@/constants/audit-action.const";
 
 export async function GET(
     _req: NextRequest,
-    { params }: { params: { employeeId: string } }
+    { params }: { params: Promise<{ employeeId: string }> }
 ) {
     const { employeeId } = await params;
     const encodedId = decodeId(decodeURIComponent(employeeId));
@@ -31,7 +32,7 @@ export async function GET(
         target: encodedId!,
         actor: faker.database.mongodbObjectId(),
         actorModel: "User",
-        action: faker.helpers.arrayElement(["created", "updated", "deleted", "restored"]),
+        action: faker.helpers.arrayElement(Object.values(AUDIT_ACTION)),
         note: faker.lorem.sentence(),
         ip: faker.internet.ip(),
         userAgent: faker.internet.userAgent(),

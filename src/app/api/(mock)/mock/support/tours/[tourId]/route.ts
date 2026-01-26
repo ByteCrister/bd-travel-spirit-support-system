@@ -150,9 +150,9 @@ function generateCancellationRuleDTO() {
 
 export async function GET(
     req: Request,
-    { params }: { params: { companyId: string; tourId: string } }
+    { params }: { params: Promise<{ tourId: string }> }
 ) {
-    const { companyId, tourId } = await params;
+    const { tourId } = await params;
     const authorId = faker.database.mongodbObjectId();
     const createdAt = faker.date.past().toISOString();
     const updatedAt = faker.date.recent().toISOString();
@@ -296,7 +296,7 @@ export async function GET(
         reApprovalRequestedAt: faker.datatype.boolean() ? faker.date.recent().toISOString() : undefined,
 
         // =============== SYSTEM FIELDS ===============
-        companyId,
+        companyId: "4hgf983h4t9h349gf39fj4f82",
         authorId,
         tags: [faker.word.noun(), faker.word.noun()],
         publishedAt,

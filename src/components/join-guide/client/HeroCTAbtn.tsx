@@ -1,13 +1,13 @@
 "use client";
 
-import React from 'react'
 import { motion } from "framer-motion";
-import useJoinAsGuide from '@/store/join-as-guide.store';
 import Link from 'next/link';
 import { FiArrowRight } from 'react-icons/fi';
+import { useRouter } from "next/navigation";
 
 const HeroCTAbtn = () => {
-    const { handleApplyClick } = useJoinAsGuide();
+    const router = useRouter();
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -17,7 +17,7 @@ const HeroCTAbtn = () => {
             className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start"
         >
             <button
-                onClick={handleApplyClick}
+                onClick={() => router.push('/join-as-guide')}
                 className="group inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold text-white shadow-2xl shadow-emerald-500/25 transition-all duration-300 hover:shadow-emerald-500/40 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 touch-manipulation"
             >
                 Start Your Journey

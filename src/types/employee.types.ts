@@ -44,7 +44,7 @@ export interface ShiftDTO {
 
 export interface DocumentDTO {
   type: string;
-  url: ObjectIdString; // Asset id or signed URL
+  url: ObjectIdString; // in frontend this will carry cloudinary url
   uploadedAt: ISODateString;
 }
 
@@ -145,6 +145,7 @@ export interface EmployeeDetailDTO {
 
   // User information
   user: UserSummaryDTO;
+  avatar?: string; // Asset id reference
 
   // Employment details
   status: EmployeeStatus;
@@ -170,7 +171,6 @@ export interface EmployeeDetailDTO {
   audit: AuditLog[];
 
   // Metadata
-  avatar?: ObjectIdString; // Asset id reference
   notes?: string;
   isDeleted: boolean;
   createdAt: ISODateString;

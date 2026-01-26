@@ -19,7 +19,7 @@ import {
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { useStepDocumentsHandlers } from '@/hooks/useStepDocumentsHandlers'
-import { DocumentFile, SegmentedDocuments } from '@/store/guide-registration.store'
+import { DocumentFile, SegmentedDocuments } from '@/types/register-as-guide.types'
 
 // Document types and their details
 export const documentTypes = [

@@ -11,7 +11,7 @@ const priorities = Object.values(REPORT_PRIORITY);
 
 export async function GET(
     req: Request,
-    { params }: { params: { companyId: string; tourId: string } }
+    { params }: { params: Promise<{ companyId: string; tourId: string }> }
 ) {
     const url = new URL(req.url);
     const page = Number(url.searchParams.get("page") ?? "1");

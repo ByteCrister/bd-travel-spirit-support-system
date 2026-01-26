@@ -57,10 +57,10 @@ function toPaymentAccount(doc: IStripePaymentAccount): PaymentAccount {
 /* ---------------------------------------------
    GET
 --------------------------------------------- */
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await ConnectDB();
-        const { id } = context.params;
+        const { id } = (await params);
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return NextResponse.json(fail("Invalid id"), { status: 400 });
@@ -86,10 +86,10 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
 /* ---------------------------------------------
    PATCH
 --------------------------------------------- */
-export async function PATCH(req: NextRequest, context: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await ConnectDB();
-        const { id } = context.params;
+        const { id } = await params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return NextResponse.json(fail("Invalid id"), { status: 400 });
@@ -134,10 +134,10 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
 /* ---------------------------------------------
    DELETE — Soft delete
 --------------------------------------------- */
-export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await ConnectDB();
-        const { id } = context.params;
+        const { id } = await params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return NextResponse.json(fail("Invalid id"), { status: 400 });

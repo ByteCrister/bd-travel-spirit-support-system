@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
 import type { SocialLinkDTO } from "@/types/footer-settings.types";
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
     // Use the id if present; otherwise return not found
-    const { id } = params ?? {};
+    const { id } = await params ?? {};
     if (!id) {
         return NextResponse.json({ message: "Missing id" }, { status: 400 });
     }

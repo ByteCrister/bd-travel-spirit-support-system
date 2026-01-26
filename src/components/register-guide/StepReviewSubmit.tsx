@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -30,6 +30,7 @@ import { showToast } from '../global/showToast'
 import { extractErrorMessage } from '@/utils/axios/extract-error-message'
 import api from '@/utils/axios'
 import { ConfirmationRegisterDialog } from './ConfirmationRegisterDialog'
+import { EmailVerificationService } from '@/utils/api/email-verification.api'
 
 interface StepReviewSubmitProps {
   onPrevious: () => void
@@ -40,9 +41,60 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
   const { formData, isSubmitting, hasSearchedApplication, setSubmitting, resetForm } = useRegisterGuideStore()
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [emailVerificationService, setEmailVerificationService] = useState<EmailVerificationService | null>(null)
+  
   const totalDocuments = Object.values(formData.documents || {}).flat().length
 
-  // Handle form submission
+  // Initialize email verification service when formData changes
+  useEffect(() => {
+    if (formData.personalInfo.email) {
+      setEmailVerificationService(new EmailVerificationService(formData.personalInfo.email))
+    }
+  }, [formData.personalInfo.email])
+
+  // Handle email verification email sending
+  const handleSendVerificationEmail = async () => {
+    if (!emailVerificationService) {
+      return { success: false, message: 'Email not available' }
+    }
+
+    try {
+      const result = await emailVerificationService.sendVerificationEmail()
+      if (result.success) {
+        showToast.success(result.message)
+      } else {
+        showToast.error(result.message)
+      }
+      return result
+    } catch (error) {
+      const message = extractErrorMessage(error)
+      showToast.error(message)
+      return { success: false, message }
+    }
+  }
+
+  // Handle token verification
+  const handleVerifyToken = async (token: string) => {
+    if (!emailVerificationService) {
+      return { success: false, message: 'Email not available' }
+    }
+
+    try {
+      const result = await emailVerificationService.verifyToken(token)
+      if (result.success) {
+        showToast.success(result.message)
+      } else {
+        showToast.error(result.message)
+      }
+      return result
+    } catch (error) {
+      const message = extractErrorMessage(error)
+      showToast.error(message)
+      return { success: false, message }
+    }
+  }
+
+  // Handle final form submission
   const handleSubmit = async () => {
     if (totalDocuments === 0) {
       showToast.error("Please upload at least one document before submitting");
@@ -54,7 +106,10 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
     try {
       await api.post(
         "/guide-applications/v1",
-        formData
+        {
+          ...formData,
+          emailVerified: true // Add flag to indicate email is verified
+        }
       );
 
       setIsSubmitted(true);
@@ -77,8 +132,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
     }
   };
 
-
-  // Format file size
+  // Rest of the component remains the same...
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -87,7 +141,6 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  // Get file icon
   const getFileIcon = (type: string) => {
     if (type.startsWith('image/')) {
       return <FileText className="w-4 h-4 text-blue-500" />
@@ -359,7 +412,6 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
               </CardContent>
             </Card>
 
-
             {/* Documents Review */}
             <Card className="border-0 shadow-lg" style={{
               background: 'rgba(255, 255, 255, 0.8)',
@@ -514,19 +566,22 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
         </motion.div>
       </motion.div>
       {
-        /* Confirmation Dialog */
-        !hasSearchedApplication && <ConfirmationRegisterDialog
-          open={showConfirmDialog}
-          onOpenChange={setShowConfirmDialog}
-          onConfirm={handleSubmit}
-          title="Final Confirmation Required"
-          description="Please review everything before submitting"
-          confirmText="Yes, Submit Application"
-          cancelText="Review Again"
-          isLoading={isSubmitting}
-        />
+        /* Confirmation Dialog with Email Verification */
+        !hasSearchedApplication && (
+          <ConfirmationRegisterDialog
+            open={showConfirmDialog}
+            onOpenChange={setShowConfirmDialog}
+            onConfirm={handleSubmit}
+            title="Final Confirmation Required"
+            confirmText="Yes, Submit Application"
+            cancelText="Review Again"
+            isLoading={isSubmitting}
+            email={formData.personalInfo.email}
+            onSendVerification={handleSendVerificationEmail}
+            onVerifyToken={handleVerifyToken}
+          />
+        )
       }
-
     </>
   )
 }

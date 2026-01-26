@@ -18,7 +18,7 @@ export async function GET(
     const employees = 200;
 
     const overview: CompanyOverviewDTO = {
-        companyId: decodeCompanyId,
+        companyId: decodeCompanyId.toString(),
         companyName: faker.company.name(),
         kpis: {
             totalTours: tours,

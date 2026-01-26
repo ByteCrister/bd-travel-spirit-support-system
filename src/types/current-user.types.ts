@@ -1,8 +1,9 @@
 // types/current-user.types.ts
 
 import { USER_ROLE } from "@/constants/user.const";
-import { ContactInfoDTO, DocumentDTO, ISODateString, ObjectIdString, SalaryHistoryDTO, ShiftDTO } from "./employee.types";
-import { EmployeeRole, EmploymentType } from "@/constants/employee.const";
+import { EmployeeDetailDTO } from "./employee.types";
+import { EmployeeRole } from "@/constants/employee.const";
+import { AuditAction } from "@/constants/audit-action.const";
 
 /**
  * Roles allowed in the admin dashboard
@@ -24,41 +25,26 @@ export interface IBaseUser {
  * Extended information for Owner (platform administrator)
  */
 export interface IOwnerInfo {
-    role: USER_ROLE.ADMIN;
+    email: string;
     fullName?: string;
+    role: USER_ROLE.ADMIN;
 }
 
 /**
  * Extended information for Employee (support)
  */
-export type IEmployeeInfo = {
-    id: ObjectIdString;
-    userId?: ObjectIdString;
-    avatar?: ObjectIdString;
-
+export type IEmployeeInfo = Omit<EmployeeDetailDTO,
+    "companyId"
+    | "user"
+    | "status"
+    | "audit"
+    | "isDeleted"
+> & {
+    fullName?: string;
+    email: string;
     role: EmployeeRole;
-    employmentType?: EmploymentType;
-
-    // Histories
-    salaryHistory: SalaryHistoryDTO[];
-
-    // Current compensation
-    salary: number;
-    currency: string;
-
-    dateOfJoining: ISODateString;
-    dateOfLeaving?: ISODateString;
-
-    contactInfo: ContactInfoDTO;
-
-    shifts?: ShiftDTO[];
-
-    documents?: DocumentDTO[];
-    lastLogin?: ISODateString;
-
-    createdAt: ISODateString;
-    updatedAt: ISODateString;
-};
+    phone: string;
+}
 
 /**
  * Union for full/expanded user
@@ -74,7 +60,7 @@ export interface AuditLog {
     target: string;
     actor?: string;
     actorModel?: string;
-    action: string;
+    action: AuditAction;
     note?: string;
     ip?: string;
     userAgent?: string;
@@ -95,7 +81,25 @@ export interface AuditListApiResponse {
     page: number;
     pageSize: number;
 }
-
+/**
+ * Date range filter for audits
+ */
+export interface AuditDateFilter {
+    startDate?: string; // ISO string
+    endDate?: string; // ISO string
+    // Single date for quick filter
+    date?: string; // ISO string
+}
+/**
+ * Audit query parameters
+ */
+export interface AuditQueryParams {
+    page?: number;
+    pageSize?: number;
+    startDate?: string;
+    endDate?: string;
+    date?: string;
+}
 /**
  * Request status flags for robust UI logic
  */
@@ -123,20 +127,52 @@ export interface CurrentUserState {
     fullUser: CurrentUser | null;
     audits: AuditLog[];
 
+    // Filters
+    auditFilters: AuditDateFilter & {
+        currentPage: number;
+        pageSize: number;
+        hasMore: boolean;
+    };
+
     // Status
     baseMeta: RequestMeta;
     fullMeta: RequestMeta;
     auditsMeta: RequestMeta;
+
+    // update meta
+    updateNameMeta?: RequestMeta;
+    updatePasswordMeta?: RequestMeta;
 
     // Abort controllers to cancel inflight requests
     _abortBase?: AbortController | null;
     _abortFull?: AbortController | null;
     _abortAudits?: AbortController | null;
 
+    // Abort controllers for update operations
+    _abortUpdateName?: AbortController | null;
+    _abortUpdatePassword?: AbortController | null;
+
     // Actions
     fetchBaseUser: (opts?: { force?: boolean }) => Promise<IBaseUser | null>;
     fetchFullUser: (role: AdminRole, opts?: { force?: boolean }) => Promise<CurrentUser | null>;
-    fetchUserAudits: (opts?: { page?: number; pageSize?: number; force?: boolean, append?: boolean; }) => Promise<AuditLog[] | null>;
+    fetchUserAudits: (opts?:
+        {
+            page?: number;
+            pageSize?: number;
+            force?: boolean;
+            append?: boolean;
+            startDate?: string;
+            endDate?: string;
+            date?: string;
+        }) => Promise<AuditLog[] | null>;
+
+    setAuditDateFilter: (filter: Partial<AuditDateFilter>) => void;
+    resetAuditFilters: () => void;
+    loadMoreAudits: () => Promise<AuditLog[] | null>;
+
+    updateUserName: (data: { name: string }) => Promise<CurrentUser | null>;
+    updateUserPassword: (data: { currentPassword: string; newPassword: string }) => Promise<void>;
+
     markStale: (scope: "base" | "full" | "audits") => void;
     clearUser: () => void;
 }

@@ -72,30 +72,6 @@ AssetFileSchema.statics.decrementRef = async function (
     ).exec();
 };
 
-/* =========================================================
- * Statics
- * ======================================================= */
-AssetFileSchema.statics.incrementRef = async function (
-    fileId: string,
-    session?: ClientSession
-) {
-    await this.updateOne(
-        { _id: fileId },
-        { $inc: { refCount: 1 } },
-        { session }
-    ).exec();
-};
-
-AssetFileSchema.statics.decrementRef = async function (
-    fileId: string,
-    session?: ClientSession
-) {
-    return this.findOneAndUpdate(
-        { _id: fileId },
-        { $inc: { refCount: -1 } },
-        { new: true, session }
-    ).exec();
-};
 
 /**
  * Decrement refCount for multiple AssetFiles in a single query

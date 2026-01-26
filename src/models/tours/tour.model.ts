@@ -303,6 +303,12 @@ export interface ApproveOptions {
   approvedBy: Types.ObjectId;
 }
 
+export interface TerminateOptions {
+  session?: ClientSession;
+  terminatedBy: Types.ObjectId;
+  reason?: string;
+}
+
 // =============== TOUR MODEL WITH METHODS ===============
 export interface ITourModel extends Model<ITour> {
   // Soft delete helpers
@@ -338,6 +344,11 @@ export interface ITourModel extends Model<ITour> {
     id: string | Types.ObjectId,
     requestedBy: Types.ObjectId,
     session?: ClientSession
+  ): Promise<ITour | null>;
+
+  terminateById(
+    id: string | Types.ObjectId,
+    options: TerminateOptions
   ): Promise<ITour | null>;
 
   // Query helpers
@@ -696,7 +707,7 @@ TourSchema.statics.rejectById = async function (
   }
 
   tour.moderationStatus = MODERATION_STATUS.DENIED;
-  tour.status = TOUR_STATUS.TERMINATED;
+  tour.status = TOUR_STATUS.DRAFT;
   tour.rejectionReason = options.reason;
   tour.updatedAt = new Date();
 
@@ -740,6 +751,46 @@ TourSchema.statics.requestReapproval = async function (
   tour.rejectionReason = undefined;
 
   return tour.save({ session });
+};
+
+// Terminate by ID
+TourSchema.statics.terminateById = async function (
+  id: string | Types.ObjectId,
+  options: TerminateOptions
+): Promise<ITour | null> {
+  const tour = await this.findById(id).session(options.session ?? null);
+
+  if (!tour) {
+    throw new Error("Tour not found");
+  }
+
+  if (tour.deletedAt) {
+    throw new Error("Cannot terminate a deleted tour");
+  }
+
+  if (tour.status === TOUR_STATUS.TERMINATED) {
+    throw new Error("Tour is already terminated");
+  }
+
+  // Only allow termination from certain statuses
+  const allowedStatuses = [
+    TOUR_STATUS.ACTIVE,
+    TOUR_STATUS.SUBMITTED,
+    TOUR_STATUS.DRAFT,
+    TOUR_STATUS.COMPLETED
+  ];
+
+  if (!allowedStatuses.includes(tour.status as TOUR_STATUS)) {
+    throw new Error(`Cannot terminate tour from status: ${tour.status}`);
+  }
+
+  // Update tour status and fields
+  tour.status = TOUR_STATUS.TERMINATED;
+  tour.moderationStatus = MODERATION_STATUS.DENIED;
+  tour.rejectionReason = options.reason;
+  tour.updatedAt = new Date();
+
+  return tour.save({ session: options.session });
 };
 
 // Find active tours (not deleted and status = ACTIVE)

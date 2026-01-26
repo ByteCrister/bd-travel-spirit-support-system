@@ -9,6 +9,7 @@ import type {
     BulkUpdateAdvertisingPricesPayload,
     ObjectId,
 } from "@/types/advertising-settings.types";
+import { CURRENCY } from "@/constants/tour.const";
 
 const PLACEMENTS = [
     PLACEMENT.LANDING_BANNER,
@@ -40,6 +41,7 @@ export function createAdvertisingPriceDTO(
     partial?: Partial<AdvertisingPriceDTO>
 ): AdvertisingPriceDTO {
     const id = partial?.id ?? generateId();
+    const title = faker.lorem.words(3);
     const placement =
         (partial?.placement as PlacementType) ??
         faker.helpers.arrayElement(PLACEMENTS.concat(PLACEMENTS));
@@ -52,7 +54,7 @@ export function createAdvertisingPriceDTO(
                 dec: 2,
             })
         );
-    const currency = partial?.currency ?? faker.helpers.arrayElement(["USD", "EUR", "BDT"]);
+    const currency = partial?.currency ?? faker.helpers.arrayElement(Object.values(CURRENCY));
     const defaultDurationDays =
         partial?.defaultDurationDays ?? faker.helpers.arrayElement([null, 7, 14, 30]);
     const allowedDurationsDays = partial?.allowedDurationsDays ?? randomAllowedDurations();
@@ -63,6 +65,7 @@ export function createAdvertisingPriceDTO(
 
     return {
         id,
+        title,
         placement,
         price,
         currency,

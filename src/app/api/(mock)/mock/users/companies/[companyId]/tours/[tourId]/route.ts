@@ -150,7 +150,7 @@ function generateCancellationRuleDTO() {
 
 export async function GET(
     req: Request,
-    { params }: { params: { companyId: string; tourId: string } }
+    { params }: { params: Promise<{ companyId: string; tourId: string }> }
 ) {
     const { companyId, tourId } = await params;
     const authorId = faker.database.mongodbObjectId();

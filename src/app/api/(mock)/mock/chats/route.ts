@@ -121,7 +121,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ChatMessageMu
             { success: true, data: newMessage },
             { status: 201 }
         );
-    } catch (err) {
+    } catch {
         return NextResponse.json(
             { success: false, message: "Invalid request" },
             { status: 400 }
@@ -157,7 +157,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse<ChatMessageM
         messages[idx] = updated;
 
         return NextResponse.json({ success: true, data: updated }, { status: 200 });
-    } catch (err) {
+    } catch {
         return NextResponse.json({ success: false, message: "Invalid request" }, { status: 400 });
     }
 }

@@ -4,7 +4,7 @@ import type { UsersStats, TimeSeriesPoint, CategoryCount } from '@/types/statist
 
 export async function GET() {
     const days = 30;
-    const signupsOverTime: TimeSeriesPoint[] = Array.from({ length: days }, (_, i) => ({
+    const signupsOverTime: TimeSeriesPoint[] = Array.from({ length: days }, () => ({
         date: faker.date.recent({ days }).toISOString(),
         value: faker.number.int({ min: 10, max: 200 }),
     }));

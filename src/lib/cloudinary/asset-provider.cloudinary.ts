@@ -3,7 +3,7 @@
 import cloudinary from "@/config/cloudinary";
 import { AssetStorageProvider, UploadedAsset } from "../storage-providers/asset-storage.interface";
 import { ASSET_TYPE, AssetType } from "@/constants/asset.const";
-import { v4 as uuidv4 } from "uuid";
+// import { v4 as uuidv4 } from "uuid";
 import { CloudinaryApiResource, CloudinaryUploadError, CloudinaryUploadResult } from "./cloudinary.types";
 
 export class CloudinaryAssetProvider implements AssetStorageProvider {
@@ -13,101 +13,101 @@ export class CloudinaryAssetProvider implements AssetStorageProvider {
      */
     async create(
         base64: string,
-        options?: { checksum?: string; fileName?: string; timeout?: number; maxRetries?: number }
+        options: { checksum: string; fileName?: string; timeout?: number; maxRetries?: number }
     ): Promise<UploadedAsset> {
-        const publicId = options?.checksum ?? uuidv4();
-        const timeout = options?.timeout ?? 30000;
-        const maxRetries = options?.maxRetries ?? 3;
+        const publicId = options.checksum; // 🔒 checksum REQUIRED
+        const timeout = options.timeout ?? 120000;
+        const retries = options.maxRetries ?? 2;
 
-        // Abort controller for timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-
+        // 1️⃣ Strong deduplication check
         try {
-            // 1️⃣ Pre-check if asset already exists (only if checksum is provided)
-            if (options?.checksum) {
-                try {
-                    const existing = await this.getAssetByChecksum(options.checksum);
-                    return this.mapUploadResult(existing);
-                } catch (err) {
-                    const error = err as CloudinaryUploadError;
-                    if (error.error?.http_code !== 404) throw err;
-                    // 404 → asset does not exist, proceed to upload
-                }
-            }
-
-            // 2️⃣ Upload with retry + exponential backoff + jitter
-            let attempt = 0;
-            while (attempt < maxRetries) {
-                try {
-                    const res = await cloudinary.uploader.upload(base64, {
-                        public_id: publicId,
-                        resource_type: "auto",
-                        overwrite: false,
-                        timeout: Math.floor(timeout / 1000),
-                        // Optional: use `folder` here if you want organized storage
-                    }) as CloudinaryUploadResult;
-
-                    clearTimeout(timeoutId);
-                    return this.mapUploadResult(res);
-                } catch (err) {
-                    attempt++;
-                    const error = err as CloudinaryUploadError;
-
-                    // Handle Cloudinary 409 / already exists race
-                    if (error.error?.http_code === 409 || error.error?.message?.includes("already exists")) {
-                        try {
-                            const existing = await this.getAssetByChecksum(publicId);
-                            clearTimeout(timeoutId);
-                            return this.mapUploadResult(existing);
-                        } catch {
-                            // If fetch fails, retry
-                        }
-                    }
-
-                    if (attempt >= maxRetries) throw err;
-
-                    // Exponential backoff with jitter
-                    const delay = 500 * Math.pow(2, attempt) + Math.random() * 200;
-                    await new Promise(r => setTimeout(r, delay));
-                }
-            }
-
-            throw new Error("Cloudinary upload failed after max retries");
+            const existing = await this.getAssetByChecksum(publicId);
+            return this.mapUploadResult(existing);
         } catch (err) {
-            const error = err as CloudinaryUploadError;
-            clearTimeout(timeoutId);
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            if ((error as any).message === "AbortError" || error.error?.message === "AbortError") {
-                throw new Error(`Cloudinary upload timed out after ${timeout}ms`);
+            if ((err as CloudinaryUploadError).error?.http_code !== 404) {
+                throw err;
             }
-
-            throw error;
-        } finally {
-            clearTimeout(timeoutId);
         }
+
+        // 2️⃣ Upload with retry (race-safe)
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const res = await cloudinary.uploader.upload(base64, {
+                    public_id: publicId,
+                    resource_type: "auto",
+                    overwrite: false,
+                    timeout
+                });
+
+                return this.mapUploadResult(res);
+            } catch (err) {
+                const error = err as CloudinaryUploadError;
+                const status = error.error?.http_code;
+
+                // Another request already uploaded it
+                if (
+                    error.error?.http_code === 409 ||
+                    error.error?.message?.includes("already exists")
+                ) {
+                    const existing = await this.getAssetByChecksum(publicId);
+                    return this.mapUploadResult(existing);
+                }
+
+                // Retry only on transient errors
+                if (
+                    attempt < retries &&
+                    (status === 499 || (typeof status === "number" && status >= 500))
+                ) {
+                    await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+                    continue;
+                }
+
+                throw err;
+            }
+        }
+
+        throw new Error("Cloudinary upload failed");
     }
+
 
     /**
     * Get asset by checksum (public_id)
     */
     async getAssetByChecksum(checksum: string): Promise<CloudinaryApiResource> {
-        try {
-            return await cloudinary.api.resource(checksum, {
-                resource_type: "auto"
-            }) as CloudinaryApiResource;
-        } catch (error) {
-            throw error as CloudinaryUploadError;
+        const resourceTypes = ["image", "video", "raw"] as const;
+
+        // Try each resource type until we find the asset
+        for (const resourceType of resourceTypes) {
+            try {
+                return await cloudinary.api.resource(checksum, {
+                    resource_type: resourceType
+                }) as CloudinaryApiResource;
+            } catch (error) {
+                const cloudinaryError = error as CloudinaryUploadError;
+                // If 404, try next resource type
+                if (cloudinaryError.error?.http_code === 404) {
+                    continue;
+                }
+                // If other error, throw it
+                throw error;
+            }
         }
+
+        // If we tried all resource types and got 404 for all, throw the last error
+        throw {
+            error: {
+                message: "Asset not found in any resource type",
+                http_code: 404
+            }
+        } as CloudinaryUploadError;
     }
 
     /**
      * Replace an asset (delete + create) with transaction safety
      */
-    async update(oldProviderId: string, newBase64: string): Promise<UploadedAsset> {
+    async update(oldProviderId: string, newBase64: string, checksum: string): Promise<UploadedAsset> {
         try {
-            const newAsset = await this.create(newBase64);
+            const newAsset = await this.create(newBase64, { checksum });
 
             // Only delete old asset if new upload succeeded
             await this.delete(oldProviderId);
@@ -123,18 +123,30 @@ export class CloudinaryAssetProvider implements AssetStorageProvider {
      * Delete an asset safely
      */
     async delete(providerId: string): Promise<boolean> {
-        try {
-            const res = await cloudinary.uploader.destroy(providerId, {
-                resource_type: "auto",
-            });
+        const resourceTypes = ["image", "video", "raw"] as const;
 
-            return res.result === "ok" || res.result === "not found";
-        } catch (error) {
-            console.error(`Failed to delete Cloudinary asset ${providerId}:`, error);
-            return false;
+        for (const resourceType of resourceTypes) {
+            try {
+                const res = await cloudinary.uploader.destroy(providerId, {
+                    resource_type: resourceType,
+                });
+
+                return res.result === "ok" || res.result === "not found";
+            } catch (error) {
+                const cloudinaryError = error as CloudinaryUploadError;
+                // If 404, try next resource type
+                if (cloudinaryError.error?.http_code === 404) {
+                    continue;
+                }
+                // For other errors, log and continue trying other resource types
+                console.warn(`Failed to delete Cloudinary asset ${providerId} with resource_type ${resourceType}:`, cloudinaryError.error?.message);
+            }
         }
-    }
 
+        // If we tried all resource types and still failed
+        console.error(`Failed to delete Cloudinary asset ${providerId} with any resource type`);
+        return false;
+    }
     /**
      * Batch delete assets
      */

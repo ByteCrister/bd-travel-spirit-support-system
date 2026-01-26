@@ -230,6 +230,7 @@ export interface IEmployeeModel
 ========================================================= */
 
 export interface IEmployee extends Document {
+    _id: Types.ObjectId;
     user: Types.ObjectId;
     companyId?: Types.ObjectId;
 

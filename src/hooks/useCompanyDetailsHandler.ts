@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import { ZodError } from "zod";
 import {
-    CompanyDetails,
     useRegisterGuideStore,
 } from "@/store/guide-registration.store";
 import {
@@ -12,6 +11,7 @@ import {
 } from "@/utils/validators/registerAsGuide.validator";
 import { showToast } from "@/components/global/showToast";
 import { Lightbulb, Target, TrendingUp, Users } from "lucide-react";
+import { CompanyDetails } from "@/types/register-as-guide.types";
 
 export const features = [
     {

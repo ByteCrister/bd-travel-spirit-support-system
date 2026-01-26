@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, message: result.message ?? "Unknown error" }, { status: 500 });
     }
 
-    return NextResponse.json({ version: result.data.version, updatedAt: result.data.updatedAt }, { status: 200 });
+    return NextResponse.json({ version: result?.data?.version, updatedAt: result?.data?.updatedAt }, { status: 200 });
   } catch (e) {
     return NextResponse.json({ ok: false, message: (e as Error).message ?? "Invalid JSON" }, { status: 400 });
   }

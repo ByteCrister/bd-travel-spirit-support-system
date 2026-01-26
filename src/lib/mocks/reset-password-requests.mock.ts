@@ -27,7 +27,7 @@ function safeBetween(from: Date, to: Date) {
 
 // ---- DTO Builder ----
 
-function makeDto(index: number): ResetPasswordRequestDTO {
+function makeDto(): ResetPasswordRequestDTO {
   const id = faker.string.uuid();
   const status = randomStatus();
 
@@ -91,7 +91,7 @@ function makeDto(index: number): ResetPasswordRequestDTO {
 
 export function ensureDataset() {
   if (MOCK_DB.length > 0) return;
-  MOCK_DB = Array.from({ length: DATASET_SIZE }, (_, i) => makeDto(i));
+  MOCK_DB = Array.from({ length: DATASET_SIZE }, () => makeDto());
 }
 
 // ---- Search ----
@@ -117,6 +117,7 @@ export function applyFilters(
   if (!filters) return true;
   for (const [k, v] of Object.entries(filters)) {
     if (v === undefined) continue;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const val = (dto as any)[k];
     if (val === undefined) return false;
     if (typeof val === "boolean") {
@@ -138,7 +139,9 @@ export function compareByField(
   field: string,
   dir: "asc" | "desc"
 ) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const av = (a as any)[field];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bv = (b as any)[field];
 
   if (av == null && bv == null) return 0;

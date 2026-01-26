@@ -8,9 +8,9 @@ import mongoose, {
     FilterQuery,
     CallbackWithoutResultAndOptionalError,
 } from "mongoose";
-import { TourModel } from "./tour.model";
 import { TRAVEL_TYPE, TravelType } from "@/constants/tour.const";
 import { defineModel } from "@/lib/helpers/defineModel";
+import TourModel from "./tour.model";
 
 export interface IReviewReply {
     _id: Types.ObjectId;

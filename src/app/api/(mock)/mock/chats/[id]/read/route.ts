@@ -4,9 +4,9 @@ import { messages } from "../../route"; // reuse in-memory array
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<ChatMessageMutationResponse>> {
-    const { id } = params;
+    const { id } = await params;
     const idx = messages.findIndex((m) => m._id === id);
     if (idx === -1) {
         return NextResponse.json({ success: false, message: "Message not found" }, { status: 404 });
