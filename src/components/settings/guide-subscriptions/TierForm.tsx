@@ -48,7 +48,7 @@ export const TierForm: React.FC<TierFormProps> = ({
       key: initialValues?.key ?? "",
       title: initialValues?.title ?? "",
       price: initialValues?.price ?? 0,
-      currency: initialValues?.currency ?? Currency.USD,
+      currency: initialValues?.currency ?? Currency.BDT,
       billingCycleDays: initialValues?.billingCycleDays ?? [30],
       perks: initialValues?.perks ?? [],
       active: initialValues?.active ?? true,
@@ -210,9 +210,6 @@ export const TierForm: React.FC<TierFormProps> = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={Currency.USD}>🇺🇸 USD</SelectItem>
-              <SelectItem value={Currency.EUR}>🇪🇺 EUR</SelectItem>
-              <SelectItem value={Currency.GBP}>🇬🇧 GBP</SelectItem>
               <SelectItem value={Currency.BDT}>🇧🇩 BDT</SelectItem>
             </SelectContent>
           </Select>

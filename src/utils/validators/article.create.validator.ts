@@ -14,6 +14,12 @@ import {
 } from '@/constants/article.const';
 import { TOUR_CATEGORIES, DIVISION, DISTRICT, Division, District, TourCategories } from '@/constants/tour.const';
 
+const BANGLA_CHAR_REGEX = /^[\s\u0980-\u09FF\u0964\u0965,.!?:;()-]+$/;
+const BANGLA_LETTER_REGEX = /[\u0985-\u09B9\u09DC-\u09DD\u09DF-\u09E3]/;
+
+const containsBanglaLetter = (value?: string) =>
+    !!value && BANGLA_LETTER_REGEX.test(value);
+
 const richTextBlockSchema = Yup.object({
     type: Yup.mixed<ArticleRichTextBlockType>()
         .oneOf(Object.values(ARTICLE_RICH_TEXT_BLOCK_TYPE))
@@ -97,7 +103,16 @@ export const createArticleSchema = Yup.object().shape({
         .required('Title is required'),
     banglaTitle: Yup.string()
         .min(5, 'Bangla title must be at least 5 characters')
-        .required('Bangla title is required'),
+        .required('Bangla title is required')
+        .matches(
+            BANGLA_CHAR_REGEX,
+            'Bangla title must contain only Bangla characters and common punctuation'
+        )
+        .test(
+            'contains-bangla-letter',
+            'Bangla title must contain at least one Bangla letter',
+            containsBanglaLetter
+        ),
     status: Yup.mixed<ArticleStatus>()
         .oneOf(Object.values(ARTICLE_STATUS))
         .required('Status is required'),

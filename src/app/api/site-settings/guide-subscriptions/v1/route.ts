@@ -23,7 +23,9 @@ function mapTierToDto(t: ISubscriptionTierSetting): SubscriptionTierDTO {
         updatedAt: t.updatedAt instanceof Date ? t.updatedAt.toISOString() : undefined,
     };
 }
-
+function escapeRegex(input: string) {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 /* -------------------------
  GET handler: fetchAll tiers
 ------------------------- */
@@ -31,7 +33,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     await ConnectDB();
 
     const url = new URL(request.url);
-    const onlyActive = url.searchParams.get("onlyActive") === "1";
+    const onlyActive = url.searchParams.get("onlyActive") === "true";
     const search = (url.searchParams.get("search") ?? "").trim();
     const sortBy = (url.searchParams.get("sortBy") as "price" | "title" | "createdAt" | null) ?? "title";
     const sortDir = (url.searchParams.get("sortDir") as "asc" | "desc") ?? "asc";
@@ -49,10 +51,48 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
     // Apply search filter using MongoDB regex (case-insensitive)
     if (search.length > 0) {
-        query.$or = [
-            { title: { $regex: search, $options: 'i' } },
-            { key: { $regex: search, $options: 'i' } }
+        const escaped = escapeRegex(search);
+        const regex = new RegExp(escaped, "i");
+
+        const orConditions: FilterQuery<ISubscriptionTierSetting>[] = [
+            { title: regex },
+            { key: regex },
+            { perks: { $elemMatch: { $regex: regex } } },
         ];
+
+        // If search contains any digit → allow numeric "contains" search
+        if (/\d/.test(search)) {
+            orConditions.push(
+                {
+                    $expr: {
+                        $regexMatch: {
+                            input: { $toString: "$price" },
+                            regex: escaped,
+                        },
+                    },
+                },
+
+                // billingCycleDays numeric contains
+                {
+                    $expr: {
+                        $anyElementTrue: {
+                            $map: {
+                                input: "$billingCycleDays",
+                                as: "day",
+                                in: {
+                                    $regexMatch: {
+                                        input: { $toString: "$$day" },
+                                        regex: escaped,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                }
+            );
+        }
+
+        query.$or = orConditions;
     }
 
     // Build sort object

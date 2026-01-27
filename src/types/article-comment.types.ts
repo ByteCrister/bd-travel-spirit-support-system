@@ -96,7 +96,7 @@ export interface CommentFiltersDTO {
     status?: CommentStatus | 'any';
     minLikes?: number | null;
     hasReplies?: boolean | null;      // true: only threads with replies; false: leaf nodes; null: any
-    authorName?: EntityId | null;
+    authorName?: string | null;
     searchQuery?: string | null;      // search in comment content
 }
 

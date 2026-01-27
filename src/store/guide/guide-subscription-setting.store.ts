@@ -31,7 +31,6 @@ type ServerValidationShape = { errors?: ValidationError[] };
 Constants
 ------------------------- */
 
-// const URL_AFTER_API = "/mock/site-settings/guide-subscriptions";
 const URL_AFTER_API = "/site-settings/guide-subscriptions/v1";
 
 const FETCH_TTL_MS = Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 1000 * 60 * 2; // 2 minutes
@@ -330,7 +329,16 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
                 });
 
                 try {
-                    const resp = await api.get<GuideSubscriptionsApiResponse>(`${URL_AFTER_API}`);
+                    // Pass query parameters to API
+                    const resp = await api.get<GuideSubscriptionsApiResponse>(`${URL_AFTER_API}`, {
+                        params: {
+                            search: q.search || undefined,
+                            onlyActive: q.onlyActive ? "true" : "false",
+                            sortBy: q.sortBy,
+                            sortDir: q.sortDir,
+                        },
+                    });
+
                     if (!resp.data || !resp.data.data) throw new Error("Invalid response body.");
                     const payload = resp.data.data;
                     const list = payload.guideSubscriptions ?? [];
@@ -525,6 +533,8 @@ export const useGuideSubscriptionsStore = create<GuideSubscriptionsState>()(
                 set((s) => {
                     s.query = { ...s.query, ...q };
                 });
+                // Auto-fetch with new query
+                get().fetchAll(false, { ...get().query, ...q });
             },
 
             validateDraft: (d?: SubscriptionTierDTO | null) => {

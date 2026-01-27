@@ -1,5 +1,5 @@
 // src/types/register-as-guide.types.ts
-import { GUIDE_SOCIAL_PLATFORM } from "@/constants/guide.const";
+import { GuideSocialPlatform } from "@/constants/guide.const";
 
 // Types for form data
 export interface PersonalInfo {
@@ -17,7 +17,7 @@ export interface CompanyDetails {
     companyName: string;
     bio: string;
     social: {
-        platform: GUIDE_SOCIAL_PLATFORM;
+        platform: GuideSocialPlatform;
         url: string;
     }[];
 }

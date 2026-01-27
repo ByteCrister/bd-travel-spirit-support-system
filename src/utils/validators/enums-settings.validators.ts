@@ -2,8 +2,8 @@
 import * as z from "zod";
 
 export const enumValueSchema = z.object({
-    key: z.string().min(3, "Key is required"),
-    label: z.string().min(3, "Label is required"),
+    key: z.string().min(2, "Key is required"),
+    label: z.string().min(2, "Label is required"),
     value: z.union([z.string(), z.number()]),
     description: z.string().optional().nullable(),
     active: z.boolean().optional(),

@@ -5,34 +5,25 @@ import { FiLogOut, FiAlertTriangle, FiX } from "react-icons/fi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "../ui/spinner";
+import { useCurrentUserStore } from "@/store/current-user.store";
+import { USER_ROLE } from "@/constants/user.const";
 
 interface LogoutConfirmationProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   isLoggingOut?: boolean;
-  admin?: {
-    name: string;
-    email: string;
-    avatar?: string;
-    role: string;
-  };
 }
 
-const mockAdmin = {
-  name: "Sarah Johnson",
-  email: "sarah@travelspirit.com",
-  avatar: "/avatars/sarah.jpg",
-  role: "Administrator",
-};
-
-export function LogoutConfirmation({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
+export function LogoutConfirmation({
+  isOpen,
+  onClose,
+  onConfirm,
   isLoggingOut = false,
-  admin = mockAdmin 
 }: LogoutConfirmationProps) {
+
+  const { fullUser } = useCurrentUserStore();
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -73,7 +64,7 @@ export function LogoutConfirmation({
               >
                 <FiX className="h-4 w-4" />
               </button>
-              
+
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-white/20 rounded-full">
                   <FiAlertTriangle className="h-6 w-6" />
@@ -89,17 +80,19 @@ export function LogoutConfirmation({
             <div className="p-6">
               <div className="flex items-center gap-4 mb-6">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={admin.avatar} alt={admin.name} />
+                  {fullUser?.role === USER_ROLE.SUPPORT && (
+                    <AvatarImage src={fullUser.avatar} alt={fullUser?.fullName} />
+                  )}
                   <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-                    {getInitials(admin.name)}
+                    {getInitials(fullUser?.fullName ?? '-')}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">{admin.name}</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{admin.email}</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">{fullUser?.fullName}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{fullUser?.email}</p>
                 </div>
               </div>
-              
+
               <p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
                 You will be signed out of your account and redirected to the login page. Any unsaved changes will be lost.
               </p>

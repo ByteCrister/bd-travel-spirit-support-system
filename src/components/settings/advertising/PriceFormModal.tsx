@@ -94,7 +94,6 @@ const placements: Array<{ label: string; value: string; icon: React.ReactNode; c
   },
 ];
 
-const currencies = Object.values(CURRENCY);
 const durationOptions = [7, 14, 30, 60, 90, 180];
 
 const PriceFormModal: React.FC<Props> = ({
@@ -438,11 +437,7 @@ const PriceFormModal: React.FC<Props> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {currencies.map((curr) => (
-                        <SelectItem key={curr} value={curr} className="font-medium">
-                          {curr}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value={CURRENCY.BDT}>🇧🇩 BDT</SelectItem>
                     </SelectContent>
                   </Select>
                 )}

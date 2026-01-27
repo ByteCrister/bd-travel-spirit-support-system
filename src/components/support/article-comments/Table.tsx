@@ -1,14 +1,12 @@
 'use client';
 
-import { memo, useMemo, useRef, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import Row from './Row';
-import { HiCheckCircle, HiXCircle } from 'react-icons/hi2';
 import { useArticleCommentsStore } from '@/store/article/article-comment.store';
 import { Thread } from './Thread';
-import { Checkbox } from '../../ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../ui/accordion';
 import { HiArrowUp } from 'react-icons/hi';
 
@@ -26,18 +24,9 @@ export const Table = memo(function Table() {
         tableQuery,
         tableLoading,
     } = useArticleCommentsStore();
-    const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
     const [openAccordions, setOpenAccordions] = useState<string[]>([]); // track open accordions
     const accordionRefs = useRef<Record<string, HTMLDivElement | null>>({}); // refs
     const vm = tableVM;
-
-    const onToggleSelect = (id: string, checked: boolean) => {
-        setSelectedIds((s) => ({ ...s, [id]: checked }));
-    };
-
-    const selectedList = useMemo(() => Object.keys(selectedIds).filter((id) => selectedIds[id]), [selectedIds]);
-
-    const bulkBarVisible = selectedList.length > 0;
 
     const handleAccordionToggle = (rowId: string, open: boolean) => {
         toggleAccordion(rowId, open);
@@ -77,60 +66,6 @@ export const Table = memo(function Table() {
 
     return (
         <div className="space-y-4">
-            {/* Bulk action bar */}
-            {bulkBarVisible && (
-                <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-gradient-to-r from-blue-50 via-indigo-50/80 to-violet-50 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-violet-950/40 border border-blue-200/60 dark:border-blue-900/40 rounded-xl shadow-[0_2px_8px_0_rgba(59,130,246,0.15)] dark:shadow-[0_2px_8px_0_rgba(59,130,246,0.25)] animate-in slide-in-from-top-2 duration-300 backdrop-blur-sm">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg shadow-sm">
-                                <HiCheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div>
-                                <p className="font-semibold text-sm text-slate-900 dark:text-white">
-                                    {selectedList.length} item{selectedList.length !== 1 ? 's' : ''} selected
-                                </p>
-                                <p className="text-xs text-slate-600 dark:text-slate-400">
-                                    Ready for bulk actions
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="default"
-                            size="sm"
-                            className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white gap-2 shadow-sm hover:shadow-md transition-all duration-200"
-                            onClick={() => {
-                                // Approve all pending
-                            }}
-                        >
-                            <HiCheckCircle className="h-4 w-4" />
-                            <span className="hidden sm:inline">Approve</span>
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white gap-2 shadow-sm hover:shadow-md transition-all duration-200"
-                            onClick={() => {
-                                // Reject selected
-                            }}
-                        >
-                            <HiXCircle className="h-4 w-4" />
-                            <span className="hidden sm:inline">Reject</span>
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 shadow-sm hover:shadow-md transition-all duration-200 hidden sm:flex"
-                            onClick={() => {
-                                // Export selected rows to CSV
-                            }}
-                        >
-                            Export
-                        </Button>
-                    </div>
-                </div>
-            )}
 
             {/* Empty state */}
             {vm.length === 0 && !tableLoading && (
@@ -192,17 +127,6 @@ export const Table = memo(function Table() {
                             <div className="flex items-center justify-between w-full px-4 sm:px-6 py-3.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-all duration-200 group">
                                 {/* Left side: checkbox + article info */}
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    <div
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="flex-shrink-0"
-                                    >
-                                        <Checkbox
-                                            aria-label={`Select ${row.title}`}
-                                            checked={!!selectedIds[row.id]}
-                                            onCheckedChange={(checked) => onToggleSelect(row.id, !!checked)}
-                                            className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                                        />
-                                    </div>
                                     <div className="flex-1 min-w-0">
                                         <Row row={row} />
                                     </div>

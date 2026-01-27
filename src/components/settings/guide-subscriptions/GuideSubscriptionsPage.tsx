@@ -162,7 +162,7 @@ export default function GuideSubscriptionsPage() {
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Potential MRR</p>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                    ${stats.totalRevenue.toFixed(2)}
+                    {stats.totalRevenue.toFixed(2)}
                   </p>
                 </div>
                 <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">

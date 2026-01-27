@@ -1,4 +1,3 @@
-// Import statements remain the same
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -15,11 +14,11 @@ import { IEmployeeInfo } from "@/types/current-user.types";
 import { USER_ROLE } from "@/constants/user.const";
 import SupportEmployeeInfo from "./SupportEmployeeInfo";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogoutConfirmation } from "@/components/layout/LogoutConfirmation";
 import { signOut } from "next-auth/react";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import ProfileHeader from "./ProfileHeader";
+import { AlertConfirmDialog } from "./AlertConfirmDialog";
 
 const tabs = [
     { id: "profile", label: "Profile Information", icon: UserCircle, color: "from-slate-600 to-slate-700" },
@@ -363,11 +362,13 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            <LogoutConfirmation
+            <AlertConfirmDialog
                 isOpen={showLogoutConfirm}
                 onClose={handleLogoutCancel}
                 onConfirm={handleConfirmLogout}
-                isLoggingOut={isLoggingOut}
+                title="Confirm Action"
+                description="Do you want to proceed with this action?"
+                isLoading={isLoggingOut}
             />
         </>
     );

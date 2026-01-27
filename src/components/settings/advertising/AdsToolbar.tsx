@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { HiPlus, HiPencil, HiTrash, HiRefresh, HiDocumentText } from "react-icons/hi";
+import { HiPlus, HiPencil, HiTrash, HiRefresh } from "react-icons/hi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -10,7 +10,6 @@ interface Props {
   onBulkEdit: () => void;
   onDelete: () => void;
   onRefresh: () => void;
-  onOpenNotes: () => void;
 }
 
 const AdsToolbar: React.FC<Props> = ({
@@ -19,7 +18,6 @@ const AdsToolbar: React.FC<Props> = ({
   onBulkEdit,
   onDelete,
   onRefresh,
-  onOpenNotes,
 }) => {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -100,20 +98,6 @@ const AdsToolbar: React.FC<Props> = ({
           </Button>
         </motion.div>
 
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Button 
-            variant="outline" 
-            onClick={onOpenNotes}
-            className="border-slate-200 hover:bg-slate-50"
-            aria-label="Edit notes"
-          >
-            <HiDocumentText className="mr-2 h-4 w-4" />
-            Notes
-          </Button>
-        </motion.div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 // components/GuideSubscriptions/TierList.tsx
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import type {
   SubscriptionTierDTO,
   ID,
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { TierRow } from "./TierRow";
 import { Search, Filter, ArrowUpDown, Package } from "lucide-react";
 import useGuideSubscriptionsStore from "@/store/guide/guide-subscription-setting.store";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
 /**
  * TierList props for index/table component
@@ -35,6 +36,17 @@ export const TierList: React.FC<TierListProps> = ({
 }) => {
   const { query, setQuery } = useGuideSubscriptionsStore()
 
+  const [searchInput, setSearchInput] = useState(query.search ?? "");
+
+  const debouncedSetSearch = useDebouncedCallback(
+    (value: string) => {
+      setQuery({
+        search: value,
+      });
+    },
+    400
+  );
+
   return (
     <div className="space-y-6">
       {/* Filter Bar */}
@@ -44,9 +56,14 @@ export const TierList: React.FC<TierListProps> = ({
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <Input
+              id="search"
               placeholder="Search by key or title..."
-              value={query.search}
-              onChange={(e) => { setQuery({ search: e.target.value }) }}
+              value={searchInput}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchInput(value);    
+                debouncedSetSearch(value);
+              }}
               className="pl-10 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
             />
           </div>

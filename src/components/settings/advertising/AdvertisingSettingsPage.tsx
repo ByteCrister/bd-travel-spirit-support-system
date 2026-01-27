@@ -111,7 +111,6 @@ const AdvertisingSettingsPage: React.FC = () => {
                         onBulkEdit={() => setBulkOpen(true)}
                         onDelete={() => setConfirmOpen(true)}
                         onRefresh={() => fetchConfig().catch(() => { })}
-                        onOpenNotes={() => { }}
                     />
                 </motion.div>
 
