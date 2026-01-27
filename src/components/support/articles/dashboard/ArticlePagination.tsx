@@ -18,7 +18,7 @@ import {
   FiChevronsRight,
   FiFileText,
 } from 'react-icons/fi';
-import { useArticleStore } from '@/store/article.store';
+import { useArticleStore } from '@/store/article/article.store';
 
 type Props = {
   totalPages: number;

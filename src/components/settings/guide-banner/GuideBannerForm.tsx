@@ -26,7 +26,7 @@ import {
   isAllowedExtension,
   getFileExtension,
 } from "@/utils/helpers/file-conversion";
-import { useGuideBannersStore } from "@/store/guide-bannerSetting.store";
+import { useGuideBannersStore } from "@/store/guide/guide-bannerSetting.store";
 import { Image as ImageIcon, Loader2 } from "lucide-react";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 

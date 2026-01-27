@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Star, Flag } from "lucide-react";
-import { selectSegment, useTravelerInfoStore } from "@/store/traveler-info.store";
+import { selectSegment, useTravelerInfoStore } from "@/store/traveler/traveler-info.store";
 import ActivitySkeleton from "../user-profile-skeletons/ActivitySkeleton";
 
 interface UserActivityTabProps {

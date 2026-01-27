@@ -2,9 +2,10 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { HiPlus, HiCurrencyDollar } from "react-icons/hi";
+import { HiPlus } from "react-icons/hi";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 interface Props {
   onCreate: () => void;
@@ -25,7 +26,7 @@ const EmptyState: React.FC<Props> = ({ onCreate }) => {
           className="relative mb-6"
         >
           <div className="h-24 w-24 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
-            <HiCurrencyDollar className="h-12 w-12 text-emerald-600" />
+            <FaBangladeshiTakaSign className="h-12 w-12 text-emerald-600" />
           </div>
           <motion.div
             animate={{

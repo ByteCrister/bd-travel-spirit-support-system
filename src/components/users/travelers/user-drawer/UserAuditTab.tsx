@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, FileText, User, Edit, Trash2, Eye, Shield } from "lucide-react";
-import { selectSegment, useTravelerInfoStore } from "@/store/traveler-info.store";
+import { selectSegment, useTravelerInfoStore } from "@/store/traveler/traveler-info.store";
 import AuditSkeleton from "../user-profile-skeletons/AuditSkeleton";
 
 interface UserAuditTabProps {

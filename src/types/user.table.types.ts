@@ -1,4 +1,4 @@
-// yser.table.types.ts
+// user.table.types.ts
 import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
 import { Suspension } from "./user.types";
 

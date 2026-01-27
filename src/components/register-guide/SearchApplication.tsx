@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useRegisterGuideStore } from '@/store/guide-registration.store';
+import { useRegisterGuideStore } from '@/store/guide/guide-registration.store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

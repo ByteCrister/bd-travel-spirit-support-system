@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import type { CompanySortBy, SortDir } from '@/types/company.types';
-import { useCompanyStore } from '@/store/company.store';
+import { useCompanyStore } from '@/store/company/company.store';
 
 export function CompanyToolbar() {
     const {

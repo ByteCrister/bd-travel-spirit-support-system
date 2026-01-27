@@ -32,7 +32,7 @@ import { BiSort } from "react-icons/bi";
 import { AiOutlineInbox } from "react-icons/ai";
 import { BsFileEarmarkText } from "react-icons/bs";
 import { TableSkeleton } from "./TableSkeleton";
-import { SortByTypes, SortDirTypes } from "@/store/guide.store";
+import { SortByTypes, SortDirTypes } from "@/store/guide/guide.store";
 import { GuideDetailsDialog } from "./GuideDetailsDialog";
 import StatusBadge from "./StatusBadge";
 import DocumentsPopover from "./DocumentsPopover";

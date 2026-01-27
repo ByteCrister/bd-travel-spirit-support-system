@@ -1,6 +1,6 @@
 // src/app/api/users/route.ts
 import { demoUsers } from "@/lib/mocks/demoUsers";
-import { UsersApiResponse } from "@/store/travelers.store";
+import { UsersApiResponse } from "@/store/traveler/travelers.store";
 import { NextResponse } from "next/server";
 import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
 import { UserSortableField } from "@/types/user.table.types";

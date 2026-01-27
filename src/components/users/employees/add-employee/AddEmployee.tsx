@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     Plus, Trash2, RefreshCw, Upload, File, Image as ImageIcon, X, AlertCircle,
-    Loader2, User, Mail, Phone, Calendar, DollarSign, Briefcase, Clock,
+    Loader2, User, Mail, Phone, Calendar, Briefcase, Clock,
     FileText, Shield, Heart, Sparkles, CheckCircle2,
     CreditCard,
     Info
@@ -36,6 +36,7 @@ import { showToast } from "@/components/global/showToast";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 import { useEmployeeStore } from "@/store/employee.store";
 import { cn } from "@/lib/utils";
+import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 // Constants
 const DAYS_OF_WEEK: DayOfWeek[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -392,14 +393,14 @@ export default function AddEmployeePage() {
                                     <div className="relative">
                                         <h3 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-3">
                                             <div className="p-2 bg-green-500 rounded-xl shadow-md">
-                                                <DollarSign className="h-5 w-5 text-white" />
+                                                <FaBangladeshiTakaSign className="h-5 w-5 text-white" />
                                             </div>
                                             Compensation Details
                                         </h3>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                             <FormItem>
-                                                <FormLabel icon={<DollarSign className="h-4 w-4" />}>Salary *</FormLabel>
+                                                <FormLabel icon={<FaBangladeshiTakaSign className="h-4 w-4" />}>Salary *</FormLabel>
                                                 <div className="flex gap-2">
                                                     <Field name="salary">
                                                         {({ field }: FieldProps<number>) => (

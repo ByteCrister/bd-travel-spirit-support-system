@@ -8,7 +8,7 @@ import { CompanyToolbar } from '@/components/users/companies/CompanyToolbar';
 import { CompanyTable } from '@/components/users/companies/CompanyTable';
 import { CompanyPagination } from '@/components/users/companies/CompanyPagination';
 import { CompanySkeleton } from '@/components/users/companies/CompanySkeleton';
-import { useCompanyStore } from '@/store/company.store';
+import { useCompanyStore } from '@/store/company/company.store';
 import { Breadcrumbs } from '../../global/Breadcrumbs';
 
 const breadcrumbItems = [

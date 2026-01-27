@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { TierRow } from "./TierRow";
 import { Search, Filter, ArrowUpDown, Package } from "lucide-react";
-import useGuideSubscriptionsStore from "@/store/guide-subscription-setting.store";
+import useGuideSubscriptionsStore from "@/store/guide/guide-subscription-setting.store";
 
 /**
  * TierList props for index/table component

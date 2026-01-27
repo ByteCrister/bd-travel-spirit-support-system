@@ -11,7 +11,7 @@ import ArticleTable from './ArticleTable';
 import ArticlePagination from './ArticlePagination';
 import ArticleRefreshButton from './ArticleRefreshButton';
 import ArticleErrorState from './ArticleErrorState';
-import { useArticleStore } from '@/store/article.store';
+import { useArticleStore } from '@/store/article/article.store';
 import { Breadcrumbs } from '@/components/global/Breadcrumbs';
 
 const breadcrumbItems = [

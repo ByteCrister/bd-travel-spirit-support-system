@@ -22,7 +22,6 @@ import {
     FiCalendar,
     FiFlag,
     FiUserX,
-    FiDollarSign,
     FiTrendingUp,
     FiRefreshCw
 } from "react-icons/fi";
@@ -31,6 +30,7 @@ import { UsersAreaChart } from "@/components/dashboard/overview/Charts/UsersArea
 import { RevenueMiniChart } from "@/components/dashboard/overview/Charts/RevenueMiniChart";
 import { Breadcrumbs } from "../../global/Breadcrumbs";
 import { USER_ROLE } from "@/constants/user.const";
+import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 const breadcrumbItems = [
     { label: "Home", href: '/' },
@@ -199,7 +199,7 @@ export default function Dashboard() {
                                 <StatsCard
                                     title="Total Revenue"
                                     value={`$${(stats?.totalRevenue || 0).toLocaleString()}`}
-                                    icon={<FiDollarSign className="h-6 w-6" />}
+                                    icon={<FaBangladeshiTakaSign className="h-6 w-6" />}
                                     color="green"
                                     loading={loading.stats}
                                     description="All time revenue"

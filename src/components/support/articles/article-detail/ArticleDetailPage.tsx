@@ -42,7 +42,7 @@ import {
     ID,
     DestinationBlock,
 } from '@/types/article.types';
-import { useArticleStore } from '@/store/article.store';
+import { useArticleStore } from '@/store/article/article.store';
 import { showToast } from '@/components/global/showToast';
 import { ArticleDetailSkeleton } from './ArticleDetailSkeleton';
 import { HeaderBar } from './HeaderBar';

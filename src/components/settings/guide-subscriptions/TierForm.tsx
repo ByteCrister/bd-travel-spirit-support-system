@@ -16,8 +16,9 @@ import { Currency } from "@/types/guide-subscription-settings.types";
 import { format } from "date-fns";
 import { mapValidationErrors } from "@/utils/helpers/guide-subscriptions.transform";
 import { motion } from "framer-motion";
-import { DollarSign, Calendar, Sparkles, Code, AlertCircle, Check, X, RefreshCw } from "lucide-react";
+import { Calendar, Sparkles, Code, AlertCircle, Check, X, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 export interface TierFormProps {
   initialValues?: Partial<SubscriptionTierFormValues> & { _id?: string; createdAt?: string; updatedAt?: string };
@@ -183,7 +184,7 @@ export const TierForm: React.FC<TierFormProps> = ({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-sm font-medium flex items-center gap-2">
-            <DollarSign size={14} className="text-green-600" />
+            <FaBangladeshiTakaSign size={14} className="text-green-600" />
             Price
           </Label>
           <Input

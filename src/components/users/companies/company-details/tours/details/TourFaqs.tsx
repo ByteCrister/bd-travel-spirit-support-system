@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronLeft, FiChevronRight, FiRefreshCw, FiSearch, FiThumbsUp, FiThumbsDown } from "react-icons/fi";
 import clsx from "clsx";
 
-import { useCompanyDetailStore } from "@/store/company-detail.store";
+import { useCompanyDetailStore } from "@/store/company/company-detail.store";
 import type { TourFAQDTO } from "@/types/faqs.types";
 
 type Props = {

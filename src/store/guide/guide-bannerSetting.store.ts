@@ -21,7 +21,7 @@ import {
     GuideBannerListResponse,
     GuideBannerQueryCacheEntry,
     GuideBannerListMeta,
-} from "../types/guide-banner-settings.types";
+} from "../../types/guide-banner-settings.types";
 
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import api from "@/utils/axios";

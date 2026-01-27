@@ -30,7 +30,7 @@ import {
     FaWheelchair,
     FaSnowflake,
 } from "react-icons/fa";
-import { useCompanyDetailStore } from "@/store/company-detail.store";
+import { useCompanyDetailStore } from "@/store/company/company-detail.store";
 import AllDetailsSkeleton from "./skeletons/AllDetailsSkeleton";
 import { TourDetailDTO } from "@/types/tour.types";
 import { Button } from "@/components/ui/button";

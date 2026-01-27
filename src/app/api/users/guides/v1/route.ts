@@ -8,7 +8,7 @@ import type { PendingGuideDTO } from "@/types/pendingGuide.types";
 import { withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { AssetType } from "@/constants/asset.const";
-import { PaginatedResponse } from "@/store/guide.store";
+import { PaginatedResponse } from "@/store/guide/guide.store";
 import AssetModel, { IAsset } from "@/models/assets/asset.model";
 import { PopulatedAssetFileLean } from "@/types/populated-asset.types";
 

@@ -27,7 +27,7 @@ import {
     BarChart3
 } from "lucide-react";
 import type { RequestError, ID } from "@/types/guide-banner-settings.types";
-import { useGuideBannersStore } from "@/store/guide-bannerSetting.store";
+import { useGuideBannersStore } from "@/store/guide/guide-bannerSetting.store";
 import { buildAssetSrc, formatISODate } from "@/utils/helpers/guide-banner-settings";
 import Image from "next/image";
 

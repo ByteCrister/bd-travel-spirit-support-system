@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import {
   HiX,
   HiCheck,
-  HiCurrencyDollar,
   HiAdjustments,
   HiLightningBolt,
   HiUsers,
@@ -35,6 +34,7 @@ import {
   UpdateAdvertisingPricePayload,
 } from "@/types/advertising-settings.types";
 import { Currency, CURRENCY } from "@/constants/tour.const";
+import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 interface Props {
   open: boolean;
@@ -143,7 +143,7 @@ const BulkEditDrawer: React.FC<Props> = ({ open, onClose, selectedRows, onSubmit
             {/* Currency Selection */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <HiCurrencyDollar className="h-5 w-5 text-emerald-600" />
+                <FaBangladeshiTakaSign className="h-5 w-5 text-emerald-600" />
                 <Label className="text-sm font-semibold">Update Currency</Label>
               </div>
               <Select value={currency} onValueChange={(c: Currency) => setCurrency(c)}>

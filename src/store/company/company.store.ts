@@ -54,6 +54,7 @@ interface CompanyState {
     selection: string[];
     loading: boolean;
     error?: string;
+    _abortController?: AbortController | null; // FIXED: Added abort controller
 
     // --- UI actions
     setSearch: (search: string) => void;
@@ -72,6 +73,7 @@ interface CompanyState {
     fetchCompanies: (force?: boolean) => Promise<void>;
     refresh: () => Promise<void>;
     invalidateAll: () => void;
+    invalidateCompany: (id: string) => void; // FIXED: Added individual invalidation
 }
 
 export const useCompanyStore = create<CompanyState>()(
@@ -85,29 +87,51 @@ export const useCompanyStore = create<CompanyState>()(
             selection: [],
             loading: false,
             error: undefined,
+            _abortController: null,
 
             // --- UI actions
             setSearch: (search) => {
+                const state = get();
+                // FIXED: Abort ongoing request
+                if (state._abortController) {
+                    state._abortController.abort();
+                }
                 set((s) => ({
                     params: { ...s.params, search, page: 1 }, // reset to page 1 on new search
                 }));
             },
 
             setSort: (sortBy, sortDir) => {
+                const state = get();
+                if (state._abortController) {
+                    state._abortController.abort();
+                }
                 set((s) => ({
                     params: { ...s.params, sortBy, sortDir, page: 1 }, // reset to page 1 on new sort
                 }));
             },
 
             setPage: (page) => {
+                const state = get();
+                if (state._abortController) {
+                    state._abortController.abort();
+                }
                 set((s) => ({
                     params: { ...s.params, page: Math.max(1, page) },
                 }));
             },
 
             setLimit: (limit) => {
+                const state = get();
+                if (state._abortController) {
+                    state._abortController.abort();
+                }
                 set((s) => ({
-                    params: { ...s.params, limit: Math.min(100, Math.max(1, limit)), page: 1 },
+                    params: {
+                        ...s.params,
+                        limit: Math.min(100, Math.max(1, limit)),
+                        page: 1,
+                    },
                 }));
             },
 
@@ -155,6 +179,14 @@ export const useCompanyStore = create<CompanyState>()(
                 // exact fresh hit -> nothing to do
                 if (!force && isFresh(cached)) return;
 
+                // FIXED: Abort previous request
+                if (state._abortController) {
+                    state._abortController.abort();
+                }
+
+                const abortController = new AbortController();
+                set({ _abortController: abortController, loading: true, error: undefined });
+
                 // Before calling API, attempt to satisfy request from existing cache entries
                 if (!force) {
                     const groupKey = makeQueryGroupKey(params);
@@ -167,22 +199,27 @@ export const useCompanyStore = create<CompanyState>()(
                         (e) =>
                             makeQueryGroupKey(e.paramsUsed) === groupKey &&
                             // must be fresh
-                            isFresh(e)
+                            isFresh(e),
                     );
 
                     // Helper: compute start index in absolute terms for a cached entry
                     const cachedStart = (e: CompanyCacheEntry) => (e.page - 1) * e.limit;
-                    const cachedEndExclusive = (e: CompanyCacheEntry) => cachedStart(e) + e.rows.length;
+                    const cachedEndExclusive = (e: CompanyCacheEntry) =>
+                        cachedStart(e) + e.rows.length;
 
                     // 1A) Superset: single cached entry that contains all requested rows
                     const superset = entries.find(
                         (e) =>
-                            cachedStart(e) <= requestedStart && cachedEndExclusive(e) >= requestedEndExclusive
+                            cachedStart(e) <= requestedStart &&
+                            cachedEndExclusive(e) >= requestedEndExclusive,
                     );
                     if (superset) {
                         // slice from superset
                         const sliceStart = requestedStart - cachedStart(superset);
-                        const slice = superset.rows.slice(sliceStart, sliceStart + params.limit);
+                        const slice = superset.rows.slice(
+                            sliceStart,
+                            sliceStart + params.limit,
+                        );
 
                         // normalize back into entities and cache a synthetic entry for the exact key
                         set((s) => {
@@ -204,9 +241,11 @@ export const useCompanyStore = create<CompanyState>()(
                                 cache: { ...s.cache, [key]: entry },
                                 stats: s.stats,
                                 loading: false,
+                                _abortController: null,
                                 error: undefined,
                             };
                         });
+                        abortController.abort(); // Clean up abort controller
                         return;
                     }
 
@@ -214,11 +253,14 @@ export const useCompanyStore = create<CompanyState>()(
                     // Build a map of absolute index -> row for all cached pages in group that are fresh
                     // Only accept if we can cover requestedStart..requestedEndExclusive entirely with contiguous rows (no gaps)
                     const coverageMap = new Map<number, CompanyRowDTO>();
+                    let totalFromEntries = 0;
                     for (const e of entries) {
                         const start = cachedStart(e);
                         for (let i = 0; i < e.rows.length; i++) {
                             coverageMap.set(start + i, e.rows[i]);
                         }
+                        // Use total from first entry (should be same for all in same group)
+                        if (totalFromEntries === 0) totalFromEntries = e.total;
                     }
                     // Check coverage
                     let allCovered = true;
@@ -231,7 +273,7 @@ export const useCompanyStore = create<CompanyState>()(
                         }
                         assembled.push(v);
                     }
-                    if (allCovered && assembled.length === params.limit) {
+                    if (allCovered && assembled.length === params.limit && totalFromEntries > 0) {
                         // save assembled as cached entry for exact key to speed future requests
                         set((s) => {
                             const nextEntities = { ...s.entities };
@@ -240,9 +282,9 @@ export const useCompanyStore = create<CompanyState>()(
                             }
                             const entry: CompanyCacheEntry = {
                                 rows: assembled.map((r) => ({ ...nextEntities[r.id] })),
-                                total: entries[0].total, // all entries share same total logically; choose first
+                                total: totalFromEntries,
                                 page: params.page,
-                                pages: Math.ceil(entries[0].total / params.limit),
+                                pages: Math.ceil(totalFromEntries / params.limit),
                                 limit: params.limit,
                                 fetchedAt: Date.now(),
                                 paramsUsed: { ...params },
@@ -252,16 +294,16 @@ export const useCompanyStore = create<CompanyState>()(
                                 cache: { ...s.cache, [key]: entry },
                                 stats: s.stats,
                                 loading: false,
+                                _abortController: null,
                                 error: undefined,
                             };
                         });
+                        abortController.abort();
                         return;
                     }
                 }
 
                 // If we reached here: no cache could satisfy the requested range, so call API
-                set({ loading: true, error: undefined });
-
                 try {
                     const { search, sortBy, sortDir, page, limit } = params;
                     const qs = new URLSearchParams({
@@ -272,8 +314,12 @@ export const useCompanyStore = create<CompanyState>()(
                         limit: String(limit),
                     }).toString();
 
-                    const res = await api.get(`${URL_AFTER_API}?${qs}`);
-                    const payload = res.data as CompanyListResponseDTO & { stats?: CompanyDashboardStatsDTO };
+                    const res = await api.get(`${URL_AFTER_API}?${qs}`, {
+                        signal: abortController.signal,
+                    });
+                    const payload = res.data as CompanyListResponseDTO & {
+                        stats?: CompanyDashboardStatsDTO;
+                    };
 
                     set((s) => {
                         // Normalize entities
@@ -298,11 +344,30 @@ export const useCompanyStore = create<CompanyState>()(
                             cache: { ...s.cache, [key]: entry },
                             stats: payload.stats ?? s.stats,
                             loading: false,
+                            _abortController: null,
                             error: undefined,
                         };
                     });
-                } catch (err) {
-                    set({ loading: false, error: extractErrorMessage(err) });
+                } catch (err: unknown) {
+                    // AbortError handling
+                    if (
+                        err instanceof DOMException && err.name === "AbortError"
+                    ) {
+                        return;
+                    }
+
+                    if (
+                        err instanceof Error &&
+                        err.message.toLowerCase().includes("aborted")
+                    ) {
+                        return;
+                    }
+
+                    set({
+                        loading: false,
+                        error: extractErrorMessage(err),
+                        _abortController: null,
+                    });
                 }
             },
 
@@ -311,12 +376,41 @@ export const useCompanyStore = create<CompanyState>()(
             },
 
             invalidateAll: () => {
-                set({ cache: {} });
+                const state = get();
+                if (state._abortController) {
+                    state._abortController.abort();
+                }
+                set({ cache: {}, entities: {}, stats: undefined, _abortController: null });
+            },
+
+            invalidateCompany: (id: string) => {
+                const state = get();
+                const newEntities = { ...state.entities };
+                delete newEntities[id];
+
+                // Remove from all cache entries
+                const newCache: Record<string, CompanyCacheEntry> = {};
+                for (const [key, entry] of Object.entries(state.cache)) {
+                    const filteredRows = entry.rows.filter(row => row.id !== id);
+                    if (filteredRows.length > 0) {
+                        newCache[key] = {
+                            ...entry,
+                            rows: filteredRows,
+                            total: entry.total - (entry.rows.length - filteredRows.length),
+                        };
+                    }
+                }
+
+                set({ entities: newEntities, cache: newCache });
             },
         }),
         {
             name: "company.store",
-            partialize: (state) => ({ params: state.params }), // only persist query params
-        }
-    )
+            partialize: (state) => ({
+                params: state.params,
+                // FIXED: Also persist stats for dashboard
+                stats: state.stats
+            }),
+        },
+    ),
 );

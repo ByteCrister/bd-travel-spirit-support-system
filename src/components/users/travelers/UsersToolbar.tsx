@@ -20,7 +20,7 @@ import {
     FiCheckCircle,
     FiX
 } from "react-icons/fi";
-import { UsersQuery } from "@/store/travelers.store";
+import { UsersQuery } from "@/store/traveler/travelers.store";
 import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
 import { cn } from "@/lib/utils";
 

@@ -5,7 +5,6 @@ import {
   HiTrash,
   HiCheckCircle,
   HiXCircle,
-  HiCurrencyDollar,
   HiCalendar,
 } from "react-icons/hi";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ import type {
   AdvertisingPriceRow,
   ObjectId,
 } from "@/types/advertising-settings.types";
+import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 interface Props {
   rows: AdvertisingPriceRow[];
@@ -127,7 +127,7 @@ const AdsTable: React.FC<Props> = ({
 
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <HiCurrencyDollar className="h-4 w-4 text-emerald-600" />
+                    <FaBangladeshiTakaSign className="h-4 w-4 text-emerald-600" />
                     <span className="font-semibold text-slate-900">
                       {formatCurrency(row.price, row.currency)}
                     </span>

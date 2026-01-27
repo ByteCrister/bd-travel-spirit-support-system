@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useRegisterGuideStore } from '@/store/guide-registration.store'
+import { useRegisterGuideStore } from '@/store/guide/guide-registration.store'
 import {
   User,
   Building2,

@@ -4,7 +4,7 @@ import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCompanyStore } from '@/store/company.store';
+import { useCompanyStore } from '@/store/company/company.store';
 
 /**
  * Props for CompanyPagination.

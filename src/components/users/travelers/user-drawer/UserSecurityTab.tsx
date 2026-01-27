@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { selectSegment, useTravelerInfoStore } from "@/store/traveler-info.store";
+import { selectSegment, useTravelerInfoStore } from "@/store/traveler/traveler-info.store";
 import SecuritySkeleton from "../user-profile-skeletons/SecuritySkeleton";
 
 interface UserSecurityTabProps {

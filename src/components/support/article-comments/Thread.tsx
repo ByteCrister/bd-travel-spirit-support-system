@@ -6,7 +6,7 @@ import { ThreadFilterBar } from './ThreadFilterBar'; // Add this import
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useArticleCommentsStore } from '@/store/article-comment.store';
+import { useArticleCommentsStore } from '@/store/article/article-comment.store';
 import { CommentFiltersDTO } from '@/types/article-comment.types';
 
 export const Thread = memo(function Thread({ articleId }: { articleId: string }) {

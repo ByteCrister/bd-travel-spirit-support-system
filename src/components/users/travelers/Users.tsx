@@ -11,7 +11,7 @@ import { SuspendUserDialog } from "@/components/users/travelers/SuspendUserDialo
 import { useUserModals } from "@/hooks/useUserModals";
 import { UserAction, UserSortableField, UserTableRow } from "@/types/user.table.types";
 import { motion } from "framer-motion";
-import useTravelerStore, { clearUsersCache, forceRefreshCurrent } from "@/store/travelers.store";
+import useTravelerStore, { clearUsersCache, forceRefreshCurrent } from "@/store/traveler/travelers.store";
 import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
 import { User, Suspension } from "@/types/user.types";
 import { showToast } from "../../global/showToast";

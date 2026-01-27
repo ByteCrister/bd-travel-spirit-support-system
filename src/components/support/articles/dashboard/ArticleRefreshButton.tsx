@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { HiArrowPath } from 'react-icons/hi2';
-import { useArticleStore } from '@/store/article.store';
+import { useArticleStore } from '@/store/article/article.store';
 
 export default function ArticleRefreshButton() {
     const invalidateStats = useArticleStore((s) => s.invalidateStats);

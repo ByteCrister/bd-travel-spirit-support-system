@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   HiX,
   HiCheck,
-  HiCurrencyDollar,
   HiCalendar,
   HiCheckCircle,
   HiEye,
@@ -48,6 +47,7 @@ import useAdvertisingSettingsStore from "@/store/advertisingSettings.store";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
 import { CURRENCY } from "@/constants/tour.const";
+import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 type Mode = "create" | "edit";
 
@@ -372,7 +372,7 @@ const PriceFormModal: React.FC<Props> = ({
           >
             <div className="col-span-2 space-y-3">
               <Label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <HiCurrencyDollar className="h-4 w-4 text-emerald-600" />
+                <FaBangladeshiTakaSign className="h-4 w-4 text-emerald-600" />
                 Price Amount
               </Label>
               <div className="relative">
@@ -405,7 +405,7 @@ const PriceFormModal: React.FC<Props> = ({
                     }
                   }}
                 />
-                <HiCurrencyDollar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <FaBangladeshiTakaSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               </div>
               <AnimatePresence>
                 {errors.price && (

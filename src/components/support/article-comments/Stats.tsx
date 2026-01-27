@@ -15,7 +15,7 @@ import {
 } from 'react-icons/hi2';
 import { HiBadgeCheck } from 'react-icons/hi';
 import Link from 'next/link';
-import { useArticleCommentsStore } from '@/store/article-comment.store';
+import { useArticleCommentsStore } from '@/store/article/article-comment.store';
 
 export function Stats() {
     const { stats, statsLoading } = useArticleCommentsStore();

@@ -8,7 +8,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   FiCalendar,  
   FiMapPin, 
-  FiDollarSign,
   FiEye,
   FiClock,
   FiCheckCircle,
@@ -17,6 +16,7 @@ import {
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 import { Booking } from "@/types/dashboard.types";
+import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 interface RecentBookingsProps {
   bookings: Booking[];
@@ -166,7 +166,7 @@ export function RecentBookings({ bookings, loading = false, onView, className }:
                     
                     <div className="text-right ml-4">
                       <div className="flex items-center gap-1 mb-1">
-                        <FiDollarSign className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <FaBangladeshiTakaSign className="h-3 w-3 text-green-600 dark:text-green-400" />
                         <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                           {formatCurrency(booking.amount)}
                         </span>

@@ -2,7 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SortByTypes, SortDirTypes, useGuideStore } from "@/store/guide.store";
+import { SortByTypes, SortDirTypes, useGuideStore } from "@/store/guide/guide.store";
 import { GuideFilters } from "@/components/users/guides/GuideFilters";
 import { GuideKPI } from "@/components/users/guides/GuideKPI";
 import { GuideTable } from "@/components/users/guides/GuideTable";

@@ -4,7 +4,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { SubscriptionTierDTO, SubscriptionTierFormValues } from "@/types/guide-subscription-settings.types";
-import useGuideSubscriptionsStore from "@/store/guide-subscription-setting.store";
+import useGuideSubscriptionsStore from "@/store/guide/guide-subscription-setting.store";
 import { toSubscriptionTierDTO } from "@/utils/helpers/guide-subscriptions.transform";
 import { VersionBanner } from "./VersionBanner";
 import { TierList } from "./TierList";
@@ -12,8 +12,9 @@ import { TierForm } from "./TierForm";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { UndoSnackbar } from "./UndoSnackbar";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, RefreshCw, Settings, TrendingUp, DollarSign, Package, AlertCircle, X } from "lucide-react";
+import { Plus, RefreshCw, Settings, TrendingUp, Package, AlertCircle, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 export default function GuideSubscriptionsPage() {
   const {
@@ -165,7 +166,7 @@ export default function GuideSubscriptionsPage() {
                   </p>
                 </div>
                 <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                  <DollarSign size={24} className="text-purple-600 dark:text-purple-400" />
+                  <FaBangladeshiTakaSign size={24} className="text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
             </div>

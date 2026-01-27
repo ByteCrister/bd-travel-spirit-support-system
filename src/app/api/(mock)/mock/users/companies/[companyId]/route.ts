@@ -4,13 +4,12 @@ import { faker } from "@faker-js/faker";
 import {
     CompanyOverviewDTO,
 } from "@/types/company.overview.types";
-import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 
 export async function GET(
     req: Request,
     { params }: { params: Promise<{ companyId: string }> }
 ) {
-    const decodeCompanyId = resolveMongoId((await params).companyId);
+    const decodeCompanyId = (await params).companyId;
 
     // Generate collections
     const tours = 200;

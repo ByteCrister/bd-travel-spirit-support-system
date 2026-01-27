@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import Row from './Row';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi2';
-import { useArticleCommentsStore } from '@/store/article-comment.store';
+import { useArticleCommentsStore } from '@/store/article/article-comment.store';
 import { Thread } from './Thread';
 import { Checkbox } from '../../ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../ui/accordion';

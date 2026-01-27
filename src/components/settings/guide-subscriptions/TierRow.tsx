@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
-import { GripVertical, Edit2, Copy, Trash2, DollarSign, Calendar, Sparkles, Clock } from "lucide-react";
+import { GripVertical, Edit2, Copy, Trash2, Calendar, Sparkles, Clock } from "lucide-react";
 import { motion } from "framer-motion";
+import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 export interface TierRowProps {
     tier: SubscriptionTierDTO;
@@ -74,7 +75,7 @@ export const TierRow: React.FC<TierRowProps> = ({
                                 {tier.key}
                             </span>
                             <div className="flex items-center gap-1.5">
-                                <DollarSign size={14} className="text-green-600 dark:text-green-400" />
+                                <FaBangladeshiTakaSign size={14} className="text-green-600 dark:text-green-400" />
                                 <span className="font-semibold text-gray-900 dark:text-white">
                                     {tier.price} {tier.currency}
                                 </span>

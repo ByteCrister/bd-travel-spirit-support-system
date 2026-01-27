@@ -15,7 +15,6 @@ import {
     TrendingUp,
     MousePointerClick,
     Eye,
-    DollarSign,
     MapPin,
     Clock,
     User,
@@ -32,6 +31,7 @@ import {
     Sparkles
 } from 'lucide-react';
 import AdDetailsSkeleton from './skeletons/AdDetailsSkeleton';
+import { FaBangladeshiTakaSign } from 'react-icons/fa6';
 
 export interface AdDetailsProps {
     id: string;
@@ -329,7 +329,7 @@ export function AdDetails({ id }: AdDetailsProps): JSX.Element {
             <Card className="border-2">
                 <div className="p-6">
                     <SectionHeader 
-                        icon={<DollarSign className="w-5 h-5" />} 
+                        icon={<FaBangladeshiTakaSign className="w-5 h-5" />} 
                         title="Plan & Billing" 
                     />
                     
@@ -345,7 +345,7 @@ export function AdDetails({ id }: AdDetailsProps): JSX.Element {
                                 }
                             />
                             <InfoRow
-                                icon={<DollarSign className="w-4 h-4" />}
+                                icon={<FaBangladeshiTakaSign className="w-4 h-4" />}
                                 label="Price"
                                 value={
                                     <span className="text-lg font-bold text-primary">

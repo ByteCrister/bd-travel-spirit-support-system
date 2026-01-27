@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { ReplyEditor } from './ReplyEditor';
 import { ModerationReasonDialog } from './ModerationReasonDialog';
-import { useArticleCommentsStore } from '@/store/article-comment.store';
+import { useArticleCommentsStore } from '@/store/article/article-comment.store';
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
 import { HiTrash } from 'react-icons/hi';
 

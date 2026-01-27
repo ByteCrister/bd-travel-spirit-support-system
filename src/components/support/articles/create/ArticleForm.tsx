@@ -21,7 +21,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { showToast } from '@/components/global/showToast';
-import { useArticleStore } from '@/store/article.store';
+import { useArticleStore } from '@/store/article/article.store';
 import {
     CreateArticleInput,
     DestinationBlock,

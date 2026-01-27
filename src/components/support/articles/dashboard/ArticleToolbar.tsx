@@ -33,7 +33,7 @@ import {
 } from 'react-icons/hi2';
 import { FiRotateCcw } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useArticleStore } from '@/store/article.store';
+import { useArticleStore } from '@/store/article/article.store';
 import { useRouter } from 'next/navigation';
 import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
 import { TOUR_CATEGORIES, TourCategories } from '@/constants/tour.const';

@@ -7,7 +7,7 @@ import { Table } from '@/components/support/article-comments/Table';
 import { Pagination } from '@/components/support/article-comments/Pagination';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useArticleCommentsStore } from '@/store/article-comment.store';
+import { useArticleCommentsStore } from '@/store/article/article-comment.store';
 import { HiExclamationTriangle, HiArrowPath } from 'react-icons/hi2';
 import { Breadcrumbs } from '@/components/global/Breadcrumbs';
 

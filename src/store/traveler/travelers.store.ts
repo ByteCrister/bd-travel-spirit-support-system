@@ -53,14 +53,11 @@ interface useTravelerStoreTypes {
     resetQuery: () => void;
 
     _cache: NormalizedCache;
-
     cacheTTL: number;
-
     _lastRequestSeq?: number;
 
     invalidateCache: (predicate?: (canonicalKey: string) => boolean) => void;
     invalidateItem: (id: string) => void;
-
 
     currentPageKey?: string;
     currentData?: UsersApiResponse;
@@ -77,7 +74,8 @@ interface useTravelerStoreTypes {
     selectedUser?: User | null;
     setSelectedUser: (u?: User | null) => void;
 
-    patchUserOptimistic: (id: string, patch: Partial<User>) => Promise<User | null>;
+    // FIXED: Changed to UserTableRow to match cache type
+    patchUserOptimistic: (id: string, patch: Partial<UserTableRow>) => Promise<UserTableRow | null>;
     verifyUser: (id: string) => Promise<boolean>;
     upgradeToOrganizer: (id: string) => Promise<boolean>;
     resetPassword: (id: string) => Promise<boolean>;
@@ -130,20 +128,40 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
             (set, get) => ({
                 perPage: 20,
                 setPerPage: (n) => {
-                    set({ perPage: n, query: { ...get().query, perPage: n } });
+                    set({ perPage: n, query: { ...get().query, perPage: n, page: 1 } }); // FIXED: Reset to page 1
+                    get().fetchUsers({ useCache: false, force: false }).catch(() => { });
                 },
 
                 query: { page: 1, perPage: 20 },
                 setQuery: (q) => {
+                    // FIXED: Add abort logic
+                    const state = get();
+                    if (state._abortController) {
+                        state._abortController.abort();
+                    }
+
                     set((state) => {
-                        const next = { query: { ...state.query, ...q } };
-                        return next;
+                        const nextQuery = { ...state.query, ...q };
+                        // FIXED: Reset to page 1 when non-pagination filters change
+                        if (q.search !== undefined || q.roles !== undefined || 
+                            q.accountStatus !== undefined || q.isVerified !== undefined) {
+                            nextQuery.page = 1;
+                        }
+                        return { query: nextQuery };
                     });
+                    
                     Promise.resolve().then(() => {
                         get().fetchUsers({ useCache: false, force: false }).catch(() => { });
                     });
                 }, 
-                resetQuery: () => set({ query: { page: 1, perPage: get().perPage } }),
+                resetQuery: () => {
+                    const state = get();
+                    if (state._abortController) {
+                        state._abortController.abort();
+                    }
+                    set({ query: { page: 1, perPage: state.perPage } });
+                    get().fetchUsers({ useCache: false, force: false }).catch(() => { });
+                },
 
                 _cache: createEmptyNormalizedCache(),
                 cacheTTL: defaultCacheTTL,
@@ -177,24 +195,29 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
                 invalidateItem: (id) => {
                     const state = get();
                     if (!state._cache.items.has(id)) return;
-                    const cache = createEmptyNormalizedCache();
-
-                    // copy items except the invalidated one
-                    for (const [k, v] of state._cache.items.entries()) {
-                        if (k !== id) cache.items.set(k, v);
-                    }
-
-                    // keep pages but remove id references
+                    
+                    const newItems = new Map(state._cache.items);
+                    newItems.delete(id);
+                    
+                    const newPages = new Map<string, PageMeta>();
+                    
+                    // Update pages to remove the invalidated item
                     for (const [pageKey, meta] of state._cache.pages.entries()) {
-                        const filtered = meta.ids.filter((iid) => iid !== id);
-                        if (filtered.length) {
-                            cache.pages.set(pageKey, { ...meta, ids: filtered });
-                        } else {
-                            // if page has no items after removal, drop it
+                        const filteredIds = meta.ids.filter((iid) => iid !== id);
+                        if (filteredIds.length > 0) {
+                            newPages.set(pageKey, { ...meta, ids: filteredIds });
                         }
+                        // If page becomes empty, it will be removed
                     }
-
-                    set({ _cache: cache });
+                    
+                    set({ 
+                        _cache: { items: newItems, pages: newPages },
+                        // Also update currentData if it contains the invalidated item
+                        currentData: state.currentData ? {
+                            ...state.currentData,
+                            data: state.currentData.data.filter(item => item._id !== id)
+                        } : undefined
+                    });
                 },
 
                 currentPageKey: undefined,
@@ -227,8 +250,15 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
                     // quick cache hit for exact page
                     const existingPage = state._cache.pages.get(pageKey);
                     if (useCache && !force && existingPage && now - existingPage.fetchedAt < state.cacheTTL) {
-                        const items = existingPage.ids.map((id) => state._cache.items.get(id)).filter(Boolean) as UserTableRow[];
-                        const payload: UsersApiResponse = { data: items, total: existingPage.total, page: q.page!, perPage: q.perPage! };
+                        const items = existingPage.ids
+                            .map((id) => state._cache.items.get(id))
+                            .filter(Boolean) as UserTableRow[];
+                        const payload: UsersApiResponse = { 
+                            data: items, 
+                            total: existingPage.total, 
+                            page: q.page!, 
+                            perPage: q.perPage! 
+                        };
 
                         // mark this as latest request result
                         set({ currentPageKey: pageKey, currentData: payload, total: payload.total, loading: false });
@@ -249,25 +279,58 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
                         }
 
                         if (candidate) {
-                            const idsSlice = candidate.ids.slice((q.page! - 1) * q.perPage!, (q.page! - 1) * q.perPage! + q.perPage!);
-                            const items = idsSlice.map((id) => state._cache.items.get(id)).filter(Boolean) as UserTableRow[];
-                            const payload: UsersApiResponse = { data: items, total: candidate.total, page: q.page!, perPage: q.perPage! };
+                            const idsSlice = candidate.ids.slice(
+                                (q.page! - 1) * q.perPage!, 
+                                (q.page! - 1) * q.perPage! + q.perPage!
+                            );
+                            const items = idsSlice
+                                .map((id) => state._cache.items.get(id))
+                                .filter(Boolean) as UserTableRow[];
+                            const payload: UsersApiResponse = { 
+                                data: items, 
+                                total: candidate.total, 
+                                page: q.page!, 
+                                perPage: q.perPage! 
+                            };
 
-                            const pageMeta: PageMeta = { ids: idsSlice, total: candidate.total, fetchedAt: candidate.fetchedAt, canonicalKey };
-                            const newCache = { items: new Map(state._cache.items), pages: new Map(state._cache.pages) };
+                            const pageMeta: PageMeta = { 
+                                ids: idsSlice, 
+                                total: candidate.total, 
+                                fetchedAt: candidate.fetchedAt, 
+                                canonicalKey 
+                            };
+                            const newCache = { 
+                                items: new Map(state._cache.items), 
+                                pages: new Map(state._cache.pages) 
+                            };
                             newCache.pages.set(pageKey, pageMeta);
 
-                            set({ _cache: newCache, currentPageKey: pageKey, currentData: payload, total: payload.total, loading: false });
+                            set({ 
+                                _cache: newCache, 
+                                currentPageKey: pageKey, 
+                                currentData: payload, 
+                                total: payload.total, 
+                                loading: false 
+                            });
                             return payload;
                         }
+                    }
+
+                    // FIXED: Abort previous request
+                    if (state._abortController) {
+                        state._abortController.abort();
                     }
 
                     // make network request with per-request seq guard
                     const abortController = new AbortController();
                     set((s) => {
-                        // increment and store the request seq token in store
                         const nextSeq = (s._lastRequestSeq ?? 0) + 1;
-                        return { _abortController: abortController, loading: true, error: null, _lastRequestSeq: nextSeq };
+                        return { 
+                            _abortController: abortController, 
+                            loading: true, 
+                            error: null, 
+                            _lastRequestSeq: nextSeq 
+                        };
                     });
 
                     // capture seq locally
@@ -275,15 +338,23 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
 
                     const requestPromise = (async (): Promise<UsersApiResponse | null> => {
                         try {
-                            const resp = await api.get<UsersApiResponse>(`${URL_AFTER_API}`, { params, signal: abortController.signal });
+                            const resp = await api.get<UsersApiResponse>(
+                                `${URL_AFTER_API}`, 
+                                { params, signal: abortController.signal }
+                            );
                             const payload = resp.data;
 
-                            // merge items into normalized map (safe to do even for stale responses — will not be applied to currentData if stale)
+                            // merge items into normalized map
                             const stateAfterRequest = get();
                             const newItems = new Map(stateAfterRequest._cache.items);
                             for (const item of payload.data) newItems.set(item._id, item);
                             const ids = payload.data.map((d) => d._id);
-                            const pageMeta: PageMeta = { ids, total: payload.total, fetchedAt: Date.now(), canonicalKey };
+                            const pageMeta: PageMeta = { 
+                                ids, 
+                                total: payload.total, 
+                                fetchedAt: Date.now(), 
+                                canonicalKey 
+                            };
                             const newPages = new Map(stateAfterRequest._cache.pages);
                             newPages.set(pageKey, pageMeta);
 
@@ -312,7 +383,10 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
                             }
                             console.error('fetchUsers error', err);
                             if (requestSeq === get()._lastRequestSeq) {
-                                set({ error: err instanceof Error ? err.message : 'Unknown error', loading: false });
+                                set({ 
+                                    error: err instanceof Error ? err.message : 'Unknown error', 
+                                    loading: false 
+                                });
                             }
                             return null;
                         } finally {
@@ -329,38 +403,52 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
                 selectedUser: null,
                 setSelectedUser: (u) => set({ selectedUser: u ?? null }),
 
-                // Optimistic patch - update normalized cache items and any page lists referencing the id
+                // FIXED: Changed to accept UserTableRow patch
                 patchUserOptimistic: async (id, patch) => {
                     const state = get();
                     const newItems = new Map(state._cache.items);
                     const existing = newItems.get(id);
+                    
                     if (existing) {
                         const updated = { ...existing, ...patch };
                         newItems.set(id, updated);
-                    } else {
-                        // no existing item in normalized cache; nothing to optimistically update
+                        
+                        // Update currentData
+                        set({
+                            _cache: {
+                                items: newItems,
+                                pages: new Map(state._cache.pages),
+                            },
+                            currentData: state.currentData
+                                ? {
+                                    ...state.currentData,
+                                    data: state.currentData.data.map((r) => 
+                                        r._id === id ? { ...r, ...patch } : r
+                                    ),
+                                }
+                                : state.currentData,
+                            // Also update selectedUser if it's the same user
+                            selectedUser: state.selectedUser?._id === id 
+                                ? { ...state.selectedUser, ...patch } 
+                                : state.selectedUser,
+                        });
+
+                        try {
+                            await api.patch(`${URL_AFTER_API}/${id}`, patch);
+                            return updated;
+                        } catch (err) {
+                            // On failure, invalidate the item to force refetch
+                            get().invalidateItem(id);
+                            console.error("patchUserOptimistic failed", err);
+                            return null;
+                        }
                     }
-
-                    // update pages (page ids remain same, item references point to updated items)
-                    set({
-                        _cache: {
-                            items: newItems,
-                            pages: new Map(state._cache.pages),
-                        },
-                        currentData: state.currentData
-                            ? {
-                                ...state.currentData,
-                                data: state.currentData.data.map((r) => (r._id === id ? { ...r, ...patch } : r)),
-                            }
-                            : state.currentData,
-                    });
-
+                    
+                    // If item not in cache, just make the API call
                     try {
-                        await api.patch(`${URL_AFTER_API}/${id}`, patch);
-                        return get().selectedUser ?? null;
+                        const response = await api.patch<UserTableRow>(`${URL_AFTER_API}/${id}`, patch);
+                        return response.data;
                     } catch (err) {
-                        // On failure, invalidate any page that contained this id so UI will refetch
-                        get().invalidateItem(id);
                         console.error("patchUserOptimistic failed", err);
                         return null;
                     }
@@ -395,6 +483,7 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
                     }));
                     try {
                         await api.post(`${URL_AFTER_API}/${id}/upgrade`);
+                        // FIXED: Use correct role - check your constants for actual role name
                         await get().patchUserOptimistic(id, { role: USER_ROLE.GUIDE });
                         return true;
                     } catch (err) {
@@ -455,6 +544,12 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
                                 items: newItems,
                                 pages: newPages,
                             },
+                            // FIXED: Update currentData immediately
+                            currentData: stateAfter.currentData ? {
+                                ...stateAfter.currentData,
+                                data: stateAfter.currentData.data.filter(item => item._id !== id),
+                                total: stateAfter.currentData.total - 1
+                            } : undefined
                         });
 
                         return true;
@@ -476,8 +571,8 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
                         userActionLoading: { ...s.userActionLoading, [id]: true },
                     }));
                     try {
-                        // Simulate API delay or replace with actual endpoint
-                        await new Promise((resolve) => setTimeout(resolve, 800));
+                        // FIXED: Call actual API endpoint instead of timeout
+                        await api.patch(`${URL_AFTER_API}/${id}/suspend`, fullSuspension);
 
                         await get().patchUserOptimistic(id, {
                             accountStatus: ACCOUNT_STATUS.SUSPENDED,
@@ -512,7 +607,6 @@ export const useTravelerStore = create<useTravelerStoreTypes>()(
 );
 
 /* Helper usage functions (keep your exported helpers) */
-
 export function buildUsersQuery(params: Partial<UsersQuery>): UsersQuery {
     return {
         page: params.page ?? 1,

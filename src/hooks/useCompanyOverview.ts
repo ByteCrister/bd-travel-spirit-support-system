@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { TourListItemDTO, SortableTourKeys } from "@/types/tour.types";
 import { EmployeeListItemDTO } from "@/types/employee.types";
-import { useCompanyDetailStore } from "@/store/company-detail.store";
+import { useCompanyDetailStore } from "@/store/company/company-detail.store";
 
 export type TabKey = "tours" | "employees";
 
@@ -53,10 +53,21 @@ export function useCompanyOverview(companyId: string) {
     const [employeeSortKey, setEmployeeSortKey] =
         useState<SortableEmployeeKeys>("updatedAt");
 
+    const [breadcrumbs, setBreadcrumbs] = useState([
+        { label: "Home", href: '/' },
+        { label: "Companies", href: "/users/companies" },
+        { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "-", href: `/users/companies/${companyId}` },
+    ])
+
     // --- Fetch company overview on mount ---
     useEffect(() => {
         fetchCompany(companyId).catch(() => { });
-    }, [companyId, fetchCompany]);
+        setBreadcrumbs([
+            { label: "Home", href: '/' },
+            { label: "Companies", href: "/users/companies" },
+            { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "-", href: `/users/companies/${companyId}` },
+        ])
+    }, [companies, companyId, fetchCompany]);
 
     // --- Fetch tab data when tab changes ---
     useEffect(() => {
@@ -178,6 +189,7 @@ export function useCompanyOverview(companyId: string) {
         loading,
         error,
         company: companies?.[companyId],
+        breadcrumbs,
         handleRefresh,
         isCompanyLoading,
         isToursLoading,

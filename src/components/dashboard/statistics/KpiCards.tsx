@@ -2,11 +2,12 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Users, MapPin, Star, Image, AlertTriangle, DollarSign, UserCheck, Calendar } from 'lucide-react';
+import { Users, MapPin, Star, Image, AlertTriangle, UserCheck, Calendar } from 'lucide-react';
 import { KpiSkeleton } from './skeletons/KpiSkeleton';
 import { KpiMetrics } from '@/types/statistics.types';
 import { formatCurrency, formatNumber } from '@/utils/helpers/format';
 import CountUp from 'react-countup';
+import { FaBangladeshiTakaSign } from 'react-icons/fa6';
 
 interface KpiCardsProps {
   data: KpiMetrics | null;
@@ -59,7 +60,7 @@ const kpiConfig = [
   {
     key: 'totalRevenue' as keyof KpiMetrics,
     label: 'Total Revenue',
-    icon: DollarSign,
+    icon: FaBangladeshiTakaSign,
     formatter: (value: number) => formatCurrency(value, true),
     color: 'from-emerald-500 to-emerald-600',
   },

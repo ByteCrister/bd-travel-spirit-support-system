@@ -10,13 +10,13 @@ import {
   FiFlag,
   FiAlertTriangle,
   FiAlertCircle,
-  FiDollarSign,
   FiUser,
   FiCheck,
   FiClock,
   FiEye,
   FiX
 } from "react-icons/fi";
+import { FaBangladeshiTakaSign } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import { AdminNotification } from "@/types/dashboard.types";
 
@@ -40,7 +40,7 @@ const getNotificationIcon = (type: AdminNotification['type']) => {
     case 'system_alert':
       return <FiAlertCircle className="h-4 w-4" />;
     case 'revenue_issue':
-      return <FiDollarSign className="h-4 w-4" />;
+      return <FaBangladeshiTakaSign className="h-4 w-4" />;
     case 'approval_pending':
       return <FiCheck className="h-4 w-4" />;
     default:

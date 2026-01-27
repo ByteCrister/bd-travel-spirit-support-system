@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { ZodError } from 'zod'
-import { useRegisterGuideStore } from '@/store/guide-registration.store'
+import { useRegisterGuideStore } from '@/store/guide/guide-registration.store'
 import { personalInfoSchema } from '@/utils/validators/registerAsGuide.validator'
 import { showToast } from '@/components/global/showToast'
 import { Building, Mail, MapPin, Phone, User } from 'lucide-react'

@@ -25,11 +25,7 @@ interface Props {
 
 export default function CompanyOverviewPage({ companyId }: Props) {
     const overview = useCompanyOverview(companyId);
-    const breadcrumbItems = [
-        { label: "Home", href: '/' },
-        { label: "Companies", href: "/users/companies" },
-        { label: overview.company?.companyName?.toLocaleUpperCase() ?? "-", href: `/users/companies/${companyId}` },
-    ];
+    const breadcrumbItems = overview.breadcrumbs;
 
     const tabConfig = {
         tours: {

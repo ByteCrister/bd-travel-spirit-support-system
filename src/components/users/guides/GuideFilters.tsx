@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { GUIDE_STATUS } from "@/constants/guide.const";
-import { QueryParams } from "@/store/guide.store";
+import { QueryParams } from "@/store/guide/guide.store";
 import { Search, X } from "lucide-react";
 
 // React Icons

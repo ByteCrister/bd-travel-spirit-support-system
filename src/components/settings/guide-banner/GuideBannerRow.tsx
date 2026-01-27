@@ -18,7 +18,7 @@ import type {
     GuideBannerEntity,
     ID,
 } from "@/types/guide-banner-settings.types";
-import { useGuideBannersStore } from "@/store/guide-bannerSetting.store";
+import { useGuideBannersStore } from "@/store/guide/guide-bannerSetting.store";
 import {
     buildAssetSrc,
     formatISODate,
