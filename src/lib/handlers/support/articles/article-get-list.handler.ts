@@ -20,7 +20,6 @@ import { TourCategories } from '@/constants/tour.const';
 import UserModel from '@/models/user.model';
 import AssetModel from '@/models/assets/asset.model';
 import AssetFileModel from '@/models/assets/asset-file.model';
-import EmployeeModel from '@/models/employees/employees.model';
 import { ApiError } from '@/lib/helpers/withErrorHandler';
 import { withTransaction } from '@/lib/helpers/withTransaction';
 import { ITravelArticle, TravelArticleModel } from '@/models/articles/travel-article.model';
@@ -325,10 +324,26 @@ export default async function ArticleGetListHandler(request: NextRequest) {
 
         // Fetch articles with population
         const articles = await TravelArticleModel.find(mongoQuery)
-            .populate<{ author: { _id: Types.ObjectId; name: string } }>({
+            .populate<{
+                author: {
+                    _id: Types.ObjectId;
+                    name: string;
+                    avatar?: PopulatedAssetLean;
+                };
+            }>({
                 path: 'author',
                 model: UserModel,
-                select: 'name'
+                select: 'name avatar',
+                populate: {
+                    path: 'avatar',
+                    model: AssetModel,
+                    select: '_id',
+                    populate: {
+                        path: 'file',
+                        model: AssetFileModel,
+                        select: 'publicUrl',
+                    },
+                },
             })
             .populate<{ heroImage: PopulatedAssetLean }>({
                 path: 'heroImage',
@@ -346,49 +361,15 @@ export default async function ArticleGetListHandler(request: NextRequest) {
             .session(session)
             .lean();
 
-        // Get all author IDs to fetch their avatars
-        const authorIds = articles
-            .map(article => article.author?._id)
-            .filter(Boolean) as Types.ObjectId[];
-
-        // Fetch employees with avatars for these authors
-        const avatarMap = new Map<string, string>();
-        if (authorIds.length > 0) {
-            const employees = await EmployeeModel.find({
-                user: { $in: authorIds }
-            })
-                .populate<{ avatar: PopulatedAssetLean }>({
-                    path: 'avatar',
-                    model: AssetModel,
-                    select: '_id',
-                    populate: {
-                        path: 'file',
-                        model: AssetFileModel,
-                        select: 'publicUrl'
-                    }
-                })
-                .session(session)
-                .lean();
-
-            // Create a map of user ID to avatar URL
-            employees.forEach(employee => {
-                const userId = (employee.user as Types.ObjectId).toString();
-                const avatarUrl = employee.avatar?.file?.publicUrl;
-                if (avatarUrl) {
-                    avatarMap.set(userId, avatarUrl);
-                }
-            });
-        }
-
         // Transform articles to ArticleListItem
         const items: ArticleListItem[] = articles.map(article => {
-            const authorUser = article.author as { _id: Types.ObjectId; name: string };
+            const authorUser = article.author as { _id: Types.ObjectId; name: string; avatar?: PopulatedAssetLean };
             const heroImageAsset = article.heroImage as PopulatedAssetLean;
 
             const author: UserRef = {
                 id: authorUser?._id?.toString() || '',
                 name: authorUser?.name,
-                avatarUrl: authorUser?._id ? avatarMap.get(authorUser._id.toString()) : undefined
+                avatarUrl: authorUser.avatar?.file?.publicUrl
             };
 
             const heroImage: ImageUrl | undefined = heroImageAsset?.file?.publicUrl;
@@ -396,7 +377,7 @@ export default async function ArticleGetListHandler(request: NextRequest) {
             return {
                 id: article._id.toString(),
                 title: article.title,
-                banglaTitle: article.banglaTitle??'-',
+                banglaTitle: article.banglaTitle ?? '-',
                 slug: article.slug,
                 status: article.status,
                 articleType: article.articleType,

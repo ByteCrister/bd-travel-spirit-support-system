@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-// Table components imported correctly in parent
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -21,7 +20,7 @@ import { useResetRequestsStore } from "@/store/reset-requests.store";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ResetRequestListQuery } from "@/types/password-reset.types";
 import RequestSkeletonRow from "./skeletons/RequestSkeletonRow";
-import { useDebouncedValueLodash } from "@/hooks/useDebouncedValueLodash";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
 // Available page limit options
 const PAGE_LIMIT_OPTIONS = [10, 20, 50, 100] as const;
@@ -39,68 +38,135 @@ export default function RequestList() {
 
     const [searchTerm, setSearchTerm] = useState(currentQuery.search ?? "");
     const [isSearching, setIsSearching] = useState(false);
-    const debouncedSearchTerm = useDebouncedValueLodash(searchTerm, 300);
 
-    const onSearch = async (term?: string) => {
-        const value = term ?? searchTerm;
+    // Create a debounced search callback
+    const debouncedSearch = useDebouncedCallback(
+        async (term: string) => {
+            setIsSearching(true);
+            
+            const newQuery = {
+                ...currentQuery,
+                search: term.trim() || undefined,
+                page: 1,
+            };
 
+            setQuery(newQuery);
+            await fetchList(newQuery);
+            
+            setIsSearching(false);
+        },
+        300 // 300ms delay
+    );
+
+    // Update search term in UI immediately, trigger debounced search
+    const handleSearchChange = useCallback((value: string) => {
+        setSearchTerm(value);
+        debouncedSearch(value);
+    }, [debouncedSearch]);
+
+    // Handle Enter key press for immediate search
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            // Cancel any pending debounced search
+            if (debouncedSearch.cancel) {
+                debouncedSearch.cancel();
+            }
+            
+            // Execute search immediately
+            setIsSearching(true);
+            const newQuery = {
+                ...currentQuery,
+                search: searchTerm.trim() || undefined,
+                page: 1,
+            };
+            
+            setQuery(newQuery);
+            fetchList(newQuery).finally(() => {
+                setIsSearching(false);
+            });
+        }
+    }, [debouncedSearch, searchTerm, currentQuery, setQuery, fetchList]);
+
+    // Handle search button click
+    const handleSearchClick = useCallback(() => {
+        // Cancel any pending debounced search
+        if (debouncedSearch.cancel) {
+            debouncedSearch.cancel();
+        }
+        
+        // Execute search immediately
         setIsSearching(true);
-
         const newQuery = {
             ...currentQuery,
-            search: value,
+            search: searchTerm.trim() || undefined,
             page: 1,
         };
+        
+        setQuery(newQuery);
+        fetchList(newQuery).finally(() => {
+            setIsSearching(false);
+        });
+    }, [debouncedSearch, searchTerm, currentQuery, setQuery, fetchList]);
 
+    // Handle clear search
+    const clearSearch = useCallback(async () => {
+        setSearchTerm("");
+        
+        // Cancel any pending debounced search
+        if (debouncedSearch.cancel) {
+            debouncedSearch.cancel();
+        }
+        
+        setIsSearching(true);
+        const newQuery = {
+            ...currentQuery,
+            search: undefined,
+            page: 1,
+        };
+        
         setQuery(newQuery);
         await fetchList(newQuery);
-
         setIsSearching(false);
-    };
+    }, [debouncedSearch, currentQuery, setQuery, fetchList]);
 
-
+    // Clean up debounced callbacks on unmount
     useEffect(() => {
-        void onSearch(debouncedSearchTerm);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedSearchTerm]);
-
+        return () => {
+            if (debouncedSearch.cancel) {
+                debouncedSearch.cancel();
+            }
+        };
+    }, [debouncedSearch]);
 
     const rows = useMemo(
         () => currentPageIds.map((id) => entities[id]).filter(Boolean),
         [currentPageIds, entities]
     );
 
-
-    const clearSearch = async () => {
-        setSearchTerm("");
-        setQuery({ search: undefined, page: 1 });
-        await fetchList({ ...currentQuery, search: undefined, page: 1 });
-    };
-
-    const onStatusChange = async (val?: ResetRequestListQuery["status"]) => {
+    const onStatusChange = useCallback(async (val?: ResetRequestListQuery["status"]) => {
         setQuery({ status: val, page: 1 });
         await fetchList({ ...currentQuery, status: val, page: 1 });
-    };
+    }, [currentQuery, setQuery, fetchList]);
 
-    const onLimitChange = async (limit: number) => {
+    const onLimitChange = useCallback(async (limit: number) => {
         setQuery({ limit, page: 1 });
         await fetchList({ ...currentQuery, limit, page: 1 });
-    };
+    }, [currentQuery, setQuery, fetchList]);
 
     // Synchronous wrapper required by Select's onValueChange signature
-    const handleSelectValueChange = (value: string): void => {
+    const handleSelectValueChange = useCallback((value: string): void => {
         // Map the incoming string to your status union
         const mapped: ResetRequestListQuery["status"] =
             value === "all" ? "all" : (value as RequestStatus);
 
         // Call the async handler and intentionally ignore the Promise (void)
         void onStatusChange(mapped);
-    };
+    }, [onStatusChange]);
 
-    const handleLimitChange = (value: string): void => {
+    const handleLimitChange = useCallback((value: string): void => {
         const limit = parseInt(value, 10);
         void onLimitChange(limit);
-    };
+    }, [onLimitChange]);
 
     return (
         <section className="space-y-6 p-6">
@@ -119,8 +185,8 @@ export default function RequestList() {
                     <Input
                         placeholder="Search by email, name or mobile..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") onSearch(); }}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         aria-label="Search requests"
                         className="pl-12 pr-12 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-full shadow-sm focus:shadow-md transition-shadow duration-150"
                     />
@@ -138,7 +204,7 @@ export default function RequestList() {
 
                 {/* Search Button */}
                 <Button
-                    onClick={() => onSearch(searchTerm)}
+                    onClick={handleSearchClick}
                     disabled={isSearching || isFetching}
                     aria-label="Execute search"
                     className="ml-2 rounded-full px-4 py-2 flex items-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 text-white hover:from-sky-600 hover:to-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed shadow-md"

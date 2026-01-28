@@ -5,6 +5,10 @@ import { withTransaction } from "@/lib/helpers/withTransaction";
 import { EmployeeDetailDTO } from "@/types/employee.types";
 import EmployeeModel from "@/models/employees/employees.model";
 import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
+import { getUserIdFromSession } from "@/lib/auth/session.auth";
+import ConnectDB from "@/config/db";
+import { validateUser } from "@/lib/auth/validateUser";
+import { USER_ROLE } from "@/constants/user.const";
 
 /**
  * PATCH /users/v1/employees/[id]/restore
@@ -15,6 +19,12 @@ export const PATCH = withErrorHandler(async (
     { params }: { params: Promise<{ employeeId: string }> }
 ): Promise<HandlerResult<EmployeeDetailDTO>> => {
 
+    const adminId = await getUserIdFromSession();
+
+    if (!adminId || !Types.ObjectId.isValid(adminId)) {
+        throw new ApiError("Unauthorized", 401);
+    }
+
     const employeeId = decodeURIComponent((await params).employeeId);
 
     if (!employeeId || !Types.ObjectId.isValid(employeeId)) {
@@ -22,6 +32,10 @@ export const PATCH = withErrorHandler(async (
     }
 
     const objectId = new Types.ObjectId(employeeId);
+
+    await ConnectDB();
+
+    await validateUser(adminId, USER_ROLE.ADMIN);
 
     const restoredEmployee = await withTransaction(async (session) => {
         const employee = await EmployeeModel.restoreById(objectId, session);

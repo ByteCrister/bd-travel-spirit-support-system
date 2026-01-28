@@ -85,11 +85,12 @@ export const POST = withErrorHandler(async (
             }
 
             /** Update user password */
-            await UserModel.updateOne(
-                { _id: userId },
-                { $set: { password: body.newPassword } },
-                { session }
-            );
+            const user = await UserModel.findById(userId).session(session);
+            if (!user) throw new ApiError("User not found", 500);
+
+            user.password = body.newPassword;
+            await user.save({ session });
+
 
             /** Mark reset request fulfilled */
             const updated =

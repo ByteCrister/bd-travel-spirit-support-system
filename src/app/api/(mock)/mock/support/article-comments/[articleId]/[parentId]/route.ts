@@ -1,4 +1,4 @@
-// api/mock/support/article-comments/[articleId]/root/route.ts
+// api/mock/support/article-comments/[articleId]/[parentId]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import {
     type CommentThreadSegmentDTO,
@@ -6,13 +6,16 @@ import {
     type CommentSortKey,
     type CommentFiltersDTO,
 } from '@/types/article-comment.types';
-import { queryRootComments } from '@/lib/mocks/article-comments.mock';
+import { queryChildComments } from '@/lib/mocks/article-comments.mock';
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ articleId: string }> }) {
+export async function GET(
+    req: NextRequest,
+    { params }: { params: Promise<{ articleId: string; parentId: string }> }
+) {
     const url = new URL(req.url);
     const pageSize = Number(url.searchParams.get('pageSize') ?? 100);
     const sortKey = (url.searchParams.get('sortKey') ?? 'createdAt') as CommentSortKey;
-    const sortDir = (url.searchParams.get('sortDir') ?? 'desc') as SortDTO<CommentSortKey>['direction'];
+    const sortDir = (url.searchParams.get('sortDir') ?? 'asc') as SortDTO<CommentSortKey>['direction']; // matches store default
     const cursor = url.searchParams.get('cursor');
 
     const filters: CommentFiltersDTO = {
@@ -25,9 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ arti
     };
 
     const sort: SortDTO<CommentSortKey> = { key: sortKey, direction: sortDir };
-    
-    // Always return some data for mock API, regardless of ID
-    const { nodes, meta } = queryRootComments((await params).articleId, cursor, pageSize, sort, filters);
+    const { nodes, meta } = queryChildComments((await params).articleId, (await params).parentId, cursor, pageSize, sort, filters);
 
     const response: CommentThreadSegmentDTO = {
         nodes,
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ arti
             pagination: meta,
             sort,
             filtersApplied: filters,
-            scope: { articleId: (await params).articleId, parentId: null, depthMax: null },
+            scope: { articleId: (await params).articleId, parentId: (await params).parentId, depthMax: null },
         },
     };
 

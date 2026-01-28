@@ -16,6 +16,9 @@ import { isValidObjectId, Types } from "mongoose";
 import { USER_ROLE, UserRole } from "@/constants/user.const";
 import ConnectDB from "@/config/db";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
+import { PopulatedAssetLean } from "@/types/populated-asset.types";
+import AssetModel from "@/models/assets/asset.model";
+import AssetFileModel from "@/models/assets/asset-file.model";
 
 interface Params {
     params: Promise<{ employeeId: string }>
@@ -29,6 +32,7 @@ export type EmployeeLeanPopulated =
         user: {
             _id: Types.ObjectId;
             name: string;
+            avatar?: PopulatedAssetLean
             role: UserRole
         };
     };
@@ -77,7 +81,7 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
 
     const body: UpdateEmployeePayload = await req.json();
 
-    if (!employeeId || typeof employeeId !== "string") {
+    if (!employeeId) {
         throw new ApiError("Missing employeeId", 400);
     }
 
@@ -93,7 +97,20 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
     const updatedEmployeeId = await withTransaction(async (session) => {
         // Fetch employee with populated user
         const rawEmployee = await EmployeeModel.findById(employeeId)
-            .populate({ path: "user", select: "name email role" })
+            .populate({
+                path: "user",
+                select: "name email role avatar",
+                populate: {
+                    path: "avatar",
+                    model: AssetModel,
+                    select: "_id",
+                    populate: {
+                        path: "file",
+                        model: AssetFileModel,
+                        select: "publicUrl",
+                    },
+                },
+            })
             .session(session)
             .lean()
             .exec();
@@ -119,7 +136,7 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
             notes: body.notes,
         };
 
-        // Handle avatar
+        // Handle avatar (USER avatar, not employee)
         if (body.avatar && !isCloudinaryUrl(body.avatar)) {
             const assetIds = await uploadAssets(
                 [
@@ -132,12 +149,22 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
                 session
             );
 
-            payload.avatar = assetIds[0];
+            const newAvatarAssetId = assetIds[0];
 
-            // Cleanup old avatar
-            if (employee.avatar) {
-                await cleanupAssets([employee.avatar as Types.ObjectId], session);
+            // Cleanup old user avatar
+            if (employee.user && (employee.user).avatar) {
+                await cleanupAssets(
+                    [(employee.user).avatar as Types.ObjectId],
+                    session
+                );
             }
+
+            // Update user avatar
+            await UserModel.findByIdAndUpdate(
+                employee.user._id,
+                { avatar: newAvatarAssetId },
+                { session }
+            );
         }
 
         // Handle documents

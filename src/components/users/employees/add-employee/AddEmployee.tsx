@@ -108,7 +108,7 @@ type SetFieldValue = <K extends keyof CreateEmployeeFormValues>(field: K, value:
 export default function AddEmployeePage() {
     const { createEmployee, fetchEnums } = useEmployeeStore()
     const [employmentTypes, setEmploymentTypes] = useState<string[]>([]);
-    const [currencies, setCurrencies] = useState<string[]>([]);
+    const [, setCurrencies] = useState<string[]>([]);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [uploadingDocuments, setUploadingDocuments] = useState(false);
     const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -437,7 +437,7 @@ export default function AddEmployeePage() {
                                                                     <SelectValue placeholder="Currency" />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    {currencies.map(cur => <SelectItem key={cur} value={cur}>{cur}</SelectItem>)}
+                                                                    <SelectItem key={CURRENCY.BDT} value={CURRENCY.BDT}>BDT</SelectItem>
                                                                 </SelectContent>
                                                             </Select>
                                                         )}

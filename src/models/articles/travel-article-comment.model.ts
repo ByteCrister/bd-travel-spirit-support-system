@@ -1,8 +1,17 @@
 // models/travelComment.model.ts
 import { COMMENT_STATUS, CommentStatus } from "@/constants/articleComment.const";
 import { defineModel } from "@/lib/helpers/defineModel";
-import { FilterQuery, Model } from "mongoose";
+import { ClientSession, FilterQuery, Model } from "mongoose";
 import { Schema, Types, Document } from "mongoose";
+
+/**
+ * Interface for tracking user likes on travel comments
+ */
+export interface ITravelCommentLike extends Document {
+  userId: Types.ObjectId;
+  commentId: Types.ObjectId;
+  likedAt: Date;
+}
 
 /**
  * Interface describing the shape of a Travel Comment document.
@@ -13,7 +22,7 @@ export interface ITravelComment extends Document {
   parentId?: Types.ObjectId | null; // Parent comment ID (for threaded/nested replies)
   author: Types.ObjectId; // Traveler who created the comment
   content: string; // The actual text content of the comment
-  likes: number; // Number of likes/upvotes this comment has received
+  likes: ITravelCommentLike[];
   replies: Types.ObjectId[]; // Array of child comment IDs (nested replies)
   status: CommentStatus; // Moderation status (pending/approved/rejected)
   rejectReason?: string; // Reason provided by admin when rejecting a comment
@@ -23,32 +32,69 @@ export interface ITravelComment extends Document {
   updatedAt: Date; // Auto-managed timestamp when last updated
 }
 
+/**
+ * Sub-schema for tracking likes (embedded)
+ */
+const TravelCommentLikeSchema = new Schema<ITravelCommentLike>(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    likedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    _id: false, // important: prevent extra _id per like
+  }
+);
+
 export interface TravelCommentModel extends Model<ITravelComment> {
 
   findByArticle(
     articleId: Types.ObjectId,
-    status?: CommentStatus
+    status?: CommentStatus,
+    session?: ClientSession
   ): Promise<ITravelComment[]>;
 
   findReplies(
     parentId: Types.ObjectId,
-    status?: CommentStatus
+    status?: CommentStatus,
+    session?: ClientSession
   ): Promise<ITravelComment[]>;
 
   createReply(
     articleId: Types.ObjectId,
     parentId: Types.ObjectId,
-    replyData: ICreateReplyData
+    replyData: ICreateReplyData,
+    session?: ClientSession
   ): Promise<ITravelComment>;
 
   findPendingModeration(): Promise<ITravelComment[]>;
 
-  findDeleted(): Promise<ITravelComment[]>;
+  findDeleted(
+    session?: ClientSession
+  ): Promise<ITravelComment[]>;
 
   findWithDeleted(
     articleId: Types.ObjectId,
-    status?: CommentStatus
+    status?: CommentStatus,
+    session?: ClientSession
   ): Promise<ITravelComment[]>;
+
+  toggleLikeById(
+    commentId: Types.ObjectId,
+    userId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<{
+    liked: boolean;
+    likeCount: number;
+  }>;
+
 }
 
 /**
@@ -93,8 +139,10 @@ const TravelCommentSchema = new Schema<ITravelComment>(
     // Comment text with max length validation
     content: { type: String, required: true, trim: true, maxlength: 5000 },
 
-    // Like counter (default: 0)
-    likes: { type: Number, default: 0, min: 0 },
+    likes: {
+      type: [TravelCommentLikeSchema],
+      default: [],
+    },
 
     // Array of reply comment IDs (self-referencing)
     replies: [{ type: Schema.Types.ObjectId, ref: "TravelComment" }],
@@ -186,14 +234,6 @@ TravelCommentSchema.pre("save", function (next) {
   next();
 });
 
-/**
- * Instance methods
- */
-TravelCommentSchema.methods.like = async function (): Promise<ITravelComment> {
-  this.likes += 1;
-  return this.save();
-};
-
 TravelCommentSchema.methods.approve = async function (): Promise<ITravelComment> {
   this.status = COMMENT_STATUS.APPROVED;
   this.rejectReason = null; // Clear reject reason when approving
@@ -223,35 +263,49 @@ TravelCommentSchema.methods.restore = async function (): Promise<ITravelComment>
  */
 TravelCommentSchema.statics.findByArticle = function (
   articleId: Types.ObjectId,
-  status: CommentStatus = COMMENT_STATUS.APPROVED
+  status: CommentStatus = COMMENT_STATUS.APPROVED,
+  session?: ClientSession
 ): Promise<ITravelComment[]> {
-  return this.find({
+
+  const query = this.find({
     articleId,
     status,
     isDeleted: false,
-    parentId: null // Only get top-level comments by default
+    parentId: null,
   })
-    .sort({ createdAt: -1 })
-    .exec();
+    .sort({ createdAt: -1 });
+
+  if (session) {
+    query.session(session);
+  }
+
+  return query.exec();
 };
 
 TravelCommentSchema.statics.findReplies = function (
   parentId: Types.ObjectId,
-  status: CommentStatus = COMMENT_STATUS.APPROVED
+  status: CommentStatus = COMMENT_STATUS.APPROVED,
+  session?: ClientSession
 ): Promise<ITravelComment[]> {
-  return this.find({
+  const query = this.find({
     parentId,
     status,
-    isDeleted: false
+    isDeleted: false,
   })
-    .sort({ createdAt: 1 }) // Oldest first for replies
-    .exec();
+    .sort({ createdAt: 1 });
+
+  if (session) {
+    query.session(session);
+  }
+
+  return query.exec();
 };
 
 TravelCommentSchema.statics.createReply = async function (
   articleId: Types.ObjectId,
   parentId: Types.ObjectId,
-  replyData: ICreateReplyData
+  replyData: ICreateReplyData,
+  session?: ClientSession
 ): Promise<ITravelComment> {
   // Create the reply comment
   const reply = new this({
@@ -265,39 +319,56 @@ TravelCommentSchema.statics.createReply = async function (
   const savedReply = await reply.save();
 
   // Add reply to parent's replies array
-  await this.findByIdAndUpdate(parentId, {
-    $push: { replies: savedReply._id }
-  });
+  await this.findByIdAndUpdate(parentId,
+    { $push: { replies: savedReply._id } },
+    { session }
+  );
 
   return savedReply;
 };
 
-TravelCommentSchema.statics.findPendingModeration = function (): Promise<ITravelComment[]> {
-  return this.find({
+TravelCommentSchema.statics.findPendingModeration = function (
+  session?: ClientSession
+): Promise<ITravelComment[]> {
+
+  const query = this.find({
     status: COMMENT_STATUS.PENDING,
-    isDeleted: false
+    isDeleted: false,
   })
-    .sort({ createdAt: -1 })
-    .exec();
+    .sort({ createdAt: -1 });
+
+  if (session) {
+    query.session(session);
+  }
+
+  return query.exec();
 };
 
-TravelCommentSchema.statics.findDeleted = function (): Promise<ITravelComment[]> {
-  return this.find({ isDeleted: true })
-    .sort({ deletedAt: -1 })
-    .exec();
+TravelCommentSchema.statics.findDeleted = function (
+  session?: ClientSession
+): Promise<ITravelComment[]> {
+  const query = this.find({ isDeleted: true })
+    .sort({ deletedAt: -1 });
+
+  if (session) {
+    query.session(session);
+  }
+
+  return query.exec();
 };
 
 TravelCommentSchema.statics.findWithDeleted = function (
   articleId: Types.ObjectId,
-  status?: CommentStatus
+  status?: CommentStatus,
+  session?: ClientSession
 ): Promise<ITravelComment[]> {
-  const query: FilterQuery<ITravelComment> = {
+  const queryObj: FilterQuery<ITravelComment> = {
     articleId,
-    parentId: null, // top-level comments only
+    parentId: null,
   };
 
   if (status !== undefined) {
-    query.status = status;
+    queryObj.status = status;
   }
 
   // NOTE:
@@ -305,9 +376,54 @@ TravelCommentSchema.statics.findWithDeleted = function (
   // - deleted
   // - non-deleted
   // - everything
-  return this.find(query)
-    .sort({ createdAt: -1 })
-    .exec();
+
+  const query = this.find(queryObj)
+    .sort({ createdAt: -1 });
+
+  if (session) {
+    query.session(session);
+  }
+
+  return query.exec();
+};
+
+TravelCommentSchema.statics.toggleLikeById = async function (
+  commentId: Types.ObjectId,
+  userId: Types.ObjectId,
+  session?: ClientSession
+) {
+  const comment = await this.findById(commentId).session(session);
+
+  if (!comment || comment.isDeleted) {
+    throw new Error("Comment not found");
+  }
+
+  // Specify type for `like` here
+  const likeIndex = comment.likes.findIndex(
+    (like: ITravelCommentLike) => like.userId.toString() === userId.toString()
+  );
+
+  let liked: boolean;
+
+  if (likeIndex >= 0) {
+    // Unlike
+    comment.likes.splice(likeIndex, 1);
+    liked = false;
+  } else {
+    // Like
+    comment.likes.push({
+      userId,
+      likedAt: new Date(),
+    } as ITravelCommentLike); // cast to correct type
+    liked = true;
+  }
+
+  await comment.save({ session });
+
+  return {
+    liked,
+    likeCount: comment.likes.length,
+  };
 };
 
 /**

@@ -1,7 +1,7 @@
 // app/api/users/v1/employees/add/route.ts
 import { NextRequest } from "next/server";
 import { ClientSession } from "mongoose";
-import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
+import { ApiError } from "@/lib/helpers/withErrorHandler";
 import { USER_ROLE } from "@/constants/user.const";
 import { EMPLOYEE_STATUS, EMPLOYMENT_TYPE } from "@/constants/employee.const";
 
@@ -51,7 +51,7 @@ async function createUser(
 }
 
 // Main POST handler
-export const POST = withErrorHandler(async (req: NextRequest) => {
+export const EmployeeAddPostHandler = async (req: NextRequest) => {
     // Parse and validate request body
     const body: CreateEmployeeRequest = await req.json();
 
@@ -106,6 +106,12 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
             ], session)
 
             avatarAssetId = assetIds[0] as ObjectId;
+
+            await UserModel.updateOne(
+                { _id: userId },
+                { avatar: avatarAssetId },
+                { session }
+            );
         }
 
         // 3 Upload documents
@@ -126,7 +132,6 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
             user: userId,
             status: EMPLOYEE_STATUS.ACTIVE,
             employmentType: body.employmentType || EMPLOYMENT_TYPE.FULL_TIME,
-            avatar: avatarAssetId,
             salary: body.salary || 0,
             currency: body.currency,
             paymentMode: body.paymentMode,
@@ -146,8 +151,13 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
             // Clean previous documents from DB + Cloudinary
             const previousAssetIds = [
                 ...existingEmployee.documents.map(d => d.asset),
-                ...(existingEmployee.avatar ? [existingEmployee.avatar] : [])
             ];
+
+            // Clean previous USER avatar if replacing
+            if (body.avatar && existingUser?.avatar) {
+                previousAssetIds.push(existingUser.avatar as ObjectId);
+            }
+
 
             await cleanupAssets(previousAssetIds, session);
 
@@ -185,4 +195,4 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         status: 201
     }
 
-});
+};

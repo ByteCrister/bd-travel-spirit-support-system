@@ -275,25 +275,6 @@ export interface UpdateCommentStatusResponseDTO {
     data: CommentDetailDTO;
 }
 
-/**
- * Like/unlike payload.
- * If you plan to support unlike, model as a boolean; otherwise increment-only.
- */
-export interface ToggleLikePayloadDTO {
-    commentId: EntityId;
-    like: boolean; // true => +1, false => -1 (if allowed)
-}
-
-/**
- * Response after like toggle.
- */
-export interface ToggleLikeResponseDTO {
-    data: {
-        commentId: EntityId;
-        likes: number;
-    };
-}
-
 /* ========================================================================== */
 /* Delete & Restore                                                          */
 /* ========================================================================== */

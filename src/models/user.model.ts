@@ -1,5 +1,5 @@
 // user.model.ts
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 import bcrypt from "bcryptjs";
 import validator from 'validator';
 import { USER_ROLE, UserRole } from "@/constants/user.const";
@@ -9,6 +9,7 @@ const passwordRegex = /^(?=.{6,}$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).+$
 
 export interface IUser {
     name: string;
+    avatar?: Types.ObjectId;
     email: string;
     password: string;
     role: UserRole;
@@ -32,6 +33,10 @@ const UserSchema = new Schema<IUserDoc, IUserModel>(
             type: String,
             required: true,
             trim: true
+        },
+        avatar: {
+            type: Schema.Types.ObjectId,
+            ref: "Asset",
         },
         email: {
             type: String,

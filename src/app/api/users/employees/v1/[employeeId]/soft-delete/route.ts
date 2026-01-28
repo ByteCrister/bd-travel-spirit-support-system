@@ -7,6 +7,8 @@ import ConnectDB from "@/config/db";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import EmployeeModel from "@/models/employees/employees.model";
 import { Types } from "mongoose";
+import { validateUser } from "@/lib/auth/validateUser";
+import { USER_ROLE } from "@/constants/user.const";
 
 interface Params {
     params: Promise<{ employeeId: string }>
@@ -27,6 +29,8 @@ export const PATCH = withErrorHandler(async (request: NextRequest, { params }: P
 
     // 4. Connect to DB
     await ConnectDB();
+
+    await validateUser(adminId, USER_ROLE.ADMIN);
 
     // 5. Run soft delete inside transaction
     const deletedEmployee = await withTransaction(async (session) => {

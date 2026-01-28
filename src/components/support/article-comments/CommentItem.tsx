@@ -5,7 +5,7 @@ import { CommentDetailDTO, CommentFiltersDTO } from '@/types/article-comment.typ
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { HiHeart, HiArrowUturnLeft, HiCheckCircle, HiXCircle, HiChevronDown, HiEllipsisHorizontal, HiArrowPath } from 'react-icons/hi2';
+import { HiArrowUturnLeft, HiCheckCircle, HiXCircle, HiChevronDown, HiEllipsisHorizontal, HiArrowPath } from 'react-icons/hi2';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { ReplyEditor } from './ReplyEditor';
@@ -27,7 +27,6 @@ export const CommentItem = memo(function CommentItem({
         threadKeyOf,
         selectThreadByKey,
         fetchChildComments,
-        toggleLike,
         updateStatus,
         createReply,
         deleteComment,
@@ -137,18 +136,6 @@ export const CommentItem = memo(function CommentItem({
 
                         {/* Actions */}
                         <div className="flex flex-wrap items-center gap-2">
-                            {/* Like button */}
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={async () => await toggleLike({ commentId: node.id, like: true })}
-                                className="text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 gap-1"
-                                title="Like comment"
-                            >
-                                <HiHeart className="h-4 w-4" />
-                                <span className="text-xs">{node.likes}</span>
-                            </Button>
-
                             {/* Moderation buttons - only for pending */}
                             {isPending && (
                                 <div className="flex gap-2">

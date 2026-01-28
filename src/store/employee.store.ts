@@ -84,7 +84,7 @@ interface EmployeeStore {
 const EMP_API = {
     LIST: URL_AFTER_API,
     DETAIL: (id: string) => `${URL_AFTER_API}/${id}`,
-    CREATE: `${URL_AFTER_API}/add`,
+    CREATE: `${URL_AFTER_API}`,
     UPDATE: (id: string) => `${URL_AFTER_API}/${id}`,
     SOFT_DELETE: (id: string) => `${URL_AFTER_API}/${id}/soft-delete`,
     RESTORE: (id: string) => `${URL_AFTER_API}/${id}/restore`,

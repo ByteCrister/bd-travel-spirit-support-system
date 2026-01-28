@@ -4,7 +4,6 @@ import { IDestinationBlock, TravelArticleModel } from '@/models/articles/travel-
 import UserModel from '@/models/user.model';
 import AssetModel from '@/models/assets/asset.model';
 import AssetFileModel from '@/models/assets/asset-file.model';
-import EmployeeModel, { IEmployee } from '@/models/employees/employees.model';
 import { PopulatedAssetLean } from '@/types/populated-asset.types';
 import { ITravelArticle } from '@/models/articles/travel-article.model';
 import { TravelCommentModel } from '@/models/articles/travel-article-comment.model';
@@ -13,6 +12,7 @@ import { COMMENT_STATUS } from '@/constants/articleComment.const';
 type PopulatedAuthor = {
     _id: Types.ObjectId;
     name: string;
+    avatar?: PopulatedAssetLean
 };
 
 type PopulatedHeroImage = PopulatedAssetLean;
@@ -73,7 +73,18 @@ export async function buildTourArticleDto(
         {
             path: 'author',
             model: UserModel,
-            select: 'name'
+            select: 'name avatar',
+            options: { session },
+            populate: {
+                path: 'avatar',
+                model: AssetModel,
+                select: '_id',
+                populate: {
+                    path: 'file',
+                    model: AssetFileModel,
+                    select: 'publicUrl',
+                },
+            },
         },
         {
             path: 'heroImage',
@@ -109,32 +120,6 @@ export async function buildTourArticleDto(
             }
         }
     ]) as unknown as LeanTravelArticle;
-
-    /* ---------------- AUTHOR AVATAR ---------------- */
-
-    let authorAvatarUrl: string | undefined;
-    const authorId =
-        article.author instanceof Types.ObjectId
-            ? article.author
-            : article.author?._id;
-
-    if (authorId) {
-        const employee = await EmployeeModel.findOne({ user: authorId })
-            .populate({
-                path: 'avatar',
-                model: AssetModel,
-                select: '_id',
-                populate: {
-                    path: 'file',
-                    model: AssetFileModel,
-                    select: 'publicUrl'
-                }
-            })
-            .lean()
-            .exec() as unknown as Omit<IEmployee, "avatar"> & { avatar?: PopulatedAssetLean };
-
-        authorAvatarUrl = employee?.avatar?.file?.publicUrl;
-    }
 
     /* ---------------- DESTINATION IMAGE ASSETS ---------------- */
 
@@ -203,12 +188,12 @@ export async function buildTourArticleDto(
         status: article.status,
         articleType: article.articleType,
         author: {
-            id: authorId?.toString() ?? '',
+            id: article.author._id?.toString() ?? '',
             name:
                 article.author instanceof Types.ObjectId
                     ? ''
                     : article.author?.name ?? '',
-            avatarUrl: authorAvatarUrl
+            avatarUrl: article.author.avatar?.file?.publicUrl
         },
         authorBio: article.authorBio,
         summary: article.summary,

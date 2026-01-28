@@ -15,6 +15,7 @@ type ObjectId = Types.ObjectId;
 interface IUserLean {
     _id: ObjectId;
     name: string;
+    avatar?: PopulatedAssetLean;
     email: string;
     role: UserRole
 }
@@ -28,12 +29,10 @@ interface IEmployeeDocumentLean {
 type EmployeeLeanPopulated =
     Omit<IEmployee,
         | "user"
-        | "avatar"
         | "documents"
     > & {
         _id: ObjectId;
         user: IUserLean;
-        avatar?: PopulatedAssetLean;
         documents: IEmployeeDocumentLean[];
     };
 
@@ -125,12 +124,15 @@ export async function buildEmployeeDTO(
 
     const rawEmployee = await baseQuery
         .slice("salaryHistory", -10)
-        .populate({ path: "user", select: "name email role" })
         .populate({
-            path: "avatar",
-            select: "file deletedAt",
-            populate: { path: "file", select: "publicUrl" },
-            ...(withDeleted ? {} : { match: { deletedAt: null } }),
+            path: "user",
+            select: "name email role avatar",
+            populate: {
+                path: "avatar",
+                select: "file deletedAt",
+                populate: { path: "file", select: "publicUrl" },
+                ...(withDeleted ? {} : { match: { deletedAt: null } }),
+            },
         })
         .populate({
             path: "documents.asset",
@@ -150,10 +152,6 @@ export async function buildEmployeeDTO(
     /* Asset map (safe)                   */
     /* ---------------------------------- */
     const assetMap = new Map<string, string>();
-
-    if (employee.avatar?.file?._id && employee.avatar.file?.publicUrl) {
-        assetMap.set(employee.avatar?.file?._id.toString(), employee.avatar.file.publicUrl);
-    }
 
     for (const doc of employee.documents || []) {
         if (doc.asset?.file?._id && doc.asset.file.publicUrl) {
@@ -244,9 +242,7 @@ export async function buildEmployeeDTO(
     /* ---------------------------------- */
     /* User summary                       */
     /* ---------------------------------- */
-    const avatarUrl = employee.avatar?.file?._id
-        ? assetMap.get(employee.avatar.file._id.toString())
-        : undefined;
+    const avatarUrl = user?.avatar?.file?.publicUrl;
 
     const userSummary: UserSummaryDTO = {
         name: user?.name ?? "",

@@ -12,6 +12,8 @@ import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { notifyEmployeeNewPassword } from "@/lib/html/notify-new-password.html";
 import { mailer } from "@/config/node-mailer";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
+import { getUserIdFromSession } from "@/lib/auth/session.auth";
+import { validateUser } from "@/lib/auth/validateUser";
 
 type ObjectId = Types.ObjectId;
 
@@ -24,6 +26,12 @@ export type EmployeeLeanPopulated =
     };
 
 export const PUT = withErrorHandler(async (request: NextRequest, { params }: { params: Promise<{ employeeId: string }> }) => {
+
+    const adminId = await getUserIdFromSession();
+
+    if (!adminId || !Types.ObjectId.isValid(adminId)) {
+        throw new ApiError("Unauthorized", 401);
+    }
 
     const employeeId = resolveMongoId((await params).employeeId);
 
@@ -57,6 +65,8 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
     }
 
     await ConnectDB()
+
+    await validateUser(adminId, USER_ROLE.ADMIN);
 
     // Load employee and populate user reference (we need the actual user doc to save)
     const rawEmployee = await EmployeeModel.findById(employeeId).populate("user").exec();

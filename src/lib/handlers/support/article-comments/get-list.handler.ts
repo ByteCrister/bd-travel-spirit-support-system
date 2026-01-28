@@ -12,6 +12,11 @@ import mongoose, { ClientSession } from 'mongoose';
 import { TravelArticleModel } from '@/models/articles/travel-article.model';
 import ConnectDB from '@/config/db';
 import { USER_ROLE, UserRole } from '@/constants/user.const';
+import { getCollectionName } from '@/lib/helpers/get-collection-name';
+import EmployeeModel from '@/models/employees/employees.model';
+import UserModel from '@/models/user.model';
+import AssetModel from '@/models/assets/asset.model';
+import AssetFileModel from '@/models/assets/asset-file.model';
 
 /**
  * Normalized query parameters with defaults
@@ -119,7 +124,7 @@ function buildAggregationPipeline(
     // Lookup comments for each article
     const lookupStage: mongoose.PipelineStage = {
         $lookup: {
-            from: 'travelcomments',
+            from: getCollectionName(TravelArticleModel),
             let: { articleId: '$_id' },
             pipeline: [
                 {
@@ -140,33 +145,60 @@ function buildAggregationPipeline(
     // Lookup author (employee) details
     const authorLookupStage: mongoose.PipelineStage = {
         $lookup: {
-            from: 'employees',
+            from: getCollectionName(EmployeeModel),
             localField: 'author',
             foreignField: '_id',
             as: 'authorDetails',
             pipeline: [
-                // Lookup avatar asset
+                // Lookup user from employee
                 {
                     $lookup: {
-                        from: 'assets',
-                        localField: 'avatar',
+                        from: getCollectionName(UserModel),
+                        localField: 'user',
                         foreignField: '_id',
-                        as: 'avatarAsset',
+                        as: 'userDetails',
                         pipeline: [
-                            // Lookup asset file
+                            // Lookup avatar asset from user
                             {
                                 $lookup: {
-                                    from: 'assetfiles',
-                                    localField: 'file',
+                                    from: getCollectionName(AssetModel),
+                                    localField: 'avatar',
                                     foreignField: '_id',
-                                    as: 'assetFile'
+                                    as: 'avatarAsset',
+                                    pipeline: [
+                                        // Lookup asset file
+                                        {
+                                            $lookup: {
+                                                from: getCollectionName(AssetFileModel),
+                                                localField: 'file',
+                                                foreignField: '_id',
+                                                as: 'assetFile'
+                                            }
+                                        },
+                                        {
+                                            $unwind: {
+                                                path: '$assetFile',
+                                                preserveNullAndEmptyArrays: true
+                                            }
+                                        }
+                                    ]
                                 }
                             },
-                            { $unwind: { path: '$assetFile', preserveNullAndEmptyArrays: true } }
+                            {
+                                $unwind: {
+                                    path: '$avatarAsset',
+                                    preserveNullAndEmptyArrays: true
+                                }
+                            }
                         ]
                     }
                 },
-                { $unwind: { path: '$avatarAsset', preserveNullAndEmptyArrays: true } }
+                {
+                    $unwind: {
+                        path: '$userDetails',
+                        preserveNullAndEmptyArrays: true
+                    }
+                }
             ]
         }
     };
@@ -190,12 +222,11 @@ function buildAggregationPipeline(
                                 in: {
                                     id: '$$author._id',
                                     name: { $ifNull: ['$$author.name', 'Unknown'] },
-                                    // Get the actual publicUrl from the AssetFile model
-                                    avatarUrl: { 
+                                    avatarUrl: {
                                         $ifNull: [
-                                            '$$author.avatarAsset.assetFile.publicUrl',
+                                            '$$author.userDetails.avatarAsset.assetFile.publicUrl',
                                             null
-                                        ] 
+                                        ]
                                     },
                                     role: { $ifNull: ['$$author.role', 'USER'] }
                                 }
@@ -414,7 +445,7 @@ async function executeArticleCommentAggregation(
                 id: item.article?.author?.id?.toString() || '',
                 name: item.article?.author?.name || 'Unknown Author',
                 avatarUrl: item.article?.author?.avatarUrl || null,
-                role: item.article?.author?.role?? USER_ROLE.SUPPORT
+                role: item.article?.author?.role ?? USER_ROLE.SUPPORT
             }
         },
         metrics: {

@@ -1,6 +1,6 @@
 "use client";
 
-import  { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -291,6 +291,7 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                 currency: (form.currency ?? detail.currency) as UpdateEmployeePayload["currency"],
                 status: (form.status ?? detail.status) as UpdateEmployeePayload["status"],
                 employmentType: (form.employmentType ?? detail.employmentType) as UpdateEmployeePayload["employmentType"],
+                paymentMode: form.paymentMode,
                 contactInfo: form.contactInfo ?? detail.contactInfo,
                 shifts: form.shifts ?? detail.shifts,
                 notes: form.notes ?? detail.notes ?? "",
@@ -315,6 +316,7 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                 status: updated.status,
                 employmentType: updated.employmentType,
                 contactInfo: updated.contactInfo,
+                salary: updated.salary,
                 shifts: updated.shifts,
                 notes: updated.notes,
                 avatar: updated.avatar,
@@ -920,11 +922,9 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                                             </SelectTrigger>
 
                                             <SelectContent>
-                                                {Object.values(CURRENCY).map((currency) => (
-                                                    <SelectItem key={currency} value={currency}>
-                                                        {currency}
-                                                    </SelectItem>
-                                                ))}
+                                                <SelectItem key={CURRENCY.BDT} value={CURRENCY.BDT}>
+                                                    {CURRENCY.BDT}
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </FormRow>

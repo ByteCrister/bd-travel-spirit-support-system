@@ -20,8 +20,6 @@ import {
     type CursorPageMetaDTO,
     type CreateCommentPayloadDTO,
     type CreateCommentResponseDTO,
-    type ToggleLikePayloadDTO,
-    type ToggleLikeResponseDTO,
     type UpdateCommentStatusPayloadDTO,
     type UpdateCommentStatusResponseDTO,
     type LoadMoreCommentsRequestDTO,
@@ -39,6 +37,7 @@ import { COMMENT_STATUS, CommentStatus } from '@/constants/articleComment.const'
 import { ApiResponse } from '@/types/api.types';
 
 const URL_AFTER_API = '/mock/support/article-comments';
+// const URL_AFTER_API = '/support/article-comments/v1';
 
 /**
  * Map Axios errors into a normalized ApiErrorDTO for consistent UI handling.
@@ -236,7 +235,6 @@ interface ArticleCommentsState {
 
     // Mutations
     createReply: (payload: CreateCommentPayloadDTO) => Promise<CommentDetailDTO>;
-    toggleLike: (payload: ToggleLikePayloadDTO) => Promise<void>;
     updateStatus: (payload: UpdateCommentStatusPayloadDTO) => Promise<void>;
 
     // Delete & Restore
@@ -645,7 +643,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                     try {
                         const { data } = await api.get<ApiResponse<CommentThreadSegmentDTO>>(
-                            `${URL_AFTER_API}/${articleId}/root`,
+                            `${URL_AFTER_API}/${articleId}`,
                             {
                                 params: {
                                     pageSize,
@@ -732,7 +730,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                     try {
                         const { data } = await api.get<ApiResponse<CommentThreadSegmentDTO>>(
-                            `${URL_AFTER_API}/${articleId}/children/${parentId}`,
+                            `${URL_AFTER_API}/${articleId}/${parentId}`,
                             {
                                 params: {
                                     pageSize,
@@ -926,68 +924,6 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                 },
 
                 /**
-                 * Toggle like with optimistic updates. Applies across all cached threads containing the comment.
-                 */
-                toggleLike: async (payload) => {
-                    // Optimistic update across all threads containing the comment
-                    set((s) => {
-                        const nextCache = { ...s.threadCache };
-                        for (const [tKey, entry] of Object.entries(nextCache)) {
-                            const idx = entry.nodes.findIndex((n) => n.id === payload.commentId);
-                            if (idx >= 0) {
-                                const delta = payload.like ? 1 : -1;
-                                entry.nodes[idx] = {
-                                    ...entry.nodes[idx],
-                                    likes: Math.max(0, entry.nodes[idx].likes + delta),
-                                };
-                                nextCache[tKey] = entry;
-                            }
-                        }
-                        return { threadCache: nextCache };
-                    });
-
-                    try {
-                        const { data } = await api.post<ApiResponse<ToggleLikeResponseDTO>>(`${URL_AFTER_API}/like`, payload);
-
-                        if (!(data?.data?.data && data.data.data.likes)) throw new Error("Invalid response body");
-
-                        const likes = data.data.data.likes;
-
-                        // Reconcile server likes count
-                        set((s) => {
-                            const nextCache = { ...s.threadCache };
-                            for (const [tKey, entry] of Object.entries(nextCache)) {
-                                const idx = entry.nodes.findIndex((n) => n.id === payload.commentId);
-                                if (idx >= 0) {
-                                    entry.nodes[idx] = { ...entry.nodes[idx], likes };
-                                    nextCache[tKey] = entry;
-                                }
-                            }
-                            return { threadCache: nextCache };
-                        });
-                    } catch (err) {
-                        const apiErr = toApiError(err);
-                        // Rollback
-                        set((s) => {
-                            const nextCache = { ...s.threadCache };
-                            for (const [tKey, entry] of Object.entries(nextCache)) {
-                                const idx = entry.nodes.findIndex((n) => n.id === payload.commentId);
-                                if (idx >= 0) {
-                                    const delta = payload.like ? -1 : 1;
-                                    entry.nodes[idx] = {
-                                        ...entry.nodes[idx],
-                                        likes: Math.max(0, entry.nodes[idx].likes + delta),
-                                    };
-                                    nextCache[tKey] = entry;
-                                }
-                            }
-                            return { threadCache: nextCache };
-                        });
-                        throw apiErr;
-                    }
-                },
-
-                /**
                  * Update moderation status with optimistic update and server reconciliation.
                  */
                 updateStatus: async (payload) => {
@@ -1009,7 +945,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     });
 
                     try {
-                        const { data } = await api.post<ApiResponse<UpdateCommentStatusResponseDTO>>(
+                        const { data } = await api.patch<ApiResponse<UpdateCommentStatusResponseDTO>>(
                             `${URL_AFTER_API}/status`,
                             payload
                         );
