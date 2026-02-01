@@ -7,8 +7,7 @@ import EmployeeModel from "@/models/employees/employees.model";
 import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import ConnectDB from "@/config/db";
-import { validateUser } from "@/lib/auth/validateUser";
-import { USER_ROLE } from "@/constants/user.const";
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 
 /**
  * PATCH /users/v1/employees/[id]/restore
@@ -35,7 +34,7 @@ export const PATCH = withErrorHandler(async (
 
     await ConnectDB();
 
-    await validateUser(adminId, USER_ROLE.ADMIN);
+    await VERIFY_USER_ROLE.ADMIN(adminId);
 
     const restoredEmployee = await withTransaction(async (session) => {
         const employee = await EmployeeModel.restoreById(objectId, session);

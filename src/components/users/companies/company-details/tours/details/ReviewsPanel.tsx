@@ -10,19 +10,15 @@ import {
     MdCalendarToday,
     MdCardTravel,
     MdSearch,
-    MdPhotoLibrary,
     MdStarHalf,
 } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCompanyDetailStore } from "@/store/company/company-detail.store";
-import type { ReviewListItemDTO, ReviewSummaryDTO } from "@/types/review.tour.response.type";
+import type { ReviewListItemDTO, ReviewSummaryDTO } from "@/types/tour-detail-review.type";
 import { TourReviewsSkeleton } from "./skeletons/TourReviewsSkeleton";
-
-function resolveImageUrl(id?: string) {
-    return id ? `/api/media/${id}` : "/placeholders/placeholder-400.jpg";
-}
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
 /* ---------------------
    Small utility components (memoized)
@@ -89,9 +85,9 @@ const ReviewItem: React.FC<ReviewItemProps> = React.memo(({ review, onOpenImage 
                         <div className="min-w-0">
                             <div className="flex items-center gap-2">
                                 <h4 className="font-semibold text-slate-900 dark:text-slate-100 truncate">{review.user.name}</h4>
-                                {review.isVerified && (
+                                {review.isApproved && (
                                     <Badge className="bg-emerald-500 text-white inline-flex items-center gap-1 text-xs rounded-full px-2">
-                                        <MdVerified className="h-3 w-3" /> Verified
+                                        <MdVerified className="h-3 w-3" /> Approved
                                     </Badge>
                                 )}
                                 {!review.isApproved && (
@@ -142,11 +138,11 @@ const ReviewItem: React.FC<ReviewItemProps> = React.memo(({ review, onOpenImage 
                             {review.images.slice(0, 8).map((img, i) => (
                                 <button
                                     key={i}
-                                    onClick={() => onOpenImage(resolveImageUrl(img))}
+                                    onClick={() => onOpenImage(img)}
                                     className="relative h-20 w-full rounded-md overflow-hidden bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                                     aria-label="Open photo"
                                 >
-                                    <Image src={resolveImageUrl(img)} alt={`photo-${i}`} fill className="object-cover" />
+                                    <Image src={img} alt={`photo-${i}`} fill className="object-cover" />
                                 </button>
                             ))}
                         </div>
@@ -191,41 +187,100 @@ interface ReviewsPanelProps {
     tourId: string;
 }
 
+// const fetchReviews = useCompanyDetailStore((s) => s.fetchReviews);
+
+
 export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
-    const fetchReviews = useCompanyDetailStore((s) => s.fetchReviews);
-    const storeParams = useCompanyDetailStore((s) => s.params.tourReviews?.[tourId]) ?? { page: 1, limit: 10 };
-    const isStoreLoading = useCompanyDetailStore((s) => Boolean(s.loading[`reviewsList:${tourId}`]));
-    const storeError = useCompanyDetailStore((s) => s.error[`reviewsListError:${tourId}`]);
+    const {
+        params,
+        loading,
+        error,
+        fetchReviews,
+    } = useCompanyDetailStore();
+    const storeParams = params.tourReviews?.[tourId] ?? { page: 1, limit: 10 };
+    const isStoreLoading = loading[`reviewsList:${tourId}`];
+    const storeError = error[`reviewsListError:${tourId}`];
 
     const [reviews, setReviews] = useState<ReviewListItemDTO[]>([]);
     const [summary, setSummary] = useState<ReviewSummaryDTO | null>(null);
     const [pagination, setPagination] = useState({ page: storeParams.page, pages: 1, total: 0 });
     const [isLoading, setIsLoading] = useState(false);
 
+    // Filter states
     const [minRating, setMinRating] = useState<number | null>(null);
-    const [verifiedOnly, setVerifiedOnly] = useState(false);
-    const [withPhotosOnly, setWithPhotosOnly] = useState(false);
-    const [query, setQuery] = useState("");
-    const [debouncedQuery, setDebouncedQuery] = useState("");
+    const [approvedOnly, setApprovedOnly] = useState(false);
+    const [searchQuery, setSearchQuery] = useState(""); // Renamed from 'query' to 'searchQuery'
     const [lightbox, setLightbox] = useState<{ url: string } | null>(null);
 
     const currentPage = storeParams.page ?? 1;
     const currentLimit = storeParams.limit ?? 10;
 
-    // debounce search (200ms)
-    useEffect(() => {
-        const id = setTimeout(() => setDebouncedQuery(query.trim()), 200);
-        return () => clearTimeout(id);
-    }, [query]);
+    // Create debounced search function using the hook
+    const debouncedSearch = useDebouncedCallback(
+        (searchValue: string) => {
+            // Trigger fetch with search filter
+            load({
+                page: 1, // Reset to first page when searching
+                limit: currentLimit,
+                search: searchValue.trim(),
+                rating: minRating as 1 | 2 | 3 | 4 | 5 | undefined,
+                approvedOnly
+            });
+        },
+        300 // 300ms debounce delay
+    );
 
+    // Handle search input change
+    const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSearchQuery(value);
+
+        // Only trigger search if there's a value or it was cleared
+        if (value.trim() === "") {
+            // If cleared, trigger immediate reload
+            load({
+                page: 1,
+                limit: currentLimit,
+                search: undefined,
+                rating: minRating as 1 | 2 | 3 | 4 | 5 | undefined,
+                approvedOnly
+            });
+        } else {
+            // Use debounced search
+            debouncedSearch(value);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentLimit, minRating, approvedOnly, debouncedSearch]);
+
+    // Load function now accepts filter params
     const load = useCallback(
-        async (opts?: { page?: number; limit?: number; force?: boolean }) => {
+        async (opts?: {
+            page?: number;
+            limit?: number;
+            force?: boolean;
+            search?: string;
+            rating?: 1 | 2 | 3 | 4 | 5;
+            approvedOnly?: boolean;
+        }) => {
             const page = opts?.page ?? currentPage;
             const limit = opts?.limit ?? currentLimit;
             setIsLoading(true);
 
             try {
-                const res = await fetchReviews(companyId, tourId, { page, limit }, opts?.force);
+                // Pass filter params to fetchReviews
+                const res = await fetchReviews(
+                    companyId,
+                    tourId,
+                    {
+                        page,
+                        limit,
+                        search: opts?.search,
+                        rating: opts?.rating,
+                        approvedOnly: opts?.approvedOnly ?? false
+                    },
+                    opts?.force
+                );
+
                 if (!res) throw new Error("Invalid response");
                 const items = res.items ?? [];
                 const total = res.total ?? items.length;
@@ -239,7 +294,7 @@ export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
                         ? Number((items.reduce((s, r) => s + (r.rating ?? 0), 0) / items.length).toFixed(1))
                         : 0);
 
-                const verifiedCount = res?.meta?.summary?.verifiedCount ?? items.filter((r) => r.isVerified).length;
+                const isApprovedCount = res?.meta?.summary?.isApproved ?? items.filter((r) => r.isApproved).length;
 
                 const ratingBreakdown =
                     res?.meta?.summary?.ratingBreakdown ??
@@ -252,7 +307,7 @@ export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
                         { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
                     );
 
-                setSummary({ totalReviews: total, averageRating: avgRating, verifiedCount, ratingBreakdown });
+                setSummary({ totalReviews: total, averageRating: avgRating, isApproved: isApprovedCount, ratingBreakdown });
             } catch (err) {
                 console.error("Failed to load reviews:", err);
                 setReviews([]);
@@ -262,40 +317,45 @@ export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
                 setIsLoading(false);
             }
         },
-        [fetchReviews, companyId, tourId, currentPage, currentLimit]
+        [fetchReviews, tourId, currentPage, currentLimit]
     );
 
+    // Load initial data
     useEffect(() => {
         void load({ page: currentPage, limit: currentLimit });
-        // keep dependency conservative: load handles currentPage/currentLimit via closure
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [load, tourId]);
+    }, [load, currentPage, currentLimit]);
 
-    // Client-side filters
-    const filteredReviews = useMemo(() => {
-        const q = debouncedQuery.toLowerCase();
-        return reviews.filter((r) => {
-            if (minRating && (r.rating ?? 0) < minRating) return false;
-            if (verifiedOnly && !r.isVerified) return false;
-            if (withPhotosOnly && !(Array.isArray((r).images) && r.images.length > 0)) return false;
-            if (q) {
-                const matches =
-                    r.title?.toLowerCase().includes(q) ||
-                    r.comment?.toLowerCase().includes(q) ||
-                    r.user?.name?.toLowerCase().includes(q);
-                if (!matches) return false;
-            }
-            return true;
+    // Update load when filter changes (excluding search which is handled by debounce)
+    useEffect(() => {
+        // Only trigger if we're not on initial load
+        if (currentPage !== 1) return;
+
+        load({
+            page: 1, // Reset to first page when filters change
+            limit: currentLimit,
+            search: searchQuery.trim() || undefined,
+            rating: minRating as 1 | 2 | 3 | 4 | 5 | undefined,
+            approvedOnly
         });
-    }, [reviews, minRating, verifiedOnly, withPhotosOnly, debouncedQuery]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [minRating, approvedOnly, currentLimit]);
+
+    // Remove client-side filtering since we're doing server-side now
+    // All filtering is done via API calls
 
     const goToPage = useCallback(
         async (page: number) => {
             if (page < 1 || page > pagination.pages || page === pagination.page) return;
-            setPagination((p) => ({ ...p, page }));
-            await load({ page, limit: currentLimit });
+
+            await load({
+                page,
+                limit: currentLimit,
+                search: searchQuery.trim() || undefined,
+                rating: minRating as 1 | 2 | 3 | 4 | 5 | undefined,
+                approvedOnly
+            });
         },
-        [pagination.pages, pagination.page, load, currentLimit]
+        [pagination.pages, pagination.page, load, currentLimit, searchQuery, minRating, approvedOnly]
     );
 
     const openImage = useCallback((url: string) => setLightbox({ url }), []);
@@ -328,8 +388,8 @@ export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
                         <div className="relative">
                             <input
                                 placeholder="Search reviews"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
+                                value={searchQuery}
+                                onChange={handleSearchChange}
                                 className="pl-9 pr-3 py-2 rounded-md border border-slate-100 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                                 aria-label="Search reviews"
                             />
@@ -364,10 +424,14 @@ export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
                             <select
                                 aria-label="Minimum rating"
                                 value={minRating ?? ""}
-                                onChange={(e) => setMinRating(e.target.value ? Number(e.target.value) : null)}
+                                onChange={(e) => {
+                                    const value = e.target.value ? Number(e.target.value) : null;
+                                    setMinRating(value);
+                                }}
                                 className="text-sm px-2 py-1 border rounded-md"
                             >
                                 <option value="">All ratings</option>
+                                <option value={5}>5 stars</option>
                                 <option value={4}>4+ stars</option>
                                 <option value={3}>3+ stars</option>
                                 <option value={2}>2+ stars</option>
@@ -375,15 +439,12 @@ export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
                             </select>
 
                             <label className="inline-flex items-center text-sm gap-2">
-                                <input type="checkbox" checked={verifiedOnly} onChange={(e) => setVerifiedOnly(e.target.checked)} />
-                                Verified only
-                            </label>
-
-                            <label className="inline-flex items-center text-sm gap-2">
-                                <input type="checkbox" checked={withPhotosOnly} onChange={(e) => setWithPhotosOnly(e.target.checked)} />
-                                <span className="inline-flex items-center gap-1">
-                                    <MdPhotoLibrary /> With photos
-                                </span>
+                                <input
+                                    type="checkbox"
+                                    checked={approvedOnly}
+                                    onChange={(e) => setApprovedOnly(e.target.checked)}
+                                />
+                                Approved only
                             </label>
                         </div>
                     </div>
@@ -394,7 +455,7 @@ export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
                 <div className="p-6 space-y-4">
                     {isLoading || isStoreLoading ? (
                         <TourReviewsSkeleton rows={4} />
-                    ) : filteredReviews.length === 0 ? (
+                    ) : reviews.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-40 gap-3 text-center">
                             <MdStar className="h-8 w-8 text-slate-400" />
                             <p className="text-sm font-medium text-slate-700">No reviews found</p>
@@ -402,7 +463,7 @@ export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
                         </div>
                     ) : (
                         <AnimatePresence mode="popLayout">
-                            {filteredReviews.map((review) => (
+                            {reviews.map((review) => (
                                 <ReviewItem key={review.id} review={review} onOpenImage={openImage} />
                             ))}
                         </AnimatePresence>
@@ -437,6 +498,7 @@ export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
                 </div>
             )}
 
+            {/* Lightbox remains the same */}
             <AnimatePresence>
                 {lightbox && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-8" onClick={closeLightbox}>

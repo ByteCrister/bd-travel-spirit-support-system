@@ -1,4 +1,3 @@
-// models/tourFAQ.model.ts
 import {
     Schema,
     Document,
@@ -6,16 +5,35 @@ import {
     Query,
 } from "mongoose";
 import { MODERATION_STATUS, ModerationStatus } from "@/constants/tour.const";
-import { FAQ_REPORT_REASON, FaqReportReason } from "@/constants/faq-report.const";
 import { defineModel } from "@/lib/helpers/defineModel";
+import { FAQ_REPORT_REASON, FaqReportReason } from "@/constants/faq-report.const";
+
+/* ------------------------------------------------------------------ */
+/* Report Types */
+/* ------------------------------------------------------------------ */
 
 export interface ITourFAQReport {
     reportedBy: Types.ObjectId;
-    reason?: FaqReportReason; // optional enum
-    customReason?: string; // user-provided reason (when no enum used)
+    reason?: FaqReportReason;
+    customReason?: string;
     explanation?: string;
     createdAt: Date;
 }
+
+/* ------------------------------------------------------------------ */
+/* Like / Dislike Types */
+/* ------------------------------------------------------------------ */
+
+export interface ITourFAQLike {
+    _id: Types.ObjectId;
+    user: Types.ObjectId;
+    createdAt: Date;
+    deletedAt?: Date | null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Main FAQ Type */
+/* ------------------------------------------------------------------ */
 
 export interface ITourFAQ extends Document {
     tour: Types.ObjectId;
@@ -30,12 +48,18 @@ export interface ITourFAQ extends Document {
     answeredAt?: Date;
     editedAt?: Date;
     editedBy?: Types.ObjectId;
-    likes: number;
-    dislikes: number;
+
+    likes: ITourFAQLike[];
+    dislikes: ITourFAQLike[];
+
     reports: ITourFAQReport[];
     createdAt: Date;
     updatedAt: Date;
 }
+
+/* ------------------------------------------------------------------ */
+/* Schemas */
+/* ------------------------------------------------------------------ */
 
 const ReportSchema = new Schema<ITourFAQReport>(
     {
@@ -48,6 +72,26 @@ const ReportSchema = new Schema<ITourFAQReport>(
     { _id: false }
 );
 
+const LikeSchema = new Schema<ITourFAQLike>(
+    {
+        user: {
+            type: Schema.Types.ObjectId,
+            ref: "Traveler",
+            required: true,
+        },
+        createdAt: { type: Date, default: Date.now },
+        deletedAt: { type: Date, default: null },
+    },
+    {
+        _id: true,
+        versionKey: false,
+    }
+);
+
+/* ------------------------------------------------------------------ */
+/* Tour FAQ Schema */
+/* ------------------------------------------------------------------ */
+
 const TourFAQSchema = new Schema<ITourFAQ>(
     {
         tour: {
@@ -58,32 +102,43 @@ const TourFAQSchema = new Schema<ITourFAQ>(
         },
         askedBy: { type: Schema.Types.ObjectId, ref: "Traveler", required: true },
         answeredBy: { type: Schema.Types.ObjectId, ref: "Traveler" },
+
         question: { type: String, required: true, trim: true, maxlength: 1000 },
         answer: { type: String, trim: true, maxlength: 5000 },
+
         status: {
             type: String,
             enum: Object.values(MODERATION_STATUS),
             default: MODERATION_STATUS.PENDING,
             index: true,
         },
+
         order: { type: Number, default: 0 },
         isActive: { type: Boolean, default: true },
         deletedAt: { type: Date, default: null },
+
         answeredAt: { type: Date },
         editedAt: { type: Date },
         editedBy: { type: Schema.Types.ObjectId, ref: "Traveler" },
-        likes: { type: Number, default: 0, min: 0 },
-        dislikes: { type: Number, default: 0, min: 0 },
-        reports: [ReportSchema],
+
+        likes: { type: [LikeSchema], default: [] },
+        dislikes: { type: [LikeSchema], default: [] },
+
+        reports: { type: [ReportSchema], default: [] },
     },
     { timestamps: true, versionKey: false }
 );
+
+/* ------------------------------------------------------------------ */
+/* Validations */
+/* ------------------------------------------------------------------ */
 
 // Ensure at least one reason is provided per report
 ReportSchema.pre("validate", function (next) {
     const hasEnumReason = !!this.reason;
     const hasCustomReason =
         !!this.customReason && this.customReason.trim().length > 0;
+
     if (!hasEnumReason && !hasCustomReason) {
         return next(
             new Error(
@@ -94,22 +149,44 @@ ReportSchema.pre("validate", function (next) {
     next();
 });
 
-// Soft delete filter
+/* ------------------------------------------------------------------ */
+/* Soft Delete Filter */
+/* ------------------------------------------------------------------ */
+
 TourFAQSchema.pre<Query<ITourFAQ[], ITourFAQ>>(/^find/, function (next) {
     this.where({ deletedAt: null });
     next();
 });
 
-// Virtuals
+/* ------------------------------------------------------------------ */
+/* Virtuals */
+/* ------------------------------------------------------------------ */
+
 TourFAQSchema.virtual("isAnswered").get(function (this: ITourFAQ) {
     return Boolean(this.answer);
 });
 
-// Indexes
+TourFAQSchema.virtual("likeCount").get(function (this: ITourFAQ) {
+    return this.likes.filter(l => !l.deletedAt).length;
+});
+
+TourFAQSchema.virtual("dislikeCount").get(function (this: ITourFAQ) {
+    return this.dislikes.filter(d => !d.deletedAt).length;
+});
+
+/* ------------------------------------------------------------------ */
+/* Indexes */
+/* ------------------------------------------------------------------ */
+
 TourFAQSchema.index({ tour: 1, status: 1, createdAt: -1 });
 TourFAQSchema.index({ askedBy: 1, createdAt: -1 });
 TourFAQSchema.index({ "reports.reason": 1 });
-TourFAQSchema.index({ likes: -1 });
-TourFAQSchema.index({ dislikes: -1 });
+
+TourFAQSchema.index({
+  question: "text",
+  answer: "text",
+});
+
+/* ------------------------------------------------------------------ */
 
 export const TourFAQModel = defineModel("TourFAQ", TourFAQSchema);

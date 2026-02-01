@@ -20,6 +20,18 @@ import {
 
 /* =============== SUB TYPES (Mirroring Model Structure) =============== */
 
+export interface TourCompanyInfo {
+    id: string;
+    name: string;
+    createdAt: string;
+}
+export interface TourAuthorInfo {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl: string;
+}
+
 // =============== PRICE & DISCOUNT TYPES ===============
 export interface PriceDTO {
     amount: number;
@@ -264,8 +276,8 @@ export interface TourDetailDTO {
     reApprovalRequestedAt?: string;
 
     // =============== SYSTEM FIELDS ===============
-    companyId: string;
-    authorId: string;
+    companyInfo: TourCompanyInfo;
+    authorInfo: TourAuthorInfo;
     tags?: string[];
     publishedAt?: string;
     viewCount: number;

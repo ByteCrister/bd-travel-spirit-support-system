@@ -1,13 +1,12 @@
-// api/support/article-comments/v1/[commentId]/restore/route.ts
+// api/support/article-comments/v1/comment/[commentId]/restore/route.ts
 import { NextRequest } from 'next/server';
 import { Types } from 'mongoose';
 import { ApiError, withErrorHandler } from '@/lib/helpers/withErrorHandler';
 import { getUserIdFromSession } from '@/lib/auth/session.auth';
 import ConnectDB from '@/config/db';
-import { validateUser } from '@/lib/auth/validateUser';
-import { USER_ROLE } from '@/constants/user.const';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 import { TravelCommentModel } from '@/models/articles/travel-article-comment.model';
+import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
 
 /**
  * POST to restore soft-deleted article comments
@@ -26,7 +25,7 @@ export const POST = withErrorHandler(async (
     await ConnectDB();
 
     // 2 Validate support user
-    await validateUser(currentUserId, USER_ROLE.SUPPORT);
+    await VERIFY_USER_ROLE.SUPPORT(currentUserId);
 
     // 3 Resolve and validate comment ID
     const commentId = resolveMongoId((await params).commentId);

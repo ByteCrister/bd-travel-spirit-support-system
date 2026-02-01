@@ -88,7 +88,7 @@ export function ToursTable({
     };
 
     const handleRouteClick = async (tourId: string) => {
-        router.push(`/users/companies/${companyId}/${encodeId(encodeURIComponent(tourId))}`);
+        router.push(`/users/companies/${encodeId(encodeURIComponent(companyId))}/${encodeId(encodeURIComponent(tourId))}`);
     };
 
     const statusBadge = (status: TourStatus) => {

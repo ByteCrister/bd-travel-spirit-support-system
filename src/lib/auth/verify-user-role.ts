@@ -1,8 +1,8 @@
 import { Types } from "mongoose";
-import { UserRole } from "@/constants/user.const";
-import UserModel, { IUser, IUserDoc } from "@/models/user.model";
-import { ApiError } from "../helpers/withErrorHandler";
 import httpStatus from "http-status";
+import UserModel, { IUser, IUserDoc } from "@/models/user.model";
+import { USER_ROLE, UserRole } from "@/constants/user.const"
+import { ApiError } from "../helpers/withErrorHandler";
 
 /**
  * Options for user validation
@@ -75,3 +75,26 @@ export async function validateUser(
 
     return user.safeToJSON();;
 }
+
+const VERIFY_USER_ROLE = {
+    ADMIN: async (id: string) => {
+        return await validateUser(id, USER_ROLE.ADMIN);
+    },
+    ASSISTANT: async (id: string) => {
+        return await validateUser(id, USER_ROLE.ASSISTANT);
+    },
+    GUIDE: async (id: string) => {
+        return await validateUser(id, USER_ROLE.GUIDE);
+    },
+    SUPPORT: async (id: string) => {
+        return await validateUser(id, USER_ROLE.SUPPORT);
+    },
+    TRAVELER: async (id: string) => {
+        return await validateUser(id, USER_ROLE.TRAVELER);
+    },
+    MULTIPLE: async (id: string, roles: UserRole[]) => {
+        return await validateUser(id, roles);
+    },
+}
+
+export default VERIFY_USER_ROLE;

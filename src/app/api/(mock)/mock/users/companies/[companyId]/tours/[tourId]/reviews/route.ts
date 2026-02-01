@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
 import { TRAVEL_TYPE } from "@/constants/tour.const";
-import { TourReviewsResponseDTO, ReviewReplyDTO } from "@/types/review.tour.response.type";
+import { TourReviewsResponseDTO, ReviewReplyDTO } from "@/types/tour-detail-review.type";
 
 /** Helper: generate a consistent avatar for each user/employee */
 function getAvatar(userId: string) {
@@ -119,7 +119,7 @@ export async function GET(
             return acc;
         }, {} as Record<1 | 2 | 3 | 4 | 5, number>);
 
-        const verifiedCount = allReviews.filter(r => r.isVerified).length;
+        const isApproved = allReviews.filter(r => r.isVerified).length;
 
         const data: TourReviewsResponseDTO = {
             companyId,
@@ -127,7 +127,7 @@ export async function GET(
             summary: {
                 totalReviews: total,
                 averageRating,
-                verifiedCount,
+                isApproved,
                 ratingBreakdown,
             },
             docs,

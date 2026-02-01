@@ -13,7 +13,7 @@ import { notifyEmployeeNewPassword } from "@/lib/html/notify-new-password.html";
 import { mailer } from "@/config/node-mailer";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
-import { validateUser } from "@/lib/auth/validateUser";
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 
 type ObjectId = Types.ObjectId;
 
@@ -66,7 +66,7 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
 
     await ConnectDB()
 
-    await validateUser(adminId, USER_ROLE.ADMIN);
+    await VERIFY_USER_ROLE.ADMIN(adminId);
 
     // Load employee and populate user reference (we need the actual user doc to save)
     const rawEmployee = await EmployeeModel.findById(employeeId).populate("user").exec();

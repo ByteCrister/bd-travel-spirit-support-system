@@ -23,7 +23,7 @@ import { HiOutlineChartSquareBar, HiOutlineUser } from 'react-icons/hi';
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { Compass, ShieldCheck } from "lucide-react";
+import { Compass, KeyRound, ShieldCheck } from "lucide-react";
 import { MdBusiness, MdTravelExplore } from 'react-icons/md';
 import { usePathname } from "next/navigation";
 import { TbPasswordFingerprint, TbReceipt } from "react-icons/tb";
@@ -78,7 +78,8 @@ const navigationGroups: NavGroup[] = [
       { href: "/support/tours", label: "Tours", icon: Compass },
       { href: "/support/articles", label: "Articles", icon: FiFileText },
       { href: "/support/article-comments", label: "Article Comments", icon: FaComments },
-      { href: "/support/reset-password-requests", label: "Employees Pass", icon: TbPasswordFingerprint, adminOnly: true },
+      { href: "/support/guide-password-requests", label: "Guide Password Requests", icon: KeyRound },
+      { href: "/support/reset-password-requests", label: "Employees Password Requests", icon: TbPasswordFingerprint, adminOnly: true },
     ],
   },
   {

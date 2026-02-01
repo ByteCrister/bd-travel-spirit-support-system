@@ -8,8 +8,7 @@ import { TravelArticleModel } from '@/models/articles/travel-article.model';
 import { getUserIdFromSession } from '@/lib/auth/session.auth';
 import ConnectDB from '@/config/db';
 import { ApiError } from '@/lib/helpers/withErrorHandler';
-import { validateUser } from '@/lib/auth/validateUser';
-import { USER_ROLE } from '@/constants/user.const';
+import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
 
 export default async function ArticleDeleteHandler(
     request: NextRequest,
@@ -30,9 +29,7 @@ export default async function ArticleDeleteHandler(
     await ConnectDB();
 
     // Check if user has 'support' role
-    await validateUser(currentUserId, USER_ROLE.SUPPORT, {
-        errorMessages: { invalidRole: "Only support users can create articles" }
-    })
+    await VERIFY_USER_ROLE.SUPPORT(currentUserId);
 
     await withTransaction(async (session) => {
         // Get current user from session (for deletedBy field)

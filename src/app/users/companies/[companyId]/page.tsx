@@ -14,6 +14,6 @@ export default async function Page({ params }: PageProps) {
     const decodedId = decodeId(decodeURIComponent(companyId));
 
     if (!decodedId) return notFound();
-
-    return <CompanyOverviewPage companyId={companyId} />;
+    
+    return <CompanyOverviewPage companyId={decodedId} />;
 }

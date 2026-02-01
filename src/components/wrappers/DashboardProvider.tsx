@@ -19,6 +19,7 @@ const ADMIN_ROUTES = [
   "/support/articles",
   "/support/article-comments",
   "/support/reset-password-requests",
+  "/support/guide-password-requests",
 
   "/social/ads",
   "/social/promotions",

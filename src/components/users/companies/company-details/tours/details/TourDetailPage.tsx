@@ -1,10 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Check, Copy } from "lucide-react";
 import { motion } from "framer-motion";
 import { FaInfoCircle, FaStar, FaFlag, FaQuestionCircle } from "react-icons/fa";
 
@@ -18,11 +15,7 @@ type Props = { companyId: string; tourId: string };
 
 export default function TourDetailPage({ companyId, tourId }: Props) {
     const [tab, setTab] = useState<string>("details");
-    const [copied, setCopied] = useState(false);
-    const [breadcrumbItems, setBreadcrumbItems] = useState<{ label: string; href: string; }[]>([
-        { label: "Home", href: '/' },
-        { label: "Companies", href: "/users/companies" }
-    ])
+    const [breadcrumbItems, setBreadcrumbItems] = useState<{ label: string; href: string; }[]>([])
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -34,12 +27,9 @@ export default function TourDetailPage({ companyId, tourId }: Props) {
         setTab(value);
     }, []);
 
-    const handleCopy = () => {
-        const link = `${window.location.origin}/tours/${companyId}/${tourId}`;
-        navigator.clipboard.writeText(link);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
+    const handleBreadcrumbItems = (items: { label: string; href: string; }[]) => {
+        setBreadcrumbItems(items);
+    }
 
     const tabs = [
         { value: "details", label: "All details", icon: <FaInfoCircle className="w-4 h-4" /> },
@@ -71,30 +61,6 @@ export default function TourDetailPage({ companyId, tourId }: Props) {
                         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                             Manage details, reviews, reports, and FAQs for this tour.
                         </p>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-3">
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        onClick={handleCopy}
-                                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-md transition-all duration-200 hover:scale-105"
-                                    >
-                                        {copied ? (
-                                            <Check className="w-4 h-4 text-green-500" />
-                                        ) : (
-                                            <Copy className="w-4 h-4 text-slate-500" />
-                                        )}
-                                        {copied ? "Copied!" : "Copy Link"}
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Copy shareable link</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
                     </div>
                 </div>
             </div>
@@ -128,7 +94,7 @@ export default function TourDetailPage({ companyId, tourId }: Props) {
 
                     <div className="mt-8">
                         <TabsContent value="details">
-                            <AllDetails companyId={companyId} tourId={tourId} setBredCrumbs={(items) => setBreadcrumbItems(prev => [...prev, ...items])} />
+                            <AllDetails companyId={companyId} tourId={tourId} handleBreadcrumbItems={handleBreadcrumbItems} />
                         </TabsContent>
                         <TabsContent value="reviews">
                             <ReviewsPanel companyId={companyId} tourId={tourId} />

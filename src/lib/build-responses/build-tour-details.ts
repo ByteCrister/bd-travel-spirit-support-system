@@ -9,6 +9,8 @@ import AssetModel from "@/models/assets/asset.model";
 import AssetFileModel from "@/models/assets/asset-file.model";
 import { ApiError } from "../helpers/withErrorHandler";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
+import GuideModel from "@/models/guide/guide.model";
+import UserModel from "@/models/user.model";
 
 type ObjectId = Types.ObjectId;
 
@@ -26,55 +28,108 @@ type TourLeanPopulated =
         | "heroImage"
         | "gallery"
         | "destinations"
+        | "companyId"
+        | "authorId"
     > & {
         _id: ObjectId;
         heroImage: PopulatedAssetLean | null;
         gallery: PopulatedAssetLean[];
-        destinations: IDestinationBlockLean[]
+        destinations: IDestinationBlockLean[];
+        companyId: {
+            _id: ObjectId;
+            companyName: string;
+            createdAt: Date;
+        };
+
+        authorId: {
+            _id: ObjectId;
+            name: string;
+            email: string;
+            avatar: PopulatedAssetLean;
+        };
     };
 
 // Helper function to transform Mongoose document to TourDetailDTO
 export async function buildTourDetailDTO(
     tourId: ObjectId,
-    withDeleted = false,
     session?: ClientSession,
 ): Promise<TourDetailDTO> {
     if (!tourId) throw new Error("tourId is required");
 
     try {
-        const baseQuery = withDeleted
-            ? TourModel.findOneWithDeleted({ _id: tourId }).session(session ?? null)
-            : TourModel.findById(tourId).session(session ?? null);
+        const baseQuery = TourModel.findById(tourId).session(session ?? null);
 
         const rawTour = await baseQuery
             .populate({
                 path: "heroImage",
                 select: "file deletedAt",
                 model: AssetModel,
-                populate: { path: "file", select: "publicUrl", model: AssetFileModel },
-                ...(withDeleted ? {} : { match: { deletedAt: null } }),
-                options: { lean: true } // optional
+                populate: {
+                    path: "file",
+                    select: "publicUrl",
+                    model: AssetFileModel,
+                    options: { session }
+                },
+                options: { lean: true, session } // optional
             })
             .populate({
                 path: "gallery",
                 select: "file deletedAt",
                 model: AssetModel,
-                populate: { path: "file", select: "publicUrl", model: AssetFileModel },
-                ...(withDeleted ? {} : { match: { deletedAt: null } }),
+                populate: {
+                    path: "file",
+                    select: "publicUrl",
+                    model: AssetFileModel,
+                    options: { session }
+                },
+                options: { session }
             })
             .populate({
                 path: "destinations.images",
                 select: "file deletedAt",
                 model: AssetModel,
-                populate: { path: "file", select: "publicUrl", model: AssetFileModel },
-                ...(withDeleted ? {} : { match: { deletedAt: null } }),
+                populate: {
+                    path: "file",
+                    select: "publicUrl",
+                    model: AssetFileModel,
+                    options: { session }
+                },
+                options: { session }
             })
             .populate({
                 path: "destinations.attractions.images",
                 select: "file deletedAt",
                 model: AssetModel,
-                populate: { path: "file", select: "publicUrl", model: AssetFileModel },
-                ...(withDeleted ? {} : { match: { deletedAt: null } }),
+                populate: {
+                    path: "file",
+                    select: "publicUrl",
+                    model: AssetFileModel,
+                    options: { session }
+                },
+                options: { session }
+            })
+            .populate({
+                path: "companyId",
+                select: "companyName createdAt",
+                model: GuideModel,
+                options: { session }
+            })
+            .populate({
+                path: "authorId",
+                select: "name email avatar",
+                model: UserModel,
+                populate: {
+                    path: "avatar",
+                    select: "file",
+                    model: AssetModel,
+                    populate: {
+                        path: "file",
+                        select: "publicUrl",
+                        model: AssetFileModel,
+                        options: { session }
+                    }
+                },
+                options: { session }
             })
             .exec();
 
@@ -157,9 +212,20 @@ export async function buildTourDetailDTO(
             completedAt: tour.completedAt?.toISOString(),
             reApprovalRequestedAt: tour.reApprovalRequestedAt?.toISOString(),
 
+            // =============== COMPANY & AUTHOR INFO ===============
+            companyInfo: {
+                id: tour.companyId._id.toString(),
+                name: tour.companyId.companyName,
+                createdAt: tour.companyId.createdAt.toISOString(),
+            },
+            authorInfo: {
+                id: tour.authorId._id.toString(),
+                name: tour.authorId.name,
+                email: tour.authorId.email,
+                avatarUrl: tour.authorId.avatar?.file?.publicUrl ?? "",
+            },
+
             // =============== SYSTEM FIELDS ===============
-            companyId: tour.companyId._id.toString(),
-            authorId: tour.authorId._id.toString(),
             tags: tour.tags || [],
             publishedAt: tour.publishedAt?.toISOString(),
             viewCount: tour.viewCount || 0,

@@ -15,6 +15,9 @@ import {
 import { PAYROLL_STATUS } from '@/constants/employee.const';
 import AssetModel from '@/models/assets/asset.model';
 import AssetFileModel from '@/models/assets/asset-file.model';
+import { getCollectionName } from '@/lib/helpers/get-collection-name';
+import UserModel from '@/models/user.model';
+import { USER_ROLE } from '@/constants/user.const';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -99,6 +102,12 @@ function buildMongooseQuery(query: EmployeesQuery) {
         if (query.filters.leftBefore) filter.dateOfLeaving.$lte = new Date(query.filters.leftBefore);
     }
 
+    // ! Main site employees only
+    filter.$or = [
+        { companyId: null },
+        { companyId: { $exists: false } }
+    ];
+
     // Sorting
     const sortOrder: 1 | -1 = query.sortOrder === 'asc' ? 1 : -1;
     switch (query.sortBy) {
@@ -182,7 +191,7 @@ export const UserEmployeeListGetHandler = async (req: NextRequest) => {
         // -------------------- USER --------------------
         {
             $lookup: {
-                from: 'users',
+                from: getCollectionName(UserModel),
                 localField: 'user',
                 foreignField: '_id',
                 as: 'user',
@@ -190,10 +199,16 @@ export const UserEmployeeListGetHandler = async (req: NextRequest) => {
         },
         { $unwind: '$user' },
 
+        {
+            $match: {
+                'user.role': USER_ROLE.SUPPORT,
+            },
+        },
+
         // User avatar -> Asset
         {
             $lookup: {
-                from: AssetModel.collection.name,
+                from: getCollectionName(AssetModel),
                 localField: 'user.avatar',
                 foreignField: '_id',
                 as: 'userAvatarAsset',
@@ -204,7 +219,7 @@ export const UserEmployeeListGetHandler = async (req: NextRequest) => {
         // User avatar -> AssetFile
         {
             $lookup: {
-                from: AssetFileModel.collection.name,
+                from: getCollectionName(AssetFileModel),
                 localField: 'userAvatarAsset.file',
                 foreignField: '_id',
                 as: 'userAvatarFile',

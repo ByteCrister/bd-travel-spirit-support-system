@@ -17,9 +17,8 @@ import { uploadAssets } from '@/lib/cloudinary/upload.cloudinary';
 import { buildTourArticleDto } from '@/lib/build-responses/build-tour-article-dt';
 import { ASSET_TYPE } from '@/constants/asset.const';
 import ConnectDB from '@/config/db';
-import { USER_ROLE } from '@/constants/user.const';
 import { SlugService } from '@/lib/helpers/slug-services';
-import { validateUser } from '@/lib/auth/validateUser';
+import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
 
 // Helper function to validate and prepare image assets
 function prepareImageAssets(formData: CreateArticleInput) {
@@ -128,9 +127,7 @@ export default async function ArticlePostHandler(request: NextRequest) {
     await ConnectDB();
 
     // Check if user has 'support' role
-    await validateUser(currentUserId, USER_ROLE.SUPPORT, {
-        errorMessages: { invalidRole: "Only support users can create articles" }
-    })
+    await VERIFY_USER_ROLE.SUPPORT(currentUserId);
 
     // 3. Process in transaction
     const article = await withTransaction(async (session) => {

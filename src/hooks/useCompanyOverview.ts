@@ -1,10 +1,12 @@
 // hooks/useCompanyOverview.ts
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { TourListItemDTO, SortableTourKeys } from "@/types/tour.types";
 import { EmployeeListItemDTO } from "@/types/employee.types";
 import { useCompanyDetailStore } from "@/store/company/company-detail.store";
+import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback"; // Add this import
 
 export type TabKey = "tours" | "employees";
 
@@ -56,8 +58,32 @@ export function useCompanyOverview(companyId: string) {
     const [breadcrumbs, setBreadcrumbs] = useState([
         { label: "Home", href: '/' },
         { label: "Companies", href: "/users/companies" },
-        { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "-", href: `/users/companies/${companyId}` },
+        { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "-", href: `/users/companies/${encodeURIComponent(encodeId(companyId))}` },
     ])
+
+    // --- Fetch data function ---
+    const fetchData = useCallback(async () => {
+        if (activeTab === "tours") {
+            await fetchTours(companyId, { 
+                page: 1, 
+                limit, 
+                search,
+                sort: sortKey, 
+                order: sortOrder,
+            });
+        } else {
+            await fetchEmployees(companyId, {
+                page: 1,
+                limit,
+                search, 
+                sort: employeeSortKey,
+                order: sortOrder,
+            });
+        }
+    }, [activeTab, fetchTours, companyId, limit, search, sortKey, sortOrder, fetchEmployees, employeeSortKey]);
+
+    // Create debounced fetch function using the custom hook
+    const debouncedFetchData = useDebouncedCallback(fetchData, 300);
 
     // --- Fetch company overview on mount ---
     useEffect(() => {
@@ -65,43 +91,34 @@ export function useCompanyOverview(companyId: string) {
         setBreadcrumbs([
             { label: "Home", href: '/' },
             { label: "Companies", href: "/users/companies" },
-            { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "-", href: `/users/companies/${companyId}` },
+            { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "-", href: `/users/companies/${encodeURIComponent(encodeId(companyId))}` },
         ])
     }, [companies, companyId, fetchCompany]);
 
-    // --- Fetch tab data when tab changes ---
+    // --- Initial fetch and refetch when tab changes ---
     useEffect(() => {
-        const fetch = async () => {
-            if (activeTab === "tours") {
-                await fetchTours(companyId, { page: 1, limit, sort: sortKey, order: sortOrder });
-            } else {
-                await fetchEmployees(companyId, {
-                    page: 1,
-                    limit,
-                    sort: employeeSortKey,
-                    order: sortOrder,
-                });
-            }
-        };
-        fetch().catch(() => { });
-    }, [activeTab, companyId, limit, sortKey, sortOrder, employeeSortKey, fetchTours, fetchEmployees]); // FIXED: Added all dependencies
+        fetchData().catch(() => { });
+    }, [fetchData, activeTab]);
 
-    // --- Refetch on limit/sort changes ---
+    // --- Refetch when search, limit, or sort changes ---
     useEffect(() => {
-        const fetch = async () => {
-            if (activeTab === "tours") {
-                await fetchTours(companyId, { page: 1, limit, sort: sortKey, order: sortOrder });
-            } else {
-                await fetchEmployees(companyId, {
-                    page: 1,
-                    limit,
-                    sort: employeeSortKey,
-                    order: sortOrder,
-                });
-            }
+        // Call the debounced function
+        debouncedFetchData();
+        
+        // Clean up the debounced call on unmount
+        return () => {
+            debouncedFetchData.cancel?.();
         };
-        fetch().catch(() => { });
-    }, [limit, sortOrder, sortKey, employeeSortKey, activeTab, companyId, fetchTours, fetchEmployees]);
+    }, [debouncedFetchData]);
+
+    // --- Search handler with immediate UI update ---
+    const handleSearchChange = useCallback((value: string) => {
+        // Update search state immediately for UI
+        setSearch(value);
+        
+        // The debouncedFetchData will be called automatically by the useEffect above
+        // because search state changes and triggers the useEffect dependency
+    }, []);
 
     // --- Get current cached lists ---
     const tourCacheKey = activeCacheKey?.tours?.[companyId];
@@ -112,7 +129,8 @@ export function useCompanyOverview(companyId: string) {
         ? listCache?.employees?.[companyId]?.[employeeCacheKey]
         : undefined;
 
-    // --- Client-side filtering for search ---
+    // --- Client-side filtering for search (optional, or remove if you want server-side only) ---
+    // If you want server-side search, you'll need to modify the API to accept search param
     const filteredTours: TourListItemDTO[] = useMemo(() => {
         const items = toursList?.items ?? [];
         if (!search.trim()) return items;
@@ -142,7 +160,6 @@ export function useCompanyOverview(companyId: string) {
         );
     }, [employeesList?.items, search]);
 
-
     // --- Handlers ---
     const handleRefresh = async () => {
         if (activeTab === "tours") {
@@ -167,7 +184,7 @@ export function useCompanyOverview(companyId: string) {
         activeTab,
         setActiveTab,
         search,
-        setSearch,
+        setSearch: handleSearchChange, // Use the new handler
         limit,
         setLimit,
         sortOrder,

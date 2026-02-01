@@ -4,12 +4,12 @@ import { withErrorHandler, HandlerResult, ApiError } from "@/lib/helpers/withErr
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { Types } from "mongoose";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
-import { validateUser } from "@/lib/auth/validateUser";
 import { USER_ROLE } from "@/constants/user.const";
 import { IOwnerInfo, IEmployeeInfo } from "@/types/current-user.types";
 import UserModel, { IUserDoc } from "@/models/user.model";
 import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
 import mappedEmployeeUser from "@/lib/build-responses/build-mappedEmployeeUser";
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 
 // Request body type for name update
 interface UpdateNameRequest {
@@ -48,7 +48,8 @@ async function handler(request: NextRequest): Promise<HandlerResult<UpdateNameRe
     }
 
     // 2. Validate user has required role (admin or support)
-    await validateUser(currentUserId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
+    await VERIFY_USER_ROLE.MULTIPLE(currentUserId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT])
+
 
     // 3. Parse and validate request body
     let body: UpdateNameRequest;

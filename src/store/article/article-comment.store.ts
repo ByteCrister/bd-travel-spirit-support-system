@@ -1003,7 +1003,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     try {
                         // Call API to delete
                         const { data } = await api.delete<ApiResponse<DeleteCommentResponseDTO>>(
-                            `${URL_AFTER_API}/${commentId}`,
+                            `${URL_AFTER_API}/comment/${commentId}`,
                             {
                                 data: { reason }
                             }
@@ -1076,7 +1076,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                     try {
                         // Call API to restore
                         const { data } = await api.post<ApiResponse<RestoreCommentResponseDTO>>(
-                            `${URL_AFTER_API}/${commentId}/restore`
+                            `${URL_AFTER_API}/comment/${commentId}/restore`
                         );
 
                         if (!data?.data?.data) throw new Error("Invalid response body");

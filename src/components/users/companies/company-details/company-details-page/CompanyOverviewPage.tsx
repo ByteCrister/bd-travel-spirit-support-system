@@ -59,10 +59,10 @@ export default function CompanyOverviewPage({ companyId }: Props) {
                                 <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 dark:from-white dark:via-slate-100 dark:to-white bg-clip-text text-transparent">
                                     {overview.company?.companyName ?? "Company"}
                                 </h1>
-                                <p className="mt-2 flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                                {/* <p className="mt-2 flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
                                     <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                                     Company ID: {companyId}
-                                </p>
+                                </p> */}
                             </div>
                         </div>
                         <Button
@@ -158,7 +158,20 @@ export default function CompanyOverviewPage({ companyId }: Props) {
 
                                 {/* Filters Bar */}
                                 <div className="rounded-lg border border-border bg-muted/30 p-4">
-                                    {((overview.activeTab === "tours" && overview.isToursLoading) ||
+                                    <FiltersBar
+                                        activeTab={overview.activeTab}
+                                        search={overview.search}
+                                        onSearch={overview.setSearch}
+                                        limit={overview.limit}
+                                        onLimitChange={overview.setLimit}
+                                        sortKey={overview.sortKey}
+                                        onSortKeyChange={overview.setSortKey}
+                                        employeeSortKey={overview.employeeSortKey}
+                                        onEmployeeSortKeyChange={overview.handleEmployeeSortKeyChange}
+                                        sortOrder={overview.sortOrder}
+                                        onSortOrderChange={overview.setSortOrder}
+                                    />
+                                    {/* {((overview.activeTab === "tours" && overview.isToursLoading) ||
                                         (overview.activeTab === "employees" && overview.isEmployeesLoading)) ? (
                                         <FiltersBarSkeleton />
                                     ) : (
@@ -175,7 +188,7 @@ export default function CompanyOverviewPage({ companyId }: Props) {
                                             sortOrder={overview.sortOrder}
                                             onSortOrderChange={overview.setSortOrder}
                                         />
-                                    )}
+                                    )} */}
                                 </div>
 
                                 {/* Tours Tab Content */}

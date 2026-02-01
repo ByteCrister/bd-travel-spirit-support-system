@@ -1,6 +1,6 @@
-// review.tour.response.type.ts
+// tour-detail-review.type.ts
 
-import { TRAVEL_TYPE } from "@/constants/tour.const";
+import { TravelType } from "@/constants/tour.const";
 
 /**
  * Minimal info about an employee replying to a review
@@ -43,10 +43,9 @@ export interface ReviewListItemDTO {
     rating: number; // 1-5
     title?: string;
     comment?: string;
-    images?: string[]; // asset ids
-    tripType?: TRAVEL_TYPE;
+    images?: string[]; // asset urls
+    tripType?: TravelType;
     travelDate?: string; // ISO date string
-    isVerified: boolean;
     isApproved: boolean;
     helpfulCount: number;
     createdAt: string;
@@ -65,7 +64,7 @@ export interface ReviewDTO {
     title?: string;
     comment: string;
     images?: string[]; // asset ids
-    tripType?: TRAVEL_TYPE;
+    tripType?: TravelType;
     travelDate?: string; // ISO date string
     isVerified: boolean;
     isApproved: boolean;
@@ -83,7 +82,7 @@ export interface ReviewDTO {
 export interface ReviewSummaryDTO {
     totalReviews: number;
     averageRating: number;
-    verifiedCount: number;
+    isApproved: number;
     ratingBreakdown: Record<1 | 2 | 3 | 4 | 5, number>;
 }
 
@@ -99,12 +98,4 @@ export interface TourReviewsResponseDTO {
     total: number;
     page: number;
     pages: number;
-}
-
-/**
- * Final wrapped HTTP response
- */
-export interface GetTourReviewsResponse {
-    success: boolean;
-    data: TourReviewsResponseDTO;
 }

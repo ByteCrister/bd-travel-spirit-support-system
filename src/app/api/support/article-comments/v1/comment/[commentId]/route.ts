@@ -1,4 +1,4 @@
-// api/support/article-comments/v1/[commentId]/route.ts
+// api/support/article-comments/v1/comment/[commentId]/route.ts
 
 import { withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { NextRequest } from 'next/server';
@@ -9,9 +9,8 @@ import ConnectDB from '@/config/db';
 import { Types } from 'mongoose';
 import { TravelCommentModel } from '@/models/articles/travel-article-comment.model';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
-import { validateUser } from '@/lib/auth/validateUser';
 import { getUserIdFromSession } from '@/lib/auth/session.auth';
-import { USER_ROLE } from '@/constants/user.const';
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 
 /**
  * Wrapped DELETE handler with error handling
@@ -38,7 +37,7 @@ export const DELETE = withErrorHandler(async (
 
     await ConnectDB();
 
-    await validateUser(currentUserId, USER_ROLE.SUPPORT);
+    await VERIFY_USER_ROLE.SUPPORT(currentUserId);
 
     // Execute in transaction to ensure data consistency
     const result = await withTransaction(async (session) => {

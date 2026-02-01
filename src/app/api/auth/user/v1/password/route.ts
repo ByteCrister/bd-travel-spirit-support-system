@@ -4,9 +4,9 @@ import { withErrorHandler, HandlerResult, ApiError } from "@/lib/helpers/withErr
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { Types } from "mongoose";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
-import { validateUser } from "@/lib/auth/validateUser";
 import { USER_ROLE } from "@/constants/user.const";
 import UserModel, { IUserDoc } from "@/models/user.model";
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 
 // Request body type for password update
 interface UpdatePasswordRequest {
@@ -42,7 +42,7 @@ async function handler(request: NextRequest): Promise<HandlerResult<UpdatePasswo
     }
 
     // 2. Validate user has required role
-    await validateUser(currentUserId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
+    await VERIFY_USER_ROLE.MULTIPLE(currentUserId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT])
 
     // 3. Parse and validate request body
     let body: UpdatePasswordRequest;

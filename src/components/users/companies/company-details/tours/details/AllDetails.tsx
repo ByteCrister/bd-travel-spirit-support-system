@@ -1,6 +1,6 @@
 "use client";
 
-import  { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 // import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,11 +42,15 @@ import {
     TOUR_STATUS,
     MODERATION_STATUS,
 } from "@/constants/tour.const";
+import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 
 type Props = {
     companyId: string;
     tourId: string;
-    setBredCrumbs: (items: { label: string; href: string; }[]) => void
+    handleBreadcrumbItems: (items: {
+        label: string;
+        href: string;
+    }[]) => void;
 };
 
 const tourDetailLoadingKey = (id: string) => `tourDetail:${id}`;
@@ -125,36 +129,45 @@ const MODERATION_CONFIG = {
     },
 };
 
-export default function AllDetails({ companyId, tourId, setBredCrumbs }: Props) {
+export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }: Props) {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [isBookmarkHovered, setIsBookmarkHovered] = useState(false);
 
-    const fetchTourDetail = useCompanyDetailStore((s) => s.fetchTourDetail);
-    const tour = useCompanyDetailStore((s) => s.tourDetails?.[tourId] ?? null) as TourDetailDTO | null;
-    const loading = useCompanyDetailStore((s) => Boolean(s.loading[tourDetailLoadingKey(tourId)]));
-    const error = useCompanyDetailStore((s) => s.error[tourDetailErrorKey(tourId)]);
+    const {
+        fetchTourDetail,
+        companies,
+        tourDetails,
+        loading: lod,
+        error: er
+    } = useCompanyDetailStore();
+    const tour = tourDetails?.[tourId] ?? null as TourDetailDTO | null;
+    const loading = lod[tourDetailLoadingKey(tourId)];
+    const error = er[tourDetailErrorKey(tourId)];
 
     const load = useCallback(
         async (force = false) => {
             try {
                 const fetchedTour = await fetchTourDetail(companyId, tourId, force);
                 if (fetchedTour?.title) {
-                    setBredCrumbs([
-                        { label: "Company", href: `/users/companies/${companyId}` },
-                        { label: fetchedTour.title, href: `/users/companies/${companyId}/${tourId}` },
-                    ]);
+                    handleBreadcrumbItems([
+                        { label: "Home", href: '/' },
+                        { label: "Companies", href: "/users/companies" },
+                        { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "-", href: `/users/companies/${encodeURIComponent(encodeId(companyId))}` },
+                        { label: fetchedTour.title, href: `/users/companies/${encodeURIComponent(encodeId(companyId))}/${encodeURIComponent(encodeId(tourId))}` },
+                    ])
                 }
             } catch {
                 // store manages errors
             }
         },
-        [companyId, fetchTourDetail, setBredCrumbs, tourId]
+        [companies, companyId, fetchTourDetail, handleBreadcrumbItems, tourId]
     );
 
     useEffect(() => {
         void load(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
 
     const formatDate = (d?: string) => {
         if (!d) return "—";
@@ -1467,7 +1480,7 @@ export default function AllDetails({ companyId, tourId, setBredCrumbs }: Props) 
                                             {/* System Information */}
                                             <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
                                                 <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-4">System Information</h4>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                                     <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                                                         <div className="text-xs text-slate-500 mb-1">Created</div>
                                                         <div className="font-medium text-slate-900 dark:text-white">
@@ -1486,10 +1499,30 @@ export default function AllDetails({ companyId, tourId, setBredCrumbs }: Props) 
                                                             {tour.publishedAt ? formatDate(tour.publishedAt) : "—"}
                                                         </div>
                                                     </div>
+                                                    {/* Updated: Company Info */}
                                                     <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                                                        <div className="text-xs text-slate-500 mb-1">Author ID</div>
+                                                        <div className="text-xs text-slate-500 mb-1">Company</div>
                                                         <div className="font-medium text-slate-900 dark:text-white truncate">
-                                                            {tour.authorId}
+                                                            {tour.companyInfo?.name || "—"}
+                                                        </div>
+                                                    </div>
+                                                    {/* Updated: Author Info */}
+                                                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                                        <div className="text-xs text-slate-500 mb-1">Author</div>
+                                                        <div className="flex items-center gap-2">
+                                                            {tour.authorInfo?.avatarUrl && (
+                                                                <div className="relative w-6 h-6 rounded-full overflow-hidden">
+                                                                    <Image
+                                                                        src={tour.authorInfo.avatarUrl}
+                                                                        alt={tour.authorInfo.name}
+                                                                        fill
+                                                                        className="object-cover"
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            <span className="font-medium text-slate-900 dark:text-white truncate">
+                                                                {tour.authorInfo?.name || "—"}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>

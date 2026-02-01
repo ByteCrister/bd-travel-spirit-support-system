@@ -16,7 +16,6 @@ import {
     ChevronRight,
     AlertCircle,
     Flag,
-    UserCircle,
     Calendar,
     FileText,
     MessageSquare,
@@ -30,7 +29,7 @@ import {
     XCircle,
     Eye,
 } from "lucide-react";
-import { REPORT_PRIORITY, REPORT_REASON, REPORT_STATUS } from "@/constants/report.const";
+import { REPORT_PRIORITY, REPORT_REASON, REPORT_STATUS, ReportPriority, ReportStatus } from "@/constants/report.const";
 import { format } from "date-fns";
 
 type Props = {
@@ -92,7 +91,7 @@ export default function ReportsPanel({ companyId, tourId, tourTitle }: Props) {
     const startItem = cachedData ? (cachedData.page - 1) * pageSize + 1 : 0;
     const endItem = cachedData ? Math.min(cachedData.page * pageSize, cachedData.total) : 0;
 
-    const getStatusBadgeVariant = (status: REPORT_STATUS) => {
+    const getStatusBadgeVariant = (status: ReportStatus) => {
         switch (status) {
             case REPORT_STATUS.OPEN:
                 return "default";
@@ -107,7 +106,7 @@ export default function ReportsPanel({ companyId, tourId, tourTitle }: Props) {
         }
     };
 
-    const getStatusIcon = (status: REPORT_STATUS) => {
+    const getStatusIcon = (status: ReportStatus) => {
         switch (status) {
             case REPORT_STATUS.OPEN:
                 return <AlertCircle className="h-3.5 w-3.5" />;
@@ -122,7 +121,7 @@ export default function ReportsPanel({ companyId, tourId, tourTitle }: Props) {
         }
     };
 
-    const getPriorityBadgeVariant = (priority: REPORT_PRIORITY) => {
+    const getPriorityBadgeVariant = (priority: ReportPriority) => {
         switch (priority) {
             case REPORT_PRIORITY.HIGH:
                 return "destructive";
@@ -280,22 +279,11 @@ export default function ReportsPanel({ companyId, tourId, tourTitle }: Props) {
                                                 )}
 
                                                 <div className="flex flex-wrap items-center gap-2">
+
                                                     <Badge variant={getPriorityBadgeVariant(report.priority)} className="gap-1">
                                                         <Flag className="h-3 w-3" />
                                                         <span className="text-xs">{report.priority}</span>
                                                     </Badge>
-
-                                                    {report.assignedToName ? (
-                                                        <div className="flex items-center gap-1.5 text-xs bg-secondary px-2 py-1 rounded-md">
-                                                            <UserCircle className="h-3 w-3 shrink-0" />
-                                                            <span className="truncate">{report.assignedToName}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                                                            <UserCircle className="h-3 w-3" />
-                                                            <span>Unassigned</span>
-                                                        </div>
-                                                    )}
 
                                                     {report.evidenceCount && report.evidenceCount > 0 && (
                                                         <div className="flex items-center gap-1.5 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md">

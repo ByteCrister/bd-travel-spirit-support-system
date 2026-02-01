@@ -1,7 +1,7 @@
 // stores/useTravelerInfoStore.ts
 import { UserNotificationDTO } from "@/types/notification.types";
 import { ReportDetailDTO } from "@/types/report.types";
-import { ReviewDTO } from "@/types/review.tour.response.type";
+import { ReviewDTO } from "@/types/tour-detail-review.type";
 import { User } from "@/types/user.types";
 import api from "@/utils/axios";
 import { create } from "zustand";

@@ -250,6 +250,10 @@ export default async function GuideAppPostHandler(req: NextRequest) {
                 zip: form.personalInfo.zip,
                 street: form.personalInfo.street,
             },
+            social: form.companyDetails.social?.map(link => ({
+                platform: link.platform,
+                url: link.url
+            })) || [],
             status: GUIDE_STATUS.PENDING,
             accessToken: existingGuide?.accessToken ?? generateStrongPassword(20),
         };

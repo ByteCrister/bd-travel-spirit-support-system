@@ -94,7 +94,7 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
 
     await ConnectDB()
 
-    const updatedEmployeeId = await withTransaction(async (session) => {
+    const updatedEmployee = await withTransaction(async (session) => {
         // Fetch employee with populated user
         const rawEmployee = await EmployeeModel.findById(employeeId)
             .populate({
@@ -200,14 +200,13 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
         });
 
         if (!updated) throw new ApiError("Employee update failed!", 400);
+        const dto = await buildEmployeeDTO(updated._id as Types.ObjectId, false, session);
 
-        return updated._id;
+        return dto;
     });
 
-    const dto = await buildEmployeeDTO(updatedEmployeeId as Types.ObjectId);
-
     return {
-        data: dto,
+        data: updatedEmployee,
         status: 200,
     };
 });

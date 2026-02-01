@@ -631,6 +631,32 @@ const TourSchema = new Schema<ITour>(
   { timestamps: true }
 );
 
+// Soft delete by ID
+TourSchema.statics.softDeleteById = async function (
+  id: string | Types.ObjectId,
+  options?: SoftDeleteOptions
+): Promise<ITour | null> {
+  const tour = await this.findById(id).session(options?.session ?? null);
+
+  if (!tour) {
+    throw new Error("Tour not found");
+  }
+
+  if (tour.deletedAt) {
+    return tour; // already soft-deleted
+  }
+
+  tour.deletedAt = new Date();
+  tour.status = TOUR_STATUS.ARCHIVED as TourStatus;
+  tour.moderationStatus = undefined;
+
+  // optional audit field if you later add it
+  // (you passed deletedBy, but schema doesn’t store it yet)
+  // tour.deletedBy = options?.deletedBy;
+
+  return tour.save({ session: options?.session });
+};
+
 // Soft delete many
 TourSchema.statics.softDeleteMany = async function (
   filter: FilterQuery<ITour>,
@@ -852,7 +878,8 @@ TourSchema.statics.findOneWithDeleted = function (
   query: FilterQuery<ITour>,
   session?: ClientSession
 ) {
-  return this.findOne({ ...query, deletedAt: { $exists: true } }).session(session ?? null);
+  // Ignore the pre-find hook by directly querying without adding deletedAt filter
+  return this.findOne(query).session(session ?? null);
 };
 
 // =============== SCHEMA HOOKS ===============
@@ -883,17 +910,6 @@ TourSchema.pre("save", async function (
   }
 
   this.slug = slug;
-});
-
-// Pre-find hook to exclude deleted documents by default
-TourSchema.pre(/^find/, function (
-  this: Query<ITour[], ITour>
-) {
-  const filter: FilterQuery<ITour> = this.getFilter();
-
-  if (filter.deletedAt === undefined) {
-    this.where({ deletedAt: null });
-  }
 });
 
 // =============== INDEXES ===============

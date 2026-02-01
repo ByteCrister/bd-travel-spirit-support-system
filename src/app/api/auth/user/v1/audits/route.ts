@@ -4,9 +4,9 @@ import { Types } from "mongoose";
 import { withErrorHandler, HandlerResult, ApiError } from "@/lib/helpers/withErrorHandler";
 import AuditModel, { IAuditDoc, IAuditModel } from "@/models/audit.model";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
-import { validateUser } from "@/lib/auth/validateUser";
 import { USER_ROLE } from "@/constants/user.const";
 import { AuditListApiResponse, AuditLog, AuditQueryParams } from "@/types/current-user.types";
+import VERIFY_USER_ROLE from "../../../../../../lib/auth/verify-user-role";
 
 type ParsedAuditQueryParams =
     Required<Pick<AuditQueryParams, "page" | "pageSize">>
@@ -112,7 +112,7 @@ async function handler(request: NextRequest): Promise<HandlerResult<AuditListApi
     }
 
     // 2. Validate user has required role
-    await validateUser(currentUserId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
+    await VERIFY_USER_ROLE.MULTIPLE(currentUserId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT])
 
     // 3. Parse and validate query parameters
     const queryParams = parseQueryParams(request);

@@ -1,5 +1,5 @@
-// report.tour.response.types.ts
-import { REPORT_PRIORITY, REPORT_REASON, REPORT_STATUS } from "@/constants/report.const";
+// tour-detail-report.types.ts
+import {  REPORT_REASON, ReportPriority, ReportReason, ReportStatus } from "@/constants/report.const";
 import { ReportAttachment, ReportTimelineEntry, SubmissionContext, UserSummary, TourSummary } from "./report.types";
 
 /**
@@ -39,12 +39,10 @@ export interface TourReportListItemDTO {
     reporterAvatarUrl?: string;
     tourId: string;
     tourTitle?: string;
-    reason: REPORT_REASON;
+    reason: ReportReason;
     messageExcerpt?: string;
-    status: REPORT_STATUS;
-    priority: REPORT_PRIORITY;
-    assignedToId?: string | null;
-    assignedToName?: string | null;
+    status: ReportStatus;
+    priority: ReportPriority;
     reopenedCount: number;
     createdAt: string; // ISO
     updatedAt: string; // ISO
@@ -66,7 +64,7 @@ export interface TourReportDetail {
     tour?: TourSummary | null;
 
     // content
-    reason: REPORT_REASON;
+    reason: ReportReason;
     message: string;
     messageHtml?: string;
 
@@ -80,8 +78,8 @@ export interface TourReportDetail {
     submissionContext?: SubmissionContext;
 
     // workflow / triage
-    status: REPORT_STATUS;
-    priority: REPORT_PRIORITY;
+    status: ReportStatus;
+    priority: ReportPriority;
     assignedToId?: string | null;
     assignedTo?: UserSummary | null;
     reopenedCount: number;
@@ -142,11 +140,4 @@ export interface TourReportsResponseDTO {
     total: number;
     page: number;
     pages: number;
-}
-
-/**
- * Final wrapped HTTP response
- */
-export interface GetTourReportsResponse {
-    data: TourReportsResponseDTO;
 }

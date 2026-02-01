@@ -13,8 +13,10 @@ import type {
 
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
+import { ApiResponse } from "@/types/api.types";
 
-const URL_AFTER_API = "/mock/users/companies";
+// const URL_AFTER_API = "/mock/users/companies";
+const URL_AFTER_API = "/users/companies/v1";
 
 export function makeKey(params: Required<CompanyQueryParams>): string {
     const { search, sortBy, sortDir, page, limit } = params;
@@ -314,12 +316,17 @@ export const useCompanyStore = create<CompanyState>()(
                         limit: String(limit),
                     }).toString();
 
-                    const res = await api.get(`${URL_AFTER_API}?${qs}`, {
+                    const res = await api.get<ApiResponse<CompanyListResponseDTO & {
+                        stats?: CompanyDashboardStatsDTO;
+                    }>>(`${URL_AFTER_API}?${qs}`, {
                         signal: abortController.signal,
                     });
-                    const payload = res.data as CompanyListResponseDTO & {
-                        stats?: CompanyDashboardStatsDTO;
-                    };
+
+                    if (!(res.data && res.data.data)) {
+                        throw new Error("Invalid response body.");
+                    }
+
+                    const payload = res.data.data;
 
                     set((s) => {
                         // Normalize entities

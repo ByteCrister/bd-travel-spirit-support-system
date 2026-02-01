@@ -1,6 +1,6 @@
-// types/faqs.types.ts
+// types/tour-detail-faqs.types.ts
 
-import { MODERATION_STATUS } from "@/constants/tour.const";
+import { ModerationStatus } from "@/constants/tour.const";
 
 /**
  * Lightweight user info for FAQ context
@@ -44,7 +44,7 @@ export interface TourFAQDTO {
     askedBy: FAQUserDTO;
     answeredBy?: FAQUserDTO;
 
-    status: MODERATION_STATUS;
+    status: ModerationStatus;
     order: number;
     isActive: boolean;
 
@@ -64,10 +64,8 @@ export interface TourFAQDTO {
  * Paginated FAQ response
  */
 export interface GetTourFaqsResponse {
-    data: {
-        docs: TourFAQDTO[];
-        total: number;
-        page: number;
-        pages: number;
-    };
+    docs: TourFAQDTO[];
+    total: number;
+    page: number;
+    pages: number;
 }

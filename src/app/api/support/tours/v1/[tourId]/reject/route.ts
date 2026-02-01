@@ -61,7 +61,6 @@ export const POST = withErrorHandler(
 
             const tourDetailDTO = await buildTourDetailDTO(
                 updatedTour._id as Types.ObjectId,
-                false,
                 session
             );
 

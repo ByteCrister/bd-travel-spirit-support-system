@@ -16,9 +16,8 @@ import { withTransaction } from "@/lib/helpers/withTransaction";
 import { buildTourArticleDto } from "@/lib/build-responses/build-tour-article-dt";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import ConnectDB from "@/config/db";
-import { validateUser } from "@/lib/auth/validateUser";
-import { USER_ROLE } from "@/constants/user.const";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 
 // Types for update operations
 type UpdateData = Partial<Omit<CreateArticleInput, 'heroImage' | 'seo' | 'destinations'>> & {
@@ -80,9 +79,7 @@ export default async function ArticlePutHandler(request: NextRequest, { params }
     await ConnectDB();
 
     // Check if user has 'support' role
-    await validateUser(currentUserId, USER_ROLE.SUPPORT, {
-        errorMessages: { invalidRole: "Only support users can create articles" }
-    })
+    await VERIFY_USER_ROLE.SUPPORT(currentUserId);
 
     // Use withTransaction to handle the entire update in a single transaction
     const article = await withTransaction(async (session) => {

@@ -2,19 +2,21 @@ import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { CompanyOverviewDTO, CompanyOverviewResponse } from "@/types/company.overview.types";
-import { TourDetailDTO, TourListItemDTO } from "@/types/tour.types";
+import { TourDetailDTO, TourFilterOptions, TourListItemDTO } from "@/types/tour.types";
 import { EmployeeDetailDTO, EmployeeListItemDTO } from "@/types/employee.types";
 import api from "@/utils/axios";
-import { GetTourReviewsResponse, ReviewListItemDTO, ReviewSummaryDTO } from "@/types/review.tour.response.type";
-import { GetTourReportsResponse, TourReportListItemDTO } from "@/types/report.tour.response.types";
-import { GetTourFaqsResponse, TourFAQDTO } from "@/types/faqs.types";
+import { ReviewListItemDTO, ReviewSummaryDTO, TourReviewsResponseDTO } from "@/types/tour-detail-review.type";
+import { TourReportListItemDTO, TourReportsResponseDTO } from "@/types/tour-detail-report.types";
+import { GetTourFaqsResponse, TourFAQDTO } from "@/types/tour-detail-faqs.types";
+import { ApiResponse } from "@/types/api.types";
 
-const URL_AFTER_API = "/mock/users/companies";
+// const URL_AFTER_API = "/mock/users/companies";
+const URL_AFTER_API = "/users/companies/v1";
 
 // --------------------
-// Types (unchanged)
+// Types (updated)
 // --------------------
-type ApiResponse = {
+type ApiCompanyListResponse = {
   companyId: string;
   data: {
     docs: TourListItemDTO[] | EmployeeListItemDTO[];
@@ -31,19 +33,36 @@ interface PaginationParams {
   order?: "asc" | "desc";
 }
 
+interface ExtraParams extends PaginationParams {
+  search?: string;
+}
+
+type TourFilterParams = ExtraParams;
+type EmployeeFilterParams = ExtraParams;
+type TourFaqFilterParams = ExtraParams;
+
+interface TourReviewFilterParams extends PaginationParams {
+  search?: string;
+  rating?: 1 | 2 | 3 | 4 | 5;
+  approvedOnly?: boolean;
+}
+
 interface ListCache<T> {
   items: T[];
   total: number;
   page: number;
   pages: number;
-  params: PaginationParams;
+  params: {
+    pagination: PaginationParams;
+    filters?: TourFilterOptions | TourReviewFilterParams | TourFaqFilterParams | TourFilterParams | EmployeeFilterParams;
+  };
   meta?: {
     summary?: ReviewSummaryDTO;
   };
 }
 
 // --------------------
-// Extended store types
+// Extended store types (updated)
 // --------------------
 type ListCacheBucket<T> = Record<string, ListCache<T>>; // cacheKey -> ListCache
 type CompanyListCache = {
@@ -55,11 +74,11 @@ type CompanyListCache = {
 };
 
 type ParamsMap = {
-  tours: Record<string, PaginationParams>;
-  employees: Record<string, PaginationParams>;
-  tourReviews: Record<string, PaginationParams>;
+  tours: Record<string, TourFilterParams>;
+  employees: Record<string, EmployeeFilterParams>;
+  tourReviews: Record<string, TourReviewFilterParams>;
   tourReports: Record<string, PaginationParams>;
-  tourFaqs: Record<string, PaginationParams>;
+  tourFaqs: Record<string, TourFaqFilterParams>;
 };
 
 type ActiveCacheKeyMap = {
@@ -71,7 +90,7 @@ type ActiveCacheKeyMap = {
 };
 
 // --------------------
-// Store interface (unchanged public methods + added utilities typed)
+// Store interface (updated)
 // --------------------
 interface CompanyDetailState {
   companies: Record<string, CompanyOverviewDTO | undefined>;
@@ -82,16 +101,16 @@ interface CompanyDetailState {
   employeeDetails: Record<string, EmployeeDetailDTO | undefined>;
   loading: Record<string, boolean>;
   error: Record<string, string | undefined>;
-  cacheTimestamps: Record<string, number>; // new: key -> timestamp ms
+  cacheTimestamps: Record<string, number>;
 
   fetchCompany: (companyId: string, force?: boolean) => Promise<CompanyOverviewDTO>;
-  fetchTours: (companyId: string, params?: Partial<PaginationParams>, force?: boolean) => Promise<ListCache<TourListItemDTO>>;
-  fetchEmployees: (companyId: string, params?: Partial<PaginationParams>, force?: boolean) => Promise<ListCache<EmployeeListItemDTO>>;
+  fetchTours: (companyId: string, params?: Partial<TourFilterParams>, force?: boolean) => Promise<ListCache<TourListItemDTO>>;
+  fetchEmployees: (companyId: string, params?: Partial<EmployeeFilterParams>, force?: boolean) => Promise<ListCache<EmployeeListItemDTO>>;
   fetchEmployeeDetail: (companyId: string, employeeId: string, force?: boolean) => Promise<EmployeeDetailDTO>;
   fetchTourDetail: (companyId: string, tourId: string, force?: boolean) => Promise<TourDetailDTO>;
-  fetchReviews: (companyId: string, tourId: string, params?: Partial<PaginationParams>, force?: boolean) => Promise<ListCache<ReviewListItemDTO>>;
+  fetchReviews: (companyId: string, tourId: string, params?: Partial<TourReviewFilterParams>, force?: boolean) => Promise<ListCache<ReviewListItemDTO>>;
   fetchReports: (companyId: string, tourId: string, params?: Partial<PaginationParams>, force?: boolean) => Promise<ListCache<TourReportListItemDTO>>;
-  fetchFaqs: (companyId: string, tourId: string, params?: Partial<PaginationParams>, force?: boolean) => Promise<ListCache<TourFAQDTO>>;
+  fetchFaqs: (companyId: string, tourId: string, params?: Partial<TourFaqFilterParams>, force?: boolean) => Promise<ListCache<TourFAQDTO>>;
 
   // typed cache utilities
   invalidateCache?: (scope: "tours" | "employees" | "tourReviews" | "tourReports" | "tourFaqs" | "companies" | "tourDetails" | "employeeDetails", id?: string, key?: string) => void;
@@ -103,6 +122,8 @@ interface CompanyDetailState {
 // --------------------
 const makeCacheKey = (params: PaginationParams) => `${params.page}-${params.limit}-${params.sort ?? ""}-${params.order ?? ""}`;
 const defaultParams: PaginationParams = { page: 1, limit: 10 };
+const defaultReviewParams: TourReviewFilterParams = { page: 1, limit: 10 };
+const defaultFaqParams: TourFaqFilterParams = { page: 1, limit: 10 };
 
 const tourDetailLoadingKey = (id: string) => `tourDetail:${id}`;
 const employeeDetailLoadingKey = (id: string) => `employeeDetail:${id}`;
@@ -124,8 +145,34 @@ const isFresh = (ts?: number) => (typeof ts === "number" ? Date.now() - ts < CAC
 // Small helper to build request key for dedupe
 const makeRequestKey = (method: string, url: string, params?: unknown) => `${method}:${url}:${JSON.stringify(params ?? {})}`;
 
+const makeReviewCacheKey = (params: TourReviewFilterParams) => {
+  const paginationKey = `${params.page}-${params.limit}-${params.sort ?? ""}-${params.order ?? ""}`;
+  const filterKey = JSON.stringify({
+    search: params.search,
+    rating: params.rating,
+    approvedOnly: params.approvedOnly,
+  });
+  return `${paginationKey}-${filterKey}`;
+};
+
+const makeFaqCacheKey = (params: TourFaqFilterParams) => {
+  const paginationKey = `${params.page}-${params.limit}-${params.sort ?? ""}-${params.order ?? ""}`;
+  const filterKey = JSON.stringify({
+    search: params.search,
+  });
+  return `${paginationKey}-${filterKey}`;
+}
+
+const makeTourEmployeeCacheKey = (params: ExtraParams) => {
+  const paginationKey = `${params.page}-${params.limit}-${params.sort ?? ""}-${params.order ?? ""}`;
+  const filterKey = JSON.stringify({
+    search: params.search,
+  });
+  return `${paginationKey}-${filterKey}`;
+};
+
 // --------------------
-// Store
+// Store (fully updated)
 // --------------------
 export const useCompanyDetailStore = create<CompanyDetailState>()(
   devtools(
@@ -249,7 +296,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
           const loadingKey = `company:${companyId}`;
           set((s) => ({ loading: { ...s.loading, [loadingKey]: true }, error: { ...s.error, [loadingKey]: undefined } }));
 
-          const url = `${URL_AFTER_API}/${companyId}`;
+          const url = `${URL_AFTER_API}/${companyId}/detail`;
           const reqKey = makeRequestKey("GET", url);
 
           if (!force && inFlightRequests.has(reqKey)) {
@@ -284,8 +331,9 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
         fetchTours: async (companyId, overrideParams = {}, force = false) => {
           const state = get();
           const prevParams = state.params.tours[companyId] ?? defaultParams;
-          const params: PaginationParams = { ...defaultParams, ...prevParams, ...overrideParams };
-          const cacheKey = makeCacheKey(params);
+          const params: ExtraParams = { ...defaultParams, ...prevParams, ...overrideParams };
+          // const cacheKey = makeCacheKey(params);
+          const cacheKey = makeTourEmployeeCacheKey(params);
 
           const cached = state.listCache.tours[companyId]?.[cacheKey];
           const tsKey = `tours:${companyId}:${cacheKey}`;
@@ -311,14 +359,17 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
           set((s) => ({ loading: { ...s.loading, tours: true }, error: { ...s.error, tours: undefined } }));
 
           const p = api
-            .get<ApiResponse>(url, { params })
+            .get<ApiCompanyListResponse>(url, { params })
             .then((res) => {
               const list: ListCache<TourListItemDTO> = {
                 items: res.data.data.docs as TourListItemDTO[],
                 total: res.data.data.total,
                 page: res.data.data.page,
                 pages: res.data.data.pages,
-                params,
+                params: {
+                  pagination: params,
+                  filters: params,
+                },
               };
 
               set((s) => {
@@ -351,8 +402,9 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
         fetchEmployees: async (companyId, overrideParams = {}, force = false) => {
           const state = get();
           const prevParams = state.params.employees?.[companyId] ?? defaultParams;
-          const params: PaginationParams = { ...defaultParams, ...prevParams, ...overrideParams };
-          const cacheKey = makeCacheKey(params);
+          const params: ExtraParams = { ...defaultParams, ...prevParams, ...overrideParams };
+          // const cacheKey = makeCacheKey(params);
+          const cacheKey = makeTourEmployeeCacheKey(params);
 
           const cached = state.listCache.employees?.[companyId]?.[cacheKey];
           const tsKey = `employees:${companyId}:${cacheKey}`;
@@ -376,14 +428,17 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
           set((s) => ({ loading: { ...s.loading, employees: true }, error: { ...s.error, employees: undefined } }));
 
           const p = api
-            .get<ApiResponse>(url, { params })
+            .get<ApiCompanyListResponse>(url, { params })
             .then((res) => {
               const list: ListCache<EmployeeListItemDTO> = {
                 items: res.data.data.docs as EmployeeListItemDTO[],
                 page: res.data.data.page,
                 pages: res.data.data.pages,
                 total: res.data.data.total,
-                params,
+                params: {
+                  pagination: params,
+                  filters: params,
+                },
               };
 
               set((s) => {
@@ -481,11 +536,11 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
         fetchReviews: async (companyId, tourId, overrideParams = {}, force = false) => {
           const state = get();
           if (!state.params.tourReviews) state.params.tourReviews = {};
-          if (!state.params.tourReviews[tourId]) state.params.tourReviews[tourId] = { ...defaultParams };
+          if (!state.params.tourReviews[tourId]) state.params.tourReviews[tourId] = { ...defaultReviewParams };
 
           const currentParams = state.params.tourReviews[tourId];
-          const params: PaginationParams = { ...defaultParams, ...currentParams, ...overrideParams };
-          const cacheKey = makeCacheKey(params);
+          const params: TourReviewFilterParams = { ...defaultReviewParams, ...currentParams, ...overrideParams };
+          const cacheKey = makeReviewCacheKey(params);
 
           const cached = state.listCache.tourReviews?.[tourId]?.[cacheKey];
           const tsKey = `tourReviews:${tourId}:${cacheKey}`;
@@ -510,15 +565,21 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
           set((s) => ({ loading: { ...s.loading, [loadingKey]: true }, error: { ...s.error, [errorKey]: undefined } }));
 
           const p = api
-            .get<GetTourReviewsResponse>(url, { params })
+            .get<ApiResponse<TourReviewsResponseDTO>>(url, { params })
             .then((res) => {
+              if (!(res.data && res.data.data)) {
+                throw new Error("Invalid response body.");
+              }
               const list: ListCache<ReviewListItemDTO> = {
                 items: res.data.data.docs,
                 total: res.data.data.total,
                 page: res.data.data.page,
                 pages: res.data.data.pages,
                 meta: { summary: res.data.data.summary },
-                params,
+                params: {
+                  pagination: params,
+                  filters: params,
+                },
               };
 
               set((s) => {
@@ -577,14 +638,19 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
           set((s) => ({ loading: { ...s.loading, [loadingKey]: true }, error: { ...s.error, [errorKey]: undefined } }));
 
           const p = api
-            .get<GetTourReportsResponse>(url, { params })
+            .get<ApiResponse<TourReportsResponseDTO>>(url, { params })
             .then((res) => {
+              if (!(res.data && res.data.data)) {
+                throw new Error("Invalid response body.");
+              }
               const list: ListCache<TourReportListItemDTO> = {
                 items: res.data.data.docs,
                 total: res.data.data.total,
                 page: res.data.data.page,
                 pages: res.data.data.pages,
-                params,
+                params: {
+                  pagination: params,
+                },
               };
 
               set((s) => {
@@ -614,11 +680,11 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
         fetchFaqs: async (companyId, tourId, overrideParams = {}, force = false) => {
           const state = get();
           if (!state.params.tourFaqs) state.params.tourFaqs = {};
-          if (!state.params.tourFaqs[tourId]) state.params.tourFaqs[tourId] = { ...defaultParams };
+          if (!state.params.tourFaqs[tourId]) state.params.tourFaqs[tourId] = { ...defaultFaqParams };
 
           const currentParams = state.params.tourFaqs[tourId];
-          const params: PaginationParams = { ...defaultParams, ...currentParams, ...overrideParams };
-          const cacheKey = makeCacheKey(params);
+          const params: TourFaqFilterParams = { ...defaultFaqParams, ...currentParams, ...overrideParams };
+          const cacheKey = makeFaqCacheKey(params);
 
           const cached = state.listCache.tourFaqs?.[tourId]?.[cacheKey];
           const tsKey = `tourFaqs:${tourId}:${cacheKey}`;
@@ -643,14 +709,20 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
           set((s) => ({ loading: { ...s.loading, [loadingKey]: true }, error: { ...s.error, [errorKey]: undefined } }));
 
           const p = api
-            .get<GetTourFaqsResponse>(url, { params })
+            .get<ApiResponse<GetTourFaqsResponse>>(url, { params })
             .then((res) => {
+              if (!(res.data && res.data.data)) {
+                throw new Error("Invalid response body.");
+              }
               const list: ListCache<TourFAQDTO> = {
                 items: res.data.data.docs,
                 total: res.data.data.total,
                 page: res.data.data.page,
                 pages: res.data.data.pages,
-                params,
+                params: {
+                  pagination: params,
+                  filters: params,
+                },
               };
 
               set((s) => {
@@ -677,7 +749,9 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
           inFlightRequests.set(reqKey, p);
           return p;
         },
+
       }),
+      
       {
         name: "company-detail.store",
         partialize: (state) => ({

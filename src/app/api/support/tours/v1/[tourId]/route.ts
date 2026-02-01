@@ -27,7 +27,7 @@ export const GET = withErrorHandler(async (
     await ConnectDB();
 
     const tourDetail = await withTransaction(async (session) => {
-        return await buildTourDetailDTO(new mongoose.Types.ObjectId(tourId), false, session);
+        return await buildTourDetailDTO(new mongoose.Types.ObjectId(tourId), session);
     });
 
     if (!tourDetail) {
