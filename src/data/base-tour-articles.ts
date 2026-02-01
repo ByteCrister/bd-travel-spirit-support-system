@@ -2,7 +2,72 @@ import { ARTICLE_RICH_TEXT_BLOCK_TYPE, ARTICLE_STATUS, ARTICLE_TYPE, FAQ_CATEGOR
 import { DISTRICT, DIVISION, TOUR_CATEGORIES } from "@/constants/tour.const";
 import { CreateArticleFormValues } from "@/utils/validators/article.create.validator";
 
-export const initialCreateArticlePayload_1: CreateArticleFormValues = {
+export const DEFAULT_TOUR_ARTICLE: CreateArticleFormValues = {
+    title: '',
+    banglaTitle: '',
+    status: ARTICLE_STATUS.DRAFT,
+    articleType: ARTICLE_TYPE.SINGLE_DESTINATION,
+    authorBio: '',
+    summary: '',
+    heroImage: '',
+    destinations: [
+        {
+            division: DIVISION.DHAKA,
+            district: DISTRICT.DHAKA,
+            area: '',
+            description: '',
+            content: [
+                {
+                    type: ARTICLE_RICH_TEXT_BLOCK_TYPE.PARAGRAPH,
+                    text: '',
+                },
+            ],
+            highlights: [''],
+            foodRecommendations: [
+                {
+                    dishName: '',
+                    description: '',
+                    bestPlaceToTry: '',
+                    approximatePrice: '',
+                    spiceLevel: null,
+                },
+            ],
+            localFestivals: [
+                {
+                    name: '',
+                    description: '',
+                    timeOfYear: '',
+                    location: '',
+                    significance: '',
+                },
+            ],
+            localTips: [''],
+            transportOptions: [''],
+            accommodationTips: [''],
+            coordinates: {
+                lat: 0,
+                lng: 0,
+            },
+            imageAsset: {
+                title: '',
+                assetId: '',
+                url: '',
+            },
+        },
+    ],
+
+    categories: [],
+    tags: [],
+    seo: {
+        metaTitle: '',
+        metaDescription: '',
+        ogImage: null,
+    },
+    faqs: [],
+    allowComments: true,
+};
+
+export const DEFAULT_TOUR_ARTICLE_1: CreateArticleFormValues = {
     title: "The Ultimate Guide to Cox's Bazar: World's Longest Natural Sea Beach",
     banglaTitle: "কক্সবাজার: বিশ্বের দীর্ঘতম প্রাকৃতিক সমুদ্র সৈকতের চূড়ান্ত গাইড",
     // slug: "ultimate-guide-coxs-bazar-worlds-longest-natural-sea-beach",
@@ -110,7 +175,7 @@ export const initialCreateArticlePayload_1: CreateArticleFormValues = {
     allowComments: true,
 };
 
-export const initialCreateArticlePayload_2: CreateArticleFormValues = {
+export const DEFAULT_TOUR_ARTICLE_2: CreateArticleFormValues = {
     title: "Exploring the Mystical Hills of Bandarban: A Complete Travel Guide",
     banglaTitle: "বান্দরবানের রহস্যময় পাহাড়: একটি সম্পূর্ণ ভ্রমণ গাইড",
     // slug: "exploring-bandarban-hills-complete-travel-guide",

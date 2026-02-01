@@ -111,88 +111,90 @@ export interface ICreateReplyData {
  * Includes references to related models, validation rules,
  * and moderation support.
  */
-const TravelCommentSchema = new Schema<ITravelComment>(
-  {
-    // Reference to the travel article this comment belongs to
-    articleId: {
-      type: Schema.Types.ObjectId,
-      ref: "TravelArticle",
-      required: true,
-      index: true,
-    },
+const TravelCommentSchema = new Schema<
+  ITravelComment,
+  TravelCommentModel>(
+    {
+      // Reference to the travel article this comment belongs to
+      articleId: {
+        type: Schema.Types.ObjectId,
+        ref: "TravelArticle",
+        required: true,
+        index: true,
+      },
 
-    // Optional parent comment for nested/threaded replies
-    parentId: {
-      type: Schema.Types.ObjectId,
-      ref: "TravelComment",
-      default: null,
-    },
+      // Optional parent comment for nested/threaded replies
+      parentId: {
+        type: Schema.Types.ObjectId,
+        ref: "TravelComment",
+        default: null,
+      },
 
-    // Author could be an support employee and can be a traveler)
-    author: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-      index: true,
-    },
+      // Author could be an support employee and can be a traveler)
+      author: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        index: true,
+      },
 
-    // Comment text with max length validation
-    content: { type: String, required: true, trim: true, maxlength: 5000 },
+      // Comment text with max length validation
+      content: { type: String, required: true, trim: true, maxlength: 5000 },
 
-    likes: {
-      type: [TravelCommentLikeSchema],
-      default: [],
-    },
+      likes: {
+        type: [TravelCommentLikeSchema],
+        default: [],
+      },
 
-    // Array of reply comment IDs (self-referencing)
-    replies: [{ type: Schema.Types.ObjectId, ref: "TravelComment" }],
+      // Array of reply comment IDs (self-referencing)
+      replies: [{ type: Schema.Types.ObjectId, ref: "TravelComment" }],
 
-    // Moderation status with default set to "pending"
-    status: {
-      type: String,
-      enum: Object.values(COMMENT_STATUS),
-      default: COMMENT_STATUS.PENDING,
-      index: true,
-    },
+      // Moderation status with default set to "pending"
+      status: {
+        type: String,
+        enum: Object.values(COMMENT_STATUS),
+        default: COMMENT_STATUS.PENDING,
+        index: true,
+      },
 
-    // Reason for rejection (required when status is REJECTED)
-    rejectReason: {
-      type: String,
-      trim: true,
-      maxlength: 1000,
-      default: null,
-      validate: {
-        validator: function (this: ITravelComment, value?: string | null): boolean {
-          // Only required when status is REJECTED
-          if (this.status === COMMENT_STATUS.REJECTED) {
-            return typeof value === "string" && value.trim().length > 0;
-          }
-          return true;
+      // Reason for rejection (required when status is REJECTED)
+      rejectReason: {
+        type: String,
+        trim: true,
+        maxlength: 1000,
+        default: null,
+        validate: {
+          validator: function (this: ITravelComment, value?: string | null): boolean {
+            // Only required when status is REJECTED
+            if (this.status === COMMENT_STATUS.REJECTED) {
+              return typeof value === "string" && value.trim().length > 0;
+            }
+            return true;
+          },
+          message: "Reject reason is required when comment is rejected",
         },
-        message: "Reject reason is required when comment is rejected",
+      },
+
+      // Soft delete flag
+      isDeleted: {
+        type: Boolean,
+        default: false,
+        index: true,
+      },
+
+      // When the comment was soft-deleted
+      deletedAt: {
+        type: Date,
+        default: null,
       },
     },
-
-    // Soft delete flag
-    isDeleted: {
-      type: Boolean,
-      default: false,
-      index: true,
-    },
-
-    // When the comment was soft-deleted
-    deletedAt: {
-      type: Date,
-      default: null,
-    },
-  },
-  {
-    timestamps: true, // Automatically adds createdAt and updatedAt fields
-    versionKey: false, // Disable __v field for cleaner documents
-    toJSON: { virtuals: true }, // Ensure virtuals are included in JSON
-    toObject: { virtuals: true },
-  }
-);
+    {
+      timestamps: true, // Automatically adds createdAt and updatedAt fields
+      versionKey: false, // Disable __v field for cleaner documents
+      toJSON: { virtuals: true }, // Ensure virtuals are included in JSON
+      toObject: { virtuals: true },
+    }
+  );
 
 /**
  * Compound index for efficient queries:
@@ -392,29 +394,33 @@ TravelCommentSchema.statics.toggleLikeById = async function (
   userId: Types.ObjectId,
   session?: ClientSession
 ) {
-  const comment = await this.findById(commentId).session(session);
+  const query = this.findById(commentId);
+
+  if (session) {
+    query.session(session);
+  }
+
+  const comment = await query;
 
   if (!comment || comment.isDeleted) {
     throw new Error("Comment not found");
   }
 
-  // Specify type for `like` here
   const likeIndex = comment.likes.findIndex(
-    (like: ITravelCommentLike) => like.userId.toString() === userId.toString()
+    (like: ITravelCommentLike) =>
+      like.userId.toString() === userId.toString()
   );
 
   let liked: boolean;
 
   if (likeIndex >= 0) {
-    // Unlike
     comment.likes.splice(likeIndex, 1);
     liked = false;
   } else {
-    // Like
     comment.likes.push({
       userId,
       likedAt: new Date(),
-    } as ITravelCommentLike); // cast to correct type
+    } as ITravelCommentLike);
     liked = true;
   }
 
@@ -430,4 +436,7 @@ TravelCommentSchema.statics.toggleLikeById = async function (
  * Exported TravelComment model.
  * Uses existing model if already compiled (hot-reload safe).
  */
-export const TravelCommentModel = defineModel("TravelComment", TravelCommentSchema);
+export const TravelCommentModel = defineModel<
+  ITravelComment,
+  TravelCommentModel
+>("TravelComment", TravelCommentSchema);

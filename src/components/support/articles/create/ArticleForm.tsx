@@ -36,7 +36,7 @@ import { ARTICLE_TYPE, ARTICLE_STATUS, ArticleStatus } from '@/constants/article
 import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 import { useState } from 'react';
 import { TOUR_CATEGORIES } from '@/constants/tour.const';
-import { initialCreateArticlePayload_1 } from '@/data/base-tour-articles';
+import { DEFAULT_TOUR_ARTICLE_1 } from '@/data/base-tour-articles';
 
 interface TabConfig {
     value: string;
@@ -45,73 +45,7 @@ interface TabConfig {
     description: string;
 }
 
-// const initialValues: CreateArticleFormValues = {
-//     title: '',
-//     banglaTitle: '',
-//     slug: '',
-//     status: ARTICLE_STATUS.DRAFT,
-//     articleType: ARTICLE_TYPE.SINGLE_DESTINATION,
-//     authorBio: '',
-//     summary: '',
-//     heroImage: '', 
-//     destinations: [
-//         {
-//             division: DIVISION.DHAKA,
-//             district: DISTRICT.DHAKA,
-//             area: '',
-//             description: '',
-//             content: [
-//                 {
-//                     type: ARTICLE_RICH_TEXT_BLOCK_TYPE.PARAGRAPH,
-//                     text: '',
-//                 },
-//             ],
-//             highlights: [''],
-//             foodRecommendations: [
-//                 {
-//                     dishName: '',
-//                     description: '',
-//                     bestPlaceToTry: '',
-//                     approximatePrice: '',
-//                     spiceLevel: null,
-//                 },
-//             ],
-//             localFestivals: [
-//                 {
-//                     name: '',
-//                     description: '',
-//                     timeOfYear: '',
-//                     location: '',
-//                     significance: '',
-//                 },
-//             ],
-//             localTips: [''],
-//             transportOptions: [''],
-//             accommodationTips: [''],
-//             coordinates: {
-//                 lat: 0,
-//                 lng: 0,
-//             },
-//             imageAsset: {
-//                 title: '',
-//                 assetId: '',
-//                 url: '',
-//             },
-//         },
-//     ],
-
-//     categories: [],
-//     tags: [],
-//     seo: {
-//         metaTitle: '',
-//         metaDescription: '',
-//         ogImage: null,
-//     },
-//     faqs: [],
-//     allowComments: true,
-// };
-
-const initialValues: CreateArticleFormValues = initialCreateArticlePayload_1;
+const initialValues: CreateArticleFormValues = DEFAULT_TOUR_ARTICLE_1;
 
 export function ArticleForm() {
     const router = useRouter();
