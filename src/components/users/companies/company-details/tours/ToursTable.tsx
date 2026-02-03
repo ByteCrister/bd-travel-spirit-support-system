@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +38,7 @@ import { TOUR_STATUS, MODERATION_STATUS, ModerationStatus, DifficultyLevel, DIFF
 import { TourListItemDTO } from "@/types/tour.types";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 import Image from "next/image";
+import Link from "next/link";
 
 interface Props {
     companyId: string;
@@ -63,7 +63,6 @@ export function ToursTable({
     error,
     onPageChange,
 }: Props) {
-    const router = useRouter();
 
     const dateFormatter = useMemo(
         () =>
@@ -85,10 +84,6 @@ export function ToursTable({
         } catch {
             return `${amount} ${currency}`;
         }
-    };
-
-    const handleRouteClick = async (tourId: string) => {
-        router.push(`/users/companies/${encodeId(encodeURIComponent(companyId))}/${encodeId(encodeURIComponent(tourId))}`);
     };
 
     const statusBadge = (status: TourStatus) => {
@@ -351,17 +346,20 @@ export function ToursTable({
                                                 </AccordionTrigger>
 
                                                 {/* Right Section - View Button */}
-                                                <Button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleRouteClick(tour.id);
-                                                    }}
-                                                    size="sm"
-                                                    className="h-10 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all ml-4"
+                                                <Link
+                                                    href={`/users/companies/${encodeId(
+                                                        encodeURIComponent(companyId)
+                                                    )}/${encodeId(encodeURIComponent(tour.id))}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    onClick={(e) => e.stopPropagation()}
                                                 >
-                                                    <MdOpenInNew className="h-4 w-4 mr-2" />
-                                                    View
-                                                </Button>
+                                                    <Button size="sm" className="h-10 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all ml-4"
+                                                    >
+                                                        <MdOpenInNew className="h-4 w-4 mr-2" />
+                                                        View
+                                                    </Button>
+                                                </Link>
                                             </div>
 
                                             {/* Expandable Content */}

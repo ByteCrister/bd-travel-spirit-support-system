@@ -20,6 +20,7 @@ import {
 } from "react-icons/md";
 import { EmployeeDetailDialogSkeleton } from "./EmployeeDetailDialogSkeleton";
 import Image from "next/image";
+import { EMPLOYEE_STATUS, EmployeeStatus, PAYROLL_STATUS, PayrollStatus } from "@/constants/employee.const";
 
 interface Props {
     open: boolean;
@@ -56,28 +57,28 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
         }
     };
 
-    const getStatusColor = (status: string | undefined) => {
+    const getStatusColor = (status: EmployeeStatus | undefined) => {
         switch (status) {
-            case "active":
+            case EMPLOYEE_STATUS.ACTIVE:
                 return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50";
-            case "onLeave":
+            case EMPLOYEE_STATUS.ON_LEAVE:
                 return "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800/50";
-            case "suspended":
+            case EMPLOYEE_STATUS.SUSPENDED:
                 return "bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300 border-orange-200 dark:border-orange-800/50";
-            case "terminated":
+            case EMPLOYEE_STATUS.TERMINATED:
                 return "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border-rose-200 dark:border-rose-800/50";
             default:
                 return "bg-slate-50 text-slate-700 dark:bg-slate-950/50 dark:text-slate-300 border-slate-200 dark:border-slate-800/50";
         }
     };
 
-    const getPaymentStatusColor = (status: string | undefined) => {
+    const getPaymentStatusColor = (status: PayrollStatus | undefined) => {
         switch (status) {
-            case "paid":
+            case PAYROLL_STATUS.PAID:
                 return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50";
-            case "pending":
+            case PAYROLL_STATUS.PENDING:
                 return "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800/50";
-            case "failed":
+            case PAYROLL_STATUS.FAILED:
                 return "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border-rose-200 dark:border-rose-800/50";
             default:
                 return "bg-slate-50 text-slate-700 dark:bg-slate-950/50 dark:text-slate-300 border-slate-200 dark:border-slate-800/50";
@@ -424,23 +425,6 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, loading }: 
                                         </div>
                                     </Section>
                                 )}
-
-                                {/* Metadata */}
-                                <Section title="Metadata">
-                                    <InfoGrid>
-                                        <InfoItem label="Created At" value={formatDate(employee.createdAt)} />
-                                        <InfoItem label="Updated At" value={formatDate(employee.updatedAt)} />
-                                        <InfoItem label="Employee ID" value={employee.id} />
-                                        {employee.userId && (
-                                            <InfoItem label="User ID" value={employee.userId} />
-                                        )}
-                                        <InfoItem
-                                            label="Status"
-                                            value={employee.isDeleted ? "Deleted" : "Active"}
-                                            capitalize
-                                        />
-                                    </InfoGrid>
-                                </Section>
                             </div>
                         </ScrollArea>
                     </>

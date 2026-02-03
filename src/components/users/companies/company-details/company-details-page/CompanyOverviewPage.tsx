@@ -12,7 +12,6 @@ import { ToursTable } from "../tours/ToursTable";
 import { EmployeesTable } from "../employees/EmployeesTable";
 import { useCompanyOverview } from "@/hooks/useCompanyOverview";
 import { CompanyAccordionSkeleton } from "./CompanyAccordionSkeleton";
-import { FiltersBarSkeleton } from "./FiltersBarSkeleton";
 import { TableSkeleton } from "./TableSkeleton";
 import { Breadcrumbs } from "../../../../global/Breadcrumbs";
 

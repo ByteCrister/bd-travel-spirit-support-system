@@ -144,15 +144,17 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
     const loading = lod[tourDetailLoadingKey(tourId)];
     const error = er[tourDetailErrorKey(tourId)];
 
+    
     const load = useCallback(
         async (force = false) => {
             try {
                 const fetchedTour = await fetchTourDetail(companyId, tourId, force);
                 if (fetchedTour?.title) {
+                    console.log(`Companies: ${JSON.stringify(companies)}`);
                     handleBreadcrumbItems([
                         { label: "Home", href: '/' },
                         { label: "Companies", href: "/users/companies" },
-                        { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "-", href: `/users/companies/${encodeURIComponent(encodeId(companyId))}` },
+                        { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "Company", href: `/users/companies/${encodeURIComponent(encodeId(companyId))}` },
                         { label: fetchedTour.title, href: `/users/companies/${encodeURIComponent(encodeId(companyId))}/${encodeURIComponent(encodeId(tourId))}` },
                     ])
                 }
