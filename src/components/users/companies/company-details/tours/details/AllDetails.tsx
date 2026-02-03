@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-// import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     MdStar,
@@ -24,12 +23,38 @@ import {
     MdLocationCity,
     MdTimer,
     MdRestaurant,
+    MdCheck,
+    MdCancel,
+    MdRadioButtonUnchecked,
+    MdArrowUpward,
+    MdFolder,
+    MdHotel,
+    MdDirectionsBus,
+    MdLightbulbOutline,
+    MdTrendingUp,
+    MdHourglassEmpty,
+    MdPause,
+    MdClose,
 } from "react-icons/md";
 import {
     FaClipboardList,
     FaWheelchair,
     FaSnowflake,
 } from "react-icons/fa";
+import {
+    // Lucide icons
+    Circle,
+    ArrowUpRight,
+    XCircle,
+    Folder,
+    Clock,
+    Lightbulb,
+    Bus,
+    Bed,
+    Check,
+    X,
+    AlertCircle,
+} from "lucide-react";
 import { useCompanyDetailStore } from "@/store/company/company-detail.store";
 import AllDetailsSkeleton from "./skeletons/AllDetailsSkeleton";
 import { TourDetailDTO } from "@/types/tour.types";
@@ -72,37 +97,37 @@ const staggerContainer = {
     }
 };
 
-// Status configurations
+// Status configurations - Updated with icons
 const STATUS_CONFIG = {
     [TOUR_STATUS.DRAFT]: {
         gradient: "from-slate-400 to-slate-500",
         text: "Draft",
-        icon: "○"
+        icon: <Circle className="w-3 h-3" />
     },
     [TOUR_STATUS.SUBMITTED]: {
         gradient: "from-amber-500 to-orange-500",
         text: "Submitted",
-        icon: "↗"
+        icon: <ArrowUpRight className="w-3 h-3" />
     },
     [TOUR_STATUS.ACTIVE]: {
         gradient: "from-emerald-500 to-teal-500",
         text: "Active",
-        icon: "✓"
+        icon: <Check className="w-3 h-3" />
     },
     [TOUR_STATUS.COMPLETED]: {
         gradient: "from-blue-500 to-indigo-500",
         text: "Completed",
-        icon: "✓"
+        icon: <Check className="w-3 h-3" />
     },
     [TOUR_STATUS.TERMINATED]: {
         gradient: "from-rose-500 to-pink-500",
         text: "Terminated",
-        icon: "⊗"
+        icon: <XCircle className="w-3 h-3" />
     },
     [TOUR_STATUS.ARCHIVED]: {
         gradient: "from-gray-500 to-gray-600",
         text: "Archived",
-        icon: "📁"
+        icon: <Folder className="w-3 h-3" />
     },
 };
 
@@ -110,22 +135,22 @@ const MODERATION_CONFIG = {
     [MODERATION_STATUS.PENDING]: {
         gradient: "from-amber-400 to-orange-500",
         text: "Pending",
-        icon: "⏳"
+        icon: <Clock className="w-3 h-3" />
     },
     [MODERATION_STATUS.APPROVED]: {
         gradient: "from-emerald-400 to-green-500",
         text: "Approved",
-        icon: "✓"
+        icon: <Check className="w-3 h-3" />
     },
     [MODERATION_STATUS.DENIED]: {
         gradient: "from-red-400 to-rose-500",
         text: "Denied",
-        icon: "✗"
+        icon: <X className="w-3 h-3" />
     },
     [MODERATION_STATUS.SUSPENDED]: {
         gradient: "from-yellow-400 to-amber-500",
         text: "Suspended",
-        icon: "⏸️"
+        icon: <MdPause className="w-3 h-3" />
     },
 };
 
@@ -144,17 +169,15 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
     const loading = lod[tourDetailLoadingKey(tourId)];
     const error = er[tourDetailErrorKey(tourId)];
 
-    
     const load = useCallback(
         async (force = false) => {
             try {
                 const fetchedTour = await fetchTourDetail(companyId, tourId, force);
                 if (fetchedTour?.title) {
-                    console.log(`Companies: ${JSON.stringify(companies)}`);
                     handleBreadcrumbItems([
                         { label: "Home", href: '/' },
                         { label: "Companies", href: "/users/companies" },
-                        { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "Company", href: `/users/companies/${encodeURIComponent(encodeId(companyId))}` },
+                        { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "-", href: `/users/companies/${encodeURIComponent(encodeId(companyId))}` },
                         { label: fetchedTour.title, href: `/users/companies/${encodeURIComponent(encodeId(companyId))}/${encodeURIComponent(encodeId(tourId))}` },
                     ])
                 }
@@ -169,7 +192,6 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
         void load(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
 
     const formatDate = (d?: string) => {
         if (!d) return "—";
@@ -656,17 +678,6 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
                                     <MdShare className="text-violet-600" />
                                 </Button>
                             </motion.div>
-
-                            {/* <Button
-                                variant="ghost"
-                                size="lg"
-                                asChild
-                                className="rounded-xl hover:bg-violet-50 dark:hover:bg-violet-950/30"
-                            >
-                                <Link href={`/companies/${companyId}/tours/${tour.id}/edit`}>
-                                    Edit Tour
-                                </Link>
-                            </Button> */}
                         </div>
                     </div>
                 </motion.header>
@@ -821,7 +832,7 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
                                                             <div className="flex flex-wrap gap-4 text-sm mb-4">
                                                                 {it.accommodation && (
                                                                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-slate-800/80">
-                                                                        <span className="font-semibold text-violet-600">🏨</span>
+                                                                        <MdHotel className="text-violet-600" />
                                                                         <span className="text-slate-700 dark:text-slate-300">{it.accommodation}</span>
                                                                     </div>
                                                                 )}
@@ -837,7 +848,7 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
 
                                                                 {it.travelMode && (
                                                                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-slate-800/80">
-                                                                        <span className="font-semibold text-blue-600">🚌</span>
+                                                                        <Bus className="text-blue-600 w-4 h-4" />
                                                                         <span className="text-slate-700 dark:text-slate-300">{it.travelMode}</span>
                                                                     </div>
                                                                 )}
@@ -1097,9 +1108,7 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
                                                                                             {attr.insiderTip && (
                                                                                                 <div className="mb-3 p-3 rounded-lg bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 border border-amber-200 dark:border-amber-900">
                                                                                                     <div className="flex items-start gap-2">
-                                                                                                        <div className="text-amber-600 dark:text-amber-400 mt-0.5">
-                                                                                                            💡
-                                                                                                        </div>
+                                                                                                        <Lightbulb className="text-amber-600 dark:text-amber-400 mt-0.5 w-4 h-4" />
                                                                                                         <div>
                                                                                                             <div className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1">
                                                                                                                 Insider Tip
@@ -1851,7 +1860,7 @@ function StatusPill({ status }: { status: string }) {
             animate={{ scale: 1 }}
             className={`px-4 py-2 rounded-full bg-gradient-to-r ${config.gradient} text-white font-bold text-sm shadow-lg flex items-center gap-2`}
         >
-            <span>{config.icon}</span>
+            {config.icon}
             <span>{config.text}</span>
         </motion.div>
     );
@@ -1866,7 +1875,7 @@ function ModerationPill({ status }: { status: string }) {
             animate={{ scale: 1 }}
             className={`px-4 py-2 rounded-full bg-gradient-to-r ${config.gradient} text-white font-bold text-sm shadow-lg flex items-center gap-2`}
         >
-            <span>{config.icon}</span>
+            {config.icon}
             <span>{config.text}</span>
         </motion.div>
     );
