@@ -67,7 +67,7 @@ const navigationGroups: NavGroup[] = [
       { href: "/users/travelers", label: "Travelers", icon: ShieldCheck },
       { href: "/users/guides", label: "Guides", icon: MdTravelExplore },
       { href: "/users/companies", label: "Companies", icon: MdBusiness },
-      { href: "/users/employees", label: "Employees", icon: FaUsers },
+      { href: "/users/employees", label: "Employees", icon: FaUsers, adminOnly: true },
     ],
   },
   {
@@ -79,7 +79,7 @@ const navigationGroups: NavGroup[] = [
       { href: "/support/articles", label: "Articles", icon: FiFileText },
       { href: "/support/article-comments", label: "Article Comments", icon: FaComments },
       { href: "/support/guide-password-requests", label: "Guide Password Requests", icon: KeyRound },
-      { href: "/support/reset-password-requests", label: "Employees Password Requests", icon: TbPasswordFingerprint, adminOnly: true },
+      { href: "/support/reset-password-requests", label: "Employees Password Requests", icon: TbPasswordFingerprint, adminOnly: true }, // this is for current owners employee
     ],
   },
   {

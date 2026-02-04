@@ -18,9 +18,9 @@ import { USER_ROLE, UserRole } from '@/constants/user.const';
 import AssetModel from '@/models/assets/asset.model';
 import AssetFileModel from '@/models/assets/asset-file.model';
 import { PopulatedAssetLean } from '@/types/populated-asset.types';
-import { TravelCommentModel } from '@/models/articles/travel-article-comment.model';
 import { ApiError } from '@/lib/helpers/withErrorHandler';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
+import TravelArticleCommentModel from "@/models/articles/travel-article-comment.model";
 
 /**
  * Normalized query parameters with defaults
@@ -373,7 +373,7 @@ async function executeCommentAggregation(
 }> {
     const pipeline = buildAggregationPipeline(articleId, query);
 
-    const results = await TravelCommentModel.aggregate<AggregationCommentItem>(pipeline)
+    const results = await TravelArticleCommentModel.aggregate<AggregationCommentItem>(pipeline)
         .session(session || null)
         .option({ allowDiskUse: true });
 

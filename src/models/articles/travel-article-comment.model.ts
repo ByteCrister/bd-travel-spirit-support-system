@@ -17,7 +17,7 @@ export interface ITravelCommentLike extends Document {
  * Interface describing the shape of a Travel Comment document.
  * Extends Mongoose's Document type for full typing support.
  */
-export interface ITravelComment extends Document {
+export interface ITravelArticleComment extends Document {
   articleId: Types.ObjectId; // The travel article this comment belongs to
   parentId?: Types.ObjectId | null; // Parent comment ID (for threaded/nested replies)
   author: Types.ObjectId; // Traveler who created the comment
@@ -30,6 +30,11 @@ export interface ITravelComment extends Document {
   deletedAt?: Date; // When the comment was soft-deleted
   createdAt: Date; // Auto-managed timestamp when created
   updatedAt: Date; // Auto-managed timestamp when last updated
+
+  approve(): Promise<ITravelArticleComment>;
+  reject(reason: string): Promise<ITravelArticleComment>;
+  softDelete(): Promise<ITravelArticleComment>;
+  restore(): Promise<ITravelArticleComment>;
 }
 
 /**
@@ -53,38 +58,38 @@ const TravelCommentLikeSchema = new Schema<ITravelCommentLike>(
   }
 );
 
-export interface TravelCommentModel extends Model<ITravelComment> {
+export interface ITravelArticleCommentModel extends Model<ITravelArticleComment> {
 
   findByArticle(
     articleId: Types.ObjectId,
     status?: CommentStatus,
     session?: ClientSession
-  ): Promise<ITravelComment[]>;
+  ): Promise<ITravelArticleComment[]>;
 
   findReplies(
     parentId: Types.ObjectId,
     status?: CommentStatus,
     session?: ClientSession
-  ): Promise<ITravelComment[]>;
+  ): Promise<ITravelArticleComment[]>;
 
   createReply(
     articleId: Types.ObjectId,
     parentId: Types.ObjectId,
     replyData: ICreateReplyData,
     session?: ClientSession
-  ): Promise<ITravelComment>;
+  ): Promise<ITravelArticleComment>;
 
-  findPendingModeration(): Promise<ITravelComment[]>;
+  findPendingModeration(): Promise<ITravelArticleComment[]>;
 
   findDeleted(
     session?: ClientSession
-  ): Promise<ITravelComment[]>;
+  ): Promise<ITravelArticleComment[]>;
 
   findWithDeleted(
     articleId: Types.ObjectId,
     status?: CommentStatus,
     session?: ClientSession
-  ): Promise<ITravelComment[]>;
+  ): Promise<ITravelArticleComment[]>;
 
   toggleLikeById(
     commentId: Types.ObjectId,
@@ -111,9 +116,9 @@ export interface ICreateReplyData {
  * Includes references to related models, validation rules,
  * and moderation support.
  */
-const TravelCommentSchema = new Schema<
-  ITravelComment,
-  TravelCommentModel>(
+const TravelArticleCommentSchema = new Schema<
+  ITravelArticleComment,
+  ITravelArticleCommentModel>(
     {
       // Reference to the travel article this comment belongs to
       articleId: {
@@ -130,7 +135,7 @@ const TravelCommentSchema = new Schema<
         default: null,
       },
 
-      // Author could be an support employee and can be a traveler)
+      // Author is a traveler)
       author: {
         type: Schema.Types.ObjectId,
         ref: "User",
@@ -164,7 +169,7 @@ const TravelCommentSchema = new Schema<
         maxlength: 1000,
         default: null,
         validate: {
-          validator: function (this: ITravelComment, value?: string | null): boolean {
+          validator: function (this: ITravelArticleComment, value?: string | null): boolean {
             // Only required when status is REJECTED
             if (this.status === COMMENT_STATUS.REJECTED) {
               return typeof value === "string" && value.trim().length > 0;
@@ -203,18 +208,18 @@ const TravelCommentSchema = new Schema<
  * - createdAt: sort by newest first
  * - isDeleted: filter out deleted comments
  */
-TravelCommentSchema.index({ articleId: 1, status: 1, isDeleted: 1, createdAt: -1 });
+TravelArticleCommentSchema.index({ articleId: 1, status: 1, isDeleted: 1, createdAt: -1 });
 
 /**
  * Index for admin queries to see deleted content
  */
-TravelCommentSchema.index({ isDeleted: 1, createdAt: -1 });
+TravelArticleCommentSchema.index({ isDeleted: 1, createdAt: -1 });
 
 /**
  * Virtual field: replyCount
  * Provides a quick way to get the number of replies without fetching them all.
  */
-TravelCommentSchema.virtual("replyCount").get(function (this: ITravelComment) {
+TravelArticleCommentSchema.virtual("replyCount").get(function (this: ITravelArticleComment) {
   return this.replies?.length || 0;
 });
 
@@ -223,7 +228,7 @@ TravelCommentSchema.virtual("replyCount").get(function (this: ITravelComment) {
  * Ensures content is trimmed and sanitized before saving.
  * Clears rejectReason when comment is not rejected.
  */
-TravelCommentSchema.pre("save", function (next) {
+TravelArticleCommentSchema.pre("save", function (next) {
   if (this.content) {
     this.content = this.content.trim();
   }
@@ -236,25 +241,25 @@ TravelCommentSchema.pre("save", function (next) {
   next();
 });
 
-TravelCommentSchema.methods.approve = async function (): Promise<ITravelComment> {
+TravelArticleCommentSchema.methods.approve = async function (): Promise<ITravelArticleComment> {
   this.status = COMMENT_STATUS.APPROVED;
   this.rejectReason = null; // Clear reject reason when approving
   return this.save();
 };
 
-TravelCommentSchema.methods.reject = async function (reason: string): Promise<ITravelComment> {
+TravelArticleCommentSchema.methods.reject = async function (reason: string): Promise<ITravelArticleComment> {
   this.status = COMMENT_STATUS.REJECTED;
   this.rejectReason = reason;
   return this.save();
 };
 
-TravelCommentSchema.methods.softDelete = async function (): Promise<ITravelComment> {
+TravelArticleCommentSchema.methods.softDelete = async function (): Promise<ITravelArticleComment> {
   this.isDeleted = true;
   this.deletedAt = new Date();
   return this.save();
 };
 
-TravelCommentSchema.methods.restore = async function (): Promise<ITravelComment> {
+TravelArticleCommentSchema.methods.restore = async function (): Promise<ITravelArticleComment> {
   this.isDeleted = false;
   this.deletedAt = null;
   return this.save();
@@ -263,11 +268,11 @@ TravelCommentSchema.methods.restore = async function (): Promise<ITravelComment>
 /**
  * Static methods
  */
-TravelCommentSchema.statics.findByArticle = function (
+TravelArticleCommentSchema.statics.findByArticle = function (
   articleId: Types.ObjectId,
   status: CommentStatus = COMMENT_STATUS.APPROVED,
   session?: ClientSession
-): Promise<ITravelComment[]> {
+): Promise<ITravelArticleComment[]> {
 
   const query = this.find({
     articleId,
@@ -284,11 +289,11 @@ TravelCommentSchema.statics.findByArticle = function (
   return query.exec();
 };
 
-TravelCommentSchema.statics.findReplies = function (
+TravelArticleCommentSchema.statics.findReplies = function (
   parentId: Types.ObjectId,
   status: CommentStatus = COMMENT_STATUS.APPROVED,
   session?: ClientSession
-): Promise<ITravelComment[]> {
+): Promise<ITravelArticleComment[]> {
   const query = this.find({
     parentId,
     status,
@@ -303,12 +308,12 @@ TravelCommentSchema.statics.findReplies = function (
   return query.exec();
 };
 
-TravelCommentSchema.statics.createReply = async function (
+TravelArticleCommentSchema.statics.createReply = async function (
   articleId: Types.ObjectId,
   parentId: Types.ObjectId,
   replyData: ICreateReplyData,
   session?: ClientSession
-): Promise<ITravelComment> {
+): Promise<ITravelArticleComment> {
   // Create the reply comment
   const reply = new this({
     articleId,
@@ -329,9 +334,9 @@ TravelCommentSchema.statics.createReply = async function (
   return savedReply;
 };
 
-TravelCommentSchema.statics.findPendingModeration = function (
+TravelArticleCommentSchema.statics.findPendingModeration = function (
   session?: ClientSession
-): Promise<ITravelComment[]> {
+): Promise<ITravelArticleComment[]> {
 
   const query = this.find({
     status: COMMENT_STATUS.PENDING,
@@ -346,9 +351,9 @@ TravelCommentSchema.statics.findPendingModeration = function (
   return query.exec();
 };
 
-TravelCommentSchema.statics.findDeleted = function (
+TravelArticleCommentSchema.statics.findDeleted = function (
   session?: ClientSession
-): Promise<ITravelComment[]> {
+): Promise<ITravelArticleComment[]> {
   const query = this.find({ isDeleted: true })
     .sort({ deletedAt: -1 });
 
@@ -359,12 +364,12 @@ TravelCommentSchema.statics.findDeleted = function (
   return query.exec();
 };
 
-TravelCommentSchema.statics.findWithDeleted = function (
+TravelArticleCommentSchema.statics.findWithDeleted = function (
   articleId: Types.ObjectId,
   status?: CommentStatus,
   session?: ClientSession
-): Promise<ITravelComment[]> {
-  const queryObj: FilterQuery<ITravelComment> = {
+): Promise<ITravelArticleComment[]> {
+  const queryObj: FilterQuery<ITravelArticleComment> = {
     articleId,
     parentId: null,
   };
@@ -389,7 +394,7 @@ TravelCommentSchema.statics.findWithDeleted = function (
   return query.exec();
 };
 
-TravelCommentSchema.statics.toggleLikeById = async function (
+TravelArticleCommentSchema.statics.toggleLikeById = async function (
   commentId: Types.ObjectId,
   userId: Types.ObjectId,
   session?: ClientSession
@@ -436,7 +441,9 @@ TravelCommentSchema.statics.toggleLikeById = async function (
  * Exported TravelComment model.
  * Uses existing model if already compiled (hot-reload safe).
  */
-export const TravelCommentModel = defineModel<
-  ITravelComment,
-  TravelCommentModel
->("TravelComment", TravelCommentSchema);
+export const TravelArticleCommentModel = defineModel<
+  ITravelArticleComment,
+  ITravelArticleCommentModel
+>("TravelArticleComment", TravelArticleCommentSchema);
+
+export default TravelArticleCommentModel;

@@ -7,10 +7,10 @@ import { withTransaction } from '@/lib/helpers/withTransaction';
 import { DeleteCommentPayloadDTO, DeleteCommentResponseDTO } from '@/types/article-comment.types';
 import ConnectDB from '@/config/db';
 import { Types } from 'mongoose';
-import { TravelCommentModel } from '@/models/articles/travel-article-comment.model';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 import { getUserIdFromSession } from '@/lib/auth/session.auth';
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import TravelArticleCommentModel from "@/models/articles/travel-article-comment.model";
 
 /**
  * Wrapped DELETE handler with error handling
@@ -42,7 +42,7 @@ export const DELETE = withErrorHandler(async (
     // Execute in transaction to ensure data consistency
     const result = await withTransaction(async (session) => {
         // Find the comment with session
-        const comment = await TravelCommentModel.findById(commentId).session(session);
+        const comment = await TravelArticleCommentModel.findById(commentId).session(session);
 
         if (!comment) {
             throw new ApiError('Comment not found', 404);
@@ -55,7 +55,7 @@ export const DELETE = withErrorHandler(async (
 
         // If comment has parent, remove it from parent's replies array
         if (comment.parentId) {
-            await TravelCommentModel.findByIdAndUpdate(
+            await TravelArticleCommentModel.findByIdAndUpdate(
                 comment.parentId,
                 { $pull: { replies: comment._id } },
                 { session }
@@ -68,7 +68,7 @@ export const DELETE = withErrorHandler(async (
         // Prepare response data
         const responseData: DeleteCommentResponseDTO = {
             data: {
-                commentId: deletedComment._id.toString(),
+                commentId: (deletedComment._id as Types.ObjectId).toString(),
                 deletedAt: deletedComment.deletedAt!.toISOString(),
                 status: deletedComment.status,
             }

@@ -6,8 +6,8 @@ import AssetModel from '@/models/assets/asset.model';
 import AssetFileModel from '@/models/assets/asset-file.model';
 import { PopulatedAssetLean } from '@/types/populated-asset.types';
 import { ITravelArticle } from '@/models/articles/travel-article.model';
-import { TravelCommentModel } from '@/models/articles/travel-article-comment.model';
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
+import TravelArticleCommentModel from '@/models/articles/travel-article-comment.model';
 // Define proper types for populated data
 type PopulatedAuthor = {
     _id: Types.ObjectId;
@@ -55,13 +55,13 @@ export async function buildTourArticleDto(
             : TravelArticleModel.findById(id).session(session ?? null),
 
         // Count approved comments
-        TravelCommentModel.countDocuments({
+        TravelArticleCommentModel.countDocuments({
             articleId: id,
             status: COMMENT_STATUS.APPROVED
         }).session(session ?? null),
 
         // Count pending comments
-        TravelCommentModel.countDocuments({
+        TravelArticleCommentModel.countDocuments({
             articleId: id,
             status: COMMENT_STATUS.PENDING
         }).session(session ?? null)

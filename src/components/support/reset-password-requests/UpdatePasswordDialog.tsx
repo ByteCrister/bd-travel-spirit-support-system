@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Key, Eye, EyeOff, Loader2, AlertCircle, Mail, CheckCircle2, Shield, RefreshCw, Copy } from "lucide-react";
-import { extractErrorMessage } from "@/utils/axios/extract-error-message";
+import { Key, Loader2, AlertCircle, Mail, CheckCircle2, Shield, RefreshCw } from "lucide-react";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 
 // Set the length of the generated password
@@ -27,33 +26,19 @@ export default function UpdatePasswordDialog({
 }: UpdatePasswordDialogProps) {
     const [generatedPassword, setGeneratedPassword] = useState("");
     const [notifyRequester, setNotifyRequester] = useState(true);
-    const [showPassword, setShowPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [copied, setCopied] = useState(false);
 
     // Generate initial password when dialog opens
     useEffect(() => {
         if (open) {
             setGeneratedPassword(generateStrongPassword(PASSWORD_LENGTH));
-            setCopied(false);
         }
     }, [open]);
 
     const handleGenerateNew = () => {
         setGeneratedPassword(generateStrongPassword(PASSWORD_LENGTH));
-        setCopied(false);
         setError(null);
-    };
-
-    const handleCopyToClipboard = async () => {
-        try {
-            await navigator.clipboard.writeText(generatedPassword);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err: unknown) {
-            setError(extractErrorMessage(err) ?? "Failed to copy to clipboard");
-        }
     };
 
     // Password strength checks
@@ -171,28 +156,10 @@ export default function UpdatePasswordDialog({
                                     <div className="relative flex-1">
                                         <Input
                                             readOnly
-                                            type={showPassword ? "text" : "password"}
+                                            type={"password"}
                                             value={generatedPassword}
                                             className="pr-12 h-12 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 focus:border-violet-400 dark:focus:border-violet-600 focus:ring-violet-400/20 rounded-xl transition-all font-mono"
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-12 top-1/2 -translate-y-1/2 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors p-1"
-                                        >
-                                            {showPassword ? (
-                                                <EyeOff className="w-5 h-5" />
-                                            ) : (
-                                                <Eye className="w-5 h-5" />
-                                            )}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleCopyToClipboard}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors p-1"
-                                        >
-                                            <Copy className="w-5 h-5" />
-                                        </button>
                                     </div>
                                     <Button
                                         type="button"
@@ -203,16 +170,6 @@ export default function UpdatePasswordDialog({
                                         <RefreshCw className="w-4 h-4" />
                                     </Button>
                                 </div>
-                                {copied && (
-                                    <motion.p
-                                        initial={{ opacity: 0, y: -5 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium"
-                                    >
-                                        <CheckCircle2 className="w-3.5 h-3.5" />
-                                        Copied to clipboard!
-                                    </motion.p>
-                                )}
 
                                 {/* Password Strength Indicators */}
                                 <motion.div

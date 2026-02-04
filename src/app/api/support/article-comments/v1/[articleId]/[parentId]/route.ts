@@ -15,12 +15,12 @@ import mongoose, { ClientSession, PipelineStage, Types } from 'mongoose';
 import ConnectDB from '@/config/db';
 import { UserRole } from '@/constants/user.const';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
-import { TravelCommentModel } from '@/models/articles/travel-article-comment.model';
 import { ApiError } from '@/lib/helpers/withErrorHandler';
 import { getCollectionName } from '@/lib/helpers/get-collection-name';
 import UserModel from '@/models/user.model';
 import AssetFileModel from '@/models/assets/asset-file.model';
 import AssetModel from '@/models/assets/asset.model';
+import TravelArticleCommentModel from "@/models/articles/travel-article-comment.model";
 
 /**
  * Normalized query parameters for child comments
@@ -306,11 +306,13 @@ function buildChildCommentPipeline(
                     },
                     {
                         $project: {
+                            _id: 1, // include the author ID
                             name: 1,
                             role: 1,
                             avatarUrl: '$avatarFile.publicUrl'
                         }
                     }
+
                 ],
                 as: 'authorDetails'
             }
@@ -325,7 +327,7 @@ function buildChildCommentPipeline(
         // Apply author name filter if specified
         ...(query.filters.authorName && query.filters.authorName.trim() ? [{
             $match: {
-                'authorDetails.name': {
+                'author.name': {
                     $regex: query.filters.authorName,
                     $options: 'i'
                 }
@@ -342,6 +344,17 @@ function buildChildCommentPipeline(
         {
             $addFields: {
                 likes: { $size: { $ifNull: ['$likes', []] } }
+            }
+        },
+
+        {
+            $addFields: {
+                author: {
+                    _id: '$authorDetails._id',
+                    name: '$authorDetails.name',
+                    role: '$authorDetails.role',
+                    avatarUrl: { $ifNull: ['$authorDetails.avatarUrl', null] }
+                }
             }
         },
 
@@ -363,12 +376,7 @@ function buildChildCommentPipeline(
                 createdAt: 1,
                 updatedAt: 1,
                 replyCount: 1,
-                author: {
-                    id: '$authorDetails._id',
-                    name: '$authorDetails.name',
-                    role: '$authorDetails.role',
-                    avatarUrl: '$authorDetails.avatarUrl'
-                }
+                author: 1
             }
         }
     ];
@@ -415,7 +423,7 @@ async function fetchChildComments(
 }> {
     const pipeline = buildChildCommentPipeline(articleId, parentId, query);
 
-    const results = await TravelCommentModel.aggregate<AggregatedComment>(pipeline)
+    const results = await TravelArticleCommentModel.aggregate<AggregatedComment>(pipeline)
         .session(session || null)
         .option({ allowDiskUse: true });
 
@@ -465,7 +473,7 @@ async function verifyParentComment(
     parentId: string,
     session?: ClientSession
 ): Promise<boolean> {
-    const parentComment = await TravelCommentModel.findOne({
+    const parentComment = await TravelArticleCommentModel.findOne({
         _id: new Types.ObjectId(parentId),
         articleId: new Types.ObjectId(articleId),
         isDeleted: false
@@ -492,7 +500,7 @@ function generateResponse(
  * Fetch child comments of a specific parent comment
  */
 
-export default async function ArticleChileCmntGetHandler(
+async function ArticleChileCmntGetHandler(
     request: NextRequest,
     { params }: { params: Promise<{ articleId: string; parentId: string }> }
 ) {

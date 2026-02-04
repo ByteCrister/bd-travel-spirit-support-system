@@ -3,10 +3,17 @@
 import { withTransaction } from '@/lib/helpers/withTransaction';
 import { CommentAdminStatsDTO } from '@/types/article-comment.types';
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
-import { ARTICLE_STATUS } from '@/constants/article.const';
 import ConnectDB from '@/config/db';
 import { TravelArticleModel } from '@/models/articles/travel-article.model';
-import { TravelCommentModel } from '@/models/articles/travel-article-comment.model';
+import TravelArticleCommentModel from '@/models/articles/travel-article-comment.model';
+
+// Define types for the aggregation results
+interface MostCommentedArticleResult {
+  articleId: string;
+  title: string;
+  totalComments: number;
+  slug: string;
+}
 
 export default async function ArticleCmntGetHandler() {
     await ConnectDB();
@@ -14,43 +21,31 @@ export default async function ArticleCmntGetHandler() {
     // Fetch stats within a transaction for consistency
     const stats = await withTransaction(async (session) => {
         // Get all stats in parallel for performance
-        const [
-            totalComments,
-            totalApprovedComments,
-            totalPendingComments,
-            totalRejectedComments,
-            uniqueCommenters,
-            mostCommentedArticle,
-        ] = await Promise.all([
-            // Article counts with session
-            TravelArticleModel.countActive({}, session),
-            TravelArticleModel.countActive({ status: ARTICLE_STATUS.PUBLISHED }, session),
-            TravelArticleModel.countActive({ status: ARTICLE_STATUS.DRAFT }, session),
-
-            // Comment counts (excluding soft-deleted) with session
-            TravelCommentModel.countDocuments({ isDeleted: false }, { session: session }),
-            TravelCommentModel.countDocuments({
+        const results = await Promise.all([
+            // Comment counts (excluding soft-deleted)
+            TravelArticleCommentModel.countDocuments({ isDeleted: false }, { session: session }),
+            TravelArticleCommentModel.countDocuments({
                 status: COMMENT_STATUS.APPROVED,
                 isDeleted: false
             }, { session: session }),
-            TravelCommentModel.countDocuments({
+            TravelArticleCommentModel.countDocuments({
                 status: COMMENT_STATUS.PENDING,
                 isDeleted: false
             }, { session: session }),
-            TravelCommentModel.countDocuments({
+            TravelArticleCommentModel.countDocuments({
                 status: COMMENT_STATUS.REJECTED,
                 isDeleted: false
             }, { session: session }),
 
-            // Unique commenters (distinct authors who have commented)
-            TravelCommentModel.aggregate([
+            // Unique commenters
+            TravelArticleCommentModel.aggregate([
                 { $match: { isDeleted: false } },
                 { $group: { _id: '$author' } },
                 { $count: 'uniqueAuthors' }
             ]).session(session).then(result => result[0]?.uniqueAuthors || 0),
 
-            // Most commented article (non-deleted)
-            TravelCommentModel.aggregate([
+            // Most commented article
+            TravelArticleCommentModel.aggregate([
                 { $match: { isDeleted: false, status: COMMENT_STATUS.APPROVED } },
                 {
                     $group: {
@@ -78,7 +73,7 @@ export default async function ArticleCmntGetHandler() {
             }),
 
             // Recent comments (last 7 days)
-            TravelCommentModel.countDocuments({
+            TravelArticleCommentModel.countDocuments({
                 isDeleted: false,
                 createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
             }, { session: session }),
@@ -89,8 +84,18 @@ export default async function ArticleCmntGetHandler() {
             }, session)
         ]);
 
+        // Destructure results with proper typing
+        const [
+            totalComments,
+            totalApprovedComments,
+            totalPendingComments,
+            totalRejectedComments,
+            uniqueCommenters,
+            mostCommentedArticle,
+        ] = results;
+
         // Calculate average replies per comment with session
-        const avgRepliesResult = await TravelCommentModel.aggregate([
+        const avgRepliesResult = await TravelArticleCommentModel.aggregate([
             { $match: { isDeleted: false, parentId: null } }, // Only root comments
             {
                 $project: {
@@ -107,19 +112,28 @@ export default async function ArticleCmntGetHandler() {
 
         const avgRepliesPerComment = avgRepliesResult[0]?.avgReplies || 0;
 
-        // Build the response
+        // Type guard to check if mostCommentedArticle is valid
+        const hasMostCommentedArticle = (
+            mostCommentedArticle !== null && 
+            typeof mostCommentedArticle === 'object' &&
+            'articleId' in mostCommentedArticle &&
+            'title' in mostCommentedArticle &&
+            'totalComments' in mostCommentedArticle
+        );
+
+        // Build the response with proper typing
         const stats: CommentAdminStatsDTO = {
             // Core comment stats
-            totalComments,
-            totalApproved: totalApprovedComments,
-            totalPending: totalPendingComments,
-            totalRejected: totalRejectedComments,
-            uniqueCommenters,
+            totalComments: totalComments as number,
+            totalApproved: totalApprovedComments as number,
+            totalPending: totalPendingComments as number,
+            totalRejected: totalRejectedComments as number,
+            uniqueCommenters: uniqueCommenters as number,
             avgRepliesPerComment: parseFloat(avgRepliesPerComment.toFixed(2)),
-            mostActiveArticle: mostCommentedArticle ? {
-                articleId: mostCommentedArticle.articleId,
-                title: mostCommentedArticle.title,
-                totalComments: mostCommentedArticle.totalComments
+            mostActiveArticle: hasMostCommentedArticle ? {
+                articleId: (mostCommentedArticle as MostCommentedArticleResult).articleId,
+                title: (mostCommentedArticle as MostCommentedArticleResult).title,
+                totalComments: (mostCommentedArticle as MostCommentedArticleResult).totalComments
             } : null,
         };
 
@@ -129,5 +143,5 @@ export default async function ArticleCmntGetHandler() {
     return {
         data: stats,
         status: 200,
-    }
+    };
 }

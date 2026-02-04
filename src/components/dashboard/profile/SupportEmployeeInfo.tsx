@@ -2,7 +2,11 @@
 
 import { motion, Variants } from "framer-motion";
 import { IEmployeeInfo } from "@/types/current-user.types";
-import { PAYROLL_STATUS, PayrollStatus, SalaryPaymentMode } from "@/constants/employee.const";
+import {
+    PAYROLL_STATUS,
+    PayrollStatus,
+    SalaryPaymentMode,
+} from "@/constants/employee.const";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,6 +30,7 @@ import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 import { format } from "date-fns";
 import SupportEmployeeInfoSkeleton from "./skeletons/SupportEmployeeInfoSkeleton";
+import getDocLink from "@/utils/helpers/get-doc-links";
 
 interface SupportEmployeeInfoProps {
     employeeInfo: IEmployeeInfo | null;
@@ -56,7 +61,10 @@ const itemVariants: Variants = {
     },
 };
 
-export default function SupportEmployeeInfo({ employeeInfo, isLoading }: SupportEmployeeInfoProps) {
+export default function SupportEmployeeInfo({
+    employeeInfo,
+    isLoading,
+}: SupportEmployeeInfoProps) {
     if (isLoading) {
         return <SupportEmployeeInfoSkeleton />;
     }
@@ -91,7 +99,7 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
             </motion.div>
         );
     }
-
+        
     const getPaymentStatusBadge = (status: PayrollStatus) => {
         switch (status) {
             case PAYROLL_STATUS.PAID:
@@ -122,11 +130,13 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
 
     const getPaymentModeBadge = (mode: SalaryPaymentMode) => {
         return (
-            <Badge className={
-                mode === "auto"
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
-                    : "bg-gray-50 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400 border border-gray-200 dark:border-gray-800"
-            }>
+            <Badge
+                className={
+                    mode === "auto"
+                        ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+                        : "bg-gray-50 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400 border border-gray-200 dark:border-gray-800"
+                }
+            >
                 <Banknote className="h-3 w-3 mr-1" />
                 {mode === "auto" ? "Auto Payment" : "Manual Payment"}
             </Badge>
@@ -175,7 +185,9 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                         </p>
                                         <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
                                             <Briefcase className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                                            <span className="font-medium">{employeeInfo.employmentType || "Not specified"}</span>
+                                            <span className="font-medium">
+                                                {employeeInfo.employmentType || "Not specified"}
+                                            </span>
                                         </div>
                                     </div>
                                     <div className="space-y-2">
@@ -193,7 +205,10 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                         <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
                                             <Calendar className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                                             <span className="font-medium">
-                                                {format(new Date(employeeInfo.dateOfJoining), "MMM d, yyyy")}
+                                                {format(
+                                                    new Date(employeeInfo.dateOfJoining),
+                                                    "MMM d, yyyy",
+                                                )}
                                             </span>
                                         </div>
                                     </div>
@@ -209,7 +224,10 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                                     Monthly Salary
                                                 </p>
                                                 <p className="text-2xl sm:text-3xl font-semibold text-gray-800 dark:text-gray-200">
-                                                    {formatCurrency(employeeInfo.salary, employeeInfo.currency)}
+                                                    {formatCurrency(
+                                                        employeeInfo.salary,
+                                                        employeeInfo.currency,
+                                                    )}
                                                 </p>
                                             </div>
                                             <div className="h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
@@ -224,9 +242,15 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                         <div className="flex items-center gap-3">
                                             <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                                             <div>
-                                                <span className="font-medium text-amber-800 dark:text-amber-300">Employment Ended</span>
+                                                <span className="font-medium text-amber-800 dark:text-amber-300">
+                                                    Employment Ended
+                                                </span>
                                                 <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-                                                    Left on {format(new Date(employeeInfo.dateOfLeaving), "MMM d, yyyy")}
+                                                    Left on{" "}
+                                                    {format(
+                                                        new Date(employeeInfo.dateOfLeaving),
+                                                        "MMM d, yyyy",
+                                                    )}
                                                 </p>
                                             </div>
                                         </div>
@@ -265,21 +289,29 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                 <CardContent className="pt-6">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         <div className="space-y-4">
-                                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Primary Contact</p>
+                                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Primary Contact
+                                            </p>
                                             <div className="space-y-3">
                                                 <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
                                                     <Phone className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                                                    <span className="font-medium">{employeeInfo.contactInfo.phone}</span>
+                                                    <span className="font-medium">
+                                                        {employeeInfo.contactInfo.phone}
+                                                    </span>
                                                 </div>
                                                 <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
                                                     <Mail className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                                                    <span className="font-medium break-all">{employeeInfo.contactInfo.email}</span>
+                                                    <span className="font-medium break-all">
+                                                        {employeeInfo.contactInfo.email}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div className="space-y-4">
-                                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Emergency Contact</p>
+                                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Emergency Contact
+                                            </p>
                                             {employeeInfo.contactInfo.emergencyContact && (
                                                 <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 space-y-3">
                                                     <div className="flex items-center justify-between">
@@ -287,7 +319,10 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                                             {employeeInfo.contactInfo.emergencyContact.name}
                                                         </span>
                                                         <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800">
-                                                            {employeeInfo.contactInfo.emergencyContact.relation}
+                                                            {
+                                                                employeeInfo.contactInfo.emergencyContact
+                                                                    .relation
+                                                            }
                                                         </Badge>
                                                     </div>
                                                     <div className="flex items-center gap-2">
@@ -321,8 +356,8 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                 </CardHeader>
                                 <CardContent className="pt-6">
                                     <div className="space-y-3">
-                                        {employeeInfo.documents.map((doc, index) => (
-                                            <motion.div
+                                        {employeeInfo.documents.map((doc, index) => {
+                                            return <motion.div
                                                 key={index}
                                                 initial={{ opacity: 0, x: -20 }}
                                                 animate={{ opacity: 1, x: 0 }}
@@ -337,12 +372,13 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                                         <p className="font-medium">{doc.type}</p>
                                                         <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
                                                             <Calendar className="h-3 w-3" />
-                                                            Uploaded {format(new Date(doc.uploadedAt), "MMM d, yyyy")}
+                                                            Uploaded{" "}
+                                                            {format(new Date(doc.uploadedAt), "MMM d, yyyy")}
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <a
-                                                    href={doc.url}
+                                                    href={getDocLink(doc.url)}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
@@ -351,7 +387,7 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                                     <ExternalLink className="h-4 w-4" />
                                                 </a>
                                             </motion.div>
-                                        ))}
+                                        })}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -374,22 +410,31 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                             <CardContent className="pt-6">
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">Created</span>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                                            Created
+                                        </span>
                                         <span className="text-sm font-medium">
                                             {format(new Date(employeeInfo.createdAt), "MMM d, yyyy")}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">Last Updated</span>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                                            Last Updated
+                                        </span>
                                         <span className="text-sm font-medium">
                                             {format(new Date(employeeInfo.updatedAt), "MMM d, yyyy")}
                                         </span>
                                     </div>
                                     {employeeInfo.lastLogin && (
                                         <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                                            <span className="text-sm text-green-700 dark:text-green-400">Last Login</span>
+                                            <span className="text-sm text-green-700 dark:text-green-400">
+                                                Last Login
+                                            </span>
                                             <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                                                {format(new Date(employeeInfo.lastLogin), "MMM d, yyyy HH:mm")}
+                                                {format(
+                                                    new Date(employeeInfo.lastLogin),
+                                                    "MMM d, yyyy HH:mm",
+                                                )}
                                             </span>
                                         </div>
                                     )}
@@ -399,62 +444,77 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                     </motion.div>
 
                     {/* Salary History */}
-                    {employeeInfo.salaryHistory && employeeInfo.salaryHistory.length > 0 && (
-                        <motion.div variants={itemVariants} className="w-full">
-                            <Card className="border border-gray-200 dark:border-gray-800">
-                                <CardHeader className="pb-4 border-b border-gray-200 dark:border-gray-800">
-                                    <CardTitle className="text-lg flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-                                            <History className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                                        </div>
-                                        <span className="text-gray-800 dark:text-gray-200 font-semibold">
-                                            Salary History
-                                        </span>
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="pt-6">
-                                    <div className="space-y-4">
-                                        {employeeInfo.salaryHistory.map((history, index) => (
-                                            <motion.div
-                                                key={index}
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: index * 0.1 }}
-                                                className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-gray-900"
-                                            >
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-3">
-                                                            <TrendingUp className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                                                            <p className="font-semibold">
-                                                                {formatCurrency(history.amount, history.currency)}
-                                                            </p>
+                    {employeeInfo.salaryHistory &&
+                        employeeInfo.salaryHistory.length > 0 && (
+                            <motion.div variants={itemVariants} className="w-full">
+                                <Card className="border border-gray-200 dark:border-gray-800">
+                                    <CardHeader className="pb-4 border-b border-gray-200 dark:border-gray-800">
+                                        <CardTitle className="text-lg flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+                                                <History className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                                            </div>
+                                            <span className="text-gray-800 dark:text-gray-200 font-semibold">
+                                                Salary History
+                                            </span>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                        <div className="space-y-4">
+                                            {employeeInfo.salaryHistory.map((history, index) => (
+                                                <motion.div
+                                                    key={index}
+                                                    initial={{ opacity: 0, x: -20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: index * 0.1 }}
+                                                    className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-gray-900"
+                                                >
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-3">
+                                                                <TrendingUp className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                                                                <p className="font-semibold">
+                                                                    {formatCurrency(
+                                                                        history.amount,
+                                                                        history.currency,
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                            {index === 0 && (
+                                                                <Badge className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border border-green-200 dark:border-green-800">
+                                                                    Current
+                                                                </Badge>
+                                                            )}
                                                         </div>
-                                                        {index === 0 && (
-                                                            <Badge className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border border-green-200 dark:border-green-800">
-                                                                Current
-                                                            </Badge>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                            Effective from{" "}
+                                                            {format(
+                                                                new Date(history.effectiveFrom),
+                                                                "MMM d, yyyy",
+                                                            )}
+                                                            {history.effectiveTo && (
+                                                                <>
+                                                                    {" "}
+                                                                    to{" "}
+                                                                    {format(
+                                                                        new Date(history.effectiveTo),
+                                                                        "MMM d, yyyy",
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </p>
+                                                        {history.reason && (
+                                                            <p className="text-sm mt-2 p-2 rounded bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                                                {history.reason}
+                                                            </p>
                                                         )}
                                                     </div>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                        Effective from {format(new Date(history.effectiveFrom), "MMM d, yyyy")}
-                                                        {history.effectiveTo && (
-                                                            <> to {format(new Date(history.effectiveTo), "MMM d, yyyy")}</>
-                                                        )}
-                                                    </p>
-                                                    {history.reason && (
-                                                        <p className="text-sm mt-2 p-2 rounded bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                                            {history.reason}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    )}
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        )}
                 </div>
 
                 {/* Right Column - Status & Shifts Only */}
@@ -476,34 +536,55 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                 <CardContent className="pt-6">
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
-                                            {getPaymentStatusBadge(employeeInfo.currentMonthPayment.status)}
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                Status
+                                            </span>
+                                            {getPaymentStatusBadge(
+                                                employeeInfo.currentMonthPayment.status,
+                                            )}
                                         </div>
                                         <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                                            <span className="text-sm text-blue-700 dark:text-blue-400 block mb-1">Amount</span>
+                                            <span className="text-sm text-blue-700 dark:text-blue-400 block mb-1">
+                                                Amount
+                                            </span>
                                             <span className="text-xl font-semibold text-blue-800 dark:text-blue-300">
-                                                {formatCurrency(employeeInfo.currentMonthPayment.amount, employeeInfo.currentMonthPayment.currency)}
+                                                {formatCurrency(
+                                                    employeeInfo.currentMonthPayment.amount,
+                                                    employeeInfo.currentMonthPayment.currency,
+                                                )}
                                             </span>
                                         </div>
                                         {employeeInfo.currentMonthPayment.dueDate && (
                                             <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-                                                <span className="text-sm text-gray-600 dark:text-gray-400">Due Date</span>
+                                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                    Due Date
+                                                </span>
                                                 <span className="text-sm font-medium">
-                                                    {format(new Date(employeeInfo.currentMonthPayment.dueDate), "MMM d, yyyy")}
+                                                    {format(
+                                                        new Date(employeeInfo.currentMonthPayment.dueDate),
+                                                        "MMM d, yyyy",
+                                                    )}
                                                 </span>
                                             </div>
                                         )}
                                         {employeeInfo.currentMonthPayment.paidAt && (
                                             <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                                                <span className="text-sm text-green-700 dark:text-green-400">Paid Date</span>
+                                                <span className="text-sm text-green-700 dark:text-green-400">
+                                                    Paid Date
+                                                </span>
                                                 <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                                                    {format(new Date(employeeInfo.currentMonthPayment.paidAt), "MMM d, yyyy")}
+                                                    {format(
+                                                        new Date(employeeInfo.currentMonthPayment.paidAt),
+                                                        "MMM d, yyyy",
+                                                    )}
                                                 </span>
                                             </div>
                                         )}
                                         {employeeInfo.currentMonthPayment.transactionRef && (
                                             <div className="space-y-2">
-                                                <p className="text-sm text-gray-600 dark:text-gray-400">Transaction Reference</p>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                    Transaction Reference
+                                                </p>
                                                 <p className="text-xs font-mono bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-800 break-all">
                                                     {employeeInfo.currentMonthPayment.transactionRef}
                                                 </p>
@@ -511,8 +592,12 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                         )}
                                         {employeeInfo.currentMonthPayment.failureReason && (
                                             <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                                                <p className="text-sm font-medium text-red-700 dark:text-red-400 mb-2">Failure Reason</p>
-                                                <p className="text-sm text-red-600 dark:text-red-400">{employeeInfo.currentMonthPayment.failureReason}</p>
+                                                <p className="text-sm font-medium text-red-700 dark:text-red-400 mb-2">
+                                                    Failure Reason
+                                                </p>
+                                                <p className="text-sm text-red-600 dark:text-red-400">
+                                                    {employeeInfo.currentMonthPayment.failureReason}
+                                                </p>
                                             </div>
                                         )}
                                     </div>
@@ -546,14 +631,20 @@ export default function SupportEmployeeInfo({ employeeInfo, isLoading }: Support
                                                 className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-gray-900"
                                             >
                                                 <div className="flex items-center justify-between mb-3">
-                                                    <span className="font-medium">{shift.startTime} - {shift.endTime}</span>
+                                                    <span className="font-medium">
+                                                        {shift.startTime} - {shift.endTime}
+                                                    </span>
                                                     <Badge className="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700">
                                                         {shift.days.length} days
                                                     </Badge>
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
                                                     {shift.days.map((day) => (
-                                                        <Badge key={day} variant="outline" className="text-xs">
+                                                        <Badge
+                                                            key={day}
+                                                            variant="outline"
+                                                            className="text-xs"
+                                                        >
                                                             {day}
                                                         </Badge>
                                                     ))}

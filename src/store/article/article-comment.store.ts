@@ -35,9 +35,10 @@ import {
 import api from '@/utils/axios';
 import { COMMENT_STATUS, CommentStatus } from '@/constants/articleComment.const';
 import { ApiResponse } from '@/types/api.types';
+import { showToast } from '@/components/global/showToast';
 
-const URL_AFTER_API = '/mock/support/article-comments';
-// const URL_AFTER_API = '/support/article-comments/v1';
+// const URL_AFTER_API = '/mock/support/article-comments';
+const URL_AFTER_API = '/support/article-comments/v1';
 
 /**
  * Map Axios errors into a normalized ApiErrorDTO for consistent UI handling.
@@ -390,7 +391,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                             slug: article.slug,
                             authorName: article.author.name,
                             authorAvatarUrl: article.author.avatarUrl ?? null,
-                            totalComments: metrics.totalComments,
+                            totalComments: metrics.totalComments ?? 0,
                             pendingComments: metrics.pendingComments,
                             approvedComments: metrics.approvedComments,
                             rejectedComments: metrics.rejectedComments,
@@ -946,7 +947,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
 
                     try {
                         const { data } = await api.patch<ApiResponse<UpdateCommentStatusResponseDTO>>(
-                            `${URL_AFTER_API}/status`,
+                            `${URL_AFTER_API}/comment/${payload.commentId}/status`,
                             payload
                         );
 
@@ -976,6 +977,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                                 },
                             }));
                         }
+                        showToast.success("Comment Status", `Comment status updated to ${payload.status}`)
                     } catch (err) {
                         const apiErr = toApiError(err);
                         // Rollback to exact previous status per thread entry
@@ -1009,7 +1011,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                             }
                         );
 
-                        if (!data?.data?.data) throw new Error("Invalid response body");
+                        if (!data?.data) throw new Error("Invalid response body");
 
                         // Remove from all thread caches
                         set((s) => {
@@ -1079,7 +1081,7 @@ export const useArticleCommentsStore = create<ArticleCommentsState>()(
                             `${URL_AFTER_API}/comment/${commentId}/restore`
                         );
 
-                        if (!data?.data?.data) throw new Error("Invalid response body");
+                        if (!data?.data) throw new Error("Invalid response body");
 
                         const restoredComment = data.data.data;
 

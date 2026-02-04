@@ -5,8 +5,21 @@ import { ApiError, withErrorHandler } from '@/lib/helpers/withErrorHandler';
 import { getUserIdFromSession } from '@/lib/auth/session.auth';
 import ConnectDB from '@/config/db';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
-import { TravelCommentModel } from '@/models/articles/travel-article-comment.model';
 import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
+import TravelArticleCommentModel, { ITravelArticleComment } from '@/models/articles/travel-article-comment.model';
+import { UserRole } from '@/constants/user.const';
+import { PopulatedAssetLean } from '@/types/populated-asset.types';
+
+interface PopulatedAuthor {
+    _id: Types.ObjectId;
+    name: string;
+    role: UserRole;
+    avatar: PopulatedAssetLean;
+}
+
+type PopulatedArticleComment = Omit<ITravelArticleComment, "author"> & {
+    author: PopulatedAuthor;
+}
 
 /**
  * POST to restore soft-deleted article comments
@@ -34,7 +47,7 @@ export const POST = withErrorHandler(async (
     }
 
     // 4 Find the soft-deleted comment
-    const comment = await TravelCommentModel.findOne({
+    const comment = await TravelArticleCommentModel.findOne({
         _id: commentId,
         isDeleted: true,
     });
@@ -47,7 +60,7 @@ export const POST = withErrorHandler(async (
     await comment.restore();
 
     // 6 Fetch restored comment with nested author avatar → file → publicUrl
-    const restoredComment = await TravelCommentModel.findById(commentId)
+    const restoredComment = await TravelArticleCommentModel.findById(commentId)
         .populate({
             path: 'author',
             select: 'name role avatar',
@@ -60,7 +73,7 @@ export const POST = withErrorHandler(async (
                 },
             },
         })
-        .lean();
+        .lean() as unknown as PopulatedArticleComment;
 
     if (!restoredComment) {
         throw new ApiError('Failed to retrieve restored comment', 401);
@@ -71,7 +84,7 @@ export const POST = withErrorHandler(async (
 
     // 8 Construct response
     const responseData = {
-        id: restoredComment._id.toString(),
+        id: (restoredComment._id as Types.ObjectId).toString(),
         articleId: restoredComment.articleId.toString(),
         parentId: restoredComment.parentId
             ? restoredComment.parentId.toString()

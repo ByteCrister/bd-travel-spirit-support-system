@@ -10,7 +10,6 @@ import { COMMENT_STATUS, CommentStatus } from '@/constants/articleComment.const'
 import mongoose, { ClientSession, Types } from 'mongoose';
 import ConnectDB from '@/config/db';
 import { USER_ROLE, UserRole } from '@/constants/user.const';
-import { TravelCommentModel } from '@/models/articles/travel-article-comment.model';
 import { TravelArticleModel } from '@/models/articles/travel-article.model';
 import { ApiError } from '@/lib/helpers/withErrorHandler';
 import UserModel from '@/models/user.model';
@@ -19,6 +18,7 @@ import AssetModel from '@/models/assets/asset.model';
 import AssetFileModel from '@/models/assets/asset-file.model';
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { PipelineStage } from "mongoose";
+import TravelArticleCommentModel from "@/models/articles/travel-article-comment.model";
 
 /**
  * Validate create comment payload
@@ -58,7 +58,7 @@ interface AggregatedComment {
     updatedAt: Date;
     replyCount: number;
     author: {
-        _id: Types.ObjectId;
+        id: Types.ObjectId;
         name: string;
         role: string;
         avatarUrl?: string | null;
@@ -164,7 +164,7 @@ function transformToCommentDetailDTO(comment: AggregatedComment): CommentDetailD
         articleId: comment.articleId.toString(),
         parentId: comment.parentId?.toString() || null,
         author: {
-            id: comment.author._id.toString(),
+            id: comment.author.id.toString(),
             name: comment.author.name,
             avatarUrl: comment.author.avatarUrl || null,
             role: comment.author.role as UserRole
@@ -206,7 +206,7 @@ async function createComment(
 
     // If replying to a comment, validate parent comment exists
     if (parentId) {
-        const parentComment = await TravelCommentModel.findOne({
+        const parentComment = await TravelArticleCommentModel.findOne({
             _id: parentId,
             articleId,
             isDeleted: false
@@ -224,7 +224,7 @@ async function createComment(
         COMMENT_STATUS.PENDING;
 
     // Create the comment
-    const newComment = new TravelCommentModel({
+    const newComment = new TravelArticleCommentModel({
         articleId,
         parentId,
         author: authorId,
@@ -239,7 +239,7 @@ async function createComment(
 
     // If this is a reply, update parent comment's replies array
     if (parentId) {
-        await TravelCommentModel.findByIdAndUpdate(
+        await TravelArticleCommentModel.findByIdAndUpdate(
             parentId,
             { $push: { replies: savedComment._id } },
             { session }
@@ -248,7 +248,7 @@ async function createComment(
 
     // Fetch the created comment with full author details
     const pipeline = buildCommentAggregationPipeline(savedComment._id as Types.ObjectId);
-    const [aggregatedComment] = await TravelCommentModel.aggregate(pipeline)
+    const [aggregatedComment] = await TravelArticleCommentModel.aggregate(pipeline)
         .session(session || null)
         .option({ allowDiskUse: true });
 
@@ -294,7 +294,7 @@ async function CreateReplyHandler(
     });
 
     return {
-        data: result,
+        data: { data: result },
         status: 200,
     }
 }

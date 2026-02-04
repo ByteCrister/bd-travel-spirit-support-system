@@ -11,9 +11,10 @@ import {
 } from '@/types/article-comment.types';
 
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
-import { TravelCommentModel, ITravelComment } from '@/models/articles/travel-article-comment.model';
 import { UserRole } from '@/constants/user.const';
 import { PopulatedAssetLean } from '@/types/populated-asset.types';
+import TravelArticleCommentModel, { ITravelArticleComment } from '@/models/articles/travel-article-comment.model';
+import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 
 /* -------------------------------------------------------------------------- */
 /*                               Populate config                               */
@@ -43,7 +44,7 @@ interface LeanAuthor {
     avatar?: PopulatedAssetLean;
 }
 
-type LeanComment = Omit<ITravelComment, 'author'> & {
+type LeanComment = Omit<ITravelArticleComment, 'author'> & {
     author: LeanAuthor;
 };
 
@@ -51,12 +52,6 @@ type LeanComment = Omit<ITravelComment, 'author'> & {
 /*                               Helper functions                               */
 /* -------------------------------------------------------------------------- */
 
-function validateAndParseCommentId(commentId: string): Types.ObjectId {
-    if (!Types.ObjectId.isValid(commentId)) {
-        throw new ApiError('Invalid comment ID format', 400);
-    }
-    return new Types.ObjectId(commentId);
-}
 
 function validateStatusUpdatePayload(
     payload: UpdateCommentStatusPayloadDTO
@@ -102,18 +97,18 @@ function mapCommentToDTO(comment: LeanComment): CommentDetailDTO {
 
 export default async function ArticleCmntPatchHandler(
     request: NextRequest,
-    { params }: { params: { commentId: string } }
+    { params }: { params: Promise<{ commentId: string }> }
 ): Promise<HandlerResult<UpdateCommentStatusResponseDTO>> {
 
     const payload: UpdateCommentStatusPayloadDTO = await request.json();
     validateStatusUpdatePayload(payload);
 
-    const commentObjectId = validateAndParseCommentId(params.commentId);
+    const commentObjectId = resolveMongoId((await params).commentId);
     await ConnectDB();
 
     return withTransaction(async (session) => {
 
-        const comment = await TravelCommentModel
+        const comment = await TravelArticleCommentModel
             .findById(commentObjectId)
             .populate(AUTHOR_WITH_AVATAR_POPULATE)
             .session(session);
@@ -136,7 +131,7 @@ export default async function ArticleCmntPatchHandler(
             await comment.reject(payload.reason!);
         }
 
-        const updatedComment = await TravelCommentModel
+        const updatedComment = await TravelArticleCommentModel
             .findById(comment._id)
             .populate(AUTHOR_WITH_AVATAR_POPULATE)
             .session(session)
@@ -146,7 +141,7 @@ export default async function ArticleCmntPatchHandler(
             throw new ApiError('Failed to load updated comment', 500);
         }
 
-        const typedComment = updatedComment as LeanComment;
+        const typedComment = updatedComment as unknown as LeanComment;
 
         return {
             status: 200,

@@ -36,7 +36,7 @@ import { ARTICLE_TYPE, ARTICLE_STATUS, ArticleStatus } from '@/constants/article
 import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 import { useState } from 'react';
 import { TOUR_CATEGORIES } from '@/constants/tour.const';
-import { DEFAULT_TOUR_ARTICLE_1 } from '@/data/base-tour-articles';
+import { DEFAULT_TOUR_ARTICLE } from '@/data/base-tour-articles';
 
 interface TabConfig {
     value: string;
@@ -45,7 +45,7 @@ interface TabConfig {
     description: string;
 }
 
-const initialValues: CreateArticleFormValues = DEFAULT_TOUR_ARTICLE_1;
+const initialValues: CreateArticleFormValues = DEFAULT_TOUR_ARTICLE;
 
 export function ArticleForm() {
     const router = useRouter();

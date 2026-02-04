@@ -16,12 +16,12 @@ import mongoose, { ClientSession, PipelineStage, Types } from 'mongoose';
 import ConnectDB from '@/config/db';
 import { UserRole } from '@/constants/user.const';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
-import { TravelCommentModel } from '@/models/articles/travel-article-comment.model';
 import { ApiError } from '@/lib/helpers/withErrorHandler';
 import { getCollectionName } from '@/lib/helpers/get-collection-name';
 import UserModel from '@/models/user.model';
 import AssetModel from '@/models/assets/asset.model';
 import AssetFileModel from '@/models/assets/asset-file.model';
+import TravelArticleCommentModel from "@/models/articles/travel-article-comment.model";
 
 /**
  * Normalized query parameters for root comments
@@ -268,49 +268,8 @@ function buildRootCommentPipeline(
         {
             $lookup: {
                 from: getCollectionName(UserModel),
-                let: { authorId: '$author' },
-                pipeline: [
-                    {
-                        $match: {
-                            $expr: { $eq: ['$_id', '$$authorId'] }
-                        }
-                    },
-                    {
-                        $lookup: {
-                            from: getCollectionName(AssetModel),
-                            localField: 'avatar',
-                            foreignField: '_id',
-                            as: 'avatarAsset'
-                        }
-                    },
-                    {
-                        $unwind: {
-                            path: '$avatarAsset',
-                            preserveNullAndEmptyArrays: true
-                        }
-                    },
-                    {
-                        $lookup: {
-                            from: getCollectionName(AssetFileModel),
-                            localField: 'avatarAsset.file',
-                            foreignField: '_id',
-                            as: 'avatarFile'
-                        }
-                    },
-                    {
-                        $unwind: {
-                            path: '$avatarFile',
-                            preserveNullAndEmptyArrays: true
-                        }
-                    },
-                    {
-                        $project: {
-                            name: 1,
-                            role: 1,
-                            avatarUrl: '$avatarFile.publicUrl'
-                        }
-                    }
-                ],
+                localField: 'author',
+                foreignField: '_id',
                 as: 'authorDetails'
             }
         },
@@ -320,6 +279,48 @@ function buildRootCommentPipeline(
                 preserveNullAndEmptyArrays: true
             }
         },
+        // Lookup avatar asset
+        {
+            $lookup: {
+                from: getCollectionName(AssetModel),
+                localField: 'authorDetails.avatar',
+                foreignField: '_id',
+                as: 'avatarAsset'
+            }
+        },
+        {
+            $unwind: {
+                path: '$avatarAsset',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        // Lookup avatar file
+        {
+            $lookup: {
+                from: getCollectionName(AssetFileModel),
+                localField: 'avatarAsset.file',
+                foreignField: '_id',
+                as: 'avatarFile'
+            }
+        },
+        {
+            $unwind: {
+                path: '$avatarFile',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        // Final project
+        {
+            $addFields: {
+                author: {
+                    _id: '$authorDetails._id',
+                    name: '$authorDetails.name',
+                    role: '$authorDetails.role',
+                    avatarUrl: { $ifNull: ['$avatarFile.publicUrl', null] }
+                }
+            }
+        },
+
 
         // Apply author name filter if specified
         ...(query.filters.authorName && query.filters.authorName.trim() ? [{
@@ -362,14 +363,10 @@ function buildRootCommentPipeline(
                 createdAt: 1,
                 updatedAt: 1,
                 replyCount: 1,
-                author: {
-                    id: '$authorDetails._id',
-                    name: '$authorDetails.name',
-                    role: '$authorDetails.role',
-                    avatarUrl: '$authorDetails.avatarUrl'
-                }
+                author: 1
             }
         }
+
     ];
 
     return pipeline;
@@ -379,15 +376,17 @@ function buildRootCommentPipeline(
  * Transform aggregated comment to CommentTreeNodeDTO
  */
 function transformToCommentNode(comment: AggregatedComment): CommentTreeNodeDTO {
+    const author = comment.author || { _id: null, name: 'Unknown Author', role: 'support', avatarUrl: null };
+
     return {
         id: comment._id.toString(),
         articleId: comment.articleId.toString(),
         parentId: comment.parentId?.toString() || null,
         author: {
-            id: comment.author._id.toString(),
-            name: comment.author.name,
-            avatarUrl: comment.author.avatarUrl || null,
-            role: comment.author.role as UserRole
+            id: author._id?.toString() || '',
+            name: author.name,
+            avatarUrl: author.avatarUrl || null,
+            role: author.role as UserRole
         },
         content: comment.content,
         likes: comment.likes,
@@ -395,7 +394,7 @@ function transformToCommentNode(comment: AggregatedComment): CommentTreeNodeDTO 
         replyCount: comment.replyCount || 0,
         createdAt: comment.createdAt.toISOString(),
         updatedAt: comment.updatedAt.toISOString(),
-        children: [] // Can be populated later if needed
+        children: []
     };
 }
 
@@ -413,7 +412,7 @@ async function fetchRootComments(
 }> {
     const pipeline = buildRootCommentPipeline(articleId, query);
 
-    const results = await TravelCommentModel.aggregate<AggregatedComment>(pipeline)
+    const results = await TravelArticleCommentModel.aggregate<AggregatedComment>(pipeline)
         .session(session || null)
         .option({ allowDiskUse: true });
 
@@ -465,7 +464,7 @@ function generateResponse(
  * GET /api/support/article-comments/v1/[articleId]
  * Fetch root comments for an article
  */
-export default async function ArticleRootGetHandler(
+async function ArticleRootGetHandler(
     request: NextRequest,
     { params }: { params: Promise<{ articleId: string }> }) {
 

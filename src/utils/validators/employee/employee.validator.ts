@@ -23,7 +23,7 @@ export const emergencyContactValidationSchema: yup.ObjectSchema<EmergencyContact
         .string()
         .trim()
         .min(3, "Employee must be at least 3 characters")
-        .matches(/^[A-Za-z]+(?: [A-Za-z]+)*$/, "Name must contain only letters A to Z and single spaces")
+        .matches(/^[A-Za-z]+\.?(?: [A-Za-z]+\.?)*$/, "Name must contain only letters, dots, and single spaces")
         .required("Emergency contact name is required"),
 
     phone: yup
@@ -80,7 +80,7 @@ export const createEmployeeValidationSchema = yup.object({
     name: yup.string()
         .min(3, "Employee must be at least 3 character")
         .trim()
-        .matches(/^[A-Za-z]+(?: [A-Za-z]+)*$/, "Name must contain only letters A to Z and single spaces")
+        .matches(/^[A-Za-z]+\.?(?: [A-Za-z]+\.?)*$/, "Name must contain only letters, dots, and single spaces")
         .required("Employee name is required"),
     password: yup
         .string()

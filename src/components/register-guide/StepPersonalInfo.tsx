@@ -181,7 +181,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Street Address */}
-              <motion.div
+              {/* <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
@@ -228,7 +228,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
                     </motion.p>
                   )}
                 </AnimatePresence>
-              </motion.div>
+              </motion.div> */}
 
               {/* Location Grid */}
               <div className="space-y-3">
@@ -309,7 +309,9 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
                     type="text"
                     placeholder="Country"
                     value={formData.personalInfo.country}
-                    onChange={(e) => handleInputChange('country', e.target.value)}
+                    // onChange={(e) => handleInputChange('country', e.target.value)}
+                    readOnly
+                    disabled
                     className={cn(
                       "h-10 pl-4 pr-10 transition-all duration-300",
                       getFieldError('country') && "border-red-500 bg-red-50",
