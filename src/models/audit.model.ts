@@ -56,10 +56,10 @@ export interface ICreateAuditParams {
 /** Mongoose Schema */
 const AuditSchema = new Schema<IAuditDoc>(
     {
-        targetModel: { type: String, required: true, index: true },
-        target: { type: Schema.Types.ObjectId, required: true, index: true },
+        targetModel: { type: String, required: true },
+        target: { type: Schema.Types.ObjectId, required: true },
 
-        actor: { type: Schema.Types.ObjectId, refPath: "actorModel" },
+        actor: { type: Schema.Types.ObjectId, ref: "User" },
         actorModel: { type: String },
 
         action: {

@@ -44,16 +44,6 @@ import { AuditDateFilter, AuditLog } from "@/types/current-user.types";
 import { useCurrentUserStore } from "@/store/current-user.store";
 import { AUDIT_ACTION, AuditAction } from "@/constants/audit-action.const";
 
-const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.03,
-        },
-    },
-};
-
 const itemVariants: Variants = {
     hidden: { opacity: 0, y: 8 },
     visible: {
@@ -265,7 +255,7 @@ export default function AuditLogsSection() {
             collapsible
             className="w-full"
             onValueChange={handleAccordionChange}
-            defaultValue="audits"
+            defaultValue="" // Changed from "audits" to "" to initially close
         >
             <AccordionItem value="audits" className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
                 <AccordionTrigger className="hover:no-underline px-6 py-5 hover:bg-slate-50 transition-colors data-[state=open]:border-b data-[state=open]:border-slate-200">
@@ -402,9 +392,16 @@ export default function AuditLogsSection() {
                                                     <PopoverContent className="w-auto p-0" align="start">
                                                         <Calendar
                                                             mode="single"
-                                                            selected={date}
-                                                            onSelect={setDate}
+                                                            selected={startDate}
+                                                            onSelect={(date) => {
+                                                                if (!date) return; // <-- handle undefined
+                                                                if (endDate && date > endDate) {
+                                                                    setEndDate(date); // auto-adjust endDate if startDate goes beyond it
+                                                                }
+                                                                setStartDate(date);
+                                                            }}
                                                             initialFocus
+                                                            disabled={(date) => endDate ? date > endDate : false} // can't pick a start after end
                                                         />
                                                     </PopoverContent>
                                                 </Popover>
@@ -430,11 +427,20 @@ export default function AuditLogsSection() {
                                                         </Button>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-auto p-0" align="start">
+                                                        {/* Start Date */}
                                                         <Calendar
                                                             mode="single"
-                                                            selected={startDate}
-                                                            onSelect={setStartDate}
+                                                            selected={startDate} //  highlight startDate
+                                                            onSelect={(date) => {
+                                                                if (!date) return;
+                                                                // auto-adjust endDate if startDate goes beyond it
+                                                                if (endDate && date > endDate) {
+                                                                    setEndDate(date);
+                                                                }
+                                                                setStartDate(date); //  set startDate
+                                                            }}
                                                             initialFocus
+                                                            disabled={(date) => endDate ? date > endDate : false} // can't pick start after end
                                                         />
                                                     </PopoverContent>
                                                 </Popover>
@@ -540,69 +546,65 @@ export default function AuditLogsSection() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    <motion.tbody
-                                        variants={containerVariants}
-                                        initial="hidden"
-                                        animate="visible"
-                                    >
-                                        {audits.map((log: AuditLog) => (
-                                            <motion.tr
-                                                key={log._id}
-                                                variants={itemVariants}
-                                                className="group hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
-                                            >
-                                                <TableCell className="py-3.5">
-                                                    <Badge
-                                                        className={cn(
-                                                            "font-medium transition-all duration-200 flex items-center gap-1.5 w-fit text-xs",
-                                                            getActionColor(log.action)
-                                                        )}
-                                                    >
-                                                        {getActionIcon(log.action)}
-                                                        {log.action}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="py-3.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="h-8 w-8 rounded bg-slate-100 flex items-center justify-center border border-slate-200">
-                                                            <Database className="h-3.5 w-3.5 text-slate-600" />
-                                                        </div>
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <span className="text-xs font-medium text-slate-900">{log.targetModel}</span>
-                                                            <span className="text-xs text-slate-500 font-mono">{log.target}</span>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="py-3.5">
-                                                    {log.changes ? (
-                                                        <div className="text-xs space-y-1">
-                                                            {Object.keys(log.changes.before || {}).length > 0 && (
-                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
-                                                                    <Activity className="h-3 w-3" />
-                                                                    Modified
-                                                                </span>
-                                                            )}
-                                                            {log.note && (
-                                                                <span className="block text-slate-600 mt-1">
-                                                                    {log.note}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-xs text-slate-500">{log.note || "—"}</span>
+                                    audits.map((log: AuditLog) => (
+                                        <motion.tr
+                                            key={log._id}
+                                            variants={itemVariants}
+                                            initial="hidden"
+                                            animate="visible"
+                                            className="group hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
+                                        >
+                                            <TableCell className="py-3.5">
+                                                <Badge
+                                                    className={cn(
+                                                        "font-medium transition-all duration-200 flex items-center gap-1.5 w-fit text-xs",
+                                                        getActionColor(log.action)
                                                     )}
-                                                </TableCell>
-                                                <TableCell className="py-3.5">
-                                                    <code className="text-xs px-2 py-1 rounded bg-slate-100 font-mono text-slate-700 border border-slate-200">
-                                                        {log.ip || "—"}
-                                                    </code>
-                                                </TableCell>
-                                                <TableCell className="text-xs text-slate-600 py-3.5 font-mono">
-                                                    {format(new Date(log.createdAt), "MMM d, yyyy HH:mm")}
-                                                </TableCell>
-                                            </motion.tr>
-                                        ))}
-                                    </motion.tbody>
+                                                >
+                                                    {getActionIcon(log.action)}
+                                                    {log.action}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="py-3.5">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-8 w-8 rounded bg-slate-100 flex items-center justify-center border border-slate-200">
+                                                        <Database className="h-3.5 w-3.5 text-slate-600" />
+                                                    </div>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-xs font-medium text-slate-900">{log.targetModel}</span>
+                                                        <span className="text-xs text-slate-500 font-mono">{log.target}</span>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="py-3.5">
+                                                {log.changes ? (
+                                                    <div className="text-xs space-y-1">
+                                                        {Object.keys(log.changes.before || {}).length > 0 && (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                                                                <Activity className="h-3 w-3" />
+                                                                Modified
+                                                            </span>
+                                                        )}
+                                                        {log.note && (
+                                                            <span className="block text-slate-600 mt-1">
+                                                                {log.note}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-slate-500">{log.note || "—"}</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="py-3.5">
+                                                <code className="text-xs px-2 py-1 rounded bg-slate-100 font-mono text-slate-700 border border-slate-200">
+                                                    {log.ip || "—"}
+                                                </code>
+                                            </TableCell>
+                                            <TableCell className="text-xs text-slate-600 py-3.5 font-mono">
+                                                {format(new Date(log.createdAt), "MMM d, yyyy HH:mm")}
+                                            </TableCell>
+                                        </motion.tr>
+                                    ))
                                 )}
 
                                 {auditsMeta.loading && audits.length > 0 && (
