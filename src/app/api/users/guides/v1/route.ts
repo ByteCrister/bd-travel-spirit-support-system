@@ -1,30 +1,95 @@
 // app/api/users/v1/guides/route.ts
+
 import { NextRequest } from "next/server";
-import mongoose, { FilterQuery, Types } from "mongoose";
+import { FilterQuery, Types, PipelineStage } from "mongoose";
 import ConnectDB from "@/config/db";
 import GuideModel, { IGuide } from "@/models/guide/guide.model";
-import { GUIDE_DOCUMENT_TYPE, GUIDE_STATUS, GuideDocumentType } from "@/constants/guide.const";
+import { GUIDE_DOCUMENT_TYPE, GUIDE_STATUS, GuideDocumentCategory, GuideDocumentType } from "@/constants/guide.const";
 import type { PendingGuideDTO } from "@/types/pendingGuide.types";
 import { withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
-import { AssetType } from "@/constants/asset.const";
 import { PaginatedResponse } from "@/store/guide/guide.store";
-import AssetModel, { IAsset } from "@/models/assets/asset.model";
-import { PopulatedAssetFileLean } from "@/types/populated-asset.types";
+import { sanitizeSearch } from "@/lib/helpers/sanitize-search";
+import UserModel from "@/models/user.model";
+import { AssetType } from "@/constants/asset.const";
+import { getCollectionName } from "@/lib/helpers/get-collection-name";
+import AssetModel from "@/models/assets/asset.model";
+import AssetFileModel from "@/models/assets/asset-file.model";
 
-/* ------------------------------------------------------------------ */
-/* Types (aligned with frontend store)                                 */
-/* ------------------------------------------------------------------ */
+export interface AggregatedAssetFile {
+    _id: Types.ObjectId;
+    publicUrl?: string | null;
+}
 
-type LeanGuideWithOwnerEmail = Omit<IGuide, "owner"> & {
-    owner?: {
-        phone?: string;
-        user?: {
-            email?: string;
-            name?: string;
-        };
-    };
-};
+export interface AggregatedAsset {
+    _id: Types.ObjectId;
+    title?: string | null;
+    assetType?: AssetType;
+    file?: Types.ObjectId;
+}
+
+export interface AggregatedDocument {
+    category: string;
+    AssetUrl: Types.ObjectId;
+    assetType?: GuideDocumentType;
+    uploadedAt?: Date | null;
+}
+
+export interface AggregatedAddress {
+    street?: string;
+    city?: string;
+    division?: string;
+    country?: string;
+    zip?: string;
+}
+
+export interface AggregatedSocial {
+    platform: string;
+    url: string;
+}
+
+export interface AggregatedSuspension {
+    until?: Date | null;
+    reason?: string | null;
+}
+
+/**
+ * This represents ONE guide AFTER aggregation
+ */
+export interface AggregatedGuide {
+    _id: Types.ObjectId;
+
+    // computed fields from $project
+    name: string;
+    email: string;
+    phone?: string;
+
+    avatar?: string | null; // logoFile.publicUrl
+
+    companyName: string;
+    bio?: string | null;
+    address?: AggregatedAddress | null;
+    social?: AggregatedSocial[] | null;
+
+    documents: Array<{
+        category: GuideDocumentCategory;
+        base64Content?: AggregatedAssetFile | null; // matched file object
+        fileType?: AssetType;
+        fileName?: string | null; // matched asset object
+        uploadedAt?: Date | null;
+    }>;
+
+    status: GUIDE_STATUS;
+    reviewComment?: string | null;
+    reviewer?: Types.ObjectId | null;
+
+    suspension?: AggregatedSuspension | null;
+
+    appliedAt: Date;
+    reviewedAt?: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
 
 /* ------------------------------------------------------------------ */
 /* Utils                                                              */
@@ -35,87 +100,16 @@ const int = (v: string | null, d: number) => {
     return Number.isInteger(n) && n > 0 ? n : d;
 };
 
-const SORT_BY_MAP: Record<string, mongoose.SortOrder | string> = {
+const SORT_BY_MAP: Record<string, string> = {
+    name: "name",
+    email: "email",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
     reviewedAt: "reviewedAt",
     status: "status",
     companyName: "companyName",
-    name: "owner.name",
     appliedAt: "createdAt",
-    email: "owner.user.email",
 };
-
-type assetUrlMapType = Map<
-    string,
-    {
-        publicUrl?: string;
-        assetType?: AssetType;
-        title?: string;
-    }
->;
-
-
-/* ------------------------------------------------------------------ */
-/* DTO mapper (NO N+1 queries)                                         */
-/* ------------------------------------------------------------------ */
-
-function mapGuideToDTO(
-    guide: LeanGuideWithOwnerEmail,
-    assetUrlMap: assetUrlMapType
-): PendingGuideDTO {
-    return {
-        _id: String(guide._id),
-
-        name: guide.owner?.user?.name ?? guide.companyName,
-        email: guide.owner?.user?.email ?? 'Undefined', // not stored on Guide
-        phone: guide.owner?.phone,
-
-        avatar: guide.logoUrl
-            ? assetUrlMap.get(String(guide.logoUrl))?.publicUrl
-            : undefined,
-
-        companyName: guide.companyName,
-        bio: guide.bio,
-
-        address: guide.address
-            ? {
-                street: guide.address.street,
-                city: guide.address.city,
-                state: guide.address.division,
-                country: guide.address.country,
-                zip: guide.address.zip,
-            }
-            : undefined,
-
-        social: guide.social?.length
-            ? guide.social.map(s => `${s.platform}:${s.url}`).join(",")
-            : undefined,
-
-        documents: guide.documents.map(d => {
-            const asset = assetUrlMap.get(String(d.AssetUrl));
-            return {
-                category: d.category,
-                base64Content: asset?.publicUrl ?? "",
-                fileType: (asset?.assetType as GuideDocumentType) ?? GUIDE_DOCUMENT_TYPE.IMAGE,
-                fileName: asset?.title,
-                uploadedAt: d.uploadedAt?.toISOString() ?? "",
-            };
-        }),
-
-        status: guide.status,
-        reviewComment: guide.reviewComment,
-        reviewer: guide.reviewer?.toString(),
-
-        suspendedUntil: guide.suspension?.until.toISOString(),
-        suspensionReason: guide.suspension?.reason??"",
-
-        appliedAt: guide.createdAt.toISOString(),
-        reviewedAt: guide.reviewedAt?.toISOString(),
-        createdAt: guide.createdAt.toISOString(),
-        updatedAt: guide.updatedAt.toISOString(),
-    };
-}
 
 /* ------------------------------------------------------------------ */
 /* GET Handler                                                        */
@@ -131,7 +125,9 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     const sortBy = searchParams.get("sortBy") ?? "createdAt";
     const sortDir = searchParams.get("sortDir") === "asc" ? 1 : -1;
     const status = searchParams.get("status");
-    const search = decodeURIComponent(searchParams.get("search")?.trim() ?? "");
+
+    const rawSearch = decodeURIComponent(searchParams.get("search") ?? "");
+    const search = sanitizeSearch(rawSearch);
 
     const filter: FilterQuery<IGuide> = {};
 
@@ -139,73 +135,250 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
         filter.status = status;
     }
 
-    if (search) {
-        filter.$or = [
-            { companyName: { $regex: search, $options: "i" } },
-            { "owner.user.name": { $regex: search, $options: "i" } },
-            { "owner.user.email": { $regex: search, $options: "i" } },
-        ];
-    }
-
-    const sortField = SORT_BY_MAP[sortBy] ?? "createdAt";
-    const sort = { [sortField]: sortDir } as Record<string, 1 | -1>;
-
     return withTransaction(async (session) => {
+        let userIds: Types.ObjectId[] = [];
+
+        if (search) {
+            const users = await UserModel.find(
+                {
+                    $or: [
+                        { name: { $regex: search, $options: "i" } },
+                        { email: { $regex: search, $options: "i" } },
+                    ],
+                },
+                { _id: 1 }
+            )
+                .lean()
+                .session(session);
+
+            userIds = users.map((u) => u._id as Types.ObjectId);
+
+            filter.$or = [
+                { companyName: { $regex: search, $options: "i" } },
+                ...(userIds.length ? [{ "owner.user": { $in: userIds } }] : []),
+            ];
+        }
+
+        const sortField = SORT_BY_MAP[sortBy] ?? "createdAt";
+
         const skip = (page - 1) * pageSize;
+
+        const pipeline: PipelineStage[] = [
+            { $match: filter },
+
+            {
+                $lookup: {
+                    from: getCollectionName(UserModel),
+                    localField: "owner.user",
+                    foreignField: "_id",
+                    as: "ownerUser",
+                },
+            },
+
+            {
+                $lookup: {
+                    from: getCollectionName(AssetModel),
+                    localField: "logoUrl",
+                    foreignField: "_id",
+                    as: "logoAsset",
+                },
+            },
+
+            {
+                $lookup: {
+                    from: getCollectionName(AssetModel),
+                    localField: "documents.AssetUrl",
+                    foreignField: "_id",
+                    as: "documentAssets",
+                },
+            },
+
+            {
+                $lookup: {
+                    from: getCollectionName(AssetFileModel),
+                    localField: "logoAsset.file",
+                    foreignField: "_id",
+                    as: "logoFile",
+                },
+            },
+
+            {
+                $lookup: {
+                    from: getCollectionName(AssetFileModel),
+                    localField: "documentAssets.file",
+                    foreignField: "_id",
+                    as: "documentFiles",
+                },
+            },
+
+            {
+                $addFields: {
+                    ownerUser: { $arrayElemAt: ["$ownerUser", 0] },
+                    logoAsset: { $arrayElemAt: ["$logoAsset", 0] },
+                    logoFile: { $arrayElemAt: ["$logoFile", 0] },
+                    name: {
+                        $ifNull: ["$ownerUser.name", "$companyName"],
+                    },
+                    email: {
+                        $ifNull: ["$ownerUser.email", "Undefined"],
+                    },
+                },
+            },
+
+            {
+                $addFields: {
+                    name: {
+                        $ifNull: ["$ownerUser.name", "$companyName"],
+                    },
+                    email: {
+                        $ifNull: ["$ownerUser.email", "Undefined"],
+                    },
+                },
+            },
+
+            {
+                $project: {
+                    _id: 1,
+                    name: {
+                        $ifNull: ["$ownerUser.name", "$companyName"],
+                    },
+                    email: {
+                        $ifNull: ["$ownerUser.email", "Undefined"],
+                    },
+                    phone: "$owner.phone",
+                    avatar: "$logoFile.publicUrl",
+                    companyName: 1,
+                    bio: 1,
+                    address: 1,
+                    social: 1,
+                    documents: {
+                        $map: {
+                            input: "$documents",
+                            as: "doc",
+                            in: {
+                                category: "$$doc.category",
+
+                                base64Content: {
+                                    $let: {
+                                        vars: {
+                                            matchedAsset: {
+                                                $arrayElemAt: [
+                                                    {
+                                                        $filter: {
+                                                            input: "$documentAssets",
+                                                            as: "a",
+                                                            cond: { $eq: ["$$a._id", "$$doc.AssetUrl"] },
+                                                        },
+                                                    },
+                                                    0,
+                                                ],
+                                            },
+                                        },
+                                        in: {
+                                            $arrayElemAt: [
+                                                {
+                                                    $filter: {
+                                                        input: "$documentFiles",
+                                                        as: "f",
+                                                        cond: {
+                                                            $eq: ["$$f._id", "$$matchedAsset.file"],
+                                                        },
+                                                    },
+                                                },
+                                                0,
+                                            ],
+                                        },
+                                    },
+                                },
+
+
+                                fileType: "$$doc.assetType",
+
+                                fileName: {
+                                    $arrayElemAt: [
+                                        {
+                                            $map: {
+                                                input: {
+                                                    $filter: {
+                                                        input: "$documentAssets",
+                                                        as: "a",
+                                                        cond: { $eq: ["$$a._id", "$$doc.AssetUrl"] },
+                                                    },
+                                                },
+                                                as: "asset",
+                                                in: "$$asset.title",   //  only title now
+                                            },
+                                        },
+                                        0,
+                                    ],
+                                },
+
+                                uploadedAt: "$$doc.uploadedAt",
+                            },
+                        },
+                    },
+
+                    status: 1,
+                    reviewComment: 1,
+                    reviewer: 1,
+                    "suspension.until": 1,
+                    "suspension.reason": 1,
+                    appliedAt: "$createdAt",
+                    reviewedAt: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                },
+            },
+
+            { $sort: { [sortField]: sortDir } },
+            { $skip: skip },
+            { $limit: pageSize },
+        ];
 
         const [total, guides] = await Promise.all([
             GuideModel.countDocuments(filter).session(session),
-            GuideModel.find(filter)
-                .sort(sort)
-                .skip(skip)
-                .limit(pageSize)
-                .populate({
-                    path: "owner.user",
-                    select: "email name",
-                })
-                .session(session)
-                .lean<LeanGuideWithOwnerEmail[]>(),
+            GuideModel.aggregate<AggregatedGuide>(pipeline).session(session),
         ]);
 
-        /* ---------------------------------------------------------- */
-        /* Resolve ALL assets in one query                            */
-        /* ---------------------------------------------------------- */
 
-        const assetIds = new Set<string>();
+        const data: PendingGuideDTO[] = guides.map((g) => ({
+            _id: String(g._id),
+            name: g.name,
+            email: g.email,
+            phone: g.phone,
+            avatar: g.avatar ?? undefined,
+            companyName: g.companyName,
+            bio: g.bio ?? '-',
+            address: g.address
+                ? {
+                    street: g.address.street,
+                    city: g.address.city,
+                    state: g.address.division,
+                    country: g.address.country,
+                    zip: g.address.zip,
+                }
+                : undefined,
+            social: g.social?.length
+                ? g.social.map((s) => `${s.platform}:${s.url}`).join(",")
+                : undefined,
+            documents: g.documents.map((d) => ({
+                category: d.category,
+                base64Content: d.base64Content?.publicUrl ?? "",
+                fileType: d.fileType as GuideDocumentType ?? GUIDE_DOCUMENT_TYPE.IMAGE,
+                fileName: d.fileName ?? '-',
+                uploadedAt: d.uploadedAt?.toISOString() ?? "",
+            })),
+            status: g.status,
+            reviewComment: g.reviewComment ?? "",
+            reviewer: g.reviewer ? String(g.reviewer) : undefined,
+            suspendedUntil: g.suspension?.until?.toISOString(),
+            suspensionReason: g.suspension?.reason ?? "",
+            appliedAt: g.appliedAt.toISOString(),
+            reviewedAt: g.reviewedAt?.toISOString(),
+            createdAt: g.createdAt.toISOString(),
+            updatedAt: g.updatedAt.toISOString(),
+        }));
 
-        for (const g of guides) {
-            if (g.logoUrl) assetIds.add(String(g.logoUrl));
-            g.documents.forEach(d => assetIds.add(String(d.AssetUrl)));
-        }
-
-        const rawAssets = assetIds.size
-            ? await AssetModel.find({
-                _id: { $in: [...assetIds].map(id => new Types.ObjectId(id)) },
-            })
-                .select({ file: 1, assetType: 1, title: 1 })
-                .populate({
-                    path: "file",
-                    select: "publicUrl",
-                })
-                .lean()
-            : [];
-
-        const assets = rawAssets as unknown as (Omit<IAsset, "file"> & { file?: PopulatedAssetFileLean })[]
-
-        const assetUrlMap = new Map(
-            assets.map(a => [
-                String(a._id),
-                {
-                    publicUrl: a.file?.publicUrl,
-                    assetType: a.assetType,
-                    title: a.title,
-                },
-            ])
-        );
-
-        const data = guides.map(g =>
-            mapGuideToDTO(g, assetUrlMap)
-        );
 
         return {
             data: {
@@ -216,8 +389,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
                 hasPrev: page > 1,
                 hasNext: skip + data.length < total,
             } satisfies PaginatedResponse<PendingGuideDTO>,
-
             status: 200,
-        }
+        };
     });
 });

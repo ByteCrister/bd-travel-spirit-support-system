@@ -96,7 +96,7 @@ async function handler(request: NextRequest): Promise<HandlerResult<UpdateNameRe
             // For support users, we need to fetch employee details
             // You'll need to import and use EmployeeModel here
             // This is a placeholder - adjust based on your actual Employee model
-            const dto = await buildEmployeeDTO(new Types.ObjectId(currentUserId), false, session)
+            const dto = await buildEmployeeDTO(new Types.ObjectId(currentUserId), session)
             if (!dto) {
                 throw new ApiError("Employee not found.", 404);
             }

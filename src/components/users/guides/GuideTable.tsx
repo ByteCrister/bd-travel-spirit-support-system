@@ -5,7 +5,7 @@ import { useState } from "react";
 import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/pendingGuide.types";
 import { GUIDE_STATUS } from "@/constants/guide.const";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { RejectReasonModal, ReviewCommentModal } from "./GuideModals";
 import { motion, AnimatePresence } from "framer-motion";
@@ -240,6 +240,10 @@ export function GuideTable({
                                         >
                                             <TableCell className="py-3">
                                                 <Avatar className="h-8 w-8 ring-2 ring-gray-100 group-hover:ring-blue-100 transition-all">
+                                                    <AvatarImage
+                                                        src={g.avatar}
+                                                        alt={g.name || "Guide Avatar"}
+                                                    />
                                                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs font-bold">
                                                         {g.name?.substring(0, 2)?.toUpperCase() || "GU"}
                                                     </AvatarFallback>

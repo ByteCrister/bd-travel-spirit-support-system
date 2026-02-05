@@ -34,7 +34,7 @@ async function handler(): Promise<{ data: IEmployeeInfo }> {
         }
 
         // Now use the employee's ID (not the user's ID)
-        const dto = await buildEmployeeDTO(employee._id as Types.ObjectId, false, session);
+        const dto = await buildEmployeeDTO(employee._id as Types.ObjectId, session);
         if (!dto) {
             throw new ApiError("Employee not found.", 404);
         }

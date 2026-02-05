@@ -61,7 +61,7 @@ export const GET = withErrorHandler(async (req: NextRequest, { params }: Params)
 
     await ConnectDB()
 
-    const employeeDto = await buildEmployeeDTO(new Types.ObjectId(decodedId), true);
+    const employeeDto = await buildEmployeeDTO(new Types.ObjectId(decodedId));
 
     if (!employeeDto) {
         throw new ApiError("Employee not found", 404);
@@ -200,7 +200,7 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
         });
 
         if (!updated) throw new ApiError("Employee update failed!", 400);
-        const dto = await buildEmployeeDTO(updated._id as Types.ObjectId, false, session);
+        const dto = await buildEmployeeDTO(updated._id as Types.ObjectId, session);
 
         return dto;
     });

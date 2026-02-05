@@ -43,7 +43,7 @@ export const PATCH = withErrorHandler(async (
             throw new ApiError("Employee not found or already active", 404);
         }
 
-        const employeeDTO = await buildEmployeeDTO(objectId, false, session);
+        const employeeDTO = await buildEmployeeDTO(objectId, session);
 
         if (!employeeDTO) {
             throw new ApiError("Failed to build employee DTO", 500);

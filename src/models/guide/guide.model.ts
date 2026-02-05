@@ -724,6 +724,9 @@ GuideSchema.index({ companyName: 1 });
 // 2. COMPOUND INDEXES (Query Optimization)
 // ────────────────────────────────────────────────────────────────────────────
 
+GuideSchema.index({ createdAt: -1 });
+GuideSchema.index({ updatedAt: -1 });
+
 // Active guides lookup
 GuideSchema.index({
     status: 1,

@@ -7,6 +7,7 @@ import AssetFileModel from '@/models/assets/asset-file.model';
 import { PopulatedAssetLean } from '@/types/populated-asset.types';
 import AssetModel from "@/models/assets/asset.model";
 import { TOUR_STATUS } from "@/constants/tour.const";
+import { sanitizeSearch } from "@/lib/helpers/sanitize-search";
 
 type ObjectId = Types.ObjectId;
 
@@ -117,7 +118,7 @@ const GetTourListHandler = async (req: NextRequest) => {
     boolFilter("transportIncluded");
 
     /* ---------------- Search ---------------- */
-    const search = searchParams.get("search");
+    const search = sanitizeSearch(searchParams.get("search"));
     if (search) {
         filter.$or = [
             { title: { $regex: search, $options: "i" } },

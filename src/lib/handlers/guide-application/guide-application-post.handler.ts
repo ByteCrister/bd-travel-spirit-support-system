@@ -225,10 +225,22 @@ export default async function GuideAppPostHandler(req: NextRequest) {
             uploadedAt: new Date(),
         }));
 
-        const logo =
+        const professionalPhotoAssetId =
             uploadedAssets.find(
                 (a) => a.category === GUIDE_DOCUMENT_CATEGORY.PROFESSIONAL_PHOTO
             )?.assetId ?? undefined;
+
+        /* ---------------------------------------------------------------------- */
+        /* STEP 4.1: UPDATE USER AVATAR IF PROFESSIONAL PHOTO EXISTS              */
+        /* ---------------------------------------------------------------------- */
+
+        if (professionalPhotoAssetId) {
+            await UserModel.findByIdAndUpdate(
+                user._id,
+                { avatar: professionalPhotoAssetId },
+                { session }
+            );
+        }
 
         /* ---------------------------------------------------------------------- */
         /* STEP 5: BUILD GUIDE PAYLOAD                                              */
@@ -237,7 +249,7 @@ export default async function GuideAppPostHandler(req: NextRequest) {
         const guidePayload = {
             companyName: form.companyDetails.companyName,
             bio: form.companyDetails.bio ?? "",
-            logoUrl: logo,
+            logoUrl: professionalPhotoAssetId,
             documents,
             owner: {
                 user: user._id,

@@ -18,6 +18,7 @@ import { getCollectionName } from '@/lib/helpers/get-collection-name';
 import AssetModel from '@/models/assets/asset.model';
 import AssetFileModel from '@/models/assets/asset-file.model';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
+import { sanitizeSearch } from '@/lib/helpers/sanitize-search';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -148,10 +149,10 @@ function buildMongooseQuery(query: EmployeesQuery) {
  */
 const CompanyEmployeeListGetHandler = async (req: NextRequest, { params }: { params: Promise<{ companyId: string; }> }) => {
     // Authenticate
-    
+
     const userId = await getUserIdFromSession();
     if (!userId) throw new ApiError('Unauthorized', 401);
-    
+
     const companyId = resolveMongoId((await params).companyId);
     if (!companyId) {
         throw new ApiError('Unauthorized company access', 403);
@@ -177,6 +178,11 @@ const CompanyEmployeeListGetHandler = async (req: NextRequest, { params }: { par
     }
     if (query.filters?.paymentStatuses && !Array.isArray(query.filters.paymentStatuses)) {
         query.filters.paymentStatuses = [query.filters.paymentStatuses];
+    }
+
+    // overwrite with safe value
+    if (query.filters) {
+        query.filters.search = sanitizeSearch(query.filters?.search);
     }
 
     // Connect to DB

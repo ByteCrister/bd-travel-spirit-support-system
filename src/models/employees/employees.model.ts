@@ -301,7 +301,7 @@ const EmployeeSchema = new Schema<IEmployee, IEmployeeModel, IEmployeeMethods>(
             type: String,
             enum: Object.values(EMPLOYMENT_TYPE),
         },
-        
+
         /* FINANCIAL */
         salary: { type: Number, required: true, min: 0 },
         currency: { type: String, required: true, uppercase: true },
@@ -375,24 +375,6 @@ const EmployeeSchema = new Schema<IEmployee, IEmployeeModel, IEmployeeMethods>(
 /* =========================================================
    PRE-FIND MIDDLEWARE TO EXCLUDE DELETED DOCUMENTS
 ========================================================= */
-
-// Apply to all find queries (find, findOne, findById, etc.)
-EmployeeSchema.pre(/^find/, function (
-    this: Query<unknown, IEmployee>,
-    next
-) {
-    const query = this.getQuery() as { deletedAt?: unknown };
-
-    // If deletedAt is explicitly specified, do nothing
-    if (query.deletedAt !== undefined) {
-        return next();
-    }
-
-    // Otherwise exclude soft-deleted docs
-    this.where({ deletedAt: null });
-
-    next();
-});
 
 EmployeeSchema.methods.isDeleted = function (): boolean {
     return Boolean(this.deletedAt);

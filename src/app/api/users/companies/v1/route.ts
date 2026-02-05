@@ -21,6 +21,9 @@ import { withErrorHandler } from '@/lib/helpers/withErrorHandler';
 import { getCollectionName } from '@/lib/helpers/get-collection-name';
 import UserModel from '@/models/user.model';
 import { ReviewModel } from '@/models/tours/review.model';
+import { sanitizeSearch } from '@/lib/helpers/sanitize-search';
+import AssetModel from '@/models/assets/asset.model';
+import AssetFileModel from '@/models/assets/asset-file.model';
 
 // -----------------------------
 // Aggregation Result Types
@@ -108,13 +111,12 @@ function buildAggregationPipeline(params: Required<CompanyQueryParams>) {
     const { search, sortBy, sortDir, page, limit } = params;
     const skip = (page - 1) * limit;
 
+    // 1️⃣ Match approved guides
     const matchStage: mongoose.PipelineStage = {
-        $match: {
-            status: GUIDE_STATUS.APPROVED,
-            deletedAt: null,
-        },
-    };    
+        $match: { status: GUIDE_STATUS.APPROVED, deletedAt: null },
+    };
 
+    // 2️⃣ Lookup owner user
     const userLookupStage: mongoose.PipelineStage = {
         $lookup: {
             from: getCollectionName(UserModel),
@@ -124,6 +126,72 @@ function buildAggregationPipeline(params: Required<CompanyQueryParams>) {
         },
     };
 
+    // 3️⃣ Unwind owner user
+    const unwindOwnerUserStage: mongoose.PipelineStage = {
+        $unwind: { path: '$ownerUser', preserveNullAndEmptyArrays: true },
+    };
+
+    // 4️⃣ Lookup avatar asset
+    const avatarAssetLookupStage: mongoose.PipelineStage = {
+        $lookup: {
+            from: getCollectionName(AssetModel),
+            localField: 'ownerUser.avatar',
+            foreignField: '_id',
+            as: 'ownerAvatarAsset',
+        },
+    };
+
+    // 5️⃣ Unwind avatar asset
+    const unwindAvatarAssetStage: mongoose.PipelineStage = {
+        $unwind: { path: '$ownerAvatarAsset', preserveNullAndEmptyArrays: true },
+    };
+
+    // 6️⃣ Lookup avatar file
+    const avatarFileLookupStage: mongoose.PipelineStage = {
+        $lookup: {
+            from: getCollectionName(AssetFileModel),
+            localField: 'ownerAvatarAsset.file',
+            foreignField: '_id',
+            as: 'ownerAvatarFile',
+        },
+    };
+
+    // 7️⃣ Unwind avatar file
+    const unwindAvatarFileStage: mongoose.PipelineStage = {
+        $unwind: { path: '$ownerAvatarFile', preserveNullAndEmptyArrays: true },
+    };
+
+    // 8️⃣ Lookup guide logo asset (fallback)
+    const guideLogoAssetLookupStage: mongoose.PipelineStage = {
+        $lookup: {
+            from: getCollectionName(AssetModel),
+            localField: 'logoUrl',
+            foreignField: '_id',
+            as: 'guideLogoAsset',
+        },
+    };
+
+    // 9️⃣ Unwind guide logo asset
+    const unwindGuideLogoAssetStage: mongoose.PipelineStage = {
+        $unwind: { path: '$guideLogoAsset', preserveNullAndEmptyArrays: true },
+    };
+
+    // 🔟 Lookup guide logo file
+    const guideLogoFileLookupStage: mongoose.PipelineStage = {
+        $lookup: {
+            from: getCollectionName(AssetFileModel),
+            localField: 'guideLogoAsset.file',
+            foreignField: '_id',
+            as: 'guideLogoFile',
+        },
+    };
+
+    // 1️⃣1️⃣ Unwind guide logo file
+    const unwindGuideLogoFileStage: mongoose.PipelineStage = {
+        $unwind: { path: '$guideLogoFile', preserveNullAndEmptyArrays: true },
+    };
+
+    // 1️⃣2️⃣ Lookup employees
     const employeeLookupStage: mongoose.PipelineStage = {
         $lookup: {
             from: getCollectionName(EmployeeModel),
@@ -136,6 +204,7 @@ function buildAggregationPipeline(params: Required<CompanyQueryParams>) {
         },
     };
 
+    // 1️⃣3️⃣ Lookup tours
     const tourLookupStage: mongoose.PipelineStage = {
         $lookup: {
             from: getCollectionName(TourModel),
@@ -148,6 +217,7 @@ function buildAggregationPipeline(params: Required<CompanyQueryParams>) {
         },
     };
 
+    // 1️⃣4️⃣ Lookup guide tours for reviews
     const reviewLookupStage: mongoose.PipelineStage = {
         $lookup: {
             from: getCollectionName(TourModel),
@@ -184,6 +254,20 @@ function buildAggregationPipeline(params: Required<CompanyQueryParams>) {
         },
     };
 
+    // 1️⃣5️⃣ Optional search filter
+    const postLookupSearchStage: mongoose.PipelineStage | null = search?.trim()
+        ? {
+            $match: {
+                $or: [
+                    { companyName: { $regex: search.trim(), $options: 'i' } },
+                    { 'ownerUser.name': { $regex: search.trim(), $options: 'i' } },
+                    { 'ownerUser.email': { $regex: search.trim(), $options: 'i' } },
+                ],
+            },
+        }
+        : null;
+
+    // 1️⃣6️⃣ Project final structure
     const projectStage: mongoose.PipelineStage = {
         $project: {
             _id: 1,
@@ -192,7 +276,14 @@ function buildAggregationPipeline(params: Required<CompanyQueryParams>) {
                 id: '$root.ownerUser._id',
                 name: '$root.ownerUser.name',
                 email: '$root.ownerUser.email',
-                avatar: '$root.ownerUser.avatar',
+                avatar: {
+                    $ifNull: [
+                        '$ownerAvatarFile.publicUrl',
+                        '$guideLogoFile.publicUrl', // fallback
+                        null,
+                    ],
+                },
+                companyName: '$root.companyName',
                 createdAt: '$root.ownerUser.createdAt',
             },
             metrics: {
@@ -250,12 +341,13 @@ function buildAggregationPipeline(params: Required<CompanyQueryParams>) {
             timestamps: {
                 createdAt: '$root.createdAt',
                 updatedAt: '$root.updatedAt',
-                lastLogin: { $arrayElemAt: ['$root.ownerUser.lastLogin', 0] },
+                lastLogin: '$root.ownerUser.lastLogin',
             },
             tags: [],
         },
     };
 
+    // 1️⃣7️⃣ Sort and paginate
     const sortFieldMap: Record<CompanySortBy, string> = {
         name: 'companyName',
         averageRating: 'metrics.averageRating',
@@ -264,34 +356,27 @@ function buildAggregationPipeline(params: Required<CompanyQueryParams>) {
         toursCount: 'metrics.toursCount',
         createdAt: 'timestamps.createdAt',
     };
-
-    const sortStage: mongoose.PipelineStage = { $sort: { [sortFieldMap[sortBy]]: sortDir === 'asc' ? 1 : -1 } };
-
-    const facetStage: mongoose.PipelineStage = {
-        $facet: {
-            metadata: [{ $count: 'total' }],
-            data: [{ $skip: skip }, { $limit: limit }],
-        },
+    const sortStage: mongoose.PipelineStage = {
+        $sort: { [sortFieldMap[sortBy]]: sortDir === 'asc' ? 1 : -1 },
     };
 
-    const postLookupSearchStage: mongoose.PipelineStage | null =
-        search?.trim()
-            ? {
-                $match: {
-                    $or: [
-                        { companyName: { $regex: search.trim(), $options: 'i' } },
-                        { 'ownerUser.name': { $regex: search.trim(), $options: 'i' } },
-                        { 'ownerUser.email': { $regex: search.trim(), $options: 'i' } },
-                    ],
-                },
-            }
-            : null;
+    const facetStage: mongoose.PipelineStage = {
+        $facet: { metadata: [{ $count: 'total' }], data: [{ $skip: skip }, { $limit: limit }] },
+    };
 
-
+    // 1️⃣8️⃣ Final pipeline
     return [
         matchStage,
         userLookupStage,
-        { $unwind: { path: '$ownerUser', preserveNullAndEmptyArrays: true } },
+        unwindOwnerUserStage,
+        avatarAssetLookupStage,
+        unwindAvatarAssetStage,
+        avatarFileLookupStage,
+        unwindAvatarFileStage,
+        guideLogoAssetLookupStage,
+        unwindGuideLogoAssetStage,
+        guideLogoFileLookupStage,
+        unwindGuideLogoFileStage,
         ...(postLookupSearchStage ? [postLookupSearchStage] : []),
         employeeLookupStage,
         tourLookupStage,
@@ -326,7 +411,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
     const searchParams = request.nextUrl.searchParams;
     const params: Required<CompanyQueryParams> = {
-        search: parseQueryParam(searchParams.get('search'), DEFAULT_PARAMS.search),
+        search: parseQueryParam(sanitizeSearch(searchParams.get('search') ?? undefined) ?? null, DEFAULT_PARAMS.search),
         sortBy: parseQueryParam(searchParams.get('sortBy'), DEFAULT_PARAMS.sortBy, isValidSortBy),
         sortDir: parseQueryParam(searchParams.get('sortDir'), DEFAULT_PARAMS.sortDir, isValidSortDir),
         page: parseQueryParam(searchParams.get('page'), DEFAULT_PARAMS.page, (v) => v > 0),

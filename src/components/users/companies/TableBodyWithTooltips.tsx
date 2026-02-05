@@ -1,11 +1,12 @@
 import { useState, useRef } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CompanyRowDTO } from "@/types/company.types";
-import {motion} from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { TableBody, TableCell, TableRow } from "../../ui/table";
 import { Building2, Star } from "lucide-react";
 import { formatDate, formatRating, formatRelativeTime } from "@/utils/helpers/companies.company-table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 function RowWithTooltip({
     row,
     index,
@@ -55,9 +56,15 @@ function RowWithTooltip({
                 >
                     <TableCell className="py-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                                {row.name.charAt(0).toUpperCase()}
-                            </div>
+                            <Avatar className="h-10 w-10 rounded-lg">
+                                <AvatarImage
+                                    src={row.host.avatar || undefined}
+                                    alt={row.name}
+                                />
+                                <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 text-white font-semibold">
+                                    {row.name?.charAt(0)?.toUpperCase()}
+                                </AvatarFallback>
+                            </Avatar>
                             <div className="flex flex-col">
                                 <span className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                     {row.name}

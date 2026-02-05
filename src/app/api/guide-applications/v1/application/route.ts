@@ -107,7 +107,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         throw new ApiError("Invalid access token", 400)
     }
 
-    ConnectDB();
+    await ConnectDB();
 
     // Find user by email
     const user = await UserModel.findOne({ email }).lean();

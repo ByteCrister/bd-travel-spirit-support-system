@@ -170,24 +170,6 @@ export default function CompanyOverviewPage({ companyId }: Props) {
                                         sortOrder={overview.sortOrder}
                                         onSortOrderChange={overview.setSortOrder}
                                     />
-                                    {/* {((overview.activeTab === "tours" && overview.isToursLoading) ||
-                                        (overview.activeTab === "employees" && overview.isEmployeesLoading)) ? (
-                                        <FiltersBarSkeleton />
-                                    ) : (
-                                        <FiltersBar
-                                            activeTab={overview.activeTab}
-                                            search={overview.search}
-                                            onSearch={overview.setSearch}
-                                            limit={overview.limit}
-                                            onLimitChange={overview.setLimit}
-                                            sortKey={overview.sortKey}
-                                            onSortKeyChange={overview.setSortKey}
-                                            employeeSortKey={overview.employeeSortKey}
-                                            onEmployeeSortKeyChange={overview.handleEmployeeSortKeyChange}
-                                            sortOrder={overview.sortOrder}
-                                            onSortOrderChange={overview.setSortOrder}
-                                        />
-                                    )} */}
                                 </div>
 
                                 {/* Tours Tab Content */}
