@@ -19,6 +19,22 @@ import {
     DIVISION,
     DISTRICT,
     Currency,
+    TravelType,
+    Division,
+    District,
+    DifficultyLevel,
+    TourStatus,
+    ModerationStatus,
+    AgeSuitability,
+    TourCategories,
+    Season,
+    TransportMode,
+    PaymentMethod,
+    TourDiscount,
+    MealsProvided,
+    AccommodationType,
+    TOUR_DISCOUNT_TYPE,
+    TourDiscountType,
 } from "@/constants/tour.const";
 
 // --- Helpers ---
@@ -29,25 +45,25 @@ function generateImageIds(prefix: string, count = 3): { id: string; url: string 
     }));
 }
 
-function randomEnum<T>(arr: T[]): T {
+function randomEnum<T>(arr: readonly T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function randomSubset<T>(arr: T[], count: number): T[] {
-    return faker.helpers.shuffle(arr).slice(0, count);
+function randomSubset<T>(arr: readonly T[], count: number): T[] {
+    return faker.helpers.shuffle([...arr]).slice(0, count);
 }
 
 function generateGeoPoint(): { lat: number; lng: number } {
     return {
-        lat: faker.location.latitude(),
-        lng: faker.location.longitude(),
+        lat: faker.location.latitude({ min: 20, max: 27 }), // Bangladesh latitude range
+        lng: faker.location.longitude({ min: 88, max: 93 }), // Bangladesh longitude range
     };
 }
 
 function generatePriceDTO(): { amount: number; currency: Currency } {
     return {
         amount: faker.number.int({ min: 1000, max: 10000 }),
-        currency: randomEnum(Object.values(CURRENCY)),
+        currency: randomEnum(Object.values(CURRENCY) as Currency[]),
     };
 }
 
@@ -91,11 +107,11 @@ function generateItineraryEntryDTO(day: number) {
         day,
         title: faker.lorem.words(3),
         description: faker.lorem.paragraph(),
-        mealsProvided: randomSubset(Object.values(MEALS_PROVIDED), 2),
+        mealsProvided: randomSubset(Object.values(MEALS_PROVIDED) as MealsProvided[], 2),
         accommodation: faker.company.name(),
         activities: [faker.lorem.word(), faker.lorem.word()],
         travelDistance: `${faker.number.int({ min: 10, max: 200 })} km`,
-        travelMode: randomEnum(Object.values(TRANSPORT_MODE)),
+        travelMode: randomEnum(Object.values(TRANSPORT_MODE) as TransportMode[]),
         estimatedTime: "2-3 hours",
         importantNotes: [faker.lorem.sentence(), faker.lorem.sentence()],
     };
@@ -148,12 +164,28 @@ function generateCancellationRuleDTO() {
     };
 }
 
+function generateTourSuspension() {
+    const isAllTime = faker.datatype.boolean(0.3);
+    return {
+        reason: faker.lorem.sentence(),
+        suspendedBy: {
+            id: faker.database.mongodbObjectId(),
+            name: faker.person.fullName(),
+            email: faker.internet.email(),
+            avatarUrl: faker.image.avatar(),
+        },
+        isAllTime,
+        startAt: faker.date.recent().toISOString(),
+        endAt: isAllTime ? undefined : faker.date.future().toISOString(),
+        notes: faker.lorem.sentence(),
+    };
+}
+
 export async function GET(
     req: Request,
     { params }: { params: Promise<{ companyId: string; tourId: string }> }
 ) {
     const { companyId, tourId } = await params;
-    const authorId = faker.database.mongodbObjectId();
     const createdAt = faker.date.past().toISOString();
     const updatedAt = faker.date.recent().toISOString();
     const publishedAt = faker.date.recent().toISOString();
@@ -161,14 +193,14 @@ export async function GET(
     const basePrice = generatePriceDTO();
     const seatsTotal = faker.number.int({ min: 20, max: 100 });
     const seatsBooked = faker.number.int({ min: 0, max: seatsTotal });
-    const hasActiveDiscount = faker.datatype.boolean();
+    const hasActiveDiscount = faker.datatype.boolean(0.3);
 
     const tour: TourDetailDTO = {
         // =============== IDENTITY & BASIC INFO ===============
         id: tourId,
         title: faker.lorem.words(4),
         slug: faker.lorem.slug(),
-        status: randomEnum(Object.values(TOUR_STATUS)),
+        status: randomEnum(Object.values(TOUR_STATUS) as TourStatus[]),
         summary: faker.lorem.paragraph(),
         heroImage: `https://picsum.photos/seed/hero-${faker.number.int({ min: 1, max: 1000 })}/1200/800`,
         gallery: Array.from({ length: 3 }, () =>
@@ -180,16 +212,16 @@ export async function GET(
         },
 
         // =============== BANGLADESH-SPECIFIC FIELDS ===============
-        tourType: randomEnum(Object.values(TRAVEL_TYPE)),
-        division: randomEnum(Object.values(DIVISION)),
-        district: randomEnum(Object.values(DISTRICT)),
-        accommodationType: randomSubset(Object.values(ACCOMMODATION_TYPE), 2),
+        tourType: randomEnum(Object.values(TRAVEL_TYPE) as TravelType[]),
+        division: randomEnum(Object.values(DIVISION) as Division[]),
+        district: randomEnum(Object.values(DISTRICT) as District[]),
+        accommodationType: randomSubset(Object.values(ACCOMMODATION_TYPE) as AccommodationType[], 2),
         guideIncluded: faker.datatype.boolean(),
         transportIncluded: faker.datatype.boolean(),
         emergencyContacts: {
-            policeNumber: faker.phone.number(),
-            ambulanceNumber: faker.phone.number(),
-            fireServiceNumber: faker.phone.number(),
+            policeNumber: "999",
+            ambulanceNumber: "999",
+            fireServiceNumber: "999",
             localEmergency: faker.phone.number(),
         },
 
@@ -198,10 +230,10 @@ export async function GET(
         itinerary: Array.from({ length: 5 }, (_, i) => generateItineraryEntryDTO(i + 1)),
         inclusions: Array.from({ length: 5 }, () => generateInclusionDTO()),
         exclusions: Array.from({ length: 3 }, () => generateExclusionDTO()),
-        difficulty: randomEnum(Object.values(DIFFICULTY_LEVEL)),
-        bestSeason: randomSubset(Object.values(SEASON), 3),
+        difficulty: randomEnum(Object.values(DIFFICULTY_LEVEL) as DifficultyLevel[]),
+        bestSeason: randomSubset(Object.values(SEASON) as Season[], 3),
         audience: randomSubset(Object.values(AUDIENCE_TYPE), 2),
-        categories: randomSubset(Object.values(TOUR_CATEGORIES), 2),
+        categories: randomSubset(Object.values(TOUR_CATEGORIES) as TourCategories[], 2),
         translations: {
             bn: {
                 title: "বাংলায় ট্যুর শিরোনাম",
@@ -220,18 +252,18 @@ export async function GET(
             address: {
                 line1: faker.location.streetAddress(),
                 city: faker.location.city(),
-                district: randomEnum(Object.values(DISTRICT)),
-                region: randomEnum(Object.values(DIVISION)),
+                district: randomEnum(Object.values(DISTRICT) as District[]),
+                region: randomEnum(Object.values(DIVISION) as Division[]),
                 postalCode: faker.location.zipCode(),
             },
             coordinates: generateGeoPoint(),
         },
-        transportModes: randomSubset(Object.values(TRANSPORT_MODE), 2),
+        transportModes: randomSubset(Object.values(TRANSPORT_MODE) as TransportMode[], 2),
         pickupOptions: [
             {
                 city: faker.location.city(),
                 price: faker.number.int({ min: 10, max: 100 }),
-                currency: randomEnum(Object.values(CURRENCY)),
+                currency: randomEnum(Object.values(CURRENCY) as Currency[]),
             },
         ],
         meetingPoint: faker.location.streetAddress(),
@@ -245,7 +277,8 @@ export async function GET(
         basePrice,
         discounts: hasActiveDiscount ? [
             {
-                type: randomEnum(Object.values(TOUR_DISCOUNT)),
+                type: randomEnum(Object.values(TOUR_DISCOUNT_TYPE) as TourDiscountType[]),
+                discount: randomEnum(Object.values(TOUR_DISCOUNT) as TourDiscount[]),
                 value: faker.number.int({ min: 5, max: 20 }),
                 code: faker.word.noun().toUpperCase(),
                 validFrom: faker.date.past().toISOString(),
@@ -258,11 +291,11 @@ export async function GET(
         },
         operatingWindows: Array.from({ length: 2 }, () => generateOperatingWindowDTO()),
         departures: Array.from({ length: 3 }, () => generateDepartureDTO()),
-        paymentMethods: randomSubset(Object.values(PAYMENT_METHOD), 3),
+        paymentMethods: randomSubset(Object.values(PAYMENT_METHOD) as PaymentMethod[], 3),
 
         // =============== COMPLIANCE & ACCESSIBILITY ===============
-        licenseRequired: faker.datatype.boolean(),
-        ageSuitability: randomEnum(Object.values(AGE_SUITABILITY)),
+        licenseRequired: faker.datatype.boolean(0.2),
+        ageSuitability: randomEnum(Object.values(AGE_SUITABILITY) as AgeSuitability[]),
         accessibility: {
             wheelchair: faker.datatype.boolean(),
             familyFriendly: faker.datatype.boolean(),
@@ -276,7 +309,7 @@ export async function GET(
             rules: Array.from({ length: 3 }, () => generateCancellationRuleDTO()),
         },
         refundPolicy: {
-            method: randomSubset(Object.values(PAYMENT_METHOD), 2),
+            method: randomSubset(Object.values(PAYMENT_METHOD) as PaymentMethod[], 2),
             processingDays: faker.number.int({ min: 3, max: 14 }),
         },
         terms: faker.lorem.paragraphs(3),
@@ -287,17 +320,26 @@ export async function GET(
             count: faker.number.int({ min: 10, max: 500 }),
         },
         wishlistCount: faker.number.int({ min: 0, max: 1000 }),
-        featured: faker.datatype.boolean(),
+        featured: faker.datatype.boolean(0.2),
 
         // =============== MODERATION ===============
-        moderationStatus: randomEnum(Object.values(MODERATION_STATUS)),
-        rejectionReason: faker.datatype.boolean() ? faker.lorem.sentence() : undefined,
-        completedAt: faker.datatype.boolean() ? faker.date.recent().toISOString() : undefined,
-        reApprovalRequestedAt: faker.datatype.boolean() ? faker.date.recent().toISOString() : undefined,
+        moderationStatus: randomEnum(Object.values(MODERATION_STATUS) as ModerationStatus[]),
+        rejectionReason: faker.datatype.boolean(0.2) ? faker.lorem.sentence() : undefined,
+        completedAt: faker.datatype.boolean(0.1) ? faker.date.recent().toISOString() : undefined,
+        reApprovalRequestedAt: faker.datatype.boolean(0.1) ? faker.date.recent().toISOString() : undefined,
 
         // =============== SYSTEM FIELDS ===============
-        companyId,
-        authorId,
+        companyInfo: {
+            id: companyId,
+            name: faker.company.name(),
+            createdAt: faker.date.past().toISOString(),
+        },
+        authorInfo: {
+            id: faker.database.mongodbObjectId(),
+            name: faker.person.fullName(),
+            email: faker.internet.email(),
+            avatarUrl: faker.image.avatar(),
+        },
         tags: [faker.word.noun(), faker.word.noun()],
         publishedAt,
         viewCount: faker.number.int({ min: 100, max: 10000 }),
@@ -305,14 +347,16 @@ export async function GET(
         shareCount: faker.number.int({ min: 5, max: 500 }),
         createdAt,
         updatedAt,
-        deletedAt: faker.datatype.boolean() ? faker.date.recent().toISOString() : undefined,
+        deletedAt: faker.datatype.boolean(0.1) ? faker.date.recent().toISOString() : undefined,
+
+        suspension: faker.datatype.boolean(0.1) ? generateTourSuspension() : undefined,
 
         // =============== COMPUTED/UI-ONLY FIELDS ===============
         priceSummary: {
             minAmount: basePrice.amount,
             maxAmount: basePrice.amount + 500,
             currency: basePrice.currency,
-            discountedAmount: hasActiveDiscount ? basePrice.amount * 0.8 : undefined,
+            discountedAmount: hasActiveDiscount ? Math.round(basePrice.amount * 0.8) : undefined,
         },
         bookingSummary: {
             totalSeats: seatsTotal,
@@ -323,7 +367,7 @@ export async function GET(
         },
         nextDeparture: faker.date.future().toISOString(),
         isUpcoming: faker.datatype.boolean(),
-        isExpired: faker.datatype.boolean(),
+        isExpired: faker.datatype.boolean(0.2),
         hasActiveDiscount,
     };
 

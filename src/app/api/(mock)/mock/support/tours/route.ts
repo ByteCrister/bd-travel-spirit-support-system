@@ -7,8 +7,6 @@ import {
 import {
     TourApprovalList,
     TourApprovalStats,
-    // TourApprovalResponse,
-    // TourApprovalRequest,
 } from "@/types/tour-approval.types";
 import {
     MODERATION_STATUS,
@@ -28,7 +26,17 @@ import {
     Division,
     District,
     TravelType,
-    DifficultyLevel
+    DifficultyLevel,
+    Currency,
+    PaymentMethod,
+    AudienceType,
+    TourCategories,
+    Season,
+    AccommodationType,
+    MEALS_PROVIDED,
+    TOUR_DISCOUNT_TYPE,
+    AGE_SUITABILITY,
+    TOUR_DISCOUNT,
 } from "@/constants/tour.const";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -92,19 +100,15 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
 
     const basePrice = {
         amount: faker.number.int({ min: 1000, max: 10000 }),
-        currency: CURRENCY.BDT,
+        currency: CURRENCY.BDT as Currency,
     };
 
     const hasActiveDiscount = faker.datatype.boolean({ probability: 0.3 });
     const discounts = hasActiveDiscount
         ? [
             {
-                type: faker.helpers.arrayElement([
-                    "seasonal",
-                    "early_bird",
-                    "group",
-                    "promo",
-                ]),
+                type: TOUR_DISCOUNT_TYPE.PERCENTAGE,
+                discount: TOUR_DISCOUNT.FIXED,
                 value: faker.number.int({ min: 5, max: 30 }),
                 code: faker.word.noun().toUpperCase(),
                 validFrom: faker.date.past().toISOString(),
@@ -139,19 +143,19 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
         },
 
         // =============== BANGLADESH-SPECIFIC FIELDS ===============
-        tourType: faker.helpers.arrayElement(Object.values(TRAVEL_TYPE)),
-        division: faker.helpers.arrayElement(Object.values(DIVISION)),
-        district: faker.helpers.arrayElement(Object.values(DISTRICT)),
+        tourType: faker.helpers.arrayElement(Object.values(TRAVEL_TYPE) as TravelType[]),
+        division: faker.helpers.arrayElement(Object.values(DIVISION) as Division[]),
+        district: faker.helpers.arrayElement(Object.values(DISTRICT) as District[]),
         accommodationType: faker.helpers.arrayElements(
-            Object.values(ACCOMMODATION_TYPE),
+            Object.values(ACCOMMODATION_TYPE) as AccommodationType[],
             faker.number.int({ min: 1, max: 3 })
         ),
         guideIncluded: faker.datatype.boolean(),
         transportIncluded: faker.datatype.boolean(),
         emergencyContacts: {
-            policeNumber: faker.phone.number(),
-            ambulanceNumber: faker.phone.number(),
-            fireServiceNumber: faker.phone.number(),
+            policeNumber: "999",
+            ambulanceNumber: "999",
+            fireServiceNumber: "999",
             localEmergency: faker.phone.number(),
         },
 
@@ -174,29 +178,27 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
                         openingHours: "9:00 AM - 6:00 PM",
                         imageIds: Array.from(
                             { length: faker.number.int({ min: 1, max: 3 }) },
-                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                            (_, i) => ({
+                            () => ({
                                 id: faker.database.mongodbObjectId(),
                                 url: `https://picsum.photos/seed/attraction-${faker.number.int({ min: 1, max: 1000 })}/600/400`,
                             })
                         ),
                         coordinates: {
-                            lat: faker.location.latitude(),
-                            lng: faker.location.longitude(),
+                            lat: faker.location.latitude({ min: 20, max: 27 }),
+                            lng: faker.location.longitude({ min: 88, max: 93 }),
                         },
                     })
                 ),
                 imageIds: Array.from(
                     { length: faker.number.int({ min: 2, max: 5 }) },
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    (_, i) => ({
+                    () => ({
                         id: faker.database.mongodbObjectId(),
                         url: `https://picsum.photos/seed/destination-${faker.number.int({ min: 1, max: 1000 })}/800/600`,
                     })
                 ),
                 coordinates: {
-                    lat: faker.location.latitude(),
-                    lng: faker.location.longitude(),
+                    lat: faker.location.latitude({ min: 20, max: 27 }),
+                    lng: faker.location.longitude({ min: 88, max: 93 }),
                 },
             })
         ),
@@ -207,19 +209,13 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
                 title: faker.lorem.words(3),
                 description: faker.lorem.paragraph(),
                 mealsProvided: faker.helpers.arrayElements(
-                    ["Breakfast", "Lunch", "Dinner"],
+                    Object.values(MEALS_PROVIDED),
                     faker.number.int({ min: 0, max: 3 })
                 ),
                 accommodation: faker.company.name(),
                 activities: [faker.word.noun(), faker.word.noun()],
                 travelDistance: `${faker.number.int({ min: 10, max: 200 })} km`,
-                travelMode: faker.helpers.arrayElement([
-                    "bus",
-                    "train",
-                    "domestic_flight",
-                    "boat",
-                    "private_car",
-                ]),
+                travelMode: faker.helpers.arrayElement(["bus", "train", "boat", "private_car"] as const),
                 estimatedTime: `${faker.number.int({ min: 1, max: 8 })} hours`,
                 importantNotes: [faker.lorem.sentence(), faker.lorem.sentence()],
             })
@@ -238,17 +234,17 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
                 description: faker.lorem.sentence(),
             })
         ),
-        difficulty: faker.helpers.arrayElement(Object.values(DIFFICULTY_LEVEL)),
+        difficulty: faker.helpers.arrayElement(Object.values(DIFFICULTY_LEVEL) as DifficultyLevel[]),
         bestSeason: faker.helpers.arrayElements(
-            Object.values(SEASON),
+            Object.values(SEASON) as Season[],
             faker.number.int({ min: 1, max: 3 })
         ),
         audience: faker.helpers.arrayElements(
-            Object.values(AUDIENCE_TYPE),
+            Object.values(AUDIENCE_TYPE) as AudienceType[],
             faker.number.int({ min: 1, max: 3 })
         ),
         categories: faker.helpers.arrayElements(
-            Object.values(TOUR_CATEGORIES),
+            Object.values(TOUR_CATEGORIES) as TourCategories[],
             faker.number.int({ min: 1, max: 3 })
         ),
         translations: {
@@ -269,24 +265,24 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
             address: {
                 line1: faker.location.streetAddress(),
                 city: faker.location.city(),
-                district: faker.helpers.arrayElement(Object.values(DISTRICT)),
-                region: faker.helpers.arrayElement(Object.values(DIVISION)),
+                district: faker.helpers.arrayElement(Object.values(DISTRICT) as District[]),
+                region: faker.helpers.arrayElement(Object.values(DIVISION) as Division[]),
                 postalCode: faker.location.zipCode(),
             },
             coordinates: {
-                lat: faker.location.latitude(),
-                lng: faker.location.longitude(),
+                lat: faker.location.latitude({ min: 20, max: 27 }),
+                lng: faker.location.longitude({ min: 88, max: 93 }),
             },
         },
         transportModes: faker.helpers.arrayElements(
-            ["bus", "train", "boat", "private_car"],
+            ["bus", "train", "boat", "private_car"] as const,
             faker.number.int({ min: 1, max: 3 })
         ),
         pickupOptions: [
             {
                 city: faker.location.city(),
                 price: faker.number.int({ min: 10, max: 100 }),
-                currency: CURRENCY.BDT,
+                currency: CURRENCY.BDT as Currency,
             },
         ],
         meetingPoint: faker.location.streetAddress(),
@@ -320,24 +316,19 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
                 seatsBooked: faker.number.int({ min: 0, max: 30 }),
                 meetingPoint: faker.location.streetAddress(),
                 meetingCoordinates: {
-                    lat: faker.location.latitude(),
-                    lng: faker.location.longitude(),
+                    lat: faker.location.latitude({ min: 20, max: 27 }),
+                    lng: faker.location.longitude({ min: 88, max: 93 }),
                 },
             })
         ),
         paymentMethods: faker.helpers.arrayElements(
-            Object.values(PAYMENT_METHOD),
+            Object.values(PAYMENT_METHOD) as PaymentMethod[],
             faker.number.int({ min: 2, max: 4 })
         ),
 
         // =============== COMPLIANCE & ACCESSIBILITY ===============
         licenseRequired: faker.datatype.boolean({ probability: 0.2 }),
-        ageSuitability: faker.helpers.arrayElement([
-            "all",
-            "kids",
-            "adults",
-            "seniors",
-        ]),
+        ageSuitability: AGE_SUITABILITY.ALL,
         accessibility: {
             wheelchair: faker.datatype.boolean(),
             familyFriendly: faker.datatype.boolean(),
@@ -357,7 +348,7 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
             ),
         },
         refundPolicy: {
-            method: faker.helpers.arrayElements(Object.values(PAYMENT_METHOD), 2),
+            method: faker.helpers.arrayElements(Object.values(PAYMENT_METHOD) as PaymentMethod[], 2),
             processingDays: faker.number.int({ min: 3, max: 14 }),
         },
         terms: faker.lorem.paragraphs(3),
@@ -385,8 +376,17 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
             : undefined,
 
         // =============== SYSTEM FIELDS ===============
-        companyId: faker.database.mongodbObjectId(),
-        authorId: faker.database.mongodbObjectId(),
+        companyInfo: {
+            id: faker.database.mongodbObjectId(),
+            name: faker.company.name(),
+            createdAt: faker.date.past().toISOString(),
+        },
+        authorInfo: {
+            id: faker.database.mongodbObjectId(),
+            name: faker.person.fullName(),
+            email: faker.internet.email(),
+            avatarUrl: faker.image.avatar(),
+        },
         tags: [faker.word.noun(), faker.word.noun(), faker.word.noun()],
         publishedAt,
         viewCount: faker.number.int({ min: 100, max: 10000 }),
@@ -398,12 +398,26 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
             ? faker.date.recent().toISOString()
             : undefined,
 
+        suspension: moderationStatus === MODERATION_STATUS.SUSPENDED ? {
+            reason: faker.lorem.sentence(),
+            suspendedBy: {
+                id: faker.database.mongodbObjectId(),
+                name: faker.person.fullName(),
+                email: faker.internet.email(),
+                avatarUrl: faker.image.avatar(),
+            },
+            isAllTime: faker.datatype.boolean(0.3),
+            startAt: faker.date.recent().toISOString(),
+            endAt: faker.datatype.boolean(0.7) ? faker.date.future().toISOString() : undefined,
+            notes: faker.lorem.sentence(),
+        } : undefined,
+
         // =============== COMPUTED/UI-ONLY FIELDS ===============
         priceSummary: {
             minAmount: basePrice.amount,
             maxAmount: basePrice.amount + 500,
             currency: basePrice.currency,
-            discountedAmount: hasActiveDiscount ? basePrice.amount * 0.8 : undefined,
+            discountedAmount: hasActiveDiscount ? Math.round(basePrice.amount * 0.8) : undefined,
         },
         bookingSummary: {
             totalSeats: seatsTotal,
@@ -455,8 +469,8 @@ function convertToTourListItemDTO(tour: TourDetailDTO): TourListItemDTO {
         featured: tour.featured,
 
         // System
-        companyId: tour.companyId,
-        authorId: tour.authorId,
+        companyId: tour.companyInfo.id,
+        authorId: tour.authorInfo.id,
         publishedAt: tour.publishedAt,
         createdAt: tour.createdAt,
         updatedAt: tour.updatedAt,
@@ -529,14 +543,14 @@ function filterTours(
         );
     }
 
-    // 15. Status filter (array)
+    // 6. Status filter (array)
     if (filters.status && filters.status.length > 0) {
         filteredTours = filteredTours.filter((tour) =>
             filters.status!.includes(tour.status)
         );
     }
 
-    // 16. Moderation Status filter (array)
+    // 7. Moderation Status filter (array)
     if (filters.moderationStatus && filters.moderationStatus.length > 0) {
         filteredTours = filteredTours.filter((tour) =>
             filters.moderationStatus!.includes(tour.moderationStatus)
@@ -582,109 +596,6 @@ function initializeMockDatabase(count: number = 100): void {
     }
 }
 
-// POST handler for approval actions
-// export async function POST(
-//     req: NextRequest,
-//     { params }: { params: { tourId: string } }
-// ) {
-//     try {
-//         const { tourId } = params;
-//         const body = await req.json();
-//         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-//         const { action, reason, suspensionDuration }: TourApprovalRequest = body;
-
-//         // Initialize mock DB once
-//         if (mockToursDatabase.length === 0) {
-//             initializeMockDatabase();
-//         }
-
-//         // Simulate network delay
-//         await new Promise((resolve) => setTimeout(resolve, 400));
-
-//         const index = mockToursDatabase.findIndex((t) => t.id === tourId);
-
-//         if (index === -1) {
-//             return NextResponse.json(
-//                 { error: `Tour with ID ${tourId} not found` },
-//                 { status: 404 }
-//             );
-//         }
-
-//         const tour = mockToursDatabase[index];
-//         let updatedTour = { ...tour };
-
-//         // Update based on action
-//         switch (action) {
-//             case MODERATION_STATUS.APPROVED:
-//                 updatedTour = {
-//                     ...tour,
-//                     moderationStatus: MODERATION_STATUS.APPROVED,
-//                     status: TOUR_STATUS.ACTIVE,
-//                     rejectionReason: undefined,
-//                     updatedAt: new Date().toISOString(),
-//                     publishedAt: tour.publishedAt || new Date().toISOString(),
-//                 };
-//                 break;
-
-//             case MODERATION_STATUS.DENIED:
-//                 if (!reason?.trim()) {
-//                     return NextResponse.json(
-//                         { error: "Rejection reason is required" },
-//                         { status: 400 }
-//                     );
-//                 }
-//                 updatedTour = {
-//                     ...tour,
-//                     moderationStatus: MODERATION_STATUS.DENIED,
-//                     rejectionReason: reason,
-//                     updatedAt: new Date().toISOString(),
-//                 };
-//                 break;
-
-//             case MODERATION_STATUS.SUSPENDED:
-//                 if (!reason?.trim()) {
-//                     return NextResponse.json(
-//                         { error: "Suspension reason is required" },
-//                         { status: 400 }
-//                     );
-//                 }
-//                 updatedTour = {
-//                     ...tour,
-//                     moderationStatus: MODERATION_STATUS.SUSPENDED,
-//                     rejectionReason: reason,
-//                     updatedAt: new Date().toISOString(),
-//                 };
-//                 break;
-
-//             default:
-//                 return NextResponse.json(
-//                     { error: `Invalid action: ${action}` },
-//                     { status: 400 }
-//                 );
-//         }
-
-//         // Update in database
-//         mockToursDatabase[index] = updatedTour;
-
-//         const response: TourApprovalResponse = {
-//             success: true,
-//             message: `Tour "${tour.title}" has been ${action}${reason ? `: ${reason}` : ""
-//                 }`,
-//             tour: updatedTour,
-//             updatedAt: new Date(),
-//         };
-
-//         return NextResponse.json({ data: response });
-//     } catch (error) {
-//         console.error("Error in POST handler:", error);
-//         return NextResponse.json(
-//             { error: "Internal server error" },
-//             { status: 500 }
-//         );
-//     }
-// }
-
-// GET handler for fetching tours with filters
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
 

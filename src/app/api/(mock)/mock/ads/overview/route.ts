@@ -8,6 +8,7 @@ export async function GET() {
     const data = getOverview();
     const payload: ApiResponse<AdvertisementOverview> = { ok: true, data };
     return NextResponse.json(payload);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: { message: err?.message ?? "Server error" } }, { status: 500 });
   }

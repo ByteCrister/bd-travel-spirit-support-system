@@ -7,6 +7,17 @@ import { MODERATION_STATUS } from "@/constants/tour.const";
 // Tour approval action types
 export type TourApprovalAction = MODERATION_STATUS.APPROVED | MODERATION_STATUS.DENIED | MODERATION_STATUS.SUSPENDED;
 
+// Tour suspension request payload
+export interface TourSuspensionRequest {
+    reason: string;
+    suspensionDuration?: number; // in days
+}
+
+// Tour unsuspension request payload
+export interface TourUnsuspensionRequest {
+    reason: string;
+}
+
 // Tour approval request payload
 export interface TourApprovalRequest {
     action: TourApprovalAction;
@@ -62,6 +73,8 @@ export interface TourApprovalStoreState {
     fetchTours: (filters?: Partial<TourFilterOptions>, page?: number, limit?: number) => Promise<void>;
     fetchTourById: (tourId: string, skipCache?: boolean) => Promise<void>;
     approveTour: (tourId: string, reason?: string) => Promise<ApiResponse<TourApprovalResponse>>;
+    suspendTour: (tourId: string, reason: string, suspensionDuration: number) => Promise<ApiResponse<TourApprovalResponse>>;
+    unsuspendTour: (tourId: string, reason: string) => Promise<ApiResponse<TourApprovalResponse>>;
     rejectTour: (tourId: string, reason: string) => Promise<ApiResponse<TourApprovalResponse>>;
     setFilters: (filters: Partial<TourFilterOptions>) => void;
     clearFilters: () => void;

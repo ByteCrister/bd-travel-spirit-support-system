@@ -1,4 +1,5 @@
 // stores/tour-approval.store.ts
+"use client";
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
@@ -7,14 +8,15 @@ import type {
     TourApprovalStats,
     TourApprovalResponse,
     TourApprovalList,
+    TourUnsuspensionRequest,
+    TourSuspensionRequest,
 } from '@/types/tour-approval.types';
 import { ApiResponse } from '@/types/api.types';
-import { TourDetailDTO, TourFilterOptions } from '@/types/tour.types';
+import { TourDetailDTO, TourFilterOptions, TourListItemDTO } from '@/types/tour.types';
 import { extractErrorMessage } from '@/utils/axios/extract-error-message';
 import api from '@/utils/axios';
 import { MODERATION_STATUS } from '@/constants/tour.const';
 import { showToast } from '@/components/global/showToast';
-import { decodeId } from '@/utils/helpers/mongodb-id-conversions';
 
 // const URL_AFTER_API = `/mock/support/tours`;
 const URL_AFTER_API = `/support/tours/v1`;
@@ -81,6 +83,34 @@ const generateTourCacheKey = (tourId: string): string => {
     return `tour_${tourId}`;
 };
 
+// Helper to convert TourDetailDTO to TourListItemDTO for list cache updates
+const convertToListItem = (tourDetail: TourDetailDTO): TourListItemDTO => ({
+    id: tourDetail.id,
+    title: tourDetail.title,
+    slug: tourDetail.slug,
+    status: tourDetail.status,
+    summary: tourDetail.summary,
+    heroImage: tourDetail.heroImage,
+    tourType: tourDetail.tourType,
+    division: tourDetail.division,
+    district: tourDetail.district,
+    difficulty: tourDetail.difficulty,
+    basePrice: tourDetail.basePrice,
+    duration: tourDetail.duration,
+    ratings: tourDetail.ratings,
+    wishlistCount: tourDetail.wishlistCount,
+    viewCount: tourDetail.viewCount,
+    likeCount: tourDetail.likeCount,
+    shareCount: tourDetail.shareCount,
+    moderationStatus: tourDetail.moderationStatus,
+    featured: tourDetail.featured,
+    companyId: tourDetail.companyInfo.id,
+    authorId: tourDetail.authorInfo.id,
+    publishedAt: tourDetail.publishedAt,
+    createdAt: tourDetail.createdAt,
+    updatedAt: tourDetail.updatedAt,
+});
+
 // Initial state
 const initialStats: TourApprovalStats = {
     pending: 0,
@@ -115,6 +145,9 @@ interface EnhancedTourApprovalStoreState extends TourApprovalStoreState {
     clearExpiredTourCache: () => void;
     updateTourInCache: (tourId: string, updates: Partial<TourDetailDTO>) => void;
 
+    // Enhanced cache updating - NEW: Update tour in ALL caches
+    updateTourInAllCaches: (tourId: string, updatedTour: TourDetailDTO) => void;
+
     // Enhanced actions
     prefetchNextPage: (filters?: Partial<TourFilterOptions>, currentPage?: number, limit?: number) => Promise<void>;
     refreshCurrentPage: () => Promise<void>;
@@ -127,7 +160,6 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                 // Initial state
                 tours: [],
                 selectedTour: null,
-                selectedTourIds: [],
                 filters: initialFilters,
                 isLoading: false,
                 isProcessing: false,
@@ -287,6 +319,69 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                     }
                 },
 
+                // NEW: Update tour in ALL caches (tour cache and list cache)
+                updateTourInAllCaches: (tourId: string, updatedTour: TourDetailDTO) => {
+                    // 1. Update in tour cache
+                    get().setToTourCache(tourId, updatedTour);
+
+                    // 2. Update in all list cache entries
+                    const listCache = get().listCache;
+                    const newListCache = new Map(listCache);
+                    const listTourUpdate = convertToListItem(updatedTour);
+
+                    let updatedAnyList = false;
+
+                    newListCache.forEach((cacheItem, key) => {
+                        const listData = cacheItem.data;
+                        const tourIndex = listData.tours.findIndex(t => t.id === tourId);
+
+                        if (tourIndex !== -1) {
+                            // Update the tour in this list
+                            const updatedTours = [...listData.tours];
+                            updatedTours[tourIndex] = { ...updatedTours[tourIndex], ...listTourUpdate };
+
+                            // Update stats in this cache entry
+                            const updatedStats = { ...listData.stats };
+                            if (updatedTour.moderationStatus === MODERATION_STATUS.APPROVED) {
+                                updatedStats.pending = Math.max(0, updatedStats.pending - 1);
+                                updatedStats.approved = updatedStats.approved + 1;
+                            } else if (updatedTour.moderationStatus === MODERATION_STATUS.DENIED) {
+                                updatedStats.pending = Math.max(0, updatedStats.pending - 1);
+                                updatedStats.rejected = updatedStats.rejected + 1;
+                            }
+
+                            // Update the cache item
+                            newListCache.set(key, {
+                                ...cacheItem,
+                                data: {
+                                    ...listData,
+                                    tours: updatedTours,
+                                    stats: updatedStats,
+                                },
+                                timestamp: Date.now(), // Refresh timestamp
+                            });
+
+                            updatedAnyList = true;
+                        }
+                    });
+
+                    if (updatedAnyList) {
+                        set({ listCache: newListCache });
+                    }
+
+                    // 3. Update in current state if the tour is in the current list
+                    const currentTours = get().tours;
+                    const tourIndexInCurrent = currentTours.findIndex(t => t.id === tourId);
+                    if (tourIndexInCurrent !== -1) {
+                        const updatedCurrentTours = [...currentTours];
+                        updatedCurrentTours[tourIndexInCurrent] = {
+                            ...updatedCurrentTours[tourIndexInCurrent],
+                            ...listTourUpdate
+                        };
+                        set({ tours: updatedCurrentTours });
+                    }
+                },
+
                 // ===== FETCH METHODS =====
                 fetchTours: async (filters = {}, page = 1, limit = 10) => {
                     const currentFilters = { ...get().filters, ...filters };
@@ -307,46 +402,34 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                             isLoading: false,
                         });
 
-                        // Cache individual tours from the list
-                        cached.tours.forEach(tour => {
-                            // Only cache basic tour info, full details will be fetched separately
-                            const basicTourInfo: TourDetailDTO = {
-                                ...tour,
-                                id: tour.id,
-                                title: tour.title,
-                                // Add other basic fields as needed
-                            } as TourDetailDTO;
-                            get().setToTourCache(tour.id, basicTourInfo);
-                        });
-
                         return;
                     }
 
                     set({ isLoading: true, error: null });
 
                     try {
-                        // Build query params as Record<string, any>
+                        // Build query params
                         const params: Record<string, unknown> = {
                             page,
                             limit,
-                            ...currentFilters,
                         };
 
-                        // Handle array filters
-                        const arrayFilters = ['moderationStatus', 'division', 'district', 'tourType', 'difficulty', 'status'];
-                        arrayFilters.forEach(filterName => {
-                            if (Array.isArray(currentFilters[filterName as keyof TourFilterOptions])) {
-                                const value = currentFilters[filterName as keyof TourFilterOptions];
-                                if (Array.isArray(value) && value.length > 0) {
-                                    params[filterName] = value.join(',');
-                                }
-                            }
-                        });
+                        // Handle individual filters
+                        if (currentFilters.search) params.search = currentFilters.search;
 
-                        // Remove undefined/empty values
-                        Object.keys(params).forEach(key => {
-                            if (params[key] === undefined || params[key] === '' || (Array.isArray(params[key]) && params[key].length === 0)) {
-                                delete params[key];
+                        // Handle array filters - safely check and process
+                        const arrayFilterMapping = {
+                            moderationStatus: currentFilters.moderationStatus,
+                            division: currentFilters.division,
+                            district: currentFilters.district,
+                            tourType: currentFilters.tourType,
+                            difficulty: currentFilters.difficulty,
+                            status: currentFilters.status,
+                        };
+
+                        Object.entries(arrayFilterMapping).forEach(([key, value]) => {
+                            if (Array.isArray(value) && value.length > 0) {
+                                params[key] = value.join(',');
                             }
                         });
 
@@ -375,18 +458,6 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                         // Cache the list result
                         get().setToListCache(cacheKey, response.data.data!, currentFilters, currentPage, currentLimit);
 
-                        // Cache individual tours from the list
-                        tours.forEach(tour => {
-                            // Only cache basic tour info
-                            const basicTourInfo: TourDetailDTO = {
-                                ...tour,
-                                id: tour.id,
-                                title: tour.title,
-                                // Add other basic fields
-                            } as TourDetailDTO;
-                            get().setToTourCache(tour.id, basicTourInfo);
-                        });
-
                     } catch (error) {
                         const message = extractErrorMessage(error);
                         set({ error: message, isLoading: false });
@@ -394,7 +465,6 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                     }
                 },
 
-                // In stores/tour-approval.store.ts - Update fetchTourById
                 fetchTourById: async (tourId: string, skipCache = false) => {
                     // Check cache first unless skipping
                     if (!skipCache) {
@@ -405,7 +475,6 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                         }
                     }
 
-                    // Don't return early if selectedTour matches - always fetch if cache is empty/expired
                     set({ isLoading: true, error: null });
 
                     try {
@@ -449,23 +518,31 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                         const params: Record<string, unknown> = {
                             page: nextPage,
                             limit,
-                            ...currentFilters,
                         };
+
+                        // Handle individual filters
+                        if (currentFilters.search) params.search = currentFilters.search;
+
+                        // Handle array filters
+                        const arrayFilterMapping = {
+                            moderationStatus: currentFilters.moderationStatus,
+                            division: currentFilters.division,
+                            district: currentFilters.district,
+                            tourType: currentFilters.tourType,
+                            difficulty: currentFilters.difficulty,
+                            status: currentFilters.status,
+                        };
+
+                        Object.entries(arrayFilterMapping).forEach(([key, value]) => {
+                            if (Array.isArray(value) && value.length > 0) {
+                                params[key] = value.join(',');
+                            }
+                        });
 
                         const response = await api.get<ApiResponse<TourApprovalList>>(`${URL_AFTER_API}`, { params });
 
                         if (response.data.data) {
                             get().setToListCache(cacheKey, response.data.data!, currentFilters, nextPage, limit);
-
-                            // Cache individual tours from prefetched list
-                            response.data.data.tours.forEach(tour => {
-                                const basicTourInfo: TourDetailDTO = {
-                                    ...tour,
-                                    id: tour.id,
-                                    title: tour.title,
-                                } as TourDetailDTO;
-                                get().setToTourCache(tour.id, basicTourInfo);
-                            });
                         }
                     } catch (error) {
                         // Silent fail for prefetching
@@ -492,7 +569,7 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
 
                     try {
                         const response = await api.post<ApiResponse<TourApprovalResponse>>(
-                            `${URL_AFTER_API}/${decodeURIComponent(decodeId(tourId) ?? "")}/approve`,
+                            `${URL_AFTER_API}/${tourId}/approve`,
                             { reason }
                         );
 
@@ -503,20 +580,15 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                         // Update local state
                         const updatedTour = response.data.data!.tour;
 
-                        // Update in tours list
-                        const tours = get().tours.map(tour =>
-                            tour.id === tourId ? { ...tour, ...updatedTour } : tour
-                        );
+                        // Update in ALL caches
+                        get().updateTourInAllCaches(tourId, updatedTour);
 
                         // Update selected tour if it's the current one
                         if (get().selectedTour?.id === tourId) {
                             set({ selectedTour: updatedTour });
                         }
 
-                        // Update tour cache
-                        get().updateTourInCache(tourId, updatedTour);
-
-                        // Update stats
+                        // Update global stats
                         const stats = get().stats;
                         const newStats = {
                             ...stats,
@@ -524,11 +596,7 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                             approved: stats.approved + 1,
                         };
 
-                        // Invalidate list cache for all queries that might include this tour
-                        get().invalidateListCache('moderationStatus');
-
                         set({
-                            tours,
                             stats: newStats,
                             isProcessing: false,
                         });
@@ -561,7 +629,7 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
 
                     try {
                         const response = await api.post<ApiResponse<TourApprovalResponse>>(
-                            `${URL_AFTER_API}/${decodeURIComponent(decodeId(tourId) ?? "")}/reject`,
+                            `${URL_AFTER_API}/${tourId}/reject`,
                             { reason }
                         );
 
@@ -572,20 +640,15 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                         // Update local state
                         const updatedTour = response.data.data!.tour;
 
-                        // Update in tours list
-                        const tours = get().tours.map(tour =>
-                            tour.id === tourId ? { ...tour, ...updatedTour } : tour
-                        );
+                        // Update in ALL caches
+                        get().updateTourInAllCaches(tourId, updatedTour);
 
                         // Update selected tour if it's the current one
                         if (get().selectedTour?.id === tourId) {
                             set({ selectedTour: updatedTour });
                         }
 
-                        // Update tour cache
-                        get().updateTourInCache(tourId, updatedTour);
-
-                        // Update stats
+                        // Update global stats
                         const stats = get().stats;
                         const newStats = {
                             ...stats,
@@ -593,11 +656,7 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                             rejected: stats.rejected + 1,
                         };
 
-                        // Invalidate list cache for all queries that might include this tour
-                        get().invalidateListCache('moderationStatus');
-
                         set({
-                            tours,
                             stats: newStats,
                             isProcessing: false,
                         });
@@ -611,6 +670,149 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                         showToast.error('Error rejecting tour', message);
 
                         console.error('Error rejecting tour:', error);
+                        return {
+                            data: undefined,
+                            error: message,
+                        };
+                    }
+                },
+
+                // Suspend a tour
+                suspendTour: async (tourId: string, reason: string, suspensionDuration?: number) => {
+                    if (!reason.trim()) {
+                        const error = 'Suspension reason is required';
+                        set({ error });
+                        return { data: undefined, error };
+                    }
+
+                    set({ isProcessing: true, error: null });
+
+                    try {
+                        const payload: TourSuspensionRequest = { reason };
+                        if (suspensionDuration) {
+                            payload.suspensionDuration = suspensionDuration;
+                        }
+
+                        const response = await api.post<ApiResponse<TourApprovalResponse>>(
+                            `${URL_AFTER_API}/${tourId}/suspend`,
+                            payload
+                        );
+
+                        if (response.data.error) {
+                            throw new Error(response.data.error);
+                        }
+
+                        // Update local state
+                        const updatedTour = response.data.data!.tour;
+
+                        // Update in ALL caches
+                        get().updateTourInAllCaches(tourId, updatedTour);
+
+                        // Update selected tour if it's the current one
+                        if (get().selectedTour?.id === tourId) {
+                            set({ selectedTour: updatedTour });
+                        }
+
+                        // Update global stats
+                        const stats = get().stats;
+                        const newStats = {
+                            ...stats,
+                            pending: Math.max(0, stats.pending - 1),
+                            suspended: stats.suspended + 1,
+                        };
+
+                        // If the tour was previously approved, decrement approved count
+                        const previousTour = get().getFromTourCache(tourId);
+                        if (previousTour?.moderationStatus === MODERATION_STATUS.APPROVED) {
+                            newStats.approved = Math.max(0, newStats.approved - 1);
+                        }
+
+                        set({
+                            stats: newStats,
+                            isProcessing: false,
+                        });
+
+                        showToast.success('Tour suspended', 'The tour has been successfully suspended.');
+
+                        return response.data;
+
+                    } catch (error) {
+                        const message = extractErrorMessage(error);
+                        set({ error: message, isProcessing: false });
+
+                        showToast.error('Error suspending tour', message);
+
+                        console.error('Error suspending tour:', error);
+                        return {
+                            data: undefined,
+                            error: message,
+                        };
+                    }
+                },
+
+                // Unsuspend a tour
+                unsuspendTour: async (tourId: string, reason: string) => {
+                    if (!reason.trim()) {
+                        const error = 'Unsuspension reason is required';
+                        set({ error });
+                        return { data: undefined, error };
+                    }
+
+                    set({ isProcessing: true, error: null });
+
+                    try {
+                        const payload: TourUnsuspensionRequest = { reason };
+
+                        const response = await api.post<ApiResponse<TourApprovalResponse>>(
+                            `${URL_AFTER_API}/${tourId}/unsuspend`,
+                            payload
+                        );
+
+                        if (response.data.error) {
+                            throw new Error(response.data.error);
+                        }
+
+                        // Update local state
+                        const updatedTour = response.data.data!.tour;
+
+                        // Update in ALL caches
+                        get().updateTourInAllCaches(tourId, updatedTour);
+
+                        // Update selected tour if it's the current one
+                        if (get().selectedTour?.id === tourId) {
+                            set({ selectedTour: updatedTour });
+                        }
+
+                        // Update global stats
+                        const stats = get().stats;
+                        const newStats = {
+                            ...stats,
+                            suspended: Math.max(0, stats.suspended - 1),
+                        };
+
+                        // Based on the unsuspended status, update appropriate stat
+                        if (updatedTour.moderationStatus === MODERATION_STATUS.APPROVED) {
+                            newStats.approved = stats.approved + 1;
+                        } else if (updatedTour.moderationStatus === MODERATION_STATUS.PENDING) {
+                            newStats.pending = stats.pending + 1;
+                        }
+
+                        set({
+                            stats: newStats,
+                            isProcessing: false,
+                        });
+
+                        showToast.success('Tour unsuspended', 'The tour has been successfully unsuspended.');
+
+                        return response.data;
+
+                    } catch (error) {
+                        const message = extractErrorMessage(error);
+                        set({ error: message, isProcessing: false });
+
+                        showToast.error('Error unsuspending tour', message);
+
+                        console.error('Error unsuspending tour:', error);
                         return {
                             data: undefined,
                             error: message,
@@ -641,17 +843,6 @@ export const useTourApproval = create<EnhancedTourApprovalStoreState>()(
                 // Set selected tour
                 setSelectedTour: (tour: TourDetailDTO | null) => {
                     set({ selectedTour: tour });
-                },
-
-                // Get tour from cache if available
-                getCachedTour: (tourId: string) => {
-                    return get().getFromTourCache(tourId);
-                },
-
-                // Clear both caches
-                clearAllCache: () => {
-                    get().clearListCache();
-                    get().clearTourCache();
                 },
 
                 // Clear error

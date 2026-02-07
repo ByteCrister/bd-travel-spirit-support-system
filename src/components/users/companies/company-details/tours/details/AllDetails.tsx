@@ -23,18 +23,8 @@ import {
     MdLocationCity,
     MdTimer,
     MdRestaurant,
-    MdCheck,
-    MdCancel,
-    MdRadioButtonUnchecked,
-    MdArrowUpward,
-    MdFolder,
     MdHotel,
-    MdDirectionsBus,
-    MdLightbulbOutline,
-    MdTrendingUp,
-    MdHourglassEmpty,
     MdPause,
-    MdClose,
 } from "react-icons/md";
 import {
     FaClipboardList,
@@ -50,10 +40,8 @@ import {
     Clock,
     Lightbulb,
     Bus,
-    Bed,
     Check,
     X,
-    AlertCircle,
 } from "lucide-react";
 import { useCompanyDetailStore } from "@/store/company/company-detail.store";
 import AllDetailsSkeleton from "./skeletons/AllDetailsSkeleton";
@@ -177,7 +165,7 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
                     handleBreadcrumbItems([
                         { label: "Home", href: '/' },
                         { label: "Companies", href: "/users/companies" },
-                        { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "-", href: `/users/companies/${encodeURIComponent(encodeId(companyId))}` },
+                        { label: companies?.[companyId]?.companyName?.toLocaleUpperCase() ?? "Company", href: `/users/companies/${encodeURIComponent(encodeId(companyId))}` },
                         { label: fetchedTour.title, href: `/users/companies/${encodeURIComponent(encodeId(companyId))}/${encodeURIComponent(encodeId(tourId))}` },
                     ])
                 }
@@ -515,24 +503,6 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
                                         </div>
                                     </div>
                                 )}
-
-                                {/* CTA Buttons */}
-                                {/* <div className="space-y-3">
-                                    <Button
-                                        disabled={tour.bookingSummary?.isFull}
-                                        size="lg"
-                                        className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl"
-                                    >
-                                        {tour.bookingSummary?.isFull ? "Fully Booked" : "Book Now"}
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="lg"
-                                        className="w-full h-12 font-semibold border-2 hover:bg-violet-50 dark:hover:bg-violet-950/30 rounded-2xl"
-                                    >
-                                        Check Availability
-                                    </Button>
-                                </div> */}
 
                                 {/* Next Departure */}
                                 {tour.nextDeparture && (

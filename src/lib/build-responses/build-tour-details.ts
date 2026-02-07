@@ -30,6 +30,7 @@ type TourLeanPopulated =
         | "destinations"
         | "companyId"
         | "authorId"
+        | "suspension"
     > & {
         _id: ObjectId;
         heroImage: PopulatedAssetLean | null;
@@ -46,6 +47,19 @@ type TourLeanPopulated =
             name: string;
             email: string;
             avatar: PopulatedAssetLean;
+        };
+        suspension?: {
+            reason: string;
+            suspendedBy: {
+                _id: ObjectId;
+                name: string;
+                email: string;
+                avatar: PopulatedAssetLean;
+            };
+            isAllTime: boolean;
+            startAt: Date;
+            endAt?: Date;
+            notes?: string;
         };
     };
 
@@ -116,6 +130,23 @@ export async function buildTourDetailDTO(
             })
             .populate({
                 path: "authorId",
+                select: "name email avatar",
+                model: UserModel,
+                populate: {
+                    path: "avatar",
+                    select: "file",
+                    model: AssetModel,
+                    populate: {
+                        path: "file",
+                        select: "publicUrl",
+                        model: AssetFileModel,
+                        options: { session }
+                    }
+                },
+                options: { session }
+            })
+            .populate({
+                path: "suspension.suspendedBy",
                 select: "name email avatar",
                 model: UserModel,
                 populate: {
@@ -234,6 +265,21 @@ export async function buildTourDetailDTO(
             createdAt: tour.createdAt.toISOString(),
             updatedAt: tour.updatedAt.toISOString(),
             deletedAt: tour.deletedAt?.toISOString(),
+
+            // =============== SUSPENSION INFO ===============
+            suspension: tour.suspension ? {
+                reason: tour.suspension.reason,
+                suspendedBy: {
+                    id: tour.suspension.suspendedBy._id.toString(),
+                    name: tour.suspension.suspendedBy.name,
+                    email: tour.suspension.suspendedBy.email,
+                    avatarUrl: tour.suspension.suspendedBy.avatar?.file?.publicUrl ?? ""
+                },
+                isAllTime: tour.suspension.isAllTime,
+                startAt: tour.suspension.startAt.toISOString(),
+                endAt: tour.suspension.endAt?.toISOString(),
+                notes: tour.suspension.notes
+            } : undefined,
 
             // =============== COMPUTED/UI-ONLY FIELDS ===============
             priceSummary,

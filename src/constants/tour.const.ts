@@ -206,11 +206,18 @@ export enum CURRENCY {
 }
 export type Currency = `${CURRENCY}`;
 
+export enum TOUR_DISCOUNT_TYPE {
+  PERCENTAGE = "percentage",
+  FLAT_AMOUNT = "flat_amount",
+}
+export type TourDiscountType = `${TOUR_DISCOUNT_TYPE}`;
+
 /**
  * Discount types applicable to tour bookings
  * Defines promotional pricing strategies
  */
 export enum TOUR_DISCOUNT {
+  FIXED = "fixed",
   /** Seasonal promotions (off-season rates) */
   SEASONAL = "seasonal",
   /** Advance booking discounts */

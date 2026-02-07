@@ -8,10 +8,9 @@ import {
     PasswordRequestFilters,
     SortOrder,
     SortOption,
-    ForgotPasswordStatus,
     PaginationParams,
 } from '@/types/guide-forgot-password.types';
-import { FORGOT_PASSWORD_STATUS } from '@/constants/guide-forgot-password.const';
+import { FORGOT_PASSWORD_STATUS, ForgotPasswordStatus } from '@/constants/guide-forgot-password.const';
 
 // --------------------------------------------------
 // MOCK DB

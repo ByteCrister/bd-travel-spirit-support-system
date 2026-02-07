@@ -38,7 +38,7 @@ export interface IAuditDoc extends Document {
 export interface ICreateAuditParams {
     targetModel: string;
     target: Types.ObjectId | string;
-    action: string;
+    action: AuditAction;
 
     note?: string;
     ip?: string;

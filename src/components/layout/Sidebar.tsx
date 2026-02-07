@@ -74,8 +74,8 @@ const navigationGroups: NavGroup[] = [
     title: "Support",
     icon: FiFileText,
     items: [
-      { href: "/support/users", label: "Users", icon: FiHeadphones },
-      { href: "/support/tours", label: "Tours", icon: Compass },
+      { href: "/support/users", label: "Travelers", icon: FiHeadphones },
+      { href: "/support/tours", label: "Tour Approval", icon: Compass },
       { href: "/support/articles", label: "Articles", icon: FiFileText },
       { href: "/support/article-comments", label: "Article Comments", icon: FaComments },
       { href: "/support/guide-password-requests", label: "Guide Password Requests", icon: KeyRound },

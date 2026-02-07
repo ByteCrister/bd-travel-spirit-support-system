@@ -33,6 +33,8 @@ import {
   Division,
   District,
   AccommodationType,
+  TourDiscountType,
+  TOUR_DISCOUNT_TYPE,
 } from "@/constants/tour.const";
 import { defineModel } from "@/lib/helpers/defineModel";
 import { HydratedDocument, Query } from "mongoose";
@@ -48,7 +50,8 @@ export type IPrice = {
 };
 
 export type IDiscount = {
-  type: TourDiscount;
+  type: TourDiscountType;
+  discount: TourDiscount;
   value: number; // Percentage 0-100
   code?: string;
   validFrom?: Date;
@@ -61,7 +64,7 @@ export type IHealthInfo = {
   malariaRiskAreas?: string[];
   waterSafety?: WaterSafety;
   commonHealthIssues?: string[];
-}
+};
 
 export interface IReligiousConsiderations {
   prayerFacilities?: boolean;
@@ -178,6 +181,30 @@ export interface IDestinationBlock {
   coordinates?: IGeoPoint;
 }
 
+// =============== SUSPENSION TYPES ===============
+export interface ITourSuspension {
+  reason: string;
+  suspendedBy: Types.ObjectId; // Admin / Moderator
+  isAllTime: boolean;
+  startAt: Date;
+  endAt?: Date; // required if not all-time
+  notes?: string;
+}
+
+export interface SuspendOptions {
+  session?: ClientSession;
+  suspendedBy: Types.ObjectId;
+  reason: string;
+  isAllTime?: boolean;
+  durationDays?: number; // ignored if all-time
+  notes?: string;
+}
+
+export interface UnsuspendOptions {
+  session?: ClientSession;
+  restoredBy: Types.ObjectId;
+}
+
 // =============== MAIN TOUR INTERFACE ===============
 export interface ITour extends Document {
   // =============== IDENTITY & BASIC INFO ===============
@@ -233,7 +260,7 @@ export interface ITour extends Document {
   transportModes?: TransportMode[];
   pickupOptions?: { city?: string; price?: number; currency?: Currency }[];
   meetingPoint?: string;
-  packingList?: IPackingListItem[]
+  packingList?: IPackingListItem[];
 
   // =============== PRICING & COMMERCE ===============
   basePrice: IPrice;
@@ -268,6 +295,9 @@ export interface ITour extends Document {
   rejectionReason?: string;
   completedAt?: Date;
   reApprovalRequestedAt?: Date;
+
+  // =============== SUSPENSION ===============
+  suspension?: ITourSuspension;
 
   // =============== SYSTEM FIELDS ===============
   authorId: Types.ObjectId;
@@ -314,41 +344,50 @@ export interface ITourModel extends Model<ITour> {
   // Soft delete helpers
   softDeleteById(
     id: string | Types.ObjectId,
-    options?: SoftDeleteOptions
+    options?: SoftDeleteOptions,
   ): Promise<ITour | null>;
   softDeleteMany(
     filter: FilterQuery<ITour>,
-    options?: SoftDeleteOptions
+    options?: SoftDeleteOptions,
   ): Promise<{ deletedCount: number }>;
 
   // Restore helpers
   restoreById(
     id: string | Types.ObjectId,
-    options?: RestoreOptions
+    options?: RestoreOptions,
   ): Promise<ITour | null>;
   restoreMany(
     filter: FilterQuery<ITour>,
-    options?: RestoreOptions
+    options?: RestoreOptions,
   ): Promise<{ restoredCount: number }>;
 
   // Moderation helpers
   rejectById(
     id: string | Types.ObjectId,
-    options: RejectOptions
+    options: RejectOptions,
   ): Promise<ITour | null>;
   approveById(
     id: string | Types.ObjectId,
-    options: ApproveOptions
+    options: ApproveOptions,
   ): Promise<ITour | null>;
+  suspendById(
+    id: string | Types.ObjectId,
+    options: SuspendOptions,
+  ): Promise<ITour | null>;
+  unsuspendById(
+    id: string | Types.ObjectId,
+    options: UnsuspendOptions,
+  ): Promise<ITour | null>;
+
   requestReapproval(
     id: string | Types.ObjectId,
     requestedBy: Types.ObjectId,
-    session?: ClientSession
+    session?: ClientSession,
   ): Promise<ITour | null>;
 
   terminateById(
     id: string | Types.ObjectId,
-    options: TerminateOptions
+    options: TerminateOptions,
   ): Promise<ITour | null>;
 
   // Query helpers
@@ -359,19 +398,19 @@ export interface ITourModel extends Model<ITour> {
   findApproved(session?: ClientSession): Promise<ITour[]>;
   findOneWithDeleted(
     query: FilterQuery<ITour>,
-    session?: ClientSession
+    session?: ClientSession,
   ): Query<HydratedEmployeeDocument | null, ITour>;
 
   // Status update helpers
   publishById(
     id: string | Types.ObjectId,
     publishedBy: Types.ObjectId,
-    session?: ClientSession
+    session?: ClientSession,
   ): Promise<ITour | null>;
   archiveById(
     id: string | Types.ObjectId,
     archivedBy: Types.ObjectId,
-    session?: ClientSession
+    session?: ClientSession,
   ): Promise<ITour | null>;
 
   // Feature helpers
@@ -379,20 +418,20 @@ export interface ITourModel extends Model<ITour> {
     id: string | Types.ObjectId,
     featured: boolean,
     featuredBy: Types.ObjectId,
-    session?: ClientSession
+    session?: ClientSession,
   ): Promise<ITour | null>;
 
   // Departure helpers
   addDeparture(
     id: string | Types.ObjectId,
     departure: Omit<IDeparture, "seatsBooked"> & { seatsBooked?: number },
-    session?: ClientSession
+    session?: ClientSession,
   ): Promise<ITour | null>;
   updateDepartureSeats(
     id: string | Types.ObjectId,
     departureId: string | Types.ObjectId,
     seatsBooked: number,
-    session?: ClientSession
+    session?: ClientSession,
   ): Promise<ITour | null>;
 }
 
@@ -400,10 +439,25 @@ export interface ITourModel extends Model<ITour> {
 const TourSchema = new Schema<ITour>(
   {
     // =============== IDENTITY & BASIC INFO ===============
-    companyId: { type: Schema.Types.ObjectId, required: true, ref: "Guide", index: true },
+    companyId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: "Guide",
+      index: true,
+    },
     title: { type: String, required: true, trim: true },
-    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    status: { type: String, enum: Object.values(TOUR_STATUS), default: TOUR_STATUS.DRAFT },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    status: {
+      type: String,
+      enum: Object.values(TOUR_STATUS),
+      default: TOUR_STATUS.DRAFT,
+    },
     summary: { type: String, required: true, trim: true },
     heroImage: { type: Schema.Types.ObjectId, ref: "Asset" },
     gallery: [{ type: Schema.Types.ObjectId, ref: "Asset" }],
@@ -413,10 +467,16 @@ const TourSchema = new Schema<ITour>(
     },
 
     // =============== BANGLADESH-SPECIFIC FIELDS ===============
-    tourType: { type: String, enum: Object.values(TRAVEL_TYPE), required: true },
+    tourType: {
+      type: String,
+      enum: Object.values(TRAVEL_TYPE),
+      required: true,
+    },
     division: { type: String, enum: Object.values(DIVISION), required: true },
     district: { type: String, enum: Object.values(DISTRICT), required: true },
-    accommodationType: [{ type: String, enum: Object.values(ACCOMMODATION_TYPE) }],
+    accommodationType: [
+      { type: String, enum: Object.values(ACCOMMODATION_TYPE) },
+    ],
     guideIncluded: { type: Boolean, default: true, required: true },
     transportIncluded: { type: Boolean, default: true, required: true },
     emergencyContacts: {
@@ -444,7 +504,7 @@ const TourSchema = new Schema<ITour>(
                 images: [{ type: Schema.Types.ObjectId, ref: "Asset" }],
                 coordinates: { lat: Number, lng: Number },
               },
-              { _id: true }
+              { _id: true },
             ),
           ],
           activities: [
@@ -456,17 +516,21 @@ const TourSchema = new Schema<ITour>(
                 duration: { type: String, trim: true },
                 price: {
                   amount: { type: Number, min: 0 },
-                  currency: { type: String, enum: Object.values(CURRENCY), default: CURRENCY.BDT },
+                  currency: {
+                    type: String,
+                    enum: Object.values(CURRENCY),
+                    default: CURRENCY.BDT,
+                  },
                 },
                 rating: { type: Number, min: 0, max: 5 },
               },
-              { _id: false }
+              { _id: false },
             ),
           ],
           images: [{ type: Schema.Types.ObjectId, ref: "Asset" }],
           coordinates: { lat: Number, lng: Number },
         },
-        { _id: true }
+        { _id: true },
       ),
     ],
 
@@ -487,11 +551,25 @@ const TourSchema = new Schema<ITour>(
     ],
 
     // =============== INCLUSIONS/EXCLUSIONS ===============
-    inclusions: [{ label: { type: String, trim: true }, description: { type: String, trim: true } }],
-    exclusions: [{ label: { type: String, trim: true }, description: { type: String, trim: true } }],
+    inclusions: [
+      {
+        label: { type: String, trim: true },
+        description: { type: String, trim: true },
+      },
+    ],
+    exclusions: [
+      {
+        label: { type: String, trim: true },
+        description: { type: String, trim: true },
+      },
+    ],
 
     // =============== CATEGORIZATION ===============
-    difficulty: { type: String, enum: Object.values(DIFFICULTY_LEVEL), required: true },
+    difficulty: {
+      type: String,
+      enum: Object.values(DIFFICULTY_LEVEL),
+      required: true,
+    },
     bestSeason: [{ type: String, enum: Object.values(SEASON), required: true }],
     audience: [{ type: String, enum: Object.values(AUDIENCE_TYPE) }],
     categories: [{ type: String, enum: Object.values(TOUR_CATEGORIES) }],
@@ -548,7 +626,8 @@ const TourSchema = new Schema<ITour>(
     },
     discounts: [
       {
-        type: { type: String, enum: Object.values(TOUR_DISCOUNT) },
+        type: { type: String, enum: Object.values(TOUR_DISCOUNT_TYPE) },
+        discount: { type: String, enum: Object.values(TOUR_DISCOUNT) },
         value: { type: Number, min: 0, max: 100 },
         code: { type: String, trim: true },
         validFrom: { type: Date },
@@ -557,7 +636,10 @@ const TourSchema = new Schema<ITour>(
     ],
 
     // =============== SCHEDULE ===============
-    duration: { days: { type: Number, min: 0 }, nights: { type: Number, min: 0 } },
+    duration: {
+      days: { type: Number, min: 0 },
+      nights: { type: Number, min: 0 },
+    },
     operatingWindows: [
       {
         startDate: { type: Date, required: true },
@@ -577,11 +659,17 @@ const TourSchema = new Schema<ITour>(
     ],
 
     // =============== PAYMENT METHODS ===============
-    paymentMethods: [{ type: String, enum: Object.values(PAYMENT_METHOD), required: true }],
+    paymentMethods: [
+      { type: String, enum: Object.values(PAYMENT_METHOD), required: true },
+    ],
 
     // =============== COMPLIANCE ===============
     licenseRequired: { type: Boolean, default: false },
-    ageSuitability: { type: String, enum: Object.values(AGE_SUITABILITY), required: true },
+    ageSuitability: {
+      type: String,
+      enum: Object.values(AGE_SUITABILITY),
+      required: true,
+    },
     accessibility: {
       wheelchair: { type: Boolean, default: false },
       familyFriendly: { type: Boolean, default: false },
@@ -600,7 +688,9 @@ const TourSchema = new Schema<ITour>(
       ],
     },
     refundPolicy: {
-      method: [{ type: String, enum: Object.values(PAYMENT_METHOD), required: true }],
+      method: [
+        { type: String, enum: Object.values(PAYMENT_METHOD), required: true },
+      ],
       processingDays: { type: Number, min: 0 },
     },
     terms: { type: String },
@@ -614,13 +704,32 @@ const TourSchema = new Schema<ITour>(
     featured: { type: Boolean, default: false },
 
     // =============== MODERATION ===============
-    moderationStatus: { type: String, enum: Object.values(MODERATION_STATUS), default: MODERATION_STATUS.PENDING },
+    moderationStatus: {
+      type: String,
+      enum: Object.values(MODERATION_STATUS),
+      default: MODERATION_STATUS.PENDING,
+    },
     rejectionReason: { type: String, trim: true },
     completedAt: { type: Date },
     reApprovalRequestedAt: { type: Date },
 
+    // =============== SUSPENSION ===============
+    suspension: {
+      reason: { type: String, trim: true },
+      suspendedBy: { type: Schema.Types.ObjectId, ref: "User" },
+      isAllTime: { type: Boolean, default: false },
+      startAt: { type: Date },
+      endAt: { type: Date },
+      notes: { type: String, trim: true },
+    },
+
     // =============== SYSTEM ===============
-    authorId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    authorId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
     tags: [{ type: String, trim: true, index: true }],
     publishedAt: { type: Date, index: true },
     viewCount: { type: Number, default: 0 },
@@ -628,13 +737,13 @@ const TourSchema = new Schema<ITour>(
     shareCount: { type: Number, default: 0 },
     deletedAt: { type: Date, index: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Soft delete by ID
 TourSchema.statics.softDeleteById = async function (
   id: string | Types.ObjectId,
-  options?: SoftDeleteOptions
+  options?: SoftDeleteOptions,
 ): Promise<ITour | null> {
   const tour = await this.findById(id).session(options?.session ?? null);
 
@@ -660,21 +769,19 @@ TourSchema.statics.softDeleteById = async function (
 // Soft delete many
 TourSchema.statics.softDeleteMany = async function (
   filter: FilterQuery<ITour>,
-  options?: SoftDeleteOptions
+  options?: SoftDeleteOptions,
 ): Promise<{ deletedCount: number }> {
   const update: UpdateQuery<ITour> = {
     $set: {
       deletedAt: new Date(),
       status: TOUR_STATUS.ARCHIVED as TourStatus,
-      moderationStatus: undefined
+      moderationStatus: undefined,
     },
   };
 
-  const result = await this.updateMany(
-    { ...filter, deletedAt: null },
-    update,
-    { session: options?.session }
-  );
+  const result = await this.updateMany({ ...filter, deletedAt: null }, update, {
+    session: options?.session,
+  });
 
   return { deletedCount: result.modifiedCount };
 };
@@ -682,7 +789,7 @@ TourSchema.statics.softDeleteMany = async function (
 // Restore by ID
 TourSchema.statics.restoreById = async function (
   id: string | Types.ObjectId,
-  options?: RestoreOptions
+  options?: RestoreOptions,
 ): Promise<ITour | null> {
   const tour = await this.findById(id).session(options?.session ?? null);
 
@@ -703,7 +810,7 @@ TourSchema.statics.restoreById = async function (
 // Restore many
 TourSchema.statics.restoreMany = async function (
   filter: FilterQuery<ITour>,
-  options?: RestoreOptions
+  options?: RestoreOptions,
 ): Promise<{ restoredCount: number }> {
   const update: UpdateQuery<ITour> = {
     $unset: { deletedAt: "" },
@@ -715,7 +822,7 @@ TourSchema.statics.restoreMany = async function (
   const result = await this.updateMany(
     { ...filter, deletedAt: { $ne: null } },
     update,
-    { session: options?.session }
+    { session: options?.session },
   );
 
   return { restoredCount: result.modifiedCount };
@@ -724,7 +831,7 @@ TourSchema.statics.restoreMany = async function (
 // Reject by ID
 TourSchema.statics.rejectById = async function (
   id: string | Types.ObjectId,
-  options: RejectOptions
+  options: RejectOptions,
 ): Promise<ITour | null> {
   const tour = await this.findById(id).session(options.session ?? null);
 
@@ -743,7 +850,7 @@ TourSchema.statics.rejectById = async function (
 // Approve by ID
 TourSchema.statics.approveById = async function (
   id: string | Types.ObjectId,
-  options: ApproveOptions
+  options: ApproveOptions,
 ): Promise<ITour | null> {
   const tour = await this.findById(id).session(options.session ?? null);
 
@@ -763,7 +870,7 @@ TourSchema.statics.approveById = async function (
 TourSchema.statics.requestReapproval = async function (
   id: string | Types.ObjectId,
   requestedBy: Types.ObjectId,
-  session?: ClientSession
+  session?: ClientSession,
 ): Promise<ITour | null> {
   const tour = await this.findById(id).session(session ?? null);
 
@@ -782,7 +889,7 @@ TourSchema.statics.requestReapproval = async function (
 // Terminate by ID
 TourSchema.statics.terminateById = async function (
   id: string | Types.ObjectId,
-  options: TerminateOptions
+  options: TerminateOptions,
 ): Promise<ITour | null> {
   const tour = await this.findById(id).session(options.session ?? null);
 
@@ -803,7 +910,7 @@ TourSchema.statics.terminateById = async function (
     TOUR_STATUS.ACTIVE,
     TOUR_STATUS.SUBMITTED,
     TOUR_STATUS.DRAFT,
-    TOUR_STATUS.COMPLETED
+    TOUR_STATUS.COMPLETED,
   ];
 
   if (!allowedStatuses.includes(tour.status as TOUR_STATUS)) {
@@ -819,9 +926,58 @@ TourSchema.statics.terminateById = async function (
   return tour.save({ session: options.session });
 };
 
+TourSchema.statics.suspendById = async function (
+  id: string | Types.ObjectId,
+  options: SuspendOptions,
+): Promise<ITour | null> {
+  const tour = await this.findById(id).session(options.session ?? null);
+
+  if (!tour) throw new Error("Tour not found");
+
+  const startAt = new Date();
+  const isAllTime = options.isAllTime ?? false;
+
+  tour.status = TOUR_STATUS.TERMINATED;
+  tour.moderationStatus = MODERATION_STATUS.SUSPENDED;
+  tour.suspension = {
+    reason: options.reason,
+    suspendedBy: options.suspendedBy,
+    isAllTime,
+    startAt,
+    endAt: isAllTime
+      ? undefined
+      : new Date(startAt.getTime() + (options.durationDays ?? 0) * 86400000),
+    notes: options.notes,
+  };
+
+  tour.updatedAt = new Date();
+  return tour.save({ session: options.session });
+};
+
+TourSchema.statics.unsuspendById = async function (
+  id: string | Types.ObjectId,
+  options: UnsuspendOptions,
+): Promise<ITour | null> {
+  const tour = await this.findById(id).session(options.session ?? null);
+
+  if (!tour) throw new Error("Tour not found");
+  if (
+    tour.status !== TOUR_STATUS.TERMINATED &&
+    tour.moderationStatus !== MODERATION_STATUS.SUSPENDED
+  )
+    throw new Error("Tour is not suspended");
+
+  tour.status = TOUR_STATUS.DRAFT; // or ACTIVE, your call
+  tour.tour.moderationStatus = MODERATION_STATUS.PENDING;
+  tour.suspension = undefined;
+  tour.updatedAt = new Date();
+
+  return tour.save({ session: options.session });
+};
+
 // Find active tours (not deleted and status = ACTIVE)
 TourSchema.statics.findActive = function (
-  session?: ClientSession
+  session?: ClientSession,
 ): Promise<ITour[]> {
   return this.find({
     deletedAt: null,
@@ -833,7 +989,7 @@ TourSchema.statics.findActive = function (
 
 // Find deleted tours
 TourSchema.statics.findDeleted = function (
-  session?: ClientSession
+  session?: ClientSession,
 ): Promise<ITour[]> {
   return this.find({ deletedAt: { $ne: null } })
     .session(session ?? null)
@@ -842,7 +998,7 @@ TourSchema.statics.findDeleted = function (
 
 // Find pending approval
 TourSchema.statics.findPendingApproval = function (
-  session?: ClientSession
+  session?: ClientSession,
 ): Promise<ITour[]> {
   return this.find({
     moderationStatus: MODERATION_STATUS.PENDING,
@@ -854,7 +1010,7 @@ TourSchema.statics.findPendingApproval = function (
 
 // Find rejected tours
 TourSchema.statics.findRejected = function (
-  session?: ClientSession
+  session?: ClientSession,
 ): Promise<ITour[]> {
   return this.find({
     moderationStatus: MODERATION_STATUS.DENIED,
@@ -865,10 +1021,12 @@ TourSchema.statics.findRejected = function (
 };
 
 // Find approved tours
-TourSchema.statics.findApproved = async function (session?: ClientSession): Promise<ITour[]> {
+TourSchema.statics.findApproved = async function (
+  session?: ClientSession,
+): Promise<ITour[]> {
   return this.find({
     moderationStatus: MODERATION_STATUS.APPROVED,
-    deletedAt: null
+    deletedAt: null,
   })
     .session(session ?? null)
     .sort({ createdAt: -1 });
@@ -876,7 +1034,7 @@ TourSchema.statics.findApproved = async function (session?: ClientSession): Prom
 
 TourSchema.statics.findOneWithDeleted = function (
   query: FilterQuery<ITour>,
-  session?: ClientSession
+  session?: ClientSession,
 ) {
   // Ignore the pre-find hook by directly querying without adding deletedAt filter
   return this.findOne(query).session(session ?? null);
@@ -885,9 +1043,7 @@ TourSchema.statics.findOneWithDeleted = function (
 // =============== SCHEMA HOOKS ===============
 
 // Pre-save hook to ensure unique slug
-TourSchema.pre("save", async function (
-  this: HydratedDocument<ITour>
-) {
+TourSchema.pre("save", async function (this: HydratedDocument<ITour>) {
   if (!this.isModified("title")) return;
 
   const baseSlug = this.title
@@ -920,6 +1076,7 @@ TourSchema.index({ "destinations.city": 1 });
 TourSchema.index({ categories: 1 });
 TourSchema.index({ audience: 1 });
 TourSchema.index({ featured: 1 });
+TourSchema.index({ status: 1, "suspension.endAt": 1 });
 
 // Additional indexes for performance
 TourSchema.index({ deletedAt: 1, status: 1 });

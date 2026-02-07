@@ -16,6 +16,7 @@ import {
     AccommodationType,
     TourDiscount,
     MealsProvided,
+    TourDiscountType,
 } from "@/constants/tour.const";
 
 /* =============== SUB TYPES (Mirroring Model Structure) =============== */
@@ -39,7 +40,8 @@ export interface PriceDTO {
 }
 
 export interface DiscountDTO {
-    type: TourDiscount;
+    type: TourDiscountType;
+    discount: TourDiscount;
     value: number;
     code?: string;
     validFrom?: string;
@@ -186,6 +188,15 @@ export interface EmergencyContactsDTO {
     localEmergency?: string;
 }
 
+export interface TourSuspension {
+    reason: string;
+    suspendedBy: TourAuthorInfo;
+    isAllTime: boolean;
+    startAt: string;
+    endAt?: string; // required if not all-time
+    notes?: string;
+}
+
 /* =============== MAIN TOUR DTO =============== */
 
 /**
@@ -286,6 +297,8 @@ export interface TourDetailDTO {
     createdAt: string;
     updatedAt: string;
     deletedAt?: string;
+
+    suspension?: TourSuspension;
 
     // =============== COMPUTED/UI-ONLY FIELDS (Not in model) ===============
     // These are calculated or derived for UI convenience

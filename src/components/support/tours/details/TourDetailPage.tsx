@@ -23,6 +23,8 @@ import {
     MdLocationCity,
     MdTimer,
     MdRestaurant,
+    MdPerson,
+    MdBusiness,
 } from "react-icons/md";
 import {
     FaClipboardList,
@@ -39,7 +41,9 @@ import {
     Archive,         // Archived
     Clock,           // Pending
     PauseCircle,
-    CheckCircle2,     // Suspended
+    CheckCircle2,
+    Hotel,
+    Bus,
 } from "lucide-react";
 import AllDetailsSkeleton from "./skeletons/TourDetailPageSkeleton";
 import { Button } from "@/components/ui/button";
@@ -53,8 +57,10 @@ import {
 } from "@/constants/tour.const";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 import { useTourApproval } from "@/store/tour-approval.store";
-import { ConfirmApproveDialog } from "../ConfirmApproveDialog";
-import { RejectDialog } from "../RejectDialog";
+import { ConfirmApproveDialog } from "./ConfirmApproveDialog";
+import { RejectDialog } from "./RejectDialog";
+import { SuspendDialog } from "./SuspendDialog";
+import { UnsuspendDialog } from "./UnsuspendDialog";
 
 type Props = {
     tourId: string;
@@ -161,6 +167,8 @@ export default function TourDetailPage({ tourId }: Props) {
 
     const [approveOpenFor, setApproveOpenFor] = useState<string | null>(null);
     const [rejectOpenFor, setRejectOpenFor] = useState<string | null>(null);
+    const [suspendOpenFor, setSuspendOpenFor] = useState<string | null>(null);
+    const [unsuspendOpenFor, setUnsuspendOpenFor] = useState<string | null>(null);
 
     useEffect(() => {
         const loadTour = async () => {
@@ -183,7 +191,7 @@ export default function TourDetailPage({ tourId }: Props) {
         };
 
         loadTour();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tourId]);
 
     const formatDate = (d?: string) => {
@@ -210,6 +218,32 @@ export default function TourDetailPage({ tourId }: Props) {
             return `${amount} ${currency}`;
         }
     };
+
+    // Determine which action buttons to show based on tour status
+    const getAvailableActions = useMemo(() => {
+        if (!tour) return { showApprove: false, showReject: false, showSuspend: false, showUnsuspend: false };
+
+        const isTourActive = tour.status === TOUR_STATUS.ACTIVE;
+        const isModerationPending = tour.moderationStatus === MODERATION_STATUS.PENDING;
+        const isModerationApproved = tour.moderationStatus === MODERATION_STATUS.APPROVED;
+        const isModerationSuspended = tour.moderationStatus === MODERATION_STATUS.SUSPENDED;
+        const isModerationDenied = tour.moderationStatus === MODERATION_STATUS.DENIED;
+
+        return {
+            // Show approve/reject only when moderation is pending
+            showApprove: isModerationPending,
+            showReject: isModerationPending,
+
+            // Show suspend only when tour is active AND moderation is approved
+            showSuspend: isTourActive && isModerationApproved,
+
+            // Show unsuspend only when tour is active AND moderation is suspended
+            showUnsuspend: isTourActive && isModerationSuspended,
+
+            // Disable all actions if tour is already denied
+            isDisabled: isModerationDenied
+        };
+    }, [tour]);
 
     // Get primary price from basePrice or priceSummary
     const pricePrimary = useMemo(() => {
@@ -253,6 +287,63 @@ export default function TourDetailPage({ tourId }: Props) {
     const handleRetry = useCallback(async () => {
         await fetchTourById(tourId, true); // Force skip cache
     }, [fetchTourById, tourId]);
+
+
+    // Show suspension details if tour is suspended
+    const renderSuspensionDetails = () => {
+        if (!tour?.suspension || tour.moderationStatus !== MODERATION_STATUS.SUSPENDED) {
+            return null;
+        }
+
+        const suspension = tour.suspension;
+        const isAllTime = suspension.isAllTime;
+        const endAt = isAllTime ? "Indefinite" : formatDate(suspension.endAt);
+
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-2 border-amber-200 dark:border-amber-800"
+            >
+                <div className="flex items-start gap-3">
+                    <PauseCircle className="w-6 h-6 text-amber-600 dark:text-amber-400 mt-0.5" />
+                    <div className="flex-1">
+                        <h3 className="font-bold text-amber-800 dark:text-amber-300 mb-2">
+                            Tour Suspended
+                        </h3>
+
+                        <div className="space-y-2 text-sm">
+                            <div>
+                                <span className="font-medium text-amber-700 dark:text-amber-400">Reason:</span>
+                                <span className="ml-2 text-slate-700 dark:text-slate-300">{suspension.reason}</span>
+                            </div>
+
+                            <div>
+                                <span className="font-medium text-amber-700 dark:text-amber-400">Duration:</span>
+                                <span className="ml-2 text-slate-700 dark:text-slate-300">
+                                    {isAllTime ? "Indefinite suspension" : `${formatDate(suspension.startAt)} to ${endAt}`}
+                                </span>
+                            </div>
+
+                            <div>
+                                <span className="font-medium text-amber-700 dark:text-amber-400">Suspended by:</span>
+                                <span className="ml-2 text-slate-700 dark:text-slate-300">
+                                    {suspension.suspendedBy.name}
+                                </span>
+                            </div>
+
+                            {suspension.notes && (
+                                <div>
+                                    <span className="font-medium text-amber-700 dark:text-amber-400">Notes:</span>
+                                    <span className="ml-2 text-slate-700 dark:text-slate-300">{suspension.notes}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        );
+    };
 
     if (isLoading && !tour) {
         return (
@@ -311,6 +402,9 @@ export default function TourDetailPage({ tourId }: Props) {
                 <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 via-transparent to-cyan-600/10 pointer-events-none z-10" />
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+                    {/* Suspension Details */}
+                    {renderSuspensionDetails()}
+
                     {/* Hero Section */}
                     <motion.div variants={fadeInUp}>
                         <div className="relative group">
@@ -514,24 +608,80 @@ export default function TourDetailPage({ tourId }: Props) {
                                     </div>
                                 )}
 
-                                {/* Action Buttons - Side by side on desktop, stacked on mobile */}
+                                {/* Action Buttons - Conditionally rendered based on status */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
-                                    <Button
-                                        onClick={() => setApproveOpenFor(tourId)}
-                                        disabled={isProcessing}
-                                        className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md hover:shadow-lg transition-all py-3 text-sm sm:text-base"
-                                    >
-                                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                                        Approve
-                                    </Button>
-                                    <Button
-                                        onClick={() => setRejectOpenFor(tourId)}
-                                        disabled={isProcessing}
-                                        className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white shadow-md hover:shadow-lg transition-all py-3 text-sm sm:text-base"
-                                    >
-                                        <XCircle className="w-4 h-4 mr-2" />
-                                        Reject
-                                    </Button>
+                                    {/* Approve Button - Only show when moderation is pending */}
+                                    {getAvailableActions.showApprove && (
+                                        <Button
+                                            onClick={() => setApproveOpenFor(tourId)}
+                                            disabled={isProcessing || getAvailableActions.isDisabled}
+                                            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md hover:shadow-lg transition-all py-3 text-sm sm:text-base"
+                                        >
+                                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                                            Approve
+                                        </Button>
+                                    )}
+
+                                    {/* Reject Button - Only show when moderation is pending */}
+                                    {getAvailableActions.showReject && (
+                                        <Button
+                                            onClick={() => setRejectOpenFor(tourId)}
+                                            disabled={isProcessing || getAvailableActions.isDisabled}
+                                            className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white shadow-md hover:shadow-lg transition-all py-3 text-sm sm:text-base"
+                                        >
+                                            <XCircle className="w-4 h-4 mr-2" />
+                                            Reject
+                                        </Button>
+                                    )}
+
+                                    {/* Suspend Button - Only show when tour is active AND moderation is approved */}
+                                    {getAvailableActions.showSuspend && (
+                                        <Button
+                                            onClick={() => setSuspendOpenFor(tourId)}
+                                            disabled={isProcessing || getAvailableActions.isDisabled}
+                                            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md hover:shadow-lg transition-all py-3 text-sm sm:text-base"
+                                        >
+                                            <PauseCircle className="w-4 h-4 mr-2" />
+                                            Suspend
+                                        </Button>
+                                    )}
+
+                                    {/* Unsuspend Button - Only show when tour is active AND moderation is suspended */}
+                                    {getAvailableActions.showUnsuspend && (
+                                        <Button
+                                            onClick={() => setUnsuspendOpenFor(tourId)}
+                                            disabled={isProcessing || getAvailableActions.isDisabled}
+                                            className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-md hover:shadow-lg transition-all py-3 text-sm sm:text-base"
+                                        >
+                                            <PlayCircle className="w-4 h-4 mr-2" />
+                                            Unsuspend
+                                        </Button>
+                                    )}
+
+                                    {/* Show message when no actions are available */}
+                                    {!getAvailableActions.showApprove &&
+                                        !getAvailableActions.showReject &&
+                                        !getAvailableActions.showSuspend &&
+                                        !getAvailableActions.showUnsuspend && (
+                                            <div className="col-span-full text-center py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-800">
+                                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                                    No actions available for this tour status
+                                                </p>
+                                            </div>
+                                        )}
+                                </div>
+
+                                {/* Status Information */}
+                                <div className="mt-4 text-sm text-slate-600 dark:text-slate-400">
+                                    <p>
+                                        Tour Status: <span className="font-semibold">{tour.status}</span> •
+                                        Moderation Status: <span className="font-semibold">{tour.moderationStatus}</span>
+                                    </p>
+                                    {getAvailableActions.isDisabled && (
+                                        <p className="text-amber-600 dark:text-amber-400 mt-1">
+                                            This tour has been denied and cannot be modified.
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Next Departure */}
@@ -816,8 +966,9 @@ export default function TourDetailPage({ tourId }: Props) {
                                                             <div className="flex flex-wrap gap-4 text-sm mb-4">
                                                                 {it.accommodation && (
                                                                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-slate-800/80">
-                                                                        <span className="font-semibold text-violet-600">🏨</span>
-                                                                        <span className="text-slate-700 dark:text-slate-300">{it.accommodation}</span>
+                                                                        <span className="font-semibold text-violet-600 inline-flex items-center">
+                                                                            <Hotel className="h-4 w-4" />
+                                                                        </span>                                                                        <span className="text-slate-700 dark:text-slate-300">{it.accommodation}</span>
                                                                     </div>
                                                                 )}
 
@@ -832,7 +983,9 @@ export default function TourDetailPage({ tourId }: Props) {
 
                                                                 {it.travelMode && (
                                                                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-slate-800/80">
-                                                                        <span className="font-semibold text-blue-600">🚌</span>
+                                                                        <span className="font-semibold text-blue-600 inline-flex items-center">
+                                                                            <Bus className="h-4 w-4" />
+                                                                        </span>
                                                                         <span className="text-slate-700 dark:text-slate-300">{it.travelMode}</span>
                                                                     </div>
                                                                 )}
@@ -1477,29 +1630,47 @@ export default function TourDetailPage({ tourId }: Props) {
                                             {/* System Information */}
                                             <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
                                                 <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-4">System Information</h4>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                                                        <div className="text-xs text-slate-500 mb-1">Created</div>
-                                                        <div className="font-medium text-slate-900 dark:text-white">
-                                                            {formatDate(tour.createdAt)}
+                                                <div className="space-y-4">
+                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                                            <div className="text-xs text-slate-500 mb-1">Created</div>
+                                                            <div className="font-medium text-slate-900 dark:text-white">
+                                                                {formatDate(tour.createdAt)}
+                                                            </div>
+                                                        </div>
+                                                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                                            <div className="text-xs text-slate-500 mb-1">Updated</div>
+                                                            <div className="font-medium text-slate-900 dark:text-white">
+                                                                {formatDate(tour.updatedAt)}
+                                                            </div>
+                                                        </div>
+                                                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                                            <div className="text-xs text-slate-500 mb-1">Published</div>
+                                                            <div className="font-medium text-slate-900 dark:text-white">
+                                                                {tour.publishedAt ? formatDate(tour.publishedAt) : "—"}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                                                        <div className="text-xs text-slate-500 mb-1">Updated</div>
-                                                        <div className="font-medium text-slate-900 dark:text-white">
-                                                            {formatDate(tour.updatedAt)}
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                                            <div className="text-xs text-slate-500 mb-1">Company</div>
+                                                            <div className="font-medium text-slate-900 dark:text-white truncate flex items-center gap-2">
+                                                                <MdBusiness className="text-violet-600" />
+                                                                {tour.companyInfo.name}
+                                                            </div>
+                                                            <div className="text-xs text-slate-500 mt-1">
+                                                                ID: {tour.companyInfo.id}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                                                        <div className="text-xs text-slate-500 mb-1">Published</div>
-                                                        <div className="font-medium text-slate-900 dark:text-white">
-                                                            {tour.publishedAt ? formatDate(tour.publishedAt) : "—"}
-                                                        </div>
-                                                    </div>
-                                                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                                                        <div className="text-xs text-slate-500 mb-1">Author ID</div>
-                                                        <div className="font-medium text-slate-900 dark:text-white truncate">
-                                                            {tour.authorId}
+                                                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                                            <div className="text-xs text-slate-500 mb-1">Author</div>
+                                                            <div className="font-medium text-slate-900 dark:text-white truncate flex items-center gap-2">
+                                                                <MdPerson className="text-blue-600" />
+                                                                {tour.authorInfo.name}
+                                                            </div>
+                                                            <div className="text-xs text-slate-500 mt-1 truncate">
+                                                                {tour.authorInfo.email}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1819,6 +1990,18 @@ export default function TourDetailPage({ tourId }: Props) {
             <RejectDialog
                 open={rejectOpenFor === tourId}
                 onOpenChange={(open: boolean) => !open && setRejectOpenFor(null)}
+                tourId={tourId}
+                tourTitle={tour.title}
+            />
+            <SuspendDialog
+                open={suspendOpenFor === tourId}
+                onOpenChange={(open: boolean) => !open && setSuspendOpenFor(null)}
+                tourId={tourId}
+                tourTitle={tour.title}
+            />
+            <UnsuspendDialog
+                open={unsuspendOpenFor === tourId}
+                onOpenChange={(open: boolean) => !open && setUnsuspendOpenFor(null)}
                 tourId={tourId}
                 tourTitle={tour.title}
             />

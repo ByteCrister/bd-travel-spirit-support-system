@@ -47,8 +47,11 @@ export function parseAdListQuery(params: URLSearchParams): AdListQuery {
   );
   let status: AdListQuery["status"];
   if (rawStatuses && rawStatuses.length) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filtered = rawStatuses.filter((s) => VALID_STATUSES.has(s as any));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (filtered.length === 1) status = filtered[0] as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     else if (filtered.length > 1) status = filtered as any;
   }
 
@@ -58,8 +61,11 @@ export function parseAdListQuery(params: URLSearchParams): AdListQuery {
   );
   let placements: AdListQuery["placements"];
   if (rawPlacements && rawPlacements.length) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filtered = rawPlacements.filter((p) => VALID_PLACEMENTS.has(p as any));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (filtered.length === 1) placements = filtered[0] as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     else if (filtered.length > 1) placements = filtered as any;
   }
 
@@ -71,7 +77,7 @@ export function parseAdListQuery(params: URLSearchParams): AdListQuery {
   const sortBy = (params.get("sortBy") as AdListQuery["sortBy"]) ?? undefined;
   const sortDirRaw = params.get("sortDir") ?? undefined;
   const sortDir =
-    sortDirRaw && (sortDirRaw === "asc" || sortDirRaw === "desc") ? (sortDirRaw as any) : undefined;
+    sortDirRaw && (sortDirRaw === "asc" || sortDirRaw === "desc") ? sortDirRaw : undefined;
 
   const withDeleted = params.get("withDeleted") === "true" || params.get("withDeleted") === "1";
 

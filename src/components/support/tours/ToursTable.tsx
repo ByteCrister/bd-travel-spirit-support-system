@@ -25,8 +25,8 @@ import {
     Ban,
 } from "lucide-react";
 import { format } from "date-fns";
-import { ConfirmApproveDialog } from "./ConfirmApproveDialog";
-import { RejectDialog } from "./RejectDialog";
+import { ConfirmApproveDialog } from "./details/ConfirmApproveDialog";
+import { RejectDialog } from "./details/RejectDialog";
 import { useRouter } from "next/navigation";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 

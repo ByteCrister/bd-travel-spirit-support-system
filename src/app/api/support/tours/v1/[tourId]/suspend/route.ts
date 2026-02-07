@@ -1,4 +1,4 @@
-// app/api/support/v1/tours/[tourId]/approve/route.ts
+// app/api/support/v1/tours/[tourId]/suspend/route.ts
 import { NextRequest } from "next/server";
 import {
     withErrorHandler,
@@ -16,8 +16,8 @@ import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 
 /**
- * POST /api/support/v1/tours/[tourId]/approve
- * Approve a tour for publication
+ * POST /api/support/v1/tours/[tourId]/suspend
+ * Suspend a tour with a reason and optional duration
  */
 export const POST = withErrorHandler(
     async (
@@ -26,9 +26,9 @@ export const POST = withErrorHandler(
     ) => {
         const tourId = resolveMongoId((await params).tourId);
         const body = await req.json();
-        const { reason } = body;
+        const { reason, suspensionDuration, isAllTime, notes } = body;
 
-        // Validate tourId
+        // Validate inputs
         if (!tourId) {
             throw new ApiError("Tour ID is required", 400);
         }
@@ -37,25 +37,48 @@ export const POST = withErrorHandler(
             throw new ApiError("Invalid Tour ID format", 400);
         }
 
-        const approvedBy = await getUserIdFromSession();
-        if (!approvedBy) {
+        if (!reason || !reason.trim()) {
+            throw new ApiError("Suspension reason is required", 400);
+        }
+
+        // Validate suspension duration if not all-time
+        if (!isAllTime && (!suspensionDuration || suspensionDuration <= 0)) {
+            throw new ApiError("Suspension duration must be a positive number when not all-time", 400);
+        }
+
+        const suspendedBy = await getUserIdFromSession();
+        if (!suspendedBy) {
             throw new ApiError("Unauthorized", 401);
         }
 
-        await VERIFY_USER_ROLE.SUPPORT(approvedBy)
+        await VERIFY_USER_ROLE.SUPPORT(suspendedBy)
 
         await ConnectDB();
 
         const result = await withTransaction(async (session) => {
+            // Check if tour exists and get current status
+            const existingTour = await TourModel.findById(tourId).session(session);
+            if (!existingTour) {
+                throw new ApiError("Tour not found", 404);
+            }
 
-            // Approve the tour
-            const updatedTour = await TourModel.approveById(tourId, {
+            // Check if already suspended
+            if (existingTour.moderationStatus === "suspended") {
+                throw new ApiError("Tour is already suspended", 400);
+            }
+
+            // Suspend the tour using the model method
+            const updatedTour = await TourModel.suspendById(tourId, {
+                reason,
                 session,
-                approvedBy: new Types.ObjectId(approvedBy),
+                suspendedBy: new Types.ObjectId(suspendedBy),
+                isAllTime: isAllTime || false,
+                durationDays: suspensionDuration,
+                notes,
             });
 
             if (!updatedTour) {
-                throw new ApiError("Tour not found", 404);
+                throw new ApiError("Failed to suspend tour", 500);
             }
 
             const tourDetailDTO = await buildTourDetailDTO(
@@ -65,9 +88,7 @@ export const POST = withErrorHandler(
 
             const response: TourApprovalResponse = {
                 success: true,
-                message: reason
-                    ? `Tour approved: ${reason}`
-                    : "Tour approved successfully",
+                message: `Tour suspended: ${reason}`,
                 tour: tourDetailDTO,
                 updatedAt: new Date(),
             };

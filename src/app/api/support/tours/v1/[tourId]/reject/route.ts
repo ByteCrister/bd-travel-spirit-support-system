@@ -13,6 +13,7 @@ import { TourApprovalResponse } from "@/types/tour-approval.types";
 import { buildTourDetailDTO } from "@/lib/build-responses/build-tour-details";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 
 /**
  * POST /api/support/v1/tours/[tourId]/reject
@@ -44,6 +45,8 @@ export const POST = withErrorHandler(
         if (!rejectedBy) {
             throw new ApiError("Unauthorized", 401);
         }
+
+        await VERIFY_USER_ROLE.SUPPORT(rejectedBy)
 
         await ConnectDB();
 

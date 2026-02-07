@@ -1,4 +1,4 @@
-// app/api/support/v1/tours/[tourId]/approve/route.ts
+// app/api/support/v1/tours/[tourId]/unsuspend/route.ts
 import { NextRequest } from "next/server";
 import {
     withErrorHandler,
@@ -16,8 +16,8 @@ import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 
 /**
- * POST /api/support/v1/tours/[tourId]/approve
- * Approve a tour for publication
+ * POST /api/support/v1/tours/[tourId]/unsuspend
+ * Remove suspension from a tour
  */
 export const POST = withErrorHandler(
     async (
@@ -28,7 +28,7 @@ export const POST = withErrorHandler(
         const body = await req.json();
         const { reason } = body;
 
-        // Validate tourId
+        // Validate inputs
         if (!tourId) {
             throw new ApiError("Tour ID is required", 400);
         }
@@ -37,25 +37,39 @@ export const POST = withErrorHandler(
             throw new ApiError("Invalid Tour ID format", 400);
         }
 
-        const approvedBy = await getUserIdFromSession();
-        if (!approvedBy) {
+        if (!reason || !reason.trim()) {
+            throw new ApiError("Unsuspension reason is required", 400);
+        }
+
+        const restoredBy = await getUserIdFromSession();
+        if (!restoredBy) {
             throw new ApiError("Unauthorized", 401);
         }
 
-        await VERIFY_USER_ROLE.SUPPORT(approvedBy)
+        await VERIFY_USER_ROLE.SUPPORT(restoredBy)
 
         await ConnectDB();
 
         const result = await withTransaction(async (session) => {
+            // Check if tour exists
+            const existingTour = await TourModel.findById(tourId).session(session);
+            if (!existingTour) {
+                throw new ApiError("Tour not found", 404);
+            }
 
-            // Approve the tour
-            const updatedTour = await TourModel.approveById(tourId, {
+            // Check if actually suspended
+            if (existingTour.moderationStatus !== "suspended" || !existingTour.suspension) {
+                throw new ApiError("Tour is not suspended", 400);
+            }
+
+            // Unsuspend the tour using the model method
+            const updatedTour = await TourModel.unsuspendById(tourId, {
                 session,
-                approvedBy: new Types.ObjectId(approvedBy),
+                restoredBy: new Types.ObjectId(restoredBy),
             });
 
             if (!updatedTour) {
-                throw new ApiError("Tour not found", 404);
+                throw new ApiError("Failed to unsuspend tour", 500);
             }
 
             const tourDetailDTO = await buildTourDetailDTO(
@@ -65,9 +79,7 @@ export const POST = withErrorHandler(
 
             const response: TourApprovalResponse = {
                 success: true,
-                message: reason
-                    ? `Tour approved: ${reason}`
-                    : "Tour approved successfully",
+                message: `Tour unsuspended: ${reason}`,
                 tour: tourDetailDTO,
                 updatedAt: new Date(),
             };
