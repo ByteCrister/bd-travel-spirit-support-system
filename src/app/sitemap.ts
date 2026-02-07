@@ -7,7 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     const routes = [
         { path: "/", priority: 1.0 },
-        { path: "/about", priority: 0.8 },
+        // { path: "/about", priority: 0.8 },
         // { path: "/features", priority: 0.9 },
         // { path: "/how-to-use", priority: 0.85 },
     ];
