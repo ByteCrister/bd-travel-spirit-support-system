@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Shield, Clock, LogOut, ChevronRight, Lock, UserCircle, Zap, Sparkles, User } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Shield, Clock, LogOut, Lock, UserCircle, Zap, Sparkles } from "lucide-react";
 import { useCurrentUserStore } from "@/store/current-user.store";
 import ProfileLoading from "./skeletons/ProfileLoading";
 import AuditLogsSection from "./AuditLogsSection";
@@ -20,8 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import ProfileHeader from "./ProfileHeader";
 import { AlertConfirmDialog } from "./AlertConfirmDialog";
 
-const tabs = [
-    { id: "profile", label: "Profile Information", icon: UserCircle, color: "from-slate-600 to-slate-700" },
+const tabItems = [
+    { id: "profile", label: "Profile", icon: UserCircle, color: "from-slate-600 to-slate-700" },
     { id: "security", label: "Security", icon: Lock, color: "from-blue-600 to-blue-700" },
     { id: "audit", label: "Audit Logs", icon: Clock, color: "from-violet-600 to-violet-700" },
 ] as const;
@@ -64,13 +64,11 @@ export default function ProfilePage() {
             }
         };
 
-        // Only load if we haven't completed initial load or if baseUser is null
         if (!initialLoadComplete || !baseUser) {
             loadUserData();
         }
     }, [fetchBaseUser, fetchFullUser, initialLoadComplete, baseUser]);
 
-    // Show loading state
     if (baseMeta.loading || !initialLoadComplete) {
         return <ProfileLoading />;
     }
@@ -97,7 +95,6 @@ export default function ProfilePage() {
                     transition={{ duration: 0.4 }}
                 >
                     <Card className="relative border-2 border-destructive/20 overflow-hidden shadow-2xl">
-                        {/* Animated background gradient */}
                         <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 via-destructive/5 to-background" />
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(239,68,68,0.1),transparent_50%)]" />
 
@@ -188,177 +185,157 @@ export default function ProfilePage() {
                                 Manage your profile and account preferences
                             </motion.p>
                         </div>
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.3, type: "spring" }}
-                        >
-                            <Badge variant="outline" className="hidden sm:flex items-center gap-2 px-5 py-2.5 text-sm font-semibold shadow-lg border-2 bg-gradient-to-r from-background to-muted/30">
-                                <Sparkles className="h-4 w-4" />
-                                {baseUser.role}
-                            </Badge>
-                        </motion.div>
+                        <div className="flex items-center gap-4">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.3, type: "spring" }}
+                            >
+                                <Badge variant="outline" className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold shadow-lg border-2 bg-gradient-to-r from-background to-muted/30">
+                                    <Sparkles className="h-4 w-4" />
+                                    {baseUser.role}
+                                </Badge>
+                            </motion.div>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.4, type: "spring" }}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <Button
+                                    variant="outline"
+                                    className="text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-200 dark:hover:border-red-900 transition-all duration-300 border-slate-300 dark:border-slate-700 font-medium h-11 rounded-lg"
+                                    onClick={handleLogoutClick}
+                                >
+                                    <LogOut className="h-4 w-4 mr-2" />
+                                    <span className="text-sm">Logout</span>
+                                </Button>
+                            </motion.div>
+                        </div>
                     </div>
                 </motion.div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-                    {/* Enhanced Sidebar Navigation */}
+                {/* Main Content Area */}
+                <div className="space-y-6">
+                    {/* Profile Header */}
                     <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        className="lg:col-span-3"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
                     >
-                        <Card className="sticky top-6 shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
-                            {/* Subtle gradient background */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent dark:from-slate-900/50 pointer-events-none" />
+                        <ProfileHeader baseUser={baseUser} fullUser={fullUser} />
+                    </motion.div>
 
-                            <div className="relative p-6">
-                                <div className="mb-6 pb-4 border-b border-slate-200 dark:border-slate-800">
-                                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                        <User className="h-3.5 w-3.5" />
-                                        <span>Navigation</span>
-                                    </div>
-                                </div>
+                    {/* Tab Navigation */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                    >
+                        <Card className="shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                            <CardContent className="p-4 sm:p-6">
+                                <Tabs
+                                    value={activeTab}
+                                    onValueChange={(value) => setActiveTab(value as typeof activeTab)}
+                                    className="w-full"
+                                >
+                                    <TabsList>
+                                        {tabItems.map((tab) => {
+                                            const Icon = tab.icon;
+                                            const isActive = activeTab === tab.id;
 
-                                <nav className="space-y-1.5">
-                                    {tabs.map((tab, index) => {
-                                        const Icon = tab.icon;
-                                        const isActive = activeTab === tab.id;
-
-                                        return (
-                                            <motion.div
-                                                key={tab.id}
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: 0.1 + index * 0.05 }}
-                                                whileHover={{ x: isActive ? 0 : 4 }}
-                                                whileTap={{ scale: 0.98 }}
-                                            >
-                                                <Button
-                                                    variant={isActive ? "default" : "ghost"}
-                                                    className={`w-full justify-start relative group transition-all duration-300 ${isActive
-                                                        ? "shadow-sm bg-gradient-to-r " + tab.color + " text-white border-0"
-                                                        : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
-                                                        } h-11 rounded-lg font-medium`}
-                                                    onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                                            return (
+                                                <TabsTrigger
+                                                    key={tab.id}
+                                                    value={tab.id}
+                                                    className={`
+                                                        relative py-4 px-6 rounded-lg font-semibold transition-all duration-300
+                                                        flex items-center justify-center gap-3
+                                                        data-[state=active]:shadow-lg
+                                                        ${isActive
+                                                            ? `bg-gradient-to-r ${tab.color} text-white shadow-md hover:shadow-lg`
+                                                            : "bg-transparent text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-slate-200"
+                                                        }
+                                                    `}
                                                 >
+                                                    <Icon className={`h-5 w-5 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
+                                                    <span className="text-sm sm:text-base font-semibold">
+                                                        {tab.label}
+                                                    </span>
                                                     {isActive && (
                                                         <motion.div
-                                                            layoutId="activeTab"
-                                                            className={`absolute inset-0 bg-gradient-to-r ${tab.color} rounded-lg`}
+                                                            layoutId="activeTabIndicator"
+                                                            className="absolute inset-0 rounded-lg border-2 border-white/20"
                                                             initial={false}
                                                             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                                                         />
                                                     )}
-                                                    <span className="relative flex items-center gap-3 w-full">
-                                                        <Icon className={`h-4.5 w-4.5 transition-all ${isActive
-                                                            ? "text-white"
-                                                            : "text-slate-500 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
-                                                            }`} />
-                                                        <span className={`flex-1 text-left text-sm font-medium transition-colors ${isActive
-                                                            ? "text-white"
-                                                            : ""
-                                                            }`}>
-                                                            {tab.label}
-                                                        </span>
-                                                        {isActive && (
-                                                            <motion.div
-                                                                initial={{ opacity: 0, x: -5 }}
-                                                                animate={{ opacity: 1, x: 0 }}
-                                                                transition={{ duration: 0.2 }}
-                                                            >
-                                                                <ChevronRight className="h-4 w-4 text-white" />
-                                                            </motion.div>
-                                                        )}
-                                                    </span>
-                                                </Button>
-                                            </motion.div>
-                                        );
-                                    })}
-                                </nav>
-
-                                <Separator className="my-6 bg-slate-200 dark:bg-slate-800" />
-
-                                <motion.div
-                                    whileHover={{ scale: 1.01 }}
-                                    whileTap={{ scale: 0.99 }}
-                                >
-                                    <Button
-                                        variant="outline"
-                                        className="w-full justify-start text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-200 dark:hover:border-red-900 transition-all duration-300 border-slate-300 dark:border-slate-700 font-medium h-11 rounded-lg"
-                                        onClick={handleLogoutClick}
-                                    >
-                                        <LogOut className="h-4 w-4 mr-3" />
-                                        <span className="text-sm">Logout</span>
-                                    </Button>
-                                </motion.div>
-                            </div>
+                                                </TabsTrigger>
+                                            );
+                                        })}
+                                    </TabsList>
+                                </Tabs>
+                            </CardContent>
                         </Card>
                     </motion.div>
 
-                    {/* Enhanced Main Content Area */}
-                    <div className="lg:col-span-9 space-y-6">
+                    {/* Tab Content Area */}
+                    <AnimatePresence mode="wait">
                         <motion.div
+                            key={activeTab}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.2 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.4, ease: "easeInOut" }}
                         >
-                            <ProfileHeader baseUser={baseUser} fullUser={fullUser} />
+                            <Card className="shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                                <CardContent className="p-6">
+                                    {activeTab === "profile" && (
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            {baseUser.role === USER_ROLE.SUPPORT ? (
+                                                <SupportEmployeeInfo
+                                                    employeeInfo={fullUser as IEmployeeInfo}
+                                                    isLoading={fullMeta.loading}
+                                                />
+                                            ) : (
+                                                <ProfileForm
+                                                    fullUser={fullUser}
+                                                    isLoading={fullMeta.loading}
+                                                    updateUserName={useCurrentUserStore.getState().updateUserName}
+                                                    updateNameMeta={useCurrentUserStore.getState().updateNameMeta}
+                                                />
+                                            )}
+                                        </motion.div>
+                                    )}
+
+                                    {activeTab === "security" && (
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <PasswordUpdateForm />
+                                        </motion.div>
+                                    )}
+
+                                    {activeTab === "audit" && (
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <AuditLogsSection />
+                                        </motion.div>
+                                    )}
+                                </CardContent>
+                            </Card>
                         </motion.div>
-
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={activeTab}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.4, ease: "easeInOut" }}
-                            >
-                                {activeTab === "profile" && (
-                                    <motion.div
-                                        initial={{ scale: 0.95 }}
-                                        animate={{ scale: 1 }}
-                                        transition={{ duration: 0.3 }}
-                                    >
-                                        {baseUser.role === USER_ROLE.SUPPORT ? (
-                                            <SupportEmployeeInfo
-                                                employeeInfo={fullUser as IEmployeeInfo}
-                                                isLoading={fullMeta.loading}
-                                            />
-                                        ) : (
-                                            <ProfileForm
-                                                fullUser={fullUser}
-                                                isLoading={fullMeta.loading}
-                                                updateUserName={useCurrentUserStore.getState().updateUserName}
-                                                updateNameMeta={useCurrentUserStore.getState().updateNameMeta}
-                                            />
-                                        )}
-                                    </motion.div>
-                                )}
-
-                                {activeTab === "security" && (
-                                    <motion.div
-                                        initial={{ scale: 0.95 }}
-                                        animate={{ scale: 1 }}
-                                        transition={{ duration: 0.3 }}
-                                    >
-                                        <PasswordUpdateForm />
-                                    </motion.div>
-                                )}
-
-                                {activeTab === "audit" && (
-                                    <motion.div
-                                        initial={{ scale: 0.95 }}
-                                        animate={{ scale: 1 }}
-                                        transition={{ duration: 0.3 }}
-                                    >
-                                        <AuditLogsSection />
-                                    </motion.div>
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
-                    </div>
+                    </AnimatePresence>
                 </div>
             </div>
 

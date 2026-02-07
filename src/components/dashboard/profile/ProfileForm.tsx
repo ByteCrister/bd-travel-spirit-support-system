@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Save, User, Mail, CheckCircle2, XCircle, AlertCircle, Info, BarChart3 } from "lucide-react";
+import { Loader2, Save, User, Mail, CheckCircle2, XCircle, AlertCircle, Info, BarChart3, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ProfileFormProps {
@@ -220,7 +220,7 @@ export default function ProfileForm({
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   <div className="h-7 w-7 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200">
-                    <span className="text-sm">🔒</span>
+                    <Lock className="h-4 w-4 text-slate-600" />
                   </div>
                 </div>
               </div>
