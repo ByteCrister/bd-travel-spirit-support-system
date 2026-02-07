@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"], variable: "--font-display" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_DOMAIN || "http://localhost:3000"),
+  metadataBase: new URL(process.env.DOMAIN || "http://localhost:3000"),
 
   // Basic Information  
   title: {
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_BD",
     alternateLocale: ["en_US", "bn_BD"],
-    url: process.env.NEXT_PUBLIC_DOMAIN,
+    url: process.env.DOMAIN,
     siteName: "BD Travel Spirit Support System",
     title: "BD Travel Spirit Support | Professional Tour Management Platform for Bangladesh",
     description: "Comprehensive support system for Bangladesh tourism. Professional tour guides, travel companies, and support staff platform. Discover, manage, and book authentic Bangladesh travel experiences.",
@@ -175,10 +175,10 @@ export const metadata: Metadata = {
 
   // Alternate Languages (if you add multilingual support)  
   alternates: {
-    canonical: process.env.NEXT_PUBLIC_DOMAIN,
+    canonical: process.env.DOMAIN,
     languages: {
-      "en-BD": `${process.env.NEXT_PUBLIC_DOMAIN}/en`,
-      "bn-BD": `${process.env.NEXT_PUBLIC_DOMAIN}/bn`,
+      "en-BD": `${process.env.DOMAIN}/en`,
+      "bn-BD": `${process.env.DOMAIN}/bn`,
     },
   },
 };
