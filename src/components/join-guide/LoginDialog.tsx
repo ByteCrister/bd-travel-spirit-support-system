@@ -52,6 +52,9 @@ const errorMap: Record<string, string> = {
   USER_NOT_EXIST_WITH_THIS_GOOGLE_EMAIL: "No account found for this Google email. Please sign up first.",
 };
 
+const CALL_BACK_URL = "/dashboard/overview";
+const EMAIL_VALIDATE_URL = "/auth/user/v1/validate";
+
 export default function LoginDialog() {
   const {
     isLoginOpen: isOpen,
@@ -80,7 +83,7 @@ export default function LoginDialog() {
 
     try {
 
-      await api.post("/auth/user/v1/validate", {
+      await api.post(EMAIL_VALIDATE_URL, {
         email: values.email,
         password: values.password,
       });
@@ -89,7 +92,7 @@ export default function LoginDialog() {
         redirect: true,
         email: values.email,
         password: values.password,
-        callbackUrl: "/dashboard/overview",
+        callbackUrl: CALL_BACK_URL,
       });
 
     } catch (error: unknown) {
@@ -106,7 +109,7 @@ export default function LoginDialog() {
     try {
       const res = await signIn("google", {
         redirect: false,
-        callbackUrl: "/dashboard/overview"
+        callbackUrl: CALL_BACK_URL
       });
 
       if (res?.error) {
@@ -114,7 +117,7 @@ export default function LoginDialog() {
       } else {
         showToast.success("Login successful", "Redirecting to dashboard...");
         // Redirect after successful login
-        window.location.href = res?.url || "/dashboard/overview";
+        window.location.href = res?.url || CALL_BACK_URL;
       }
     } catch {
       showToast.error("Google Login Error", "Failed to sign in with Google. Please try again.");
