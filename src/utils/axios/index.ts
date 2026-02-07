@@ -1,8 +1,12 @@
 // utils/axios/index.ts
 import axios from "axios";
 
+const baseURL = typeof window === 'undefined'
+    ? process.env.NEXTAUTH_URL
+    : '';
+
 const api = axios.create({
-    baseURL: `${process.env.NEXT_PUBLIC_DOMAIN!}/api`,
+    baseURL: `${baseURL}/api`,
     withCredentials: true,
     headers: {
         "Content-Type": "application/json",
