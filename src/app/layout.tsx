@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
 import { Inter, Poppins } from "next/font/google";
@@ -136,20 +136,6 @@ export const metadata: Metadata = {
   // Manifest  
   manifest: "/site.webmanifest",
 
-  // Theme & Colors  
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
-
-  // Viewport (Next.js 14+ - separate from metadata)  
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-  },
-
   // Verification (Add these to your environment variables)  
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
@@ -182,6 +168,19 @@ export const metadata: Metadata = {
     },
   },
 };
+
+// Theme & Colors  
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
+};
+
 
 export default async function RootLayout({
   children,
