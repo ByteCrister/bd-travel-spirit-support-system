@@ -27,7 +27,7 @@ export const formatRelative = (iso: string) => {
 export const formatExact = (iso: string) => new Date(iso).toLocaleString();
 
 // utils/csv.ts
-import { AdminArticleRowVM } from '@/types/article-comment.types';
+import { AdminArticleRowVM } from '@/types/article/article-comment.types';
 
 export function exportSliceToCsv(rows: AdminArticleRowVM[]) {
     const header = ['id', 'title', 'slug', 'authorName', 'totalComments', 'pendingComments', 'approvedComments', 'rejectedComments', 'latestCommentAt'];

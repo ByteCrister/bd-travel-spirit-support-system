@@ -3,7 +3,7 @@
 
 import { PlacementType } from "@/constants/advertising.const";
 import { Currency } from "@/constants/tour.const";
-import { ApiResponse } from "./api.types";
+import { ApiResponse } from "../common/api.types";
 
 /* -------------------------
    Primitives

@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PasswordRequestDto } from "@/types/guide-forgot-password.types";
+import { PasswordRequestDto } from "@/types/guide/guide-forgot-password.types";
 import { RefreshCw, AlertCircle, Shield } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { usePasswordRequestStore } from "@/store/guide/guide-password-request.store";

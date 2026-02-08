@@ -4,7 +4,7 @@ import Link from 'next/link'
 import React, { useState, useEffect } from 'react'
 import { FiArrowRight, FiUser, FiZap, FiHome } from 'react-icons/fi'
 import { motion } from 'framer-motion'
-import useJoinAsGuideStore from '@/store/join-as-guide.store';
+import useJoinAsGuideStore from '@/store/guide/join-as-guide.store';
 import { inter, jakarta } from '@/styles/fonts'
 import { useRouter } from 'next/navigation'
 import { useCurrentUserStore } from '@/store/current-user.store'

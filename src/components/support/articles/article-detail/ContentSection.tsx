@@ -44,7 +44,7 @@ import {
 import { DIVISION, Division, District } from '@/constants/tour.const';
 import { fileToBase64 } from '@/utils/helpers/file-conversion';
 import { CreateArticleFormValues } from '@/utils/validators/article.create.validator';
-import { DestinationBlock } from '@/types/article.types';
+import { DestinationBlock } from '@/types/article/article.types';
 import { MapPickerDialog } from '@/components/settings/footer/MapPickerDialog';
 import { showToast } from '@/components/global/showToast';
 import { extractErrorMessage } from '@/utils/axios/extract-error-message';

@@ -14,7 +14,7 @@ import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
 import { USER_ROLE } from "@/constants/user.const";
-import { ApiResponse } from "@/types/api.types";
+import { ApiResponse } from "@/types/common/api.types";
 
 const URL_AFTER_API = "/auth/user/v1";
 

@@ -11,7 +11,7 @@ import {
     SortOrder,
     EmployeesListResponse,
     EmployeeListItemDTO,
-} from '@/types/employee.types';
+} from '@/types/employee/employee.types';
 import { PAYROLL_STATUS } from '@/constants/employee.const';
 import UserModel from '@/models/user.model';
 import { getCollectionName } from '@/lib/helpers/get-collection-name';

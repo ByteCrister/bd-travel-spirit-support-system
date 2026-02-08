@@ -1,6 +1,6 @@
 // utils/api/email-verification.api.ts
 
-import { ApiResponse } from "@/types/api.types";
+import { ApiResponse } from "@/types/common/api.types";
 import api from "../axios";
 import { extractErrorMessage } from "../axios/extract-error-message";
 

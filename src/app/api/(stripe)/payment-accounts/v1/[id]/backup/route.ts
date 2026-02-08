@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose, { Types } from "mongoose";
 import ConnectDB from "@/config/db";
 import StripePaymentAccountModel, { IStripePaymentAccount } from "@/models/payment-account.model";
-import { PaymentAccount, SafeCardInfo } from "@/types/stripe-payment-account.type";
-import { Lean } from "@/types/mongoose-lean.types";
+import { PaymentAccount, SafeCardInfo } from "@/types/site-settings/stripe-payment-account.type";
+import { Lean } from "@/types/common/mongoose-lean.types";
 
 /* ---------------------------
    Helpers

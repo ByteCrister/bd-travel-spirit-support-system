@@ -1,6 +1,6 @@
 import { GUIDE_STATUS } from "@/constants/guide.const";
 import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
-import { User } from "@/types/user.types";
+import { User } from "@/types/user/user.types";
 
 export const demoUsers: User[] = Array.from({ length: 30 }).map((_, i) => {
     const numId = i + 1; // keep as number for math

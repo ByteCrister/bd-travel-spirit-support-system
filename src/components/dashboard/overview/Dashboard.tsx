@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { useDashboardStore } from "@/store/dashboard.store";
+import { useDashboardStore } from "@/store/dashboard/dashboard.store";
 import { StatsCard } from "@/components/dashboard/overview/StatsCard";
 import { RecentActivity } from "@/components/dashboard/overview/RecentActivity";
 import { PendingActions } from "@/components/dashboard/overview/PendingActions";

@@ -5,7 +5,7 @@ import { withTransaction } from '@/lib/helpers/withTransaction';
 import {
     CreateCommentPayloadDTO,
     CommentDetailDTO,
-} from '@/types/article-comment.types';
+} from '@/types/article/article-comment.types';
 import { COMMENT_STATUS, CommentStatus } from '@/constants/articleComment.const';
 import mongoose, { ClientSession, Types } from 'mongoose';
 import ConnectDB from '@/config/db';

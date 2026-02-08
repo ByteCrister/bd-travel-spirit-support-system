@@ -3,7 +3,7 @@ import {
     SubscriptionTierDTO,
     SubscriptionTierFormValues,
     ValidationError,
-} from "@/types/guide-subscription-settings.types";
+} from "@/types/site-settings/guide-subscription-settings.types";
 
 export function normalizePrice(input: string | number): number {
     const raw = typeof input === "string" ? input.trim() : input;

@@ -7,7 +7,7 @@ import {
     SalaryPaymentMode,
 } from "@/constants/employee.const";
 import { CURRENCY, Currency } from "@/constants/tour.const";
-import { DayOfWeek, EmergencyContactDTO, ContactInfoDTO, ShiftDTO, DocumentDTO } from "@/types/employee.types";
+import { DayOfWeek, EmergencyContactDTO, ContactInfoDTO, ShiftDTO, DocumentDTO } from "@/types/employee/employee.types";
 import { Types } from "mongoose";
 
 const objectIdSchema = yup

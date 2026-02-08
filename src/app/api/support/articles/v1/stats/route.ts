@@ -1,6 +1,6 @@
 // api/support/articles/v1/stats/route.ts
 import { ARTICLE_STATUS } from '@/constants/article.const';
-import { ArticleDashboardStats } from '@/types/article.types';
+import { ArticleDashboardStats } from '@/types/article/article.types';
 import { subMonths } from 'date-fns';
 import { withErrorHandler } from '@/lib/helpers/withErrorHandler';
 import { withTransaction } from '@/lib/helpers/withTransaction';

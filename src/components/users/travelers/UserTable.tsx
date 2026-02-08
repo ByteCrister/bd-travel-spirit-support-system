@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { UserTableRow, UserSortableField, UserAction } from "@/types/user.table.types";
+import { UserTableRow, UserSortableField, UserAction } from "@/types/user/user.table.types";
 import { UserActionMenu } from "./UserActionMenu";
 import {
     FiChevronUp,

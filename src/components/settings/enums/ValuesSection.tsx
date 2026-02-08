@@ -3,7 +3,7 @@
 
 import React, { JSX, useState } from "react";
 import { Plus } from "lucide-react";
-import { EnumValue, EnumValueForm } from "@/types/enum-settings.types";
+import { EnumValue, EnumValueForm } from "@/types/site-settings/enum-settings.types";
 import { Button } from "@/components/ui/button";
 import ValuesTable from "./ValuesTable";
 import ValueEditorDialog from "./ValueEditorDialog";

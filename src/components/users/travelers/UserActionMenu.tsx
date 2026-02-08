@@ -3,7 +3,7 @@
 
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { UserAction, UserTableRow } from "@/types/user.table.types";
+import { UserAction, UserTableRow } from "@/types/user/user.table.types";
 import { FiMoreVertical, FiUser, FiEdit3, FiCheckCircle, FiShield, FiRotateCcw, FiTrash2, FiArrowUpCircle, FiPauseCircle } from "react-icons/fi";
 import { useState } from "react";
 

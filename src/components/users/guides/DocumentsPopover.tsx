@@ -1,6 +1,6 @@
 "use client";
 
-import { PendingGuideDocumentDTO, PendingGuideDTO } from "@/types/pendingGuide.types";
+import { PendingGuideDocumentDTO, PendingGuideDTO } from "@/types/guide/pendingGuide.types";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { 

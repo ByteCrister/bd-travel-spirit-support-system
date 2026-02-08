@@ -1,6 +1,6 @@
 // utils/email/templates/employee-welcome.ts
-import { CreateEmployeePayload } from "@/types/employee.types";
-import { ShiftDTO } from "@/types/employee.types";
+import { CreateEmployeePayload } from "@/types/employee/employee.types";
+import { ShiftDTO } from "@/types/employee/employee.types";
 import { escapeHtml } from "../helpers/escape-html";
 
 /**

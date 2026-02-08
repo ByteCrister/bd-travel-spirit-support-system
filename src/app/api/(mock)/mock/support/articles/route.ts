@@ -6,7 +6,7 @@ import {
   ArticleListItem,
   ImageUrl,
   UserRef,
-} from "@/types/article.types";
+} from "@/types/article/article.types";
 import { ARTICLE_STATUS, ARTICLE_TYPE } from "@/constants/article.const";
 import { TOUR_CATEGORIES } from "@/constants/tour.const";
 

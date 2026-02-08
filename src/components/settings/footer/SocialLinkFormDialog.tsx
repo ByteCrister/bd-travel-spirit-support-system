@@ -12,7 +12,7 @@ import { useEffect, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SocialLinkForm, socialLinkSchema } from "@/utils/validators/footer-settings.validator";
-import { useFooterStore } from "@/store/footerSettings.store";
+import { useFooterStore } from "@/store/site-settings/footerSettings.store";
 import { IconComboBox } from "./IconComboBox";
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };

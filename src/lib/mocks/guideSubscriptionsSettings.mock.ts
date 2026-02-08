@@ -3,7 +3,7 @@ import { faker } from "@faker-js/faker";
 import type {
     SubscriptionTierDTO,
     ValidationError,
-} from "@/types/guide-subscription-settings.types";
+} from "@/types/site-settings/guide-subscription-settings.types";
 
 type SiteSettingsSingleton = {
     guideSubscriptions: SubscriptionTierDTO[];

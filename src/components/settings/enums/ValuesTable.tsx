@@ -3,8 +3,8 @@
 
 import React, { JSX, useCallback } from "react";
 import { Edit, Trash2, Hash, Tag, Database } from "lucide-react";
-import { EnumValue } from "@/types/enum-settings.types";
-import useEnumSettingsStore from "@/store/enumSettings.store";
+import { EnumValue } from "@/types/site-settings/enum-settings.types";
+import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";

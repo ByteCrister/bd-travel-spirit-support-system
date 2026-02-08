@@ -45,7 +45,7 @@ import {
 } from "lucide-react";
 import { useCompanyDetailStore } from "@/store/company/company-detail.store";
 import AllDetailsSkeleton from "./skeletons/AllDetailsSkeleton";
-import { TourDetailDTO } from "@/types/tour.types";
+import { TourDetailDTO } from "@/types/tour/tour.types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +54,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
     TOUR_STATUS,
     MODERATION_STATUS,
+    TOUR_DISCOUNT_TYPE,
+    CURRENCY,
+    Currency,
 } from "@/constants/tour.const";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 
@@ -192,7 +195,7 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
         }
     };
 
-    const formatCurrency = (amount?: number, currency = "BDT") => {
+    const formatCurrency = (amount?: number, currency: Currency = CURRENCY.BDT) => {
         if (amount === undefined || amount === null) return "—";
         try {
             return new Intl.NumberFormat(undefined, {
@@ -207,16 +210,57 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
     };
 
     // Get primary price from basePrice or priceSummary
+    // Get primary price from basePrice or priceSummary
     const pricePrimary = useMemo(() => {
         if (!tour) return null;
-        if (tour.priceSummary?.minAmount) {
-            return {
-                amount: tour.priceSummary.discountedAmount ?? tour.priceSummary.minAmount,
-                currency: tour.priceSummary.currency
-            };
-        }
+        // Remove the priceSummary logic since it's no longer in the type
         return tour.basePrice;
     }, [tour]);
+
+    // Helper to calculate the best discounted price
+    const getBestDiscountedPrice = useCallback((tour: TourDetailDTO) => {
+        if (!tour.discounts || tour.discounts.length === 0) {
+            return tour.basePrice.amount;
+        }
+
+        let bestPrice = tour.basePrice.amount;
+
+        tour.discounts.forEach(discount => {
+            let discountedPrice = tour.basePrice.amount;
+
+            if (discount.type === TOUR_DISCOUNT_TYPE.PERCENTAGE) {
+                discountedPrice = tour.basePrice.amount * (1 - discount.value / 100);
+            } else if (discount.type === TOUR_DISCOUNT_TYPE.FLAT_AMOUNT) {
+                discountedPrice = tour.basePrice.amount - discount.value;
+            }
+
+            if (discountedPrice < bestPrice) {
+                bestPrice = discountedPrice;
+            }
+        });
+
+        return bestPrice;
+    }, []);
+
+    // Calculate maximum discount percentage for display
+    const calculateMaxDiscountPercentage = useCallback((tour: TourDetailDTO) => {
+        if (!tour.discounts || tour.discounts.length === 0) return 0;
+
+        let maxDiscount = 0;
+
+        tour.discounts.forEach(discount => {
+            if (discount.type === TOUR_DISCOUNT_TYPE.PERCENTAGE && discount.value > maxDiscount) {
+                maxDiscount = discount.value;
+            } else if (discount.type === TOUR_DISCOUNT_TYPE.FLAT_AMOUNT) {
+                const percentage = (discount.value / tour.basePrice.amount) * 100;
+                if (percentage > maxDiscount) {
+                    maxDiscount = percentage;
+                }
+            }
+        });
+
+        return Math.round(maxDiscount);
+    }, []);
 
     // Get duration display
     const durationDisplay = useMemo(() => {
@@ -365,34 +409,34 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
                                     )}
                                 </div>
 
-                                {/* Price & Duration Cards */}
-                                <div className="absolute right-6 top-6 flex flex-col items-end gap-3 z-20">
+                                {/* Calculate and display best discounted price */}
+                                {pricePrimary && (
                                     <motion.div
                                         initial={{ x: 20, opacity: 0 }}
                                         animate={{ x: 0, opacity: 1 }}
                                         transition={{ delay: 0.2 }}
-                                        className="backdrop-blur-xl bg-white/90 dark:bg-slate-900/90 px-4 py-3 rounded-2xl shadow-xl border border-white/20"
+                                        className="absolute right-6 top-6 z-20"
                                     >
-                                        <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
-                                            Starting from
-                                        </div>
-                                        <div className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
-                                            {pricePrimary ? formatCurrency(pricePrimary.amount, pricePrimary.currency) : "—"}
+                                        <div className="backdrop-blur-lg bg-white/90 dark:bg-slate-900/20 px-6 py-4 rounded-2xl shadow-lg border border-white/10">
+                                            <div className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 uppercase tracking-wider">
+                                                Starting from
+                                            </div>
+                                            <div className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
+                                                {formatCurrency(
+                                                    tour.discounts && tour.discounts.length > 0
+                                                        ? getBestDiscountedPrice(tour)
+                                                        : pricePrimary.amount,
+                                                    pricePrimary.currency
+                                                )}
+                                            </div>
+                                            {tour.discounts && tour.discounts.length > 0 && (
+                                                <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-2">
+                                                    Save up to {calculateMaxDiscountPercentage(tour)}%
+                                                </div>
+                                            )}
                                         </div>
                                     </motion.div>
-
-                                    <motion.div
-                                        initial={{ x: 20, opacity: 0 }}
-                                        animate={{ x: 0, opacity: 1 }}
-                                        transition={{ delay: 0.3 }}
-                                        className="backdrop-blur-xl bg-white/90 dark:bg-slate-900/90 px-4 py-2 rounded-2xl shadow-xl border border-white/20"
-                                    >
-                                        <div className="flex items-center gap-2 text-sm font-semibold">
-                                            <MdTimer className="text-violet-600" />
-                                            <span>{durationDisplay}</span>
-                                        </div>
-                                    </motion.div>
-                                </div>
+                                )}
                             </motion.div>
 
                             {/* Gallery Strip */}
@@ -437,11 +481,6 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
                                             <div className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
                                                 {tour.basePrice ? formatCurrency(tour.basePrice.amount, tour.basePrice.currency) : "—"}
                                             </div>
-                                            {tour.priceSummary?.discountedAmount && (
-                                                <div className="text-lg text-slate-400 line-through">
-                                                    {formatCurrency(tour.priceSummary.minAmount, tour.basePrice.currency)}
-                                                </div>
-                                            )}
                                         </div>
                                         <div className="text-sm text-slate-500 mt-1">per person</div>
                                     </div>
@@ -488,18 +527,58 @@ export default function AllDetails({ companyId, tourId, handleBreadcrumbItems }:
                                                 Active Offers
                                             </span>
                                         </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {tour.discounts.map((d, idx) => (
-                                                <motion.div
-                                                    key={d.code || idx}
-                                                    initial={{ scale: 0 }}
-                                                    animate={{ scale: 1 }}
-                                                    transition={{ delay: 0.1 * idx }}
-                                                    className="px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold shadow-lg"
-                                                >
-                                                    {d.code ? `${d.code} · ` : ""}{d.value}% OFF
-                                                </motion.div>
-                                            ))}
+                                        <div className="space-y-3">
+                                            {tour.discounts.map((discount, idx) => {
+                                                // Calculate discounted price for each discount
+                                                const baseAmount = tour.basePrice.amount;
+                                                let discountedAmount = baseAmount;
+                                                let discountText = '';
+
+                                                if (discount.type === 'percentage') {
+                                                    discountedAmount = baseAmount * (1 - discount.value / 100);
+                                                    discountText = `${discount.value}% OFF`;
+                                                } else if (discount.type === 'flat_amount') {
+                                                    discountedAmount = baseAmount - discount.value;
+                                                    discountText = `${formatCurrency(discount.value, tour.basePrice.currency)} OFF`;
+                                                }
+
+                                                return (
+                                                    <motion.div
+                                                        key={discount.code || idx}
+                                                        initial={{ scale: 0 }}
+                                                        animate={{ scale: 1 }}
+                                                        transition={{ delay: 0.1 * idx }}
+                                                        className="p-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-900"
+                                                    >
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <div className="font-bold text-slate-900 dark:text-white">
+                                                                {discount.code || discount.discount}
+                                                            </div>
+                                                            <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs">
+                                                                {discount.discount}
+                                                            </Badge>
+                                                        </div>
+                                                        <div className="flex items-baseline justify-between text-sm">
+                                                            <div>
+                                                                <span className="text-slate-500 line-through mr-2">
+                                                                    {formatCurrency(baseAmount, tour.basePrice.currency)}
+                                                                </span>
+                                                                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                                                    {formatCurrency(discountedAmount, tour.basePrice.currency)}
+                                                                </span>
+                                                            </div>
+                                                            <span className="font-bold text-amber-700 dark:text-amber-400">
+                                                                {discountText}
+                                                            </span>
+                                                        </div>
+                                                        {discount.validFrom && discount.validUntil && (
+                                                            <div className="text-xs text-slate-500 mt-1">
+                                                                Valid: {formatDate(discount.validFrom)} - {formatDate(discount.validUntil)}
+                                                            </div>
+                                                        )}
+                                                    </motion.div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}

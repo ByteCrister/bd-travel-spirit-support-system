@@ -3,7 +3,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { SubscriptionTierDTO, SubscriptionTierFormValues } from "@/types/guide-subscription-settings.types";
+import type { SubscriptionTierDTO, SubscriptionTierFormValues } from "@/types/site-settings/guide-subscription-settings.types";
 import useGuideSubscriptionsStore from "@/store/guide/guide-subscription-setting.store";
 import { toSubscriptionTierDTO } from "@/utils/helpers/guide-subscriptions.transform";
 import { VersionBanner } from "./VersionBanner";

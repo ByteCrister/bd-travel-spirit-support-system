@@ -14,7 +14,7 @@ import {
     StatisticsState,
     DateRange,
     SectionResponse,
-} from "@/types/statistics.types";
+} from "@/types/dashboard/statistics.types";
 
 const URL_AFTER_API = "/mock/statistics";
 

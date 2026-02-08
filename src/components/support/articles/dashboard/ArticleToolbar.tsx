@@ -11,7 +11,7 @@ import {
     ArticleSearch,
     OffsetPageRequest,
     ID,
-} from '@/types/article.types';
+} from '@/types/article/article.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

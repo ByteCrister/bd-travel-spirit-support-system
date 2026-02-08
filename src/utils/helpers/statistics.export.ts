@@ -151,7 +151,7 @@ function downloadFile(content: string, filename: string, mimeType: string): void
 
 
 // src/utils/helpers/statistics.export.ts
-import { SectionKeyEnum, SectionResponse } from '@/types/statistics.types';
+import { SectionKeyEnum, SectionResponse } from '@/types/dashboard/statistics.types';
 
 export type Scalar = string | number | boolean | null | undefined;
 export type Row = Record<string, string>;

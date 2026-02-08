@@ -7,7 +7,7 @@ import { FiChevronLeft, FiChevronRight, FiRefreshCw, FiSearch, FiThumbsUp, FiThu
 import clsx from "clsx";
 
 import { useCompanyDetailStore } from "@/store/company/company-detail.store";
-import type { TourFAQDTO } from "@/types/tour-detail-faqs.types";
+import type { TourFAQDTO } from "@/types/tour/tour-detail-faqs.types";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
 type Props = {

@@ -1,10 +1,10 @@
 // app/api/support/v1/employees-password-request/[id]/route.ts (Next.js 14)
 import { NextRequest } from "next/server";
 import mongoose from "mongoose";
-import { ResetPasswordRequestDTO } from "@/types/password-reset.types";
+import { ResetPasswordRequestDTO } from "@/types/employee/password-reset.types";
 import ConnectDB from "@/config/db";
 import ResetPasswordRequestModel from "@/models/employees/reset-password-request.model";
-import { ResetPasswordRequestPopulated } from "@/types/employee-password-request.types.server";
+import { ResetPasswordRequestPopulated } from "@/types/employee/employee-password-request.types.server";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 
 /**

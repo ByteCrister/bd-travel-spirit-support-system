@@ -4,7 +4,7 @@ import React, { JSX, useState } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { MdRefresh, MdDelete, MdVisibility, MdTouchApp, MdPerson, MdError } from 'react-icons/md';
 import { BiChevronDown } from 'react-icons/bi';
-import type { AdvertisementResponse } from '@/types/advertising.types';
+import type { AdvertisementResponse } from '@/types/advertising/advertising.types';
 import { showToast } from '@/components/global/showToast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';

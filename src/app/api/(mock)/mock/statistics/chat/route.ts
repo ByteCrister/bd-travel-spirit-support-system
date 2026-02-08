@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { NextResponse } from 'next/server';
-import type { ChatStats } from '@/types/statistics.types';
+import type { ChatStats } from '@/types/dashboard/statistics.types';
 
 export async function GET() {
   const data: ChatStats = {

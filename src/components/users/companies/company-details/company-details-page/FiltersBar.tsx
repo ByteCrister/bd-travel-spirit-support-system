@@ -17,7 +17,7 @@ import {
     MdFilterList
 } from "react-icons/md";
 
-import { SortableTourKeys } from "@/types/tour.types";
+import { SortableTourKeys } from "@/types/tour/tour.types";
 import { motion, AnimatePresence } from "framer-motion";
 
 type TabKey = "tours" | "employees";

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/pendingGuide.types";
+import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/guide/pendingGuide.types";
 import { GUIDE_STATUS, GUIDE_DOCUMENT_TYPE } from "@/constants/guide.const";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";

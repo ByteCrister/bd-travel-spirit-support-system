@@ -10,13 +10,13 @@ import { isCloudinaryUrl } from "@/lib/helpers/document-conversions";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
 import UserModel from "@/models/user.model";
-import { UpdateEmployeePayload } from "@/types/employee.types";
+import { UpdateEmployeePayload } from "@/types/employee/employee.types";
 import { updateEmployeeServerSchema } from "@/utils/validators/employee/employee-server-payload.validator";
 import { isValidObjectId, Types } from "mongoose";
 import { USER_ROLE, UserRole } from "@/constants/user.const";
 import ConnectDB from "@/config/db";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
-import { PopulatedAssetLean } from "@/types/populated-asset.types";
+import { PopulatedAssetLean } from "@/types/common/populated-asset.types";
 import AssetModel from "@/models/assets/asset.model";
 import AssetFileModel from "@/models/assets/asset-file.model";
 

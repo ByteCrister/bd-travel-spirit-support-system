@@ -35,7 +35,7 @@ import {
 } from "react-icons/md";
 
 import { TOUR_STATUS, MODERATION_STATUS, ModerationStatus, DifficultyLevel, DIFFICULTY_LEVEL, TourStatus } from "@/constants/tour.const";
-import { TourListItemDTO } from "@/types/tour.types";
+import { TourListItemDTO } from "@/types/tour/tour.types";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 import Image from "next/image";
 import Link from "next/link";

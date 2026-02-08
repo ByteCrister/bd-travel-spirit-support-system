@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import type {
     GuideBannerEntity,
     ID,
-} from "@/types/guide-banner-settings.types";
+} from "@/types/site-settings/guide-banner-settings.types";
 import { useGuideBannersStore } from "@/store/guide/guide-bannerSetting.store";
 import {
     buildAssetSrc,

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
-import type { DashboardStats } from '@/types/dashboard.types';
+import type { DashboardStats } from '@/types/dashboard/dashboard.types';
 
 export async function GET() {
     const mock: DashboardStats = {

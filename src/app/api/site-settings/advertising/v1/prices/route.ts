@@ -1,5 +1,5 @@
 // app/api/site-settings/v1/advertising/config/prices/route.ts
-import type { CreateAdvertisingPricePayload } from "@/types/advertising-settings.types";
+import type { CreateAdvertisingPricePayload } from "@/types/advertising/advertising-settings.types";
 import { NextRequest } from "next/server";
 import AdvertisingSetting, { advertisingToDTO } from "@/models/site-settings/advertising.model";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";

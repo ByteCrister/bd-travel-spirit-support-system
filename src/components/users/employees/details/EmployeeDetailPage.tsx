@@ -9,7 +9,7 @@ import {
     ContactInfoDTO,
     ShiftDTO,
     DocumentDTO,
-} from "@/types/employee.types";
+} from "@/types/employee/employee.types";
 import { EMPLOYEE_STATUS, EMPLOYMENT_TYPE, EMPLOYEE_ROLE, EmployeeStatus, EmploymentType, SALARY_PAYMENT_MODE, SalaryPaymentMode } from "@/constants/employee.const";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,7 +58,7 @@ import Image from "next/image";
 import ConfirmationDialog from "./ConfirmationDialog";
 import EmployeeDetailSkeleton from "./EmployeeDetailSkeleton";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useEmployeeStore } from "@/store/employee.store";
+import { useEmployeeStore } from "@/store/employee/employee.store";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { validateUpdateEmployeePayload } from "@/utils/validators/employee/employee.update-validator";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";

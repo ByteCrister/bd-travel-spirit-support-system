@@ -3,7 +3,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { UserTableRow } from "@/types/user.table.types";
+import { UserTableRow } from "@/types/user/user.table.types";
 
 interface DeleteUserDialogProps {
     user: UserTableRow | null;

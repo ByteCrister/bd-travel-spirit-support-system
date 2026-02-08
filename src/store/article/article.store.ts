@@ -28,7 +28,7 @@ import {
     RestoreArticleInput,
     RestoreArticleResponse,
     RestoreArticleApi,
-} from '@/types/article.types';
+} from '@/types/article/article.types';
 
 import api from '@/utils/axios';
 import { extractErrorMessage } from '@/utils/axios/extract-error-message';

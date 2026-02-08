@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { Types } from "mongoose";
 import { withErrorHandler, ApiError, HandlerResult } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
-import { EmployeeDetailDTO } from "@/types/employee.types";
+import { EmployeeDetailDTO } from "@/types/employee/employee.types";
 import EmployeeModel from "@/models/employees/employees.model";
 import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";

@@ -11,7 +11,7 @@ import {
   FiHeart
 } from "react-icons/fi";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { FooterTypes } from "@/types/join-as-guide.types";
+import { FooterTypes } from "@/types/guide/join-as-guide.types";
 import IconFromName from "../global/IconFromName";
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });

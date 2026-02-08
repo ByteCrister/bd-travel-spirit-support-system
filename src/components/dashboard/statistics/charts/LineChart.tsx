@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
-import { TimeSeriesPoint } from '@/types/statistics.types';
+import { TimeSeriesPoint } from '@/types/dashboard/statistics.types';
 import { formatDate, formatNumber } from '@/utils/helpers/format';
 
 interface LineChartProps {

@@ -1,5 +1,5 @@
 // types/guide-banner-settings.types.ts
-import { ApiResponse } from "./api.types";
+import { ApiResponse } from "../common/api.types";
 
 /* -------------------------
    Basic id and date helpers

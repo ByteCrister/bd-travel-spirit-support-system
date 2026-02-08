@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useState } from 'react';
-import { CommentDetailDTO, CommentFiltersDTO } from '@/types/article-comment.types';
+import { CommentDetailDTO, CommentFiltersDTO } from '@/types/article/article-comment.types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';

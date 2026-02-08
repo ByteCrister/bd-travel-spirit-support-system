@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
-import type { AnalyticsData } from "@/types/dashboard.types";
+import type { AnalyticsData } from "@/types/dashboard/dashboard.types";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(req: NextRequest) {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
-import type { RecentActivity } from '@/types/dashboard.types';
+import type { RecentActivity } from '@/types/dashboard/dashboard.types';
 
 export async function GET() {
     const types = ['signup', 'booking', 'report', 'tour', 'user_action'] as const;

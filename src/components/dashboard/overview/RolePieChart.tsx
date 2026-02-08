@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FiUsers, FiUser, FiUserCheck, FiUserX, FiPieChart } from "react-icons/fi";
 import { cn } from "@/lib/utils";
-import { RoleDistribution } from "@/types/dashboard.types";
+import { RoleDistribution } from "@/types/dashboard/dashboard.types";
 
 import {
   PieChart,

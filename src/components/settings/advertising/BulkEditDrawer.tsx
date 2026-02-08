@@ -32,7 +32,7 @@ import {
   AdvertisingPriceRow,
   BulkUpdateAdvertisingPricesPayload,
   UpdateAdvertisingPricePayload,
-} from "@/types/advertising-settings.types";
+} from "@/types/advertising/advertising-settings.types";
 import { Currency, CURRENCY } from "@/constants/tour.const";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
 

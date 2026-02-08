@@ -3,8 +3,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import api from "@/utils/axios"; // Make sure you have this import
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
-import { ApiResponse } from "@/types/api.types";
-import { CompanyDetails, DocumentFile, FormData, PersonalInfo, SegmentedDocuments } from "@/types/register-as-guide.types";
+import { ApiResponse } from "@/types/common/api.types";
+import { CompanyDetails, DocumentFile, FormData, PersonalInfo, SegmentedDocuments } from "@/types/guide/register-as-guide.types";
 
 function createChecksum(data: unknown): string {
   return btoa(

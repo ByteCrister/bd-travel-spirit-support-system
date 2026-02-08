@@ -1,7 +1,7 @@
 // types/tour-approval.types.ts
 
 import { TourDetailDTO, TourFilterOptions, TourListItemDTO } from "./tour.types";
-import { ApiResponse } from "./api.types";
+import { ApiResponse } from "../common/api.types";
 import { MODERATION_STATUS } from "@/constants/tour.const";
 
 // Tour approval action types

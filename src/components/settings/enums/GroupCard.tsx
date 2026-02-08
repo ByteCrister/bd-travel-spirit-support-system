@@ -1,8 +1,8 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import useEnumSettingsStore from "@/store/enumSettings.store";
-import { EnumGroup } from "@/types/enum-settings.types";
+import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
+import { EnumGroup } from "@/types/site-settings/enum-settings.types";
 import React, { JSX } from "react";
 import { motion } from "framer-motion";
 import { Layers, Loader2 } from "lucide-react";

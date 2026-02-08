@@ -4,10 +4,10 @@ import AuditModel from "@/models/audit.model";
 import "@/models/assets/asset.model"; // for populate
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
 import { AuditLog } from "@/types/current-user.types";
-import { ContactInfoDTO, DocumentDTO, EmployeeDetailDTO, PayrollRecordDTO, SalaryHistoryDTO, UserSummaryDTO, CurrentMonthPaymentStatusDTO } from "@/types/employee.types";
+import { ContactInfoDTO, DocumentDTO, EmployeeDetailDTO, PayrollRecordDTO, SalaryHistoryDTO, UserSummaryDTO, CurrentMonthPaymentStatusDTO } from "@/types/employee/employee.types";
 import { UserRole } from "@/constants/user.const";
 import { ClientSession } from "mongoose";
-import { PopulatedAssetLean } from "@/types/populated-asset.types";
+import { PopulatedAssetLean } from "@/types/common/populated-asset.types";
 import { PAYROLL_STATUS, PayrollStatus } from "@/constants/employee.const";
 
 type ObjectId = Types.ObjectId;

@@ -3,7 +3,7 @@ import imageCompression from 'browser-image-compression'
 import { useRegisterGuideStore } from '@/store/guide/guide-registration.store'
 import { validateFile } from '@/utils/validators/registerAsGuide.validator'
 import { FileText, Image } from 'lucide-react'
-import { DocumentFile, SegmentedDocuments } from '@/types/register-as-guide.types'
+import { DocumentFile, SegmentedDocuments } from '@/types/guide/register-as-guide.types'
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 10MB raw file limit
 

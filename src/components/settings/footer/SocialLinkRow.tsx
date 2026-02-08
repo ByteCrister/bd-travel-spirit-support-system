@@ -4,10 +4,10 @@
 import { motion } from "framer-motion";
 import { Edit2, Trash2, ExternalLink, GripVertical } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import type { SocialLinkDTO } from "@/types/footer-settings.types";
+import type { SocialLinkDTO } from "@/types/site-settings/footer-settings.types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useFooterStore } from "@/store/footerSettings.store";
+import { useFooterStore } from "@/store/site-settings/footerSettings.store";
 
 type Props = {
     link: SocialLinkDTO;

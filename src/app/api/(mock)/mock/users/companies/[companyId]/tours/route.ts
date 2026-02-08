@@ -4,7 +4,7 @@ import { faker } from "@faker-js/faker";
 import {
   TourListItemDTO,
   SortableTourKeys,
-} from "@/types/tour.types";
+} from "@/types/tour/tour.types";
 import {
   TOUR_STATUS,
   TRAVEL_TYPE,

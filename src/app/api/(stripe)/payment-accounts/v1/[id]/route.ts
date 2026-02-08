@@ -7,7 +7,7 @@ import ConnectDB from "@/config/db";
 import {
     PaymentAccount,
     PaymentAccountUpdateDTO,
-} from "@/types/stripe-payment-account.type";
+} from "@/types/site-settings/stripe-payment-account.type";
 import StripePaymentAccountModel, { IStripePaymentAccount } from "@/models/payment-account.model";
 
 function ok<T>(data: T) {

@@ -1,4 +1,4 @@
-import type { LandingPageData } from "@/types/join-as-guide.types";
+import type { LandingPageData } from "@/types/guide/join-as-guide.types";
 
 const imageFilenames = [
     "amphitheater-fortaleza-san-felipe-puerta-plata-dominican-republic.jpg",

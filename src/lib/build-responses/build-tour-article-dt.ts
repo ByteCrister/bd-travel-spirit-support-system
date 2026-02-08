@@ -1,10 +1,10 @@
 import { ClientSession, Types } from 'mongoose';
-import { ArticleDetail } from '@/types/article.types';
+import { ArticleDetail } from '@/types/article/article.types';
 import { IDestinationBlock, TravelArticleModel } from '@/models/articles/travel-article.model';
 import UserModel from '@/models/user.model';
 import AssetModel from '@/models/assets/asset.model';
 import AssetFileModel from '@/models/assets/asset-file.model';
-import { PopulatedAssetLean } from '@/types/populated-asset.types';
+import { PopulatedAssetLean } from '@/types/common/populated-asset.types';
 import { ITravelArticle } from '@/models/articles/travel-article.model';
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
 import TravelArticleCommentModel from '@/models/articles/travel-article-comment.model';

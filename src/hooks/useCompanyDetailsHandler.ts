@@ -11,7 +11,7 @@ import {
 } from "@/utils/validators/registerAsGuide.validator";
 import { showToast } from "@/components/global/showToast";
 import { Lightbulb, Target, TrendingUp, Users } from "lucide-react";
-import { CompanyDetails } from "@/types/register-as-guide.types";
+import { CompanyDetails } from "@/types/guide/register-as-guide.types";
 
 export const features = [
     {

@@ -7,7 +7,7 @@ import { GuideFilters } from "@/components/users/guides/GuideFilters";
 import { GuideKPI } from "@/components/users/guides/GuideKPI";
 import { GuideTable } from "@/components/users/guides/GuideTable";
 import { GuideViewer } from "@/components/users/guides/GuideViewer";
-import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/pendingGuide.types";
+import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/guide/pendingGuide.types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { RefreshCw } from "lucide-react";

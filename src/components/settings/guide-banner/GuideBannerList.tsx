@@ -12,7 +12,7 @@ import {
     Info,
     Zap,
 } from "lucide-react";
-import type { GuideBannerQueryParams } from "@/types/guide-banner-settings.types";
+import type { GuideBannerQueryParams } from "@/types/site-settings/guide-banner-settings.types";
 import { useGuideBannersStore } from "@/store/guide/guide-bannerSetting.store";
 import { Table, TableHeader, TableRow, TableHead, TableBody } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";

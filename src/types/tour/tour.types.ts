@@ -302,12 +302,6 @@ export interface TourDetailDTO {
 
     // =============== COMPUTED/UI-ONLY FIELDS (Not in model) ===============
     // These are calculated or derived for UI convenience
-    priceSummary?: {
-        minAmount: number;
-        maxAmount: number;
-        currency: string;
-        discountedAmount?: number;
-    };
     bookingSummary?: {
         totalSeats: number;
         bookedSeats: number;

@@ -1,6 +1,6 @@
 import mongoose, { ClientSession, PipelineStage } from "mongoose";
 import { FORGOT_PASSWORD_STATUS, ForgotPasswordStatus } from "@/constants/guide-forgot-password.const";
-import { PasswordRequestDto } from "@/types/guide-forgot-password.types";
+import { PasswordRequestDto } from "@/types/guide/guide-forgot-password.types";
 import { ApiError } from "../helpers/withErrorHandler";
 import GuideForgotPasswordModel from "@/models/guide/guide-forgot-password.model";
 

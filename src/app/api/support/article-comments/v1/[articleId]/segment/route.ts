@@ -10,14 +10,14 @@ import {
     CommentFiltersDTO,
     EntityId,
     CommentTreeNodeDTO,
-} from '@/types/article-comment.types';
+} from '@/types/article/article-comment.types';
 import { CommentStatus } from '@/constants/articleComment.const';
 import mongoose, { ClientSession, PipelineStage } from 'mongoose';
 import ConnectDB from '@/config/db';
 import { USER_ROLE, UserRole } from '@/constants/user.const';
 import AssetModel from '@/models/assets/asset.model';
 import AssetFileModel from '@/models/assets/asset-file.model';
-import { PopulatedAssetLean } from '@/types/populated-asset.types';
+import { PopulatedAssetLean } from '@/types/common/populated-asset.types';
 import { ApiError } from '@/lib/helpers/withErrorHandler';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 import TravelArticleCommentModel from "@/models/articles/travel-article-comment.model";

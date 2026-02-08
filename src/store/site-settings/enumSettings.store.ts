@@ -16,7 +16,7 @@ import {
     EnumValue,
     EnumGroupResponse,
     ID,
-} from "../types/enum-settings.types";
+} from "../../types/site-settings/enum-settings.types";
 
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";

@@ -4,7 +4,7 @@ import { faker } from "@faker-js/faker";
 import {
     EmployeeDetailDTO,
     PayrollRecordDTO,
-} from "@/types/employee.types";
+} from "@/types/employee/employee.types";
 import { AuditLog } from "@/types/current-user.types";
 import {
     EMPLOYEE_STATUS,

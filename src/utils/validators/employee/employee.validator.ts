@@ -7,7 +7,7 @@ import {
     SalaryPaymentMode,
 } from "@/constants/employee.const";
 import { CURRENCY, Currency } from "@/constants/tour.const";
-import { DayOfWeek, EmergencyContactDTO, ContactInfoDTO, ShiftDTO, DocumentDTO, CreateEmployeePayload } from "@/types/employee.types";
+import { DayOfWeek, EmergencyContactDTO, ContactInfoDTO, ShiftDTO, DocumentDTO, CreateEmployeePayload } from "@/types/employee/employee.types";
 
 // Phone validation regex for Bangladesh
 export const phoneRegex = /^(?:\+88|88)?(01[3-9]\d{8})$/;

@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { ArticleListItem } from '@/types/article.types';
+import { ArticleListItem } from '@/types/article/article.types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import ArticleTableRow from './ArticleTableRow';

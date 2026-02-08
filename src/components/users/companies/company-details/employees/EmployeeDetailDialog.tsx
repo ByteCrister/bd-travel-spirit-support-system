@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { EmployeeDetailDTO, PayrollRecordDTO } from "@/types/employee.types";
+import { EmployeeDetailDTO, PayrollRecordDTO } from "@/types/employee/employee.types";
 import {
     MdPerson,
     MdEmail,

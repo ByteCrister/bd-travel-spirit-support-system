@@ -4,7 +4,7 @@ import { FilterQuery, Types } from "mongoose";
 import {
     TourReportsResponseDTO,
     TourReportListItemDTO,
-} from "@/types/tour-detail-report.types";
+} from "@/types/tour/tour-detail-report.types";
 import { ReportStatus, ReportPriority, ReportReason } from "@/constants/report.const";
 import { ApiError, HandlerResult, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { getCollectionName } from "@/lib/helpers/get-collection-name";

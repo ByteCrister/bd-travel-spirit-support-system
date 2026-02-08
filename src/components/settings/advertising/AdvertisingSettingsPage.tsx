@@ -11,8 +11,8 @@ import ConfirmDialog from "./ConfirmDialog";
 import PageSkeleton from "./skeletons/PageSkeleton";
 import EmptyState from "./EmptyState";
 import ErrorState from "./ErrorState";
-import useAdvertisingSettingsStore from "@/store/advertisingSettings.store";
-import { CreateAdvertisingPricePayload } from "@/types/advertising-settings.types";
+import useAdvertisingSettingsStore from "@/store/site-settings/advertisingSettings.store";
+import { CreateAdvertisingPricePayload } from "@/types/advertising/advertising-settings.types";
 
 const AdvertisingSettingsPage: React.FC = () => {
     const {

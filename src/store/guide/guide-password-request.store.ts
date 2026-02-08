@@ -11,16 +11,16 @@ import {
     QueryParams,
     CacheStore,
     CacheEntry
-} from '@/types/guide-forgot-password.types';
+} from '@/types/guide/guide-forgot-password.types';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import api from '@/utils/axios';
 import { showToast } from '@/components/global/showToast';
 import { extractErrorMessage } from '@/utils/axios/extract-error-message';
-import { ApiResponse } from '@/types/api.types';
+import { ApiResponse } from '@/types/common/api.types';
 
-const URL_AFTER_API = `/mock/support/guide-password-requests`;
-// const URL_AFTER_API = `/support/guide-password-requests/v1`;
+// const URL_AFTER_API = `/mock/support/guide-password-requests`;
+const URL_AFTER_API = `/support/guide-password-requests/v1`;
 
 export const DEFAULT_FILTERS: PasswordRequestFilters = {
     search: '',

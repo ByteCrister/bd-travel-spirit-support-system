@@ -6,7 +6,7 @@ import type {
     PaginatedResponse,
     AdvertisementOverview,
     AdvertisementAdminActionDTO,
-} from "@/types/advertising.types";
+} from "@/types/advertising/advertising.types";
 import { AdStatusType, PlacementType } from "@/constants/advertising.const";
 
 const AD_STATUSES: AdStatusType[] = ["draft", "pending", "active", "paused", "expired", "cancelled", "rejected"];

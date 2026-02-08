@@ -2,7 +2,7 @@
 import type {
     AdvertisingConfigDTO,
     AdvertisingPriceDTO,
-} from "@/types/advertising-settings.types";
+} from "@/types/advertising/advertising-settings.types";
 import AdvertisingSetting from "@/models/site-settings/advertising.model";
 import ConnectDB from "@/config/db";
 import { withErrorHandler } from "@/lib/helpers/withErrorHandler";

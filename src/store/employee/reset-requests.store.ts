@@ -12,12 +12,12 @@ import {
     PagedCacheEntry,
     ResetRequestsStoreState,
     ApiErrorShape,
-} from "@/types/password-reset.types";
+} from "@/types/employee/password-reset.types";
 
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
-import { ApiResponse } from "@/types/api.types";
+import { ApiResponse } from "@/types/common/api.types";
 
 enableMapSet();
 

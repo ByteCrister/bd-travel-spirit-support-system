@@ -7,7 +7,7 @@ import {
     UpdateArticleInput,
     DestinationBlock,
     CreateArticleInput
-} from "@/types/article.types";
+} from "@/types/article/article.types";
 import { validateUpdatedYupSchema } from "@/utils/validators/common/update-updated-yup-schema";
 import { createArticleSchema } from "@/utils/validators/article.create.validator";
 import { TravelArticleModel, IDestinationBlock } from "@/models/articles/travel-article.model";

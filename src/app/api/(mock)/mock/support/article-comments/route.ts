@@ -5,7 +5,7 @@ import {
     type SortDTO,
     type ArticleSortKey,
     type ArticleFiltersDTO,
-} from '@/types/article-comment.types';
+} from '@/types/article/article-comment.types';
 import { queryArticleSummary } from '@/lib/mocks/article-comments.mock';
 import { CommentStatus } from '@/constants/articleComment.const';
 

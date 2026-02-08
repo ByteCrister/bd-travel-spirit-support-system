@@ -7,7 +7,7 @@ import { EMPLOYEE_STATUS, EMPLOYMENT_TYPE } from "@/constants/employee.const";
 
 // Import models
 import UserModel, { IUserDoc } from "@/models/user.model";
-import { CreateEmployeePayload } from "@/types/employee.types";
+import { CreateEmployeePayload } from "@/types/employee/employee.types";
 import { Types } from "mongoose";
 import { createEmployeeValidationSchema } from "@/utils/validators/employee/employee.validator";
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";

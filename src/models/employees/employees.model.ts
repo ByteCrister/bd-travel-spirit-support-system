@@ -12,7 +12,7 @@ import {
 } from "@/constants/employee.const";
 
 import { Currency } from "@/constants/tour.const";
-import { DayOfWeek } from "@/types/employee.types";
+import { DayOfWeek } from "@/types/employee/employee.types";
 import { defineModel } from "@/lib/helpers/defineModel";
 import { ClientSession } from "mongoose";
 

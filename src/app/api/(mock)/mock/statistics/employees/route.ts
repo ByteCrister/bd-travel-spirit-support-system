@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import type { EmployeesStats } from '@/types/statistics.types';
+import type { EmployeesStats } from '@/types/dashboard/statistics.types';
 
 export async function GET() {
     const data: EmployeesStats = {

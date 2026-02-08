@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 
 import {
     CreateArticleInput
-} from '@/types/article.types';
+} from '@/types/article/article.types';
 
 import { ARTICLE_STATUS } from '@/constants/article.const';
 import { ApiError } from '@/lib/helpers/withErrorHandler';

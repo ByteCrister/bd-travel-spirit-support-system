@@ -7,7 +7,7 @@ import ConnectDB from "@/config/db";
 import GuideBannerSetting from "@/models/site-settings/guideBanner.model";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import AssetModel, { IAsset } from "@/models/assets/asset.model";
-import { PopulatedAssetFileLean } from "@/types/populated-asset.types";
+import { PopulatedAssetFileLean } from "@/types/common/populated-asset.types";
 
 type populatedAssetDoc = Omit<IAsset, "file"> & {
     file: PopulatedAssetFileLean;

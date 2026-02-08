@@ -1,7 +1,7 @@
 // app/api/mock/site-settings/advertising/prices/bulk/route.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import type { BulkUpdateAdvertisingPricesPayload } from "@/types/advertising-settings.types";
+import type { BulkUpdateAdvertisingPricesPayload } from "@/types/advertising/advertising-settings.types";
 import { bulkUpdatePrices } from "@/lib/mocks/siteSettings.mock";
 
 export async function PUT(req: NextRequest) {

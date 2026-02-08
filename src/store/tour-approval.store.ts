@@ -10,9 +10,9 @@ import type {
     TourApprovalList,
     TourUnsuspensionRequest,
     TourSuspensionRequest,
-} from '@/types/tour-approval.types';
-import { ApiResponse } from '@/types/api.types';
-import { TourDetailDTO, TourFilterOptions, TourListItemDTO } from '@/types/tour.types';
+} from '@/types/tour/tour-approval.types';
+import { ApiResponse } from '@/types/common/api.types';
+import { TourDetailDTO, TourFilterOptions, TourListItemDTO } from '@/types/tour/tour.types';
 import { extractErrorMessage } from '@/utils/axios/extract-error-message';
 import api from '@/utils/axios';
 import { MODERATION_STATUS } from '@/constants/tour.const';

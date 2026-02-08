@@ -41,7 +41,7 @@ import {
     DeleteArticleInput,
     ID,
     DestinationBlock,
-} from '@/types/article.types';
+} from '@/types/article/article.types';
 import { useArticleStore } from '@/store/article/article.store';
 import { showToast } from '@/components/global/showToast';
 import { ArticleDetailSkeleton } from './ArticleDetailSkeleton';

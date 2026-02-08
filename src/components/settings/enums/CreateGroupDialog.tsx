@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { HiOutlinePlusCircle, HiOutlineX } from "react-icons/hi";
 
-import useEnumSettingsStore from "@/store/enumSettings.store";
+import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

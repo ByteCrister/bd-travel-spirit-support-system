@@ -2,7 +2,7 @@
    Formatting helpers
 ------------------------------ */
 
-import { SalaryHistoryDTO } from "@/types/employee.types";
+import { SalaryHistoryDTO } from "@/types/employee/employee.types";
 
 export function formatDate(iso?: string) {
   if (!iso) return "—";

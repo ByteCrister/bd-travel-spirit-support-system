@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
-import type { FooterSettingsDTO, LocationEntryDTO } from "@/types/footer-settings.types";
+import type { FooterSettingsDTO, LocationEntryDTO } from "@/types/site-settings/footer-settings.types";
 
 export async function GET() {
     // Seed faker for consistent mock data

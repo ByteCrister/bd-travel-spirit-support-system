@@ -8,11 +8,11 @@ import {
     UpdateCommentStatusPayloadDTO,
     UpdateCommentStatusResponseDTO,
     CommentDetailDTO,
-} from '@/types/article-comment.types';
+} from '@/types/article/article-comment.types';
 
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
 import { UserRole } from '@/constants/user.const';
-import { PopulatedAssetLean } from '@/types/populated-asset.types';
+import { PopulatedAssetLean } from '@/types/common/populated-asset.types';
 import TravelArticleCommentModel, { ITravelArticleComment } from '@/models/articles/travel-article-comment.model';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 

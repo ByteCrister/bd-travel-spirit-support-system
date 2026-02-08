@@ -16,7 +16,7 @@ import {
   FiAlertCircle
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
-import { PendingAction } from "@/types/dashboard.types";
+import { PendingAction } from "@/types/dashboard/dashboard.types";
 
 interface PendingActionsProps {
   actions: PendingAction[];

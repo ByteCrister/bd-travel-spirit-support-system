@@ -1,7 +1,7 @@
 // app/api/admin/ads/[id]/restore/route.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import type { ApiResponse, AdvertisementResponse } from "@/types/advertising.types";
+import type { ApiResponse, AdvertisementResponse } from "@/types/advertising/advertising.types";
 import { getAdById, restoreAd } from "@/lib/mocks/mockAds";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

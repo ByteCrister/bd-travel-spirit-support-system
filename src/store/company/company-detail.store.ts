@@ -1,14 +1,14 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
-import { CompanyOverviewDTO, CompanyOverviewResponse } from "@/types/company.overview.types";
-import { TourDetailDTO, TourFilterOptions, TourListItemDTO } from "@/types/tour.types";
-import { EmployeeDetailDTO, EmployeeListItemDTO } from "@/types/employee.types";
+import { CompanyOverviewDTO, CompanyOverviewResponse } from "@/types/company/company.overview.types";
+import { TourDetailDTO, TourFilterOptions, TourListItemDTO } from "@/types/tour/tour.types";
+import { EmployeeDetailDTO, EmployeeListItemDTO } from "@/types/employee/employee.types";
 import api from "@/utils/axios";
-import { ReviewListItemDTO, ReviewSummaryDTO, TourReviewsResponseDTO } from "@/types/tour-detail-review.type";
-import { TourReportListItemDTO, TourReportsResponseDTO } from "@/types/tour-detail-report.types";
-import { GetTourFaqsResponse, TourFAQDTO } from "@/types/tour-detail-faqs.types";
-import { ApiResponse } from "@/types/api.types";
+import { ReviewListItemDTO, ReviewSummaryDTO, TourReviewsResponseDTO } from "@/types/tour/tour-detail-review.type";
+import { TourReportListItemDTO, TourReportsResponseDTO } from "@/types/tour/tour-detail-report.types";
+import { GetTourFaqsResponse, TourFAQDTO } from "@/types/tour/tour-detail-faqs.types";
+import { ApiResponse } from "@/types/common/api.types";
 
 // const URL_AFTER_API = "/mock/users/companies";
 const URL_AFTER_API = "/users/companies/v1";

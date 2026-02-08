@@ -18,7 +18,7 @@ import {
 import Image from "next/image";
 
 import { CreateEmployeeFormValues, createEmployeeValidationSchema } from "@/utils/validators/employee/employee.validator";
-import { CreateEmployeePayload, ShiftDTO, DayOfWeek, DocumentDTO } from "@/types/employee.types";
+import { CreateEmployeePayload, ShiftDTO, DayOfWeek, DocumentDTO } from "@/types/employee/employee.types";
 import { EMPLOYMENT_TYPE, SALARY_PAYMENT_MODE, SalaryPaymentMode } from "@/constants/employee.const";
 import { CURRENCY } from "@/constants/tour.const";
 import {
@@ -34,7 +34,7 @@ import { useRouter } from "next/navigation";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 import { showToast } from "@/components/global/showToast";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
-import { useEmployeeStore } from "@/store/employee.store";
+import { useEmployeeStore } from "@/store/employee/employee.store";
 import { cn } from "@/lib/utils";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
 

@@ -1,7 +1,7 @@
 import { FiStar, FiUsers, FiGlobe } from "react-icons/fi";
 import ImageCarousel from "./ImageCarousel";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { HeroContentType } from "@/types/join-as-guide.types";
+import { HeroContentType } from "@/types/guide/join-as-guide.types";
 import HeroCTAbtn from "./client/HeroCTAbtn";
 import CountUpStat from "../global/CountUpStat";
 import { MotionDiv } from "@/components/global/motion-elements";

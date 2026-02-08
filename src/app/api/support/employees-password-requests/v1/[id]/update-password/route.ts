@@ -12,8 +12,8 @@ import EmployeeModel from "@/models/employees/employees.model";
 import ResetPasswordRequestModel from "@/models/employees/reset-password-request.model";
 
 import { REQUEST_STATUS } from "@/constants/reset-password-request.const";
-import { ResetPasswordRequestDTO } from "@/types/password-reset.types";
-import { ResetPasswordRequestPopulated } from "@/types/employee-password-request.types.server";
+import { ResetPasswordRequestDTO } from "@/types/employee/password-reset.types";
+import { ResetPasswordRequestPopulated } from "@/types/employee/employee-password-request.types.server";
 import { validatePassword } from "@/lib/helpers/validatePassword";
 import { employeePasswordUpdateEmail } from "@/lib/html/employee-password-update.html";
 import { mailer } from "@/config/node-mailer";

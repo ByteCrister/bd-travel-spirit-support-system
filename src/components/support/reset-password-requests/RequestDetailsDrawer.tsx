@@ -19,7 +19,7 @@ import {
     AlertCircle,
     Sparkles,
 } from "lucide-react";
-import { useResetRequestsStore } from "@/store/reset-requests.store";
+import { useResetRequestsStore } from "@/store/employee/reset-requests.store";
 import DenyDialog from "./DenyDialog";
 import UpdatePasswordDialog from "./UpdatePasswordDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

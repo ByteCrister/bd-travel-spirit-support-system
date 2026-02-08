@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCompanyDetailStore } from "@/store/company/company-detail.store";
-import type { ReviewListItemDTO, ReviewSummaryDTO } from "@/types/tour-detail-review.type";
+import type { ReviewListItemDTO, ReviewSummaryDTO } from "@/types/tour/tour-detail-review.type";
 import { TourReviewsSkeleton } from "./skeletons/TourReviewsSkeleton";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 

@@ -1,7 +1,7 @@
 // src/app/api/mock/statistics/kpis/route.ts
 import { faker } from '@faker-js/faker';
 import { NextResponse } from 'next/server';
-import type { KpiMetrics } from '@/types/statistics.types';
+import type { KpiMetrics } from '@/types/dashboard/statistics.types';
 
 export async function GET() {
     const data: KpiMetrics = {

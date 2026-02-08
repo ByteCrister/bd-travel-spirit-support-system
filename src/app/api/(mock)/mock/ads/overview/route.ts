@@ -1,6 +1,6 @@
 // app/api/mock/ads/overview/route.ts
 import { NextResponse } from "next/server";
-import type { ApiResponse, AdvertisementOverview } from "@/types/advertising.types";
+import type { ApiResponse, AdvertisementOverview } from "@/types/advertising/advertising.types";
 import { getOverview } from "@/lib/mocks/mockAds";
 
 export async function GET() {

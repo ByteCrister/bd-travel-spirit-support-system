@@ -17,7 +17,7 @@ import {
   TrendingInsight,
   DashboardFilters,
   ApiEnvelope,
-} from '@/types/dashboard.types';
+} from '@/types/dashboard/dashboard.types';
 
 import api from '@/utils/axios';
 import { extractErrorMessage } from '@/utils/axios/extract-error-message';

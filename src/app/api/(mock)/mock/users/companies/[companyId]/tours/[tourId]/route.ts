@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
-import { TourDetailDTO } from "@/types/tour.types";
+import { TourDetailDTO } from "@/types/tour/tour.types";
 import {
     TOUR_STATUS,
     TRAVEL_TYPE,

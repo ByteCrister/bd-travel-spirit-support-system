@@ -1,5 +1,5 @@
 // src/utils/helpers/file-conversion.ts
-import { DocumentDTO, ObjectIdString } from "@/types/employee.types";
+import { DocumentDTO, ObjectIdString } from "@/types/employee/employee.types";
 
 // Images we accept from users
 export const IMAGE_EXTENSIONS = [

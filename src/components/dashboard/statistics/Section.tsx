@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ExportMenu } from './exports/ExportMenu';
 import { ChartSkeleton } from './skeletons/ChartSkeleton';
 import { TableSkeleton } from './skeletons/TableSkeleton';
-import { ChatStats, EmployeesStats, ImagesStats, NotificationsStats, ReportsStats, ReviewsStats, ToursStats, UsersStats } from '@/types/statistics.types';
+import { ChatStats, EmployeesStats, ImagesStats, NotificationsStats, ReportsStats, ReviewsStats, ToursStats, UsersStats } from '@/types/dashboard/statistics.types';
 
 interface SectionProps {
     title: string;

@@ -9,7 +9,7 @@ import {
     CommentFiltersDTO,
     EntityId,
     CommentTreeNodeDTO,
-} from '@/types/article-comment.types';
+} from '@/types/article/article-comment.types';
 import { CommentStatus } from '@/constants/articleComment.const';
 import mongoose, { ClientSession, PipelineStage, Types } from 'mongoose';
 import ConnectDB from '@/config/db';

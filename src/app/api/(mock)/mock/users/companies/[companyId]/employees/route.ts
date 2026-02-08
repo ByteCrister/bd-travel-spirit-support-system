@@ -5,7 +5,7 @@ import {
     EmployeeListItemDTO,
     EmployeeTableColumn,
     sortableEmployeeFields,
-} from "@/types/employee.types";
+} from "@/types/employee/employee.types";
 import {
     EMPLOYEE_STATUS,
     EMPLOYMENT_TYPE,

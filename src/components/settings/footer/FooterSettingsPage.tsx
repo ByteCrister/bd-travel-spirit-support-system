@@ -4,7 +4,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, MapPin, Users } from "lucide-react";
-import { useFooterStore } from "@/store/footerSettings.store";
+import { useFooterStore } from "@/store/site-settings/footerSettings.store";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FooterSettingsHeader } from "./FooterSettingsHeader";

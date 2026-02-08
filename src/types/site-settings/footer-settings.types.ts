@@ -1,7 +1,7 @@
 // types/footer-settings.types.ts
 // Minimal types for Footer management — only SocialLink and LocationEntry are included.
 
-import { ApiResponse } from "./api.types";
+import { ApiResponse } from "../common/api.types";
 
 export type ObjectId = string;
 

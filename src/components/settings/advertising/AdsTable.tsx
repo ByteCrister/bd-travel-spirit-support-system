@@ -22,7 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import type {
   AdvertisingPriceRow,
   ObjectId,
-} from "@/types/advertising-settings.types";
+} from "@/types/advertising/advertising-settings.types";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 interface Props {

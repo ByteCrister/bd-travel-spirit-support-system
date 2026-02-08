@@ -1,7 +1,7 @@
 import React from "react";
 import { Switch } from "@/components/ui/switch";
 import { HiPencil, HiTrash } from "react-icons/hi";
-import { AdvertisingPriceRow } from "@/types/advertising-settings.types";
+import { AdvertisingPriceRow } from "@/types/advertising/advertising-settings.types";
 
 interface Props {
   row: AdvertisingPriceRow;

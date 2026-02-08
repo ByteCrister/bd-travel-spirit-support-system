@@ -8,7 +8,7 @@ import BackToTop from "@/components/join-guide/BackToTop";
 import Footer from "@/components/join-guide/Footer";
 import LoginDialog from "@/components/join-guide/LoginDialog";
 import JoinAsGuideHeader from "./JoinAsGuideHeader";
-import { LandingPageData } from "@/types/join-as-guide.types";
+import { LandingPageData } from "@/types/guide/join-as-guide.types";
 import { jakarta } from "@/styles/fonts";
 
 

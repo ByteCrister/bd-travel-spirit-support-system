@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
-import type {  SocialLinkDTO } from "@/types/footer-settings.types";
+import type {  SocialLinkDTO } from "@/types/site-settings/footer-settings.types";
 
 export async function GET() {
   faker.seed(54321);

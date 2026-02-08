@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
-import type { SystemHealth } from '@/types/dashboard.types';
+import type { SystemHealth } from '@/types/dashboard/dashboard.types';
 
 export async function GET() {
     const status = faker.helpers.arrayElement(['healthy', 'warning', 'critical'] as const);

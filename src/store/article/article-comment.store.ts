@@ -30,11 +30,11 @@ import {
     RestoreCommentPayloadDTO,
     RestoreCommentResponseDTO,
     DeleteCommentResponseDTO,
-} from '@/types/article-comment.types';
+} from '@/types/article/article-comment.types';
 
 import api from '@/utils/axios';
 import { COMMENT_STATUS, CommentStatus } from '@/constants/articleComment.const';
-import { ApiResponse } from '@/types/api.types';
+import { ApiResponse } from '@/types/common/api.types';
 import { showToast } from '@/components/global/showToast';
 
 // const URL_AFTER_API = '/mock/support/article-comments';

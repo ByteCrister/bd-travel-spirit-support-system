@@ -3,7 +3,7 @@
 import React from 'react';
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
-import { CategoryCount } from '@/types/statistics.types';
+import { CategoryCount } from '@/types/dashboard/statistics.types';
 import { formatNumber } from '@/utils/helpers/format';
 
 interface BarChartProps {

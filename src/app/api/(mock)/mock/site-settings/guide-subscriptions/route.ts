@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import type { SubscriptionTierDTO } from "@/types/guide-subscription-settings.types";
+import type { SubscriptionTierDTO } from "@/types/site-settings/guide-subscription-settings.types";
 import { getSiteSettings, upsertTier } from "@/lib/mocks/guideSubscriptionsSettings.mock";
 
 /**

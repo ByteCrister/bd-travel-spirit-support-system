@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, Variants } from "framer-motion";
-import { ResetRequestEntity } from "@/types/password-reset.types";
+import { ResetRequestEntity } from "@/types/employee/password-reset.types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Clock, CheckCircle2, XCircle } from "lucide-react";

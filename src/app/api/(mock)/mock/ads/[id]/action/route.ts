@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { performAdminAction, getAdById } from "@/lib/mocks/mockAds";
-import type { ApiResponse, AdvertisementResponse, AdvertisementAdminActionDTO } from "@/types/advertising.types";
+import type { ApiResponse, AdvertisementResponse, AdvertisementAdminActionDTO } from "@/types/advertising/advertising.types";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

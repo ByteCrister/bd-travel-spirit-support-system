@@ -3,7 +3,7 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { motion } from 'framer-motion';
-import { CategoryCount } from '@/types/statistics.types';
+import { CategoryCount } from '@/types/dashboard/statistics.types';
 import { formatNumber, formatPercentage } from '@/utils/helpers/format';
 
 interface DonutChartProps {

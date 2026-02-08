@@ -1,4 +1,4 @@
-import { CategoryCount, TimeSeriesPoint } from "@/types/statistics.types";
+import { CategoryCount, TimeSeriesPoint } from "@/types/dashboard/statistics.types";
 
 export function groupByDate<T extends Record<string, unknown>>(
     data: T[],

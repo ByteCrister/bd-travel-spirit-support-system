@@ -8,7 +8,7 @@ import type {
     UpdateAdvertisingPricePayload,
     BulkUpdateAdvertisingPricesPayload,
     ObjectId,
-} from "@/types/advertising-settings.types";
+} from "@/types/advertising/advertising-settings.types";
 import { CURRENCY } from "@/constants/tour.const";
 
 const PLACEMENTS = [

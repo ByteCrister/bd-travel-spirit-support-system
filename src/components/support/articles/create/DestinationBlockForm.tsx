@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/accordion';
 import { RichTextEditor } from './RichTextEditor';
 import { CreateArticleFormValues } from '@/utils/validators/article.create.validator';
-import { DestinationBlock, RichTextBlock, FoodRecommendation, LocalFestival } from '@/types/article.types';
+import { DestinationBlock, RichTextBlock, FoodRecommendation, LocalFestival } from '@/types/article/article.types';
 import {
   Plus,
   Trash2,

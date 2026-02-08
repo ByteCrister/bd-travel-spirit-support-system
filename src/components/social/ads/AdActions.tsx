@@ -31,7 +31,7 @@ import {
     Settings,
     Database,
 } from 'lucide-react';
-import { AdsActionTypes } from '@/types/advertising.types';
+import { AdsActionTypes } from '@/types/advertising/advertising.types';
 
 interface AdActionsProps {
     id: string;

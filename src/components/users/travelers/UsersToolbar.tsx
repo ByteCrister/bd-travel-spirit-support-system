@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { UserSortableField } from "@/types/user.table.types";
+import { UserSortableField } from "@/types/user/user.table.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";

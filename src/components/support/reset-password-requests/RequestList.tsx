@@ -16,9 +16,9 @@ import { Search, Filter, Loader2, X, List } from "lucide-react";
 import RequestRow from "./RequestRow";
 import PaginationControls from "./PaginationControls";
 import { REQUEST_STATUS, RequestStatus } from "@/constants/reset-password-request.const";
-import { useResetRequestsStore } from "@/store/reset-requests.store";
+import { useResetRequestsStore } from "@/store/employee/reset-requests.store";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ResetRequestListQuery } from "@/types/password-reset.types";
+import { ResetRequestListQuery } from "@/types/employee/password-reset.types";
 import RequestSkeletonRow from "./skeletons/RequestSkeletonRow";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 

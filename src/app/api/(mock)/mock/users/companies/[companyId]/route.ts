@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
 import {
     CompanyOverviewDTO,
-} from "@/types/company.overview.types";
+} from "@/types/company/company.overview.types";
 
 export async function GET(
     req: Request,

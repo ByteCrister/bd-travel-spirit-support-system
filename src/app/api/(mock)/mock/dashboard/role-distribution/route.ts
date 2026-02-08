@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
-import type { RoleDistribution } from '@/types/dashboard.types';
+import type { RoleDistribution } from '@/types/dashboard/dashboard.types';
 
 export async function GET() {
     const travelers = faker.number.int({ min: 1000, max: 10000 });

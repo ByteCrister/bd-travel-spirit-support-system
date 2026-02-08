@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
-import { useResetRequestsStore } from "@/store/reset-requests.store";
+import { useResetRequestsStore } from "@/store/employee/reset-requests.store";
 
 export default function PaginationControls() {
     const { currentQuery, fetchList, queryCache } = useResetRequestsStore();

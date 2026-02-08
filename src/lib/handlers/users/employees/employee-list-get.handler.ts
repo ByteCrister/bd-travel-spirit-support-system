@@ -11,7 +11,7 @@ import {
     SortOrder,
     EmployeesListResponse,
     EmployeeListItemDTO,
-} from '@/types/employee.types';
+} from '@/types/employee/employee.types';
 import { EmployeeStatus, EmploymentType, PAYROLL_STATUS, PayrollStatus } from '@/constants/employee.const';
 import AssetModel from '@/models/assets/asset.model';
 import AssetFileModel from '@/models/assets/asset-file.model';

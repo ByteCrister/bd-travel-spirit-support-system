@@ -17,8 +17,8 @@ import type {
   RequestStatus,
   ID,
   GuideBannerFormErrors,
-} from "@/types/guide-banner-settings.types";
-import { GUIDE_BANNER_CONSTRAINTS } from "@/types/guide-banner-settings.types";
+} from "@/types/site-settings/guide-banner-settings.types";
+import { GUIDE_BANNER_CONSTRAINTS } from "@/types/site-settings/guide-banner-settings.types";
 import { buildAssetSrc, validateForm } from "@/utils/helpers/guide-banner-settings";
 // Use the shared file helpers
 import {

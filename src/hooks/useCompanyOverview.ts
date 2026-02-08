@@ -2,8 +2,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { TourListItemDTO, SortableTourKeys } from "@/types/tour.types";
-import { EmployeeListItemDTO } from "@/types/employee.types";
+import { TourListItemDTO, SortableTourKeys } from "@/types/tour/tour.types";
+import { EmployeeListItemDTO } from "@/types/employee/employee.types";
 import { useCompanyDetailStore } from "@/store/company/company-detail.store";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback"; // Add this import

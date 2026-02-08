@@ -5,7 +5,7 @@ import { FilterQuery, Types, PipelineStage } from "mongoose";
 import ConnectDB from "@/config/db";
 import GuideModel, { IGuide } from "@/models/guide/guide.model";
 import { GUIDE_DOCUMENT_TYPE, GUIDE_STATUS, GuideDocumentCategory, GuideDocumentType } from "@/constants/guide.const";
-import type { PendingGuideDTO } from "@/types/pendingGuide.types";
+import type { PendingGuideDTO } from "@/types/guide/pendingGuide.types";
 import { withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { PaginatedResponse } from "@/store/guide/guide.store";
