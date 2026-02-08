@@ -1,6 +1,6 @@
 // utils/payment-calculator.ts
 import { PayrollStatus } from "@/constants/employee.const";
-import { ISODateString,  } from "@/types/employee.types";
+import { ISODateString,  } from "@/types/employee/employee.types";
 
 /**
  * Calculate payment status for an employee based on joining date

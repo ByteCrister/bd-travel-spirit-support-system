@@ -4,8 +4,8 @@ import { devtools } from "zustand/middleware";
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { GUIDE_STATUS, GuideStatus } from "@/constants/guide.const";
-import { PendingGuideDTO } from "@/types/pendingGuide.types";
-import { ApiResponse } from "@/types/api.types";
+import { PendingGuideDTO } from "@/types/guide/pendingGuide.types";
+import { ApiResponse } from "@/types/common/api.types";
 import { showToast } from "@/components/global/showToast";
 
 // const URL_AFTER_API = "/mock/users/guides";

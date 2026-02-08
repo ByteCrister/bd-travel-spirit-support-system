@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
-import type { PendingAction } from '@/types/dashboard.types';
+import type { PendingAction } from '@/types/dashboard/dashboard.types';
 
 export async function GET() {
     const types = ['report', 'complaint', 'flagged_content', 'organizer_approval', 'tour_approval'] as const;

@@ -7,7 +7,7 @@ import { Skeleton } from "./primitives/Skeleton";
 
 import {
     EmployeesQuery,
-} from "@/types/employee.types";
+} from "@/types/employee/employee.types";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

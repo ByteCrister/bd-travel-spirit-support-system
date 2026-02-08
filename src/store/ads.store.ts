@@ -14,7 +14,7 @@ import {
   normalizeQueryKey,
   AdvertisementAdminActionDTO,
   FilterState,
-} from "@/types/advertising.types";
+} from "@/types/advertising/advertising.types";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import api from "@/utils/axios";
 enableMapSet();

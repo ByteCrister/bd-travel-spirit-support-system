@@ -11,7 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { CommentFiltersDTO } from '@/types/article-comment.types';
+import { CommentFiltersDTO } from '@/types/article/article-comment.types';
 import { COMMENT_STATUS, CommentStatus } from '@/constants/articleComment.const';
 import { HiFilter, HiX } from 'react-icons/hi';
 

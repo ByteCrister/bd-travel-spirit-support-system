@@ -16,7 +16,7 @@ import {
   FiInfo
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
-import { RecentActivity as RecentActivityType } from "@/types/dashboard.types"
+import { RecentActivity as RecentActivityType } from "@/types/dashboard/dashboard.types"
 
 interface RecentActivityProps {
   activities: RecentActivityType[];

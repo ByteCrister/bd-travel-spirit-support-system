@@ -9,7 +9,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/pendingGuide.types";
+import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/guide/pendingGuide.types";
 import Image from "next/image";
 import { GUIDE_DOCUMENT_TYPE } from "@/constants/guide.const";
 import { useMemo } from "react";

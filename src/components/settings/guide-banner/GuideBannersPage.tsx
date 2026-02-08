@@ -29,8 +29,8 @@ import GuideBannerEmptyState from "./GuideBannerEmptyState";
 import type {
     GuideBannerQueryParams,
     GuideBannerSortKey,
-} from "@/types/guide-banner-settings.types";
-import { GUIDE_BANNER_CONSTRAINTS, GUIDE_BANNER_SORT_KEYS } from "@/types/guide-banner-settings.types";
+} from "@/types/site-settings/guide-banner-settings.types";
+import { GUIDE_BANNER_CONSTRAINTS, GUIDE_BANNER_SORT_KEYS } from "@/types/site-settings/guide-banner-settings.types";
 import { formatISODate } from "@/utils/helpers/guide-banner-settings";
 import { useGuideBannersStore } from "@/store/guide/guide-bannerSetting.store";
 import GuideBannerSkeleton from "./skeletons/GuideBannerSkeleton";

@@ -11,8 +11,8 @@ import {
     RestoreEmployeePayload,
     UpdateEmployeePayload,
     ObjectIdString,
-} from "@/types/employee.types";
-import { ApiResponse } from "@/types/api.types";
+} from "@/types/employee/employee.types";
+import { ApiResponse } from "@/types/common/api.types";
 import { showToast } from "@/components/global/showToast";
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";

@@ -1,8 +1,8 @@
 'use client';
 
 import { ACCOUNT_STATUS, USER_ROLE } from "@/constants/user.const";
-import { UserSortableField, UserTableRow } from "@/types/user.table.types";
-import { Suspension, User } from "@/types/user.types";
+import { UserSortableField, UserTableRow } from "@/types/user/user.table.types";
+import { Suspension, User } from "@/types/user/user.types";
 import api from "@/utils/axios";
 import axios from "axios";
 import { create } from "zustand";

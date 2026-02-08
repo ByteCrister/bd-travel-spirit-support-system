@@ -7,7 +7,7 @@ import LocationSetting from "@/models/site-settings/location.model";
 
 import { locationSchema } from "@/utils/validators/footer-settings.validator";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
-import { LocationEntryDTO } from "@/types/footer-settings.types";
+import { LocationEntryDTO } from "@/types/site-settings/footer-settings.types";
 
 interface Params {
     params: Promise<{ id: string }>;

@@ -16,7 +16,7 @@ import {
   FiEye,
 } from 'react-icons/fi';
 import { cn } from '@/lib/utils';
-import { UserRole } from '@/types/dashboard.types';
+import { UserRole } from '@/types/dashboard/dashboard.types';
 import { USER_ROLE } from '@/constants/user.const';
 
 interface QuickActionsProps {

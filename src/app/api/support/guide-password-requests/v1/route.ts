@@ -8,7 +8,7 @@ import {
     PasswordRequestStats,
     PaginatedResponse,
     SortOrder
-} from '@/types/guide-forgot-password.types';
+} from '@/types/guide/guide-forgot-password.types';
 
 import { withErrorHandler, ApiError } from '@/lib/helpers/withErrorHandler';
 import { withTransaction } from '@/lib/helpers/withTransaction';
@@ -16,6 +16,7 @@ import { FORGOT_PASSWORD_STATUS, ForgotPasswordStatus } from '@/constants/guide-
 
 import GuideForgotPasswordModel from '@/models/guide/guide-forgot-password.model';
 import ConnectDB from '@/config/db';
+import { sanitizeSearch } from '@/lib/helpers/sanitize-search';
 
 /* ------------------------------------------------------------------
    QUERY PARAM TYPES
@@ -192,7 +193,7 @@ async function getRequestsHandler(request: NextRequest) {
     );
     const skip = (page - 1) * limit;
 
-    const search = searchParams.get('search') || '';
+    const search = sanitizeSearch(searchParams.get('search') ?? '') ?? "";
     const status = searchParams.get('status') || 'ALL';
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder =

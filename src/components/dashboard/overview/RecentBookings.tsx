@@ -15,7 +15,7 @@ import {
   FiAlertCircle
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
-import { Booking } from "@/types/dashboard.types";
+import { Booking } from "@/types/dashboard/dashboard.types";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
 interface RecentBookingsProps {

@@ -41,9 +41,9 @@ import {
   AdvertisingPriceForm,
   CreateAdvertisingPricePayload,
   UpdateAdvertisingPricePayload,
-} from "@/types/advertising-settings.types";
+} from "@/types/advertising/advertising-settings.types";
 import { PLACEMENT } from "@/constants/advertising.const";
-import useAdvertisingSettingsStore from "@/store/advertisingSettings.store";
+import useAdvertisingSettingsStore from "@/store/site-settings/advertisingSettings.store";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
 import { CURRENCY } from "@/constants/tour.const";

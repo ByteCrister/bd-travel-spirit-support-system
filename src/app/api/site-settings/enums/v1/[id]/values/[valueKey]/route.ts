@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import ConnectDB from "@/config/db";
 import EnumGroupSetting from "@/models/site-settings/enumGroup.model";
 
-import type { EnumGroup } from "@/types/enum-settings.types";
+import type { EnumGroup } from "@/types/site-settings/enum-settings.types";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 
 interface RouteParams {

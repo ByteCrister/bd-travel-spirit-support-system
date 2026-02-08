@@ -9,11 +9,11 @@ import type {
     CompanyDashboardStatsDTO,
     CompanySortBy,
     SortDir,
-} from "@/types/company.types";
+} from "@/types/company/company.types";
 
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
-import { ApiResponse } from "@/types/api.types";
+import { ApiResponse } from "@/types/common/api.types";
 
 // const URL_AFTER_API = "/mock/users/companies";
 const URL_AFTER_API = "/users/companies/v1";

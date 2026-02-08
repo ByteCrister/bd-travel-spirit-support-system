@@ -6,7 +6,7 @@ import type {
     UpsertEnumValuesPayload,
     EnumGroup,
     EnumValue,
-} from "@/types/enum-settings.types";
+} from "@/types/site-settings/enum-settings.types";
 
 import ConnectDB from "@/config/db";
 import EnumGroupSetting from "@/models/site-settings/enumGroup.model";

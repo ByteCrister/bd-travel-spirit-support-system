@@ -628,7 +628,26 @@ const TourSchema = new Schema<ITour>(
       {
         type: { type: String, enum: Object.values(TOUR_DISCOUNT_TYPE) },
         discount: { type: String, enum: Object.values(TOUR_DISCOUNT) },
-        value: { type: Number, min: 0, max: 100 },
+        value: {
+          type: Number,
+          required: true,
+          min: 0,
+          validate: {
+            validator: function (
+              this: { type: TourDiscountType },
+              value: number
+            ) {
+              if (
+                this.type === TOUR_DISCOUNT_TYPE.PERCENTAGE &&
+                value > 100
+              ) {
+                return false;
+              }
+              return true;
+            },
+            message: "Percentage discount value must be between 0 and 100",
+          },
+        },
         code: { type: String, trim: true },
         validFrom: { type: Date },
         validUntil: { type: Date },

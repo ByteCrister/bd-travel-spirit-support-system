@@ -1,7 +1,7 @@
 // app/api/articles/stats/route.ts
 import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
-import { ArticleDashboardStats, UserRef } from '@/types/article.types';
+import { ArticleDashboardStats, UserRef } from '@/types/article/article.types';
 
 /** Create a fake user reference */
 function makeUserRef(seed?: string): UserRef {

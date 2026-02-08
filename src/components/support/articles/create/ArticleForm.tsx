@@ -25,7 +25,7 @@ import { useArticleStore } from '@/store/article/article.store';
 import {
     CreateArticleInput,
     DestinationBlock,
-} from '@/types/article.types';
+} from '@/types/article/article.types';
 import { ArticleBasics } from './ArticleBasics';
 import { DestinationBlockForm } from './DestinationBlockForm';
 import { FaqForm } from './FaqForm';

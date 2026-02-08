@@ -9,8 +9,8 @@ import type {
     CompanyListResponseDTO,
     CompanyDashboardStatsDTO,
     CompanyRowDTO
-} from '@/types/company.types';
-import { COMPANY_SORT_FIELDS } from '@/types/company.types';
+} from '@/types/company/company.types';
+import { COMPANY_SORT_FIELDS } from '@/types/company/company.types';
 
 import ConnectDB from '@/config/db';
 import GuideModel from '@/models/guide/guide.model';

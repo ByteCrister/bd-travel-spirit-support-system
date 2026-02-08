@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/pendingGuide.types";
+import { PendingGuideDTO, PendingGuideDocumentDTO } from "@/types/guide/pendingGuide.types";
 import { GUIDE_STATUS } from "@/constants/guide.const";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

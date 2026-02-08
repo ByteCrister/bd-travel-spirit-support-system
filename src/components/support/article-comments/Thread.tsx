@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useArticleCommentsStore } from '@/store/article/article-comment.store';
-import { CommentFiltersDTO } from '@/types/article-comment.types';
+import { CommentFiltersDTO } from '@/types/article/article-comment.types';
 
 export const Thread = memo(function Thread({ articleId }: { articleId: string }) {
     const {

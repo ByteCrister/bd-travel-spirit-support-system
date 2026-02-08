@@ -24,7 +24,7 @@ import {
     FormData,
     SegmentedDocuments,
     DocumentFile,
-} from "@/types/register-as-guide.types";
+} from "@/types/guide/register-as-guide.types";
 import { cleanupAssets } from "@/lib/cloudinary/delete.cloudinary";
 import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
 

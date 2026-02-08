@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
-import type { Booking } from "@/types/dashboard.types";
+import type { Booking } from "@/types/dashboard/dashboard.types";
 
 export async function GET() {
     const statuses = ["confirmed", "pending", "cancelled", "completed"] as const;

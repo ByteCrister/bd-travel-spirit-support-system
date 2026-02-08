@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { NextResponse } from 'next/server';
-import type { UsersStats, TimeSeriesPoint, CategoryCount } from '@/types/statistics.types';
+import type { UsersStats, TimeSeriesPoint, CategoryCount } from '@/types/dashboard/statistics.types';
 
 export async function GET() {
     const days = 30;

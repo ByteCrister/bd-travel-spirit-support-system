@@ -6,8 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { EnumValueFormSchema, enumValueSchema } from "@/utils/validators/enums-settings.validators";
-import { EnumValueForm } from "@/types/enum-settings.types";
-import useEnumSettingsStore from "@/store/enumSettings.store";
+import { EnumValueForm } from "@/types/site-settings/enum-settings.types";
+import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
 import {
   Dialog,
   DialogContent,

@@ -9,6 +9,7 @@ import EmployeeModel from "@/models/employees/employees.model";
 import { FilterQuery, PipelineStage } from "mongoose";
 import { USER_ROLE } from "@/constants/user.const";
 import { RequestStatus } from "@/constants/reset-password-request.const";
+import { sanitizeSearch } from "@/lib/helpers/sanitize-search";
 
 /* -----------------------------------------
    Query params
@@ -34,13 +35,14 @@ export default async function EmpPassReqListGetHandler(request: NextRequest) {
     const params = Object.fromEntries(searchParams.entries()) as ListQueryParams;
 
     const {
-        search,
+        search: rawSearch,
         status,
         sortBy = "requestedAt",
         sortDir = "desc",
         page = "1",
         limit = "20",
     } = params;
+    const search = sanitizeSearch(rawSearch);
 
     const pageNum = Math.max(Number(page) || 1, 1);
     const limitNum = Math.min(Number(limit) || 20, 100);

@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Users, MapPin, Star, Image, AlertTriangle, UserCheck, Calendar } from 'lucide-react';
 import { KpiSkeleton } from './skeletons/KpiSkeleton';
-import { KpiMetrics } from '@/types/statistics.types';
+import { KpiMetrics } from '@/types/dashboard/statistics.types';
 import { formatCurrency, formatNumber } from '@/utils/helpers/format';
 import CountUp from 'react-countup';
 import { FaBangladeshiTakaSign } from 'react-icons/fa6';

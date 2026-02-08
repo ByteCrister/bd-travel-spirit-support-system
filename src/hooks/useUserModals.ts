@@ -1,8 +1,8 @@
 // hooks/useUserModals.ts
 "use client";
 
-import { UserTableRow } from "@/types/user.table.types";
-import { User } from "@/types/user.types";
+import { UserTableRow } from "@/types/user/user.table.types";
+import { User } from "@/types/user/user.types";
 import { useState, useCallback } from "react";
 
 export function useUserModals() {

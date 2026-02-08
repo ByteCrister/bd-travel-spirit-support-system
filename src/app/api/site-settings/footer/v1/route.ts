@@ -5,9 +5,9 @@ import { Types } from "mongoose";
 import SocialLinkSetting, { ISocialLinkSetting } from "@/models/site-settings/socialLink.model";
 import LocationSetting, { ILocationEntry } from "@/models/site-settings/location.model";
 
-import type { FooterSettingsDTO } from "@/types/footer-settings.types";
+import type { FooterSettingsDTO } from "@/types/site-settings/footer-settings.types";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
-import { Lean } from "@/types/mongoose-lean.types";
+import { Lean } from "@/types/common/mongoose-lean.types";
 
 /**
  * GET: returns FooterSettingsDTO (data only)

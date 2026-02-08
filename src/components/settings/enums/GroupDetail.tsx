@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import GroupDetailSkeleton from "./skeletons/GroupDetailSkeleton";
 import ErrorBar from "./ErrorBar";
 import ValuesSection from "./ValuesSection";
-import useEnumSettingsStore from "@/store/enumSettings.store";
+import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
 import { EnumGroupFormSchema, enumGroupSchema } from "@/utils/validators/enums-settings.validators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -14,7 +14,7 @@ import {
     type CursorPageMetaDTO,
     type OffsetPageMetaDTO,
     type CommentAdminStatsDTO,
-} from '@/types/article-comment.types';
+} from '@/types/article/article-comment.types';
 import { USER_ROLE } from '@/constants/user.const';
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
 

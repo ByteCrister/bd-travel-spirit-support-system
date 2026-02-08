@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LoginFormValues, loginValidator } from "@/utils/validators/login.validator";
 import ForgotPasswordDialog from "./ForgotPasswordDialog";
-import useJoinAsGuideStore from "@/store/join-as-guide.store";
+import useJoinAsGuideStore from "@/store/guide/join-as-guide.store";
 import { showToast } from "../global/showToast";
 import { inter, jakarta } from "@/styles/fonts";
 import api from "@/utils/axios";

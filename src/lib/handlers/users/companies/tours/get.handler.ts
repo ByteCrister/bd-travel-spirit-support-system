@@ -4,7 +4,7 @@ import { Types, FilterQuery } from "mongoose";
 import TourModel, { IDestinationBlock, ITour, IAttraction } from "@/models/tours/tour.model";
 import ConnectDB from "@/config/db";
 import AssetFileModel from '@/models/assets/asset-file.model';
-import { PopulatedAssetLean } from '@/types/populated-asset.types';
+import { PopulatedAssetLean } from '@/types/common/populated-asset.types';
 import AssetModel from "@/models/assets/asset.model";
 import { TOUR_STATUS } from "@/constants/tour.const";
 import { sanitizeSearch } from "@/lib/helpers/sanitize-search";

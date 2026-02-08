@@ -6,7 +6,7 @@ import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User } from "@/types/user.types";
+import { User } from "@/types/user/user.types";
 import { UserActivityTab } from "./UserActivityTab";
 import { UserRolesTab } from "./UserRolesTab";
 import { UserSecurityTab } from "./UserSecurityTab";

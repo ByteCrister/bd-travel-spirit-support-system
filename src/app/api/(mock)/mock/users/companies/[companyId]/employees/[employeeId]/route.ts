@@ -1,7 +1,7 @@
 // \api\users-management\companies\[companyId]\employees\[employeeId]\route.ts
 import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
-import { EmployeeDetailDTO, PayrollRecordDTO, CurrentMonthPaymentStatusDTO } from "@/types/employee.types";
+import { EmployeeDetailDTO, PayrollRecordDTO, CurrentMonthPaymentStatusDTO } from "@/types/employee/employee.types";
 import {
     EMPLOYEE_STATUS,
     EMPLOYMENT_TYPE,

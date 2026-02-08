@@ -6,7 +6,7 @@ import type {
     CompanyRowDTO,
     CompanyListResponseDTO,
     CompanyDashboardStatsDTO,
-} from "@/types/company.types";
+} from "@/types/company/company.types";
 
 // -------------------------------
 // Deterministic fake generator

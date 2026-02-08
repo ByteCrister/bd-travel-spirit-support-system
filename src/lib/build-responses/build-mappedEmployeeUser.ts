@@ -1,6 +1,6 @@
 import { USER_ROLE } from "@/constants/user.const";
 import { IEmployeeInfo } from "@/types/current-user.types";
-import { EmployeeDetailDTO } from "@/types/employee.types";
+import { EmployeeDetailDTO } from "@/types/employee/employee.types";
 
 export default function mappedEmployeeUser(dto: EmployeeDetailDTO): IEmployeeInfo {
     return {

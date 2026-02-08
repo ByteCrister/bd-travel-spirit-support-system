@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
 import {
   PasswordRequestStats,
-} from '@/types/guide-forgot-password.types';
+} from '@/types/guide/guide-forgot-password.types';
 
 // A small typed response envelope so this route is consistent with your other APIs
 interface StatsApiResponse {

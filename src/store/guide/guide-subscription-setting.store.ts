@@ -15,7 +15,7 @@ import {
     SubscriptionTierApiResponse,
     QueryCacheEntry,
     CacheKey,
-} from "@/types/guide-subscription-settings.types";
+} from "@/types/site-settings/guide-subscription-settings.types";
 
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";

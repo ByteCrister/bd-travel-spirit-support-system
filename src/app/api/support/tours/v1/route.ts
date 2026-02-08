@@ -5,7 +5,7 @@ import TourModel, { IDestinationBlock, ITour, IAttraction } from "@/models/tours
 import ConnectDB from "@/config/db";
 import AssetFileModel from '@/models/assets/asset-file.model';
 import AssetModel from '@/models/assets/asset.model';
-import { PopulatedAssetLean } from '@/types/populated-asset.types';
+import { PopulatedAssetLean } from '@/types/common/populated-asset.types';
 import { withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { MODERATION_STATUS } from "@/constants/tour.const";
 

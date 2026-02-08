@@ -8,7 +8,7 @@ import type {
     EnumGroup,
     EnumValue,
     CreateEnumGroupPayload,
-} from "@/types/enum-settings.types";
+} from "@/types/site-settings/enum-settings.types";
 
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 

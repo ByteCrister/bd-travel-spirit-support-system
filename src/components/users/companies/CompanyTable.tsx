@@ -9,7 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import type { CompanyRowDTO } from '@/types/company.types';
+import type { CompanyRowDTO } from '@/types/company/company.types';
 import TableBodyWithTooltips from './TableBodyWithTooltips';
 import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 

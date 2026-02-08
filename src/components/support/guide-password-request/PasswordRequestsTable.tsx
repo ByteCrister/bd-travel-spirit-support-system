@@ -23,7 +23,7 @@ import {
   Calendar,
   User,
 } from "lucide-react";
-import { PasswordRequestDto } from "@/types/guide-forgot-password.types";
+import { PasswordRequestDto } from "@/types/guide/guide-forgot-password.types";
 import { FORGOT_PASSWORD_STATUS } from "@/constants/guide-forgot-password.const";
 import { formatDistanceToNow, format } from "date-fns";
 import TableSkeleton from "./skeletons/TableSkeleton";

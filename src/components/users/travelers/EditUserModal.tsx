@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { User } from "@/types/user.types";
+import { User } from "@/types/user/user.types";
 
 interface EditUserModalProps {
     user: User | null;

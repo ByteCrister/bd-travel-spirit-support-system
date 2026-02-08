@@ -1,6 +1,6 @@
 import { FiStar } from "react-icons/fi";
 import { MdFormatQuote } from "react-icons/md";
-import type { TestimonialsType } from "@/types/join-as-guide.types";
+import type { TestimonialsType } from "@/types/guide/join-as-guide.types";
 import CountUpStat from "../global/CountUpStat";
 import { MotionDiv } from "@/components/global/motion-elements";
 import { jakarta } from "@/styles/fonts";

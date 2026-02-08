@@ -1,8 +1,8 @@
 // src/lib/build-responses/build-tour-details.ts
 import { TOUR_STATUS } from "@/constants/tour.const";
 import TourModel, { IAttraction, IDestinationBlock, ITour } from "@/models/tours/tour.model";
-import { PopulatedAssetLean } from "@/types/populated-asset.types";
-import { TourDetailDTO } from "@/types/tour.types";
+import { PopulatedAssetLean } from "@/types/common/populated-asset.types";
+import { TourDetailDTO } from "@/types/tour/tour.types";
 import { ClientSession, Types } from "mongoose";
 import "@/models/assets/asset.model";
 import AssetModel from "@/models/assets/asset.model";
@@ -171,7 +171,6 @@ export async function buildTourDetailDTO(
         const tour = rawTour.toObject() as unknown as TourLeanPopulated;
 
         // Calculate computed fields
-        const priceSummary = calculatePriceSummary(tour);
         const bookingSummary = calculateBookingSummary(tour);
         const nextDeparture = calculateNextDeparture(tour);
         const hasActiveDiscount = checkActiveDiscount(tour.discounts);
@@ -267,7 +266,7 @@ export async function buildTourDetailDTO(
             deletedAt: tour.deletedAt?.toISOString(),
 
             // =============== SUSPENSION INFO ===============
-            suspension: tour.suspension ? {
+            suspension: tour.suspension && tour.suspension.suspendedBy ? {
                 reason: tour.suspension.reason,
                 suspendedBy: {
                     id: tour.suspension.suspendedBy._id.toString(),
@@ -282,7 +281,6 @@ export async function buildTourDetailDTO(
             } : undefined,
 
             // =============== COMPUTED/UI-ONLY FIELDS ===============
-            priceSummary,
             bookingSummary,
             nextDeparture,
             isUpcoming: isTourUpcoming(tour),
@@ -348,29 +346,6 @@ function transformDepartures(departures: ITour["departures"] | undefined): TourD
         meetingPoint: dep.meetingPoint,
         meetingCoordinates: dep.meetingCoordinates
     }));
-}
-
-// Calculate price summary
-function calculatePriceSummary(tour: TourLeanPopulated): TourDetailDTO['priceSummary'] {
-    const baseAmount = tour.basePrice?.amount || 0;
-    const currency = tour.basePrice?.currency || 'BDT';
-
-    // Apply active discount if any
-    const activeDiscount = tour.discounts?.find((d) =>
-        (!d.validFrom || new Date(d.validFrom) <= new Date()) &&
-        (!d.validUntil || new Date(d.validUntil) >= new Date())
-    );
-
-    const discountedAmount = activeDiscount
-        ? baseAmount * (1 - (activeDiscount.value / 100))
-        : undefined;
-
-    return {
-        minAmount: baseAmount,
-        maxAmount: baseAmount,
-        currency,
-        discountedAmount
-    };
 }
 
 // Calculate booking summary

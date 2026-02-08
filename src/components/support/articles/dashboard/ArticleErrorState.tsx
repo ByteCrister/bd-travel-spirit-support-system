@@ -4,7 +4,7 @@ import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { HiExclamationTriangle, HiMagnifyingGlass, HiSparkles } from 'react-icons/hi2';
-import { ArticleListItem } from '@/types/article.types';
+import { ArticleListItem } from '@/types/article/article.types';
 
 type Props<T extends ArticleListItem = ArticleListItem> = {
     error?: string;

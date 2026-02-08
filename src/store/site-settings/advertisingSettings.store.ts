@@ -26,7 +26,7 @@ import type {
   CreateAdvertisingPriceRes,
   UpdateAdvertisingPriceRes,
   BulkUpdateRes,
-} from "@/types/advertising-settings.types";
+} from "@/types/advertising/advertising-settings.types";
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";

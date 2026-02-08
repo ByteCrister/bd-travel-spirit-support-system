@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
-import type { AdminNotification } from '@/types/dashboard.types';
+import type { AdminNotification } from '@/types/dashboard/dashboard.types';
 
 export async function GET() {
     const types = ['report', 'ticket', 'flagged_user', 'system_alert', 'revenue_issue', 'approval_pending'] as const;

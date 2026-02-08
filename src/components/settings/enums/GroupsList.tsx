@@ -14,14 +14,14 @@ import {
     AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import GroupsListSkeleton from "./skeletons/GroupsListSkeleton";
-import useEnumSettingsStore from "@/store/enumSettings.store";
+import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
 import { useDebouncedValueLodash } from "@/hooks/useDebouncedValueLodash";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import GroupCard from "./GroupCard";
 import CreateGroupDialog from "./CreateGroupDialog";
 import { showToast } from "@/components/global/showToast";
-import { EnumGroup } from "@/types/enum-settings.types";
+import { EnumGroup } from "@/types/site-settings/enum-settings.types";
 
 export default function GroupsList({
     selected,

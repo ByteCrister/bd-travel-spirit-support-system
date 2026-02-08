@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { ArticleListItem } from '@/types/article.types';
+import { ArticleListItem } from '@/types/article/article.types';
 import { Badge } from '@/components/ui/badge';
 import { motion, Variants } from 'framer-motion';
 import { FiArrowRight } from 'react-icons/fi';

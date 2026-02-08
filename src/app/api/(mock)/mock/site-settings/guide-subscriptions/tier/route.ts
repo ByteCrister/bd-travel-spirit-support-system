@@ -1,7 +1,7 @@
 // app/api/mock/site-settings/guide-subscriptions/tier/route.ts
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
-import type { SubscriptionTierDTO } from "@/types/guide-subscription-settings.types";
+import type { SubscriptionTierDTO } from "@/types/site-settings/guide-subscription-settings.types";
 import { upsertTier } from "@/lib/mocks/guideSubscriptionsSettings.mock";
 
 export async function POST(req: NextRequest) {

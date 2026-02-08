@@ -8,7 +8,7 @@ import ConnectDB from "@/config/db";
 import AdvertisingSetting from "@/models/site-settings/advertising.model";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
-import type { AdvertisingPriceDTO } from "@/types/advertising-settings.types";
+import type { AdvertisingPriceDTO } from "@/types/advertising/advertising-settings.types";
 
 /* ----------------------------- Zod Schemas ----------------------------- */
 const UpdatePayloadSchema = z.object({

@@ -4,7 +4,7 @@ import {
     ShiftDTO,
     DocumentDTO,
     ContactInfoDTO,
-} from "@/types/employee.types";
+} from "@/types/employee/employee.types";
 
 import {
     EMPLOYEE_STATUS,

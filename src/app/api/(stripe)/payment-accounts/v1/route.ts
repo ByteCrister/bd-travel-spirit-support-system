@@ -8,7 +8,7 @@ import {
     Paginated,
     PaymentAccount,
     SafeCardInfo,
-} from "@/types/stripe-payment-account.type";
+} from "@/types/site-settings/stripe-payment-account.type";
 import ConnectDB from "@/config/db";
 import paymentAccountModel from "@/models/payment-account.model";
 

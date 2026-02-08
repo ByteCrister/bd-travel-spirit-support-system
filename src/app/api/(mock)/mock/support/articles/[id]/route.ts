@@ -11,7 +11,7 @@ import {
   LocalFestival,
   RichTextBlock,
   UserRef,
-} from "@/types/article.types";
+} from "@/types/article/article.types";
 import { Division, District, TOUR_CATEGORIES, DIVISION, DISTRICT } from "@/constants/tour.const";
 import { ARTICLE_STATUS, ARTICLE_TYPE, FAQ_CATEGORY, FOOD_RECO_SPICE_TYPE } from "@/constants/article.const";
 

@@ -6,7 +6,7 @@ import ConnectDB from "@/config/db";
 import SocialLinkSetting from "@/models/site-settings/socialLink.model";
 
 import { socialLinkSchema } from "@/utils/validators/footer-settings.validator";
-import type { SocialLinkDTO } from "@/types/footer-settings.types";
+import type { SocialLinkDTO } from "@/types/site-settings/footer-settings.types";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 
 // Add social link

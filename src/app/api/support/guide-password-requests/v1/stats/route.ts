@@ -7,7 +7,7 @@ import GuideForgotPasswordModel from '@/models/guide/guide-forgot-password.model
 import { withErrorHandler, ApiError } from '@/lib/helpers/withErrorHandler';
 import { withTransaction } from '@/lib/helpers/withTransaction';
 import { PipelineStage } from 'mongoose';
-import { PasswordRequestStats } from '@/types/guide-forgot-password.types';
+import { PasswordRequestStats } from '@/types/guide/guide-forgot-password.types';
 
 interface MatchStage {
     status?: string;

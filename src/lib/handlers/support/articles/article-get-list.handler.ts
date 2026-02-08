@@ -13,7 +13,7 @@ import {
     ArticleListQueryResponse,
     SortOrder,
     ArticleSortField,
-} from '@/types/article.types';
+} from '@/types/article/article.types';
 
 import { ARTICLE_STATUS, ArticleStatus, ArticleType } from '@/constants/article.const';
 import { TourCategories } from '@/constants/tour.const';
@@ -23,8 +23,9 @@ import AssetFileModel from '@/models/assets/asset-file.model';
 import { ApiError } from '@/lib/helpers/withErrorHandler';
 import { withTransaction } from '@/lib/helpers/withTransaction';
 import { ITravelArticle, TravelArticleModel } from '@/models/articles/travel-article.model';
-import { PopulatedAssetLean } from '@/types/populated-asset.types';
+import { PopulatedAssetLean } from '@/types/common/populated-asset.types';
 import ConnectDB from '@/config/db';
+import { sanitizeSearch } from '@/lib/helpers/sanitize-search';
 
 // Helper function to build MongoDB query from filters
 function buildMongoQuery(filter?: ArticleFilter, search?: ArticleSearch) {
@@ -114,7 +115,7 @@ function buildMongoQuery(filter?: ArticleFilter, search?: ArticleSearch) {
 
     // Search query (across multiple fields)
     if (search?.query) {
-        const searchRegex = { $regex: search.query, $options: 'i' };
+        const searchRegex = { $regex: sanitizeSearch(search.query ?? "") ?? "", $options: 'i' };
         query.$or = [
             { title: searchRegex },
             { banglaTitle: searchRegex },

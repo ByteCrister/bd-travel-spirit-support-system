@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
 import {
     PasswordRequestDto,
-} from '@/types/guide-forgot-password.types';
+} from '@/types/guide/guide-forgot-password.types';
 import { FORGOT_PASSWORD_STATUS, ForgotPasswordStatus } from '@/constants/guide-forgot-password.const';
 
 // ---------- Shared API envelope (consistent with your other routes) ----------

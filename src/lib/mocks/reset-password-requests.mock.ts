@@ -1,5 +1,5 @@
 import { RequestStatus } from "@/constants/reset-password-request.const";
-import { ResetPasswordRequestDTO } from "@/types/password-reset.types";
+import { ResetPasswordRequestDTO } from "@/types/employee/password-reset.types";
 import { faker } from "@faker-js/faker";
 
 // Deterministic dataset per server process

@@ -5,7 +5,7 @@ import * as React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArticleDashboardStats } from '@/types/article.types';
+import { ArticleDashboardStats } from '@/types/article/article.types';
 import { HiDocumentText, HiEye, HiHeart, HiShare, HiClock, HiCheckCircle, HiDocumentDuplicate, HiArchiveBox } from 'react-icons/hi2';
 
 type Props = {

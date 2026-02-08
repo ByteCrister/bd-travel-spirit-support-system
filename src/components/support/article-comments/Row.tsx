@@ -1,6 +1,6 @@
 'use client';
 
-import { AdminArticleRowVM } from '@/types/article-comment.types';
+import { AdminArticleRowVM } from '@/types/article/article-comment.types';
 import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 import { motion } from 'framer-motion';
 import Image from 'next/image';

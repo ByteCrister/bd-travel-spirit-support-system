@@ -1,5 +1,5 @@
 // types/guide-subscription-settings.types.ts
-import { ApiResponse } from "./api.types";
+import { ApiResponse } from "../common/api.types";
 
 export type ID = string;
 

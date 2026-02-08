@@ -1,7 +1,7 @@
 // app/api/mock/site-settings/advertising/prices/[id]/route.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import type { UpdateAdvertisingPricePayload } from "@/types/advertising-settings.types";
+import type { UpdateAdvertisingPricePayload } from "@/types/advertising/advertising-settings.types";
 import { deletePrice, updatePrice } from "@/lib/mocks/siteSettings.mock";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

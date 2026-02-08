@@ -2,7 +2,7 @@
 'use client';
 
 import React, { JSX, useEffect } from 'react';
-import type { AdvertisementResponse } from '@/types/advertising.types';
+import type { AdvertisementResponse } from '@/types/advertising/advertising.types';
 import useAdsStore from '@/store/ads.store';
 import { showToast } from '@/components/global/showToast';
 import { Card } from '@/components/ui/card';

@@ -1,6 +1,6 @@
 import { FiGlobe, FiCreditCard, FiCalendar, FiTrendingUp } from "react-icons/fi";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import type { WhyPartnerType } from "@/types/join-as-guide.types";
+import type { WhyPartnerType } from "@/types/guide/join-as-guide.types";
 import CountUpStat from "../global/CountUpStat";
 import { MotionDiv } from "@/components/global/motion-elements";
 

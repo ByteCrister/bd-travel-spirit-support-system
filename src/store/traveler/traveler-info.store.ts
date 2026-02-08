@@ -1,8 +1,8 @@
 // stores/useTravelerInfoStore.ts
 import { UserNotificationDTO } from "@/types/notification.types";
 import { ReportDetailDTO } from "@/types/report.types";
-import { ReviewDTO } from "@/types/tour-detail-review.type";
-import { User } from "@/types/user.types";
+import { ReviewDTO } from "@/types/tour/tour-detail-review.type";
+import { User } from "@/types/user/user.types";
 import api from "@/utils/axios";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";

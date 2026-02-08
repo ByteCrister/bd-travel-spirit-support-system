@@ -1,4 +1,4 @@
-import type { LandingPageData } from "@/types/join-as-guide.types";
+import type { LandingPageData } from "@/types/guide/join-as-guide.types";
 import CTAWidget from "./CTAWidget";
 import FinalCTAbtn from "./client/FinalCTAbtn";
 import { MotionDiv } from "@/components/global/motion-elements";

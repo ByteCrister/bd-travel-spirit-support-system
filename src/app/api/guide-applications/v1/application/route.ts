@@ -7,9 +7,9 @@ import {
     GUIDE_SOCIAL_PLATFORM,
     GUIDE_STATUS,
 } from "@/constants/guide.const";
-import { Lean } from "@/types/mongoose-lean.types";
+import { Lean } from "@/types/common/mongoose-lean.types";
 import GuideModel, { GuideSocialLink, IGuide, IGuideDocument } from "@/models/guide/guide.model";
-import { DocumentFile, FormData, SegmentedDocuments } from "@/types/register-as-guide.types";
+import { DocumentFile, FormData, SegmentedDocuments } from "@/types/guide/register-as-guide.types";
 import ConnectDB from "@/config/db";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import AssetModel, { IAsset } from "@/models/assets/asset.model";

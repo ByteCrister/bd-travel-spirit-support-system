@@ -6,7 +6,7 @@ import { AlertCircle, CheckCircle2, Database, Loader2, RefreshCw, Settings2, Spa
 import type { LucideIcon } from "lucide-react";
 
 import { motion } from "framer-motion";
-import useEnumSettingsStore from "@/store/enumSettings.store";
+import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
 import EnumManagerShell from "./EnumManagerShell";
 
 type StatusConfigItem = {

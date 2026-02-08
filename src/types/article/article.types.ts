@@ -3,7 +3,7 @@
 import { ArticleRichTextBlockType, ArticleStatus, ArticleType, FaqCategory, FoodRecoSpiceType } from "@/constants/article.const";
 import { CommentStatus } from "@/constants/articleComment.const";
 import { TourCategories, Division, District } from "@/constants/tour.const";
-import { ApiResponse } from "./api.types";
+import { ApiResponse } from "../common/api.types";
 
 /* ============================================================
    Core primitives and cross-cutting types

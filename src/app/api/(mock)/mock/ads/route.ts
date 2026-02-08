@@ -6,7 +6,7 @@ import type {
   PaginatedResponse,
   AdvertisementResponse,
   AdListQuery,
-} from "@/types/advertising.types";
+} from "@/types/advertising/advertising.types";
 import { queryAds } from "@/lib/mocks/mockAds";
 import { AD_STATUS, PLACEMENT } from "@/constants/advertising.const";
 

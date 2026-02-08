@@ -16,7 +16,7 @@ import {
     EmployeesListResponse,
     EmployeeListItemDTO,
     EmployeeSortKey,
-} from "@/types/employee.types";
+} from "@/types/employee/employee.types";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
 
 import {

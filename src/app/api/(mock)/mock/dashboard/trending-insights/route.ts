@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
-import type { TrendingInsight } from '@/types/dashboard.types';
+import type { TrendingInsight } from '@/types/dashboard/dashboard.types';
 
 export async function GET() {
     const types = ['destination', 'category', 'tour_type'] as const;

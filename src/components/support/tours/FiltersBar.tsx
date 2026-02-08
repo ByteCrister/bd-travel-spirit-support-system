@@ -17,7 +17,7 @@ import {
     ModerationStatus,
     TourStatus,
 } from "@/constants/tour.const";
-import type { TourFilterOptions } from "@/types/tour.types";
+import type { TourFilterOptions } from "@/types/tour/tour.types";
 import { useTourApproval } from "@/store/tour-approval.store";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import { ComboBox } from "@/components/ui/combobox";

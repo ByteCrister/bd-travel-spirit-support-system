@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { EmployeeListItemDTO, EmployeeDetailDTO } from "@/types/employee.types";
+import { EmployeeListItemDTO, EmployeeDetailDTO } from "@/types/employee/employee.types";
 import {
     MdArrowBack,
     MdArrowForward,

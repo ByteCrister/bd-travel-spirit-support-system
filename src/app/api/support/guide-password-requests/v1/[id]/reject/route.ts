@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 import mongoose, { Types } from 'mongoose';
 import GuideForgotPasswordModel from '@/models/guide/guide-forgot-password.model';
 import { FORGOT_PASSWORD_STATUS } from '@/constants/guide-forgot-password.const';
-import { PasswordRequestDto } from '@/types/guide-forgot-password.types';
+import { PasswordRequestDto } from '@/types/guide/guide-forgot-password.types';
 import { withErrorHandler, ApiError, HandlerResult } from '@/lib/helpers/withErrorHandler';
 import { withTransaction } from '@/lib/helpers/withTransaction';
 import ConnectDB from '@/config/db';

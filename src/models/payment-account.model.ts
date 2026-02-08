@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, Query } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 import {
     CARD_BRAND,
     CardBrand,
@@ -87,14 +87,13 @@ const StripePaymentAccountSchema = new Schema<
 
         ownerId: {
             type: Schema.Types.ObjectId,
-            index: true,
+            ref: "User",
             default: null,
         },
 
         purpose: {
             type: String,
             enum: Object.values(PAYMENT_PURPOSE),
-            required: true,
             index: true,
         },
 
@@ -111,7 +110,6 @@ const StripePaymentAccountSchema = new Schema<
         isActive: {
             type: Boolean,
             default: true,
-            index: true,
         },
 
         isBackup: {
@@ -123,7 +121,6 @@ const StripePaymentAccountSchema = new Schema<
         isDeleted: {
             type: Boolean,
             default: false,
-            index: true,
         },
 
         deletedAt: {
@@ -176,18 +173,6 @@ StripePaymentAccountSchema.statics.restore = async function (id: string) {
         { new: true }
     );
 };
-
-/* ---------------------------------------------
-   Auto-exclude Soft Deleted
---------------------------------------------- */
-
-StripePaymentAccountSchema.pre(/^find/, function (
-    this: Query<unknown, IStripePaymentAccount>,
-    next
-) {
-    this.where({ isDeleted: { $ne: true } });
-    next();
-});
 
 /* ---------------------------------------------
    Indexes

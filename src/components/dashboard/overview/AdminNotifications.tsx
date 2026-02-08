@@ -18,7 +18,7 @@ import {
 } from "react-icons/fi";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
-import { AdminNotification } from "@/types/dashboard.types";
+import { AdminNotification } from "@/types/dashboard/dashboard.types";
 
 interface AdminNotificationsProps {
   notifications: AdminNotification[];

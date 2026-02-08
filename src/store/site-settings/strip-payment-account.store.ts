@@ -11,7 +11,7 @@ import type {
     Paginated,
     CreateStripePaymentMethodDTO,
     PaymentAccountUpdateDTO,
-} from "@/types/stripe-payment-account.type"; // UPDATED: types reflect stripeMeta top-level
+} from "@/types/site-settings/stripe-payment-account.type"; // UPDATED: types reflect stripeMeta top-level
 
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";

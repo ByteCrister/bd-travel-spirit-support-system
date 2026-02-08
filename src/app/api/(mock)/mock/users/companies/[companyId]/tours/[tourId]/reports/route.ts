@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
 import { REPORT_PRIORITY, REPORT_REASON, REPORT_STATUS } from "@/constants/report.const";
-import { TourReportListItemDTO } from "@/types/tour-detail-report.types";
+import { TourReportListItemDTO } from "@/types/tour/tour-detail-report.types";
 
 // enum arrays for faker
 const reasons = Object.values(REPORT_REASON);

@@ -5,14 +5,14 @@ import { useForm, FieldPath } from "react-hook-form";
 import type {
   SubscriptionTierFormValues,
   ValidationError,
-} from "@/types/guide-subscription-settings.types";
+} from "@/types/site-settings/guide-subscription-settings.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Currency } from "@/types/guide-subscription-settings.types";
+import { Currency } from "@/types/site-settings/guide-subscription-settings.types";
 import { format } from "date-fns";
 import { mapValidationErrors } from "@/utils/helpers/guide-subscriptions.transform";
 import { motion } from "framer-motion";

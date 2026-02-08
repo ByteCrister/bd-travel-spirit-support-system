@@ -44,6 +44,8 @@ import {
     CheckCircle2,
     Hotel,
     Bus,
+    Lightbulb,
+    X,
 } from "lucide-react";
 import AllDetailsSkeleton from "./skeletons/TourDetailPageSkeleton";
 import { Button } from "@/components/ui/button";
@@ -54,6 +56,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
     TOUR_STATUS,
     MODERATION_STATUS,
+    TOUR_DISCOUNT_TYPE,
+    CURRENCY,
+    Currency,
 } from "@/constants/tour.const";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 import { useTourApproval } from "@/store/tour-approval.store";
@@ -61,6 +66,8 @@ import { ConfirmApproveDialog } from "./ConfirmApproveDialog";
 import { RejectDialog } from "./RejectDialog";
 import { SuspendDialog } from "./SuspendDialog";
 import { UnsuspendDialog } from "./UnsuspendDialog";
+import {  DiscountDTO, PriceDTO } from "@/types/tour/tour.types";
+import { formatCurrency } from "@/utils/helpers/format";
 
 type Props = {
     tourId: string;
@@ -147,6 +154,82 @@ const MODERATION_CONFIG = {
     },
 };
 
+// =============== PRICE & DISCOUNT HELPER FUNCTIONS ===============
+
+/**
+ * Calculate the final price after applying all discounts
+ */
+const calculateFinalPrice = (basePrice: PriceDTO, discounts?: DiscountDTO[]): PriceDTO => {
+    if (!discounts || discounts.length === 0) {
+        return basePrice;
+    }
+
+    let finalAmount = basePrice.amount;
+
+    discounts.forEach(discount => {
+        if (discount.type === TOUR_DISCOUNT_TYPE.PERCENTAGE) {
+            finalAmount = finalAmount * (1 - discount.value / 100);
+        } else if (discount.type === TOUR_DISCOUNT_TYPE.FLAT_AMOUNT) {
+            finalAmount = finalAmount - discount.value;
+        }
+    });
+
+    // Ensure price doesn't go below 0
+    finalAmount = Math.max(0, finalAmount);
+
+    return {
+        amount: finalAmount,
+        currency: basePrice.currency
+    };
+};
+
+/**
+ * Check if a tour has any active discounts
+ */
+const hasActiveDiscount = (discounts?: DiscountDTO[]): boolean => {
+    return !!(discounts && discounts.length > 0);
+};
+
+/**
+ * Format discount value for display
+ */
+const formatDiscountValue = (discount: DiscountDTO): string => {
+    if (discount.type === TOUR_DISCOUNT_TYPE.PERCENTAGE) {
+        return `${discount.value}% OFF`;
+    } else {
+        return `${formatCurrency(discount.value)} OFF`;
+    }
+};
+
+/**
+ * Format discount badge text
+ */
+const formatDiscountBadgeText = (discount: DiscountDTO): string => {
+    const valueText = formatDiscountValue(discount);
+    return discount.code ? `${discount.code} · ${valueText}` : valueText;
+};
+
+/**
+ * Get discount display info for UI
+ */
+const getDiscountDisplayInfo = (basePrice: PriceDTO, discounts?: DiscountDTO[]) => {
+    const hasDiscount = hasActiveDiscount(discounts);
+    const finalPrice = calculateFinalPrice(basePrice, discounts);
+    const totalDiscountPercent = hasDiscount
+        ? Math.round(((basePrice.amount - finalPrice.amount) / basePrice.amount) * 100)
+        : 0;
+
+    return {
+        hasDiscount,
+        finalPrice,
+        originalPrice: basePrice,
+        totalDiscountPercent,
+        isDiscounted: finalPrice.amount < basePrice.amount
+    };
+};
+
+// =============== MAIN COMPONENT ===============
+
 export default function TourDetailPage({ tourId }: Props) {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -205,7 +288,7 @@ export default function TourDetailPage({ tourId }: Props) {
         }
     };
 
-    const formatCurrency = (amount?: number, currency = "BDT") => {
+    const formatCurrency = (amount?: number, currency: Currency = CURRENCY.BDT) => {
         if (amount === undefined || amount === null) return "—";
         try {
             return new Intl.NumberFormat(undefined, {
@@ -245,16 +328,10 @@ export default function TourDetailPage({ tourId }: Props) {
         };
     }, [tour]);
 
-    // Get primary price from basePrice or priceSummary
-    const pricePrimary = useMemo(() => {
+    // Calculate price and discount info
+    const priceInfo = useMemo(() => {
         if (!tour) return null;
-        if (tour.priceSummary?.minAmount) {
-            return {
-                amount: tour.priceSummary.discountedAmount ?? tour.priceSummary.minAmount,
-                currency: tour.priceSummary.currency
-            };
-        }
-        return tour.basePrice;
+        return getDiscountDisplayInfo(tour.basePrice, tour.discounts);
     }, [tour]);
 
     // Get duration display
@@ -456,7 +533,7 @@ export default function TourDetailPage({ tourId }: Props) {
                                         </motion.div>
                                     )}
 
-                                    {tour.hasActiveDiscount && (
+                                    {priceInfo?.hasDiscount && (
                                         <motion.div
                                             initial={{ x: -20, opacity: 0 }}
                                             animate={{ x: 0, opacity: 1 }}
@@ -481,7 +558,7 @@ export default function TourDetailPage({ tourId }: Props) {
                                             Starting from
                                         </div>
                                         <div className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
-                                            {pricePrimary ? formatCurrency(pricePrimary.amount, pricePrimary.currency) : "—"}
+                                            {priceInfo ? formatCurrency(priceInfo.finalPrice.amount, priceInfo.finalPrice.currency) : "—"}
                                         </div>
                                     </motion.div>
 
@@ -539,11 +616,11 @@ export default function TourDetailPage({ tourId }: Props) {
                                         </div>
                                         <div className="flex items-baseline gap-2">
                                             <div className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
-                                                {tour.basePrice ? formatCurrency(tour.basePrice.amount, tour.basePrice.currency) : "—"}
+                                                {priceInfo ? formatCurrency(priceInfo.finalPrice.amount, priceInfo.finalPrice.currency) : "—"}
                                             </div>
-                                            {tour.priceSummary?.discountedAmount && (
+                                            {priceInfo?.isDiscounted && (
                                                 <div className="text-lg text-slate-400 line-through">
-                                                    {formatCurrency(tour.priceSummary.minAmount, tour.basePrice.currency)}
+                                                    {formatCurrency(priceInfo.originalPrice.amount, priceInfo.originalPrice.currency)}
                                                 </div>
                                             )}
                                         </div>
@@ -601,7 +678,7 @@ export default function TourDetailPage({ tourId }: Props) {
                                                     transition={{ delay: 0.1 * idx }}
                                                     className="px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold shadow-lg"
                                                 >
-                                                    {d.code ? `${d.code} · ` : ""}{d.value}% OFF
+                                                    {formatDiscountBadgeText(d)}
                                                 </motion.div>
                                             ))}
                                         </div>
@@ -795,23 +872,6 @@ export default function TourDetailPage({ tourId }: Props) {
                                     <span>shares</span>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-3">
-
-                            {/* <Button
-                                variant="ghost"
-
-                                size="lg"
-                                asChild
-                                className="rounded-xl hover:bg-violet-50 dark:hover:bg-violet-950/30"
-                            >
-                                <Link href={`/companies/${companyId}/tours/${tour.id}/edit`}>
-                                    Edit Tour
-                                </Link>
-                            </Button> */}
-
                         </div>
                     </div>
                 </motion.header>
@@ -1246,7 +1306,7 @@ export default function TourDetailPage({ tourId }: Props) {
                                                                                                 <div className="mb-3 p-3 rounded-lg bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 border border-amber-200 dark:border-amber-900">
                                                                                                     <div className="flex items-start gap-2">
                                                                                                         <div className="text-amber-600 dark:text-amber-400 mt-0.5">
-                                                                                                            💡
+                                                                                                            <Lightbulb className="w-5 h-5" />
                                                                                                         </div>
                                                                                                         <div>
                                                                                                             <div className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1">
@@ -1331,7 +1391,7 @@ export default function TourDetailPage({ tourId }: Props) {
                                                                                 onClick={() => setSelectedImage(null)}
                                                                                 className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/90 dark:bg-slate-900/90 flex items-center justify-center text-slate-900 dark:text-white hover:bg-white dark:hover:bg-slate-800 transition-all shadow-lg"
                                                                             >
-                                                                                ✕
+                                                                                <X className="w-6 h-6" />
                                                                             </button>
 
                                                                             {/* Navigation buttons if there are multiple images */}

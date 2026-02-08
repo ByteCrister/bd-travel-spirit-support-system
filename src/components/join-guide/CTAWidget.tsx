@@ -1,7 +1,7 @@
 // components/join-guide/CTAWidget.tsx
 import React from "react";
 import { FiUsers, FiGlobe, FiTrendingUp } from "react-icons/fi";
-import type { LandingPageData } from "@/types/join-as-guide.types";
+import type { LandingPageData } from "@/types/guide/join-as-guide.types";
 import { MotionDiv } from "@/components/global/motion-elements";
 import CountUpStat from "@/components/global/CountUpStat";
 

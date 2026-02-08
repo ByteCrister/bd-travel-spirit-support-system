@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { OffsetPageRequest } from '@/types/article.types';
+import { OffsetPageRequest } from '@/types/article/article.types';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiChevronLeft,

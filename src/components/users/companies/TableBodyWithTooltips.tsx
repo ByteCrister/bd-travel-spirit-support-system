@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CompanyRowDTO } from "@/types/company.types";
+import { CompanyRowDTO } from "@/types/company/company.types";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { TableBody, TableCell, TableRow } from "../../ui/table";

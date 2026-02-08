@@ -1,7 +1,7 @@
 // api/support/article-comments/v1/stats/route.ts
 
 import { withTransaction } from '@/lib/helpers/withTransaction';
-import { CommentAdminStatsDTO } from '@/types/article-comment.types';
+import { CommentAdminStatsDTO } from '@/types/article/article-comment.types';
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
 import ConnectDB from '@/config/db';
 import { TravelArticleModel } from '@/models/articles/travel-article.model';

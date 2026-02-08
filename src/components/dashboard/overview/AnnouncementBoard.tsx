@@ -14,7 +14,7 @@ import {
   FiUser
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
-import { Announcement } from "@/types/dashboard.types";
+import { Announcement } from "@/types/dashboard/dashboard.types";
 
 interface AnnouncementBoardProps {
   announcements: Announcement[];

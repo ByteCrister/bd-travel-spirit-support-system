@@ -4,7 +4,7 @@
 import React, { JSX } from 'react';
 import { motion, Variants } from 'framer-motion';
 import { MdInbox } from 'react-icons/md';
-import type { AdvertisementResponse } from '@/types/advertising.types';
+import type { AdvertisementResponse } from '@/types/advertising/advertising.types';
 import { AdRow } from './AdRow';
 import { AdsPagination } from './AdsPagination';
 import { Card } from '@/components/ui/card';

@@ -2,8 +2,8 @@ import type {
     ISODateString,
     GuideBannerFormValues,
     GuideBannerFormErrors,
-} from "@/types/guide-banner-settings.types";
-import { GUIDE_BANNER_CONSTRAINTS } from "@/types/guide-banner-settings.types";
+} from "@/types/site-settings/guide-banner-settings.types";
+import { GUIDE_BANNER_CONSTRAINTS } from "@/types/site-settings/guide-banner-settings.types";
 
 /**
  * Format ISO date string into compact readable format: YYYY-MM-DD HH:mm.

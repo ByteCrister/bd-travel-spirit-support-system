@@ -5,7 +5,7 @@ import {
     type SortDTO,
     type CommentSortKey,
     type CommentFiltersDTO,
-} from '@/types/article-comment.types';
+} from '@/types/article/article-comment.types';
 import { queryRootComments, queryChildComments } from '@/lib/mocks/article-comments.mock';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ articleId: string }> }) {

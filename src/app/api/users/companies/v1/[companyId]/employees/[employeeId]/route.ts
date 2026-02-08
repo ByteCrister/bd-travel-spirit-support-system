@@ -7,7 +7,7 @@ import { Types } from "mongoose";
 import { UserRole } from "@/constants/user.const";
 import ConnectDB from "@/config/db";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
-import { PopulatedAssetLean } from "@/types/populated-asset.types";
+import { PopulatedAssetLean } from "@/types/common/populated-asset.types";
 
 interface Params {
     params: Promise<{ employeeId: string }>

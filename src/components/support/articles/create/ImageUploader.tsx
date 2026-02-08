@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ImageUrl } from '@/types/article.types';
+import { ImageUrl } from '@/types/article/article.types';
 import { UploadCloud, X } from 'lucide-react';
 import { toast } from 'sonner'; // shadcn toast
 import imageCompression from 'browser-image-compression'; // lightweight client-side compression

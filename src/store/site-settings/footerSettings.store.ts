@@ -15,7 +15,7 @@ import type {
     AsyncStatus,
     SocialLinkResponse,
     LocationEntryResponse,
-} from "@/types/footer-settings.types";
+} from "@/types/site-settings/footer-settings.types";
 
 import api from "@/utils/axios";
 import { showToast } from "@/components/global/showToast";

@@ -4,10 +4,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, MapPin, Globe } from "lucide-react";
-import type { FooterEntities } from "@/types/footer-settings.types";
+import type { FooterEntities } from "@/types/site-settings/footer-settings.types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useFooterStore } from "@/store/footerSettings.store";
+import { useFooterStore } from "@/store/site-settings/footerSettings.store";
 import { LocationRow } from "./LocationRow";
 import { LocationFormDialog } from "./LocationFormDialog";
 

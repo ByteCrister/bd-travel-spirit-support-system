@@ -3,10 +3,10 @@
 
 import { motion } from "framer-motion";
 import { Edit2, Trash2, MapPin, GripVertical, Navigation } from "lucide-react";
-import type { LocationEntryDTO } from "@/types/footer-settings.types";
+import type { LocationEntryDTO } from "@/types/site-settings/footer-settings.types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useFooterStore } from "@/store/footerSettings.store";
+import { useFooterStore } from "@/store/site-settings/footerSettings.store";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 type Props = {

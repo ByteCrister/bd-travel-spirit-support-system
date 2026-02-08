@@ -13,7 +13,7 @@ import { Download, FileText, Database } from 'lucide-react';
 import { formatDateRange } from '@/utils/helpers/format';
 import { toCsv, toJson } from '@/utils/helpers/statistics.export';
 import { buildCsvFromSection } from '@/utils/helpers/statistics.export';
-import { useStatisticsStore } from '@/store/statistics.store';
+import { useStatisticsStore } from '@/store/dashboard/statistics.store';
 import {
     ChatStats,
     EmployeesStats,
@@ -24,7 +24,7 @@ import {
     ToursStats,
     UsersStats,
     SectionKeyEnum,
-} from '@/types/statistics.types';
+} from '@/types/dashboard/statistics.types';
 
 type Data =
     | UsersStats

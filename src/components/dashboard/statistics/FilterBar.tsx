@@ -7,9 +7,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarIcon, RefreshCw, X } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
-import { Preset, PresetEnum } from '@/types/statistics.types';
+import { Preset, PresetEnum } from '@/types/dashboard/statistics.types';
 import { formatDateRange } from '@/utils/helpers/format';
-import { useStatisticsStore } from '@/store/statistics.store';
+import { useStatisticsStore } from '@/store/dashboard/statistics.store';
 
 const presetOptions: { value: Preset; label: string }[] = [
     { value: PresetEnum.LAST_7, label: 'Last 7 days' },

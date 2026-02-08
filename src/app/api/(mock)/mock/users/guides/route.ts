@@ -1,6 +1,6 @@
 // src/app/api/users-management/guide/route.ts
 import { NextResponse } from "next/server";
-import { PendingGuideDTO } from "@/types/pendingGuide.types";
+import { PendingGuideDTO } from "@/types/guide/pendingGuide.types";
 import { GUIDE_STATUS } from "@/constants/guide.const";
 import { GUIDE_DOCUMENT_CATEGORY, GUIDE_DOCUMENT_TYPE } from "@/constants/guide.const";
 

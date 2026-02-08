@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { isValidObjectId } from "mongoose";
 import ConnectDB from "@/config/db";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
-import type { UpdateSubscriptionTierPayload } from "@/types/guide-subscription-settings.types";
+import type { UpdateSubscriptionTierPayload } from "@/types/site-settings/guide-subscription-settings.types";
 import SubscriptionTierSetting from "@/models/site-settings/subscriptionTier.model";
 
 /* -------------------------

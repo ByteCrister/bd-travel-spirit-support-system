@@ -2,9 +2,10 @@
 import { NextRequest } from "next/server";
 import ConnectDB from "@/config/db";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
-import type { SubscriptionTierDTO, UpsertSubscriptionTierPayload } from "@/types/guide-subscription-settings.types";
+import type { SubscriptionTierDTO, UpsertSubscriptionTierPayload } from "@/types/site-settings/guide-subscription-settings.types";
 import SubscriptionTierSetting, { ISubscriptionTierSetting } from "@/models/site-settings/subscriptionTier.model";
 import { FilterQuery } from "mongoose";
+import { sanitizeSearch } from "@/lib/helpers/sanitize-search";
 
 /* -------------------------
  Utility: map mongoose doc to DTO
@@ -34,7 +35,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
     const url = new URL(request.url);
     const onlyActive = url.searchParams.get("onlyActive") === "true";
-    const search = (url.searchParams.get("search") ?? "").trim();
+    const search = sanitizeSearch((url.searchParams.get("search") ?? "").trim()) ?? "";
     const sortBy = (url.searchParams.get("sortBy") as "price" | "title" | "createdAt" | null) ?? "title";
     const sortDir = (url.searchParams.get("sortDir") as "asc" | "desc") ?? "asc";
 

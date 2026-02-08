@@ -1,7 +1,7 @@
 // components/GuideSubscriptions/TierRow.tsx
 "use client";
 import React from "react";
-import type { SubscriptionTierDTO, ID } from "@/types/guide-subscription-settings.types";
+import type { SubscriptionTierDTO, ID } from "@/types/site-settings/guide-subscription-settings.types";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

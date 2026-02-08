@@ -3,11 +3,11 @@ import {
     TourDetailDTO,
     TourListItemDTO,
     TourFilterOptions,
-} from "@/types/tour.types";
+} from "@/types/tour/tour.types";
 import {
     TourApprovalList,
     TourApprovalStats,
-} from "@/types/tour-approval.types";
+} from "@/types/tour/tour-approval.types";
 import {
     MODERATION_STATUS,
     TOUR_STATUS,

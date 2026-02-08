@@ -11,8 +11,8 @@ import {
     GUIDE_BANNER_SORT_KEYS,
     GuideBannerCreateDTO,
     type GuideBannerSortKey,
-} from "@/types/guide-banner-settings.types";
-import { Lean } from "@/types/mongoose-lean.types";
+} from "@/types/site-settings/guide-banner-settings.types";
+import { Lean } from "@/types/common/mongoose-lean.types";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { GuideBanner } from "@/models/site-settings.model";
 import { ASSET_TYPE } from "@/constants/asset.const";
@@ -21,7 +21,8 @@ import { resolveGuideBannersOrder } from "@/lib/helpers/resolve-guideBanner-orde
 import { Types } from "mongoose";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
-import { PopulatedAssetLean } from "@/types/populated-asset.types";
+import { PopulatedAssetLean } from "@/types/common/populated-asset.types";
+import { sanitizeSearch } from "@/lib/helpers/sanitize-search";
 
 /* -------------------------
    Query parsing
@@ -39,7 +40,7 @@ function parseQuery(req: NextRequest) {
     const activeParam = searchParams.get("active");
     const active = activeParam === null ? undefined : activeParam === "true";
 
-    const search = searchParams.get("search")?.trim();
+    const search = sanitizeSearch(searchParams.get("search")?.trim()) ?? "";
 
     return { limit, offset, sortBy, sortDir, active, search };
 }

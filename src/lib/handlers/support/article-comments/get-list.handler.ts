@@ -6,7 +6,7 @@ import {
     ArticleSortKey,
     SortDTO,
     ArticleCommentSummaryRowDTO,
-} from "@/types/article-comment.types";
+} from "@/types/article/article-comment.types";
 import {
     COMMENT_STATUS,
     CommentStatus,
@@ -19,6 +19,7 @@ import { getCollectionName } from "@/lib/helpers/get-collection-name";
 import UserModel from "@/models/user.model";
 import AssetModel from "@/models/assets/asset.model";
 import { TravelArticleCommentModel } from "@/models/articles/travel-article-comment.model"; // ADD THIS IMPORT
+import { sanitizeSearch } from "@/lib/helpers/sanitize-search";
 
 /**
  * Normalized query parameters with defaults
@@ -46,7 +47,7 @@ function normalizeQueryParams(request: NextRequest): NormalizedQuery {
     const sortKeyParam = searchParams.get("sortKey");
     const sortDirParam = searchParams.get("sortDir");
     const statusParam = searchParams.get("status");
-    const searchQueryParam = searchParams.get("searchQuery");
+    const searchQueryParam = sanitizeSearch(searchParams.get("searchQuery") ?? '');
     const authorNameParam = searchParams.get("authorName");
     const taggedRegionParam = searchParams.get("taggedRegion");
 
@@ -224,8 +225,8 @@ function buildAggregationPipeline(
             article: {
                 id: "$_id",
                 title: "$title",
-               slug: "$slug",
-                coverImageUrl: { $ifNull: ["$heroImageFile.publicUrl", null] }, 
+                slug: "$slug",
+                coverImageUrl: { $ifNull: ["$heroImageFile.publicUrl", null] },
                 createdAt: 1,
                 updatedAt: 1,
                 author: {

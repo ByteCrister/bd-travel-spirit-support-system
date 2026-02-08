@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Resolver, useForm } from "react-hook-form";
 import { LocationForm, locationSchema } from "@/utils/validators/footer-settings.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFooterStore } from "@/store/footerSettings.store";
+import { useFooterStore } from "@/store/site-settings/footerSettings.store";
 import { MapPickerDialog } from "./MapPickerDialog";
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };

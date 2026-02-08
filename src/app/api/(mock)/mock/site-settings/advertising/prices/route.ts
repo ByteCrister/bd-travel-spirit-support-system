@@ -1,7 +1,7 @@
 // app/api/mock/site-settings/advertising/prices/route.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import type { CreateAdvertisingPricePayload } from "@/types/advertising-settings.types";
+import type { CreateAdvertisingPricePayload } from "@/types/advertising/advertising-settings.types";
 import { createPrice, getConfig } from "@/lib/mocks/siteSettings.mock";
 
 export async function GET() {

@@ -4,7 +4,7 @@ import { withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { NextRequest } from 'next/server';
 import { ApiError } from '@/lib/helpers/withErrorHandler';
 import { withTransaction } from '@/lib/helpers/withTransaction';
-import { DeleteCommentPayloadDTO, DeleteCommentResponseDTO } from '@/types/article-comment.types';
+import { DeleteCommentPayloadDTO, DeleteCommentResponseDTO } from '@/types/article/article-comment.types';
 import ConnectDB from '@/config/db';
 import { Types } from 'mongoose';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';

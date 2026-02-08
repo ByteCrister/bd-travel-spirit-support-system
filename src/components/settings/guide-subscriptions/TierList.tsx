@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import type {
   SubscriptionTierDTO,
   ID,
-} from "@/types/guide-subscription-settings.types";
+} from "@/types/site-settings/guide-subscription-settings.types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";

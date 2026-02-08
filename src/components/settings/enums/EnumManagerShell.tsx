@@ -5,7 +5,7 @@ import { JSX, useState } from "react";
 import { motion } from "framer-motion";
 import GroupsList from "./GroupsList";
 import GroupDetail from "./GroupDetail";
-import useEnumSettingsStore from "@/store/enumSettings.store";
+import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
 
 export default function EnumManagerShell(): JSX.Element {
   const { fetchGroup } = useEnumSettingsStore();

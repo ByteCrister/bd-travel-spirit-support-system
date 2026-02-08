@@ -12,8 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format, startOfToday, endOfDay, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
-import { UserTableRow } from "@/types/user.table.types";
-import { Suspension } from "@/types/user.types";
+import { UserTableRow } from "@/types/user/user.table.types";
+import { Suspension } from "@/types/user/user.types";
 import { useState } from "react";
 
 interface SuspendUserDialogProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DayOfWeek, ShiftDTO } from "@/types/employee.types";
+import { DayOfWeek, ShiftDTO } from "@/types/employee/employee.types";
 import { Calendar, Clock, Plus, Trash2 } from "lucide-react";
 import FormRow from "./FormRow";
 import { Input } from "@/components/ui/input";

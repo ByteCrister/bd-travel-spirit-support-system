@@ -9,7 +9,7 @@ import { withTransaction } from "@/lib/helpers/withTransaction";
 import TourModel from "@/models/tours/tour.model";
 import ConnectDB from "@/config/db";
 import { Types } from "mongoose";
-import { TourApprovalResponse } from "@/types/tour-approval.types";
+import { TourApprovalResponse } from "@/types/tour/tour-approval.types";
 import { buildTourDetailDTO } from "@/lib/build-responses/build-tour-details";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";

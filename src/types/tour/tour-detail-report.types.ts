@@ -1,6 +1,6 @@
 // tour-detail-report.types.ts
 import {  REPORT_REASON, ReportPriority, ReportReason, ReportStatus } from "@/constants/report.const";
-import { ReportAttachment, ReportTimelineEntry, SubmissionContext, UserSummary, TourSummary } from "./report.types";
+import { ReportAttachment, ReportTimelineEntry, SubmissionContext, UserSummary, TourSummary } from "../report.types";
 
 /**
  * Aggregate metrics and small charts data for a tour-level reports header/card.

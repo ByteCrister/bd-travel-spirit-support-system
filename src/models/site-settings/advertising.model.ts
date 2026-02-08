@@ -9,7 +9,7 @@ import {
 import { PLACEMENT, PlacementType } from "@/constants/advertising.const";
 import { Currency, CURRENCY } from "@/constants/tour.const";
 import { defineModel } from "@/lib/helpers/defineModel";
-import type { AdvertisingPriceDTO } from "@/types/advertising-settings.types";
+import type { AdvertisingPriceDTO } from "@/types/advertising/advertising-settings.types";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 
 export type ObjectId = Types.ObjectId;
