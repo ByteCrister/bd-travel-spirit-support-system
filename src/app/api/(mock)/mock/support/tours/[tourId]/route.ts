@@ -399,12 +399,6 @@ export async function GET(
       : undefined,
 
     // =============== COMPUTED/UI-ONLY FIELDS ===============
-    priceSummary: {
-      minAmount: basePrice.amount,
-      maxAmount: basePrice.amount + 500,
-      currency: basePrice.currency,
-      discountedAmount: hasActiveDiscount ? basePrice.amount * 0.8 : undefined,
-    },
     bookingSummary: {
       totalSeats: seatsTotal,
       bookedSeats: seatsBooked,
