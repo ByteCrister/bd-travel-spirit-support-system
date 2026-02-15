@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   // Basic Information  
   title: {
     default: "BD Travel Spirit Support System | Professional Tour Management Platform",
-    template: "%s | BD Travel Spirit Support",
+    template: "BD Travel Spirit Support System | %s",
   },
 
   description: "Comprehensive travel platform support system for Bangladesh tourism. Manage tours, guides, bookings, and customer support. Discover Bangladesh's beauty through professional tour operators across all divisions including Dhaka, Chittagong, Sylhet, Cox's Bazar, and more.",

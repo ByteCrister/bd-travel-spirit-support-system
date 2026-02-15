@@ -186,7 +186,6 @@ StripePaymentAccountSchema.index({
 });
 
 StripePaymentAccountSchema.index({
-    "stripeMeta.stripePaymentMethodId": 1,
     isDeleted: 1,
 });
 
