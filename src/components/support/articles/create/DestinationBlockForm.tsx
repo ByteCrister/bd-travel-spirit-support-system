@@ -40,7 +40,7 @@ import {
 
 // Import components
 import { ComboBox } from '@/components/ui/combobox';
-import { MapPickerDialog } from '@/components/settings/footer/MapPickerDialog';
+import { MapPickerDialog } from '@/components/setting/footer/MapPickerDialog';
 import Image from 'next/image';
 import { getDistrictsByDivision } from '@/utils/helpers/conversions.tour';
 

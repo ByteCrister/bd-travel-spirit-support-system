@@ -1,4 +1,4 @@
-import AdvertisingSettingsPage from "@/components/settings/advertising/AdvertisingSettingsPage"
+import AdvertisingSettingsPage from "@/components/setting/advertising/AdvertisingSettingsPage"
 
 const page = () => {
   return (

@@ -8,7 +8,7 @@ import ConnectDB from "@/config/db";
 import {
     AdvertisingPriceInput,
     AdvertisingPriceSchema,
-} from "@/utils/validators/advertising-setting.validator";
+} from "@/utils/validators/site-settings/advertising-setting.validator";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 
 /**

@@ -5,7 +5,7 @@ import { isValidObjectId, Types } from "mongoose";
 import ConnectDB from "@/config/db";
 import LocationSetting from "@/models/site-settings/location.model";
 
-import { locationSchema } from "@/utils/validators/footer-settings.validator";
+import { locationSchema } from "@/utils/validators/site-settings/footer-settings.validator";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { LocationEntryDTO } from "@/types/site-settings/footer-settings.types";
 

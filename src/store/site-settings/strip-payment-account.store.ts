@@ -11,16 +11,17 @@ import type {
     Paginated,
     CreateStripePaymentMethodDTO,
     PaymentAccountUpdateDTO,
-} from "@/types/site-settings/stripe-payment-account.type"; // UPDATED: types reflect stripeMeta top-level
+} from "@/types/site-settings/stripe-payment-account.type";
 
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
+import { ApiResponse } from "@/types/common/api.types";
 
 enableMapSet();
 
-// const URL_AFTER_API = "/mock/payment-accounts";
-const URL_AFTER_API = "/payment-accounts";
+// const URL_AFTER_API = "/mock/site-settings/payment-accounts";
+const URL_AFTER_API = "/site-settings/payment-accounts/v1";
 
 /** ------------------------
  * Initial state
@@ -112,12 +113,16 @@ export const usePaymentAccountStore = create<Store>()(
             );
 
             try {
-                const res = await api.get(URL_AFTER_API, {
+                const res = await api.get<ApiResponse<Paginated<PaymentAccount>>>(URL_AFTER_API, {
                     params: { page, pageSize },
                     signal,
                 });
 
-                const pageData = res.data as Paginated<PaymentAccount>;
+                if (!(res.data && res.data.data)) {
+                    throw new Error("Invalid response format");
+                }
+
+                const pageData = res.data.data;
                 if (signal.aborted) return;
 
                 get()._mergePage(pageData);
@@ -151,8 +156,13 @@ export const usePaymentAccountStore = create<Store>()(
             );
 
             try {
-                const res = await api.get(`${URL_AFTER_API}/${id}`);
-                const account = res.data as PaymentAccount;
+                const res = await api.get<ApiResponse<PaymentAccount>>(`${URL_AFTER_API}/${id}`);
+
+                if (!(res.data && res.data.data)) {
+                    throw new Error("Invalid response format");
+                }
+
+                const account = res.data.data;
                 get()._upsertOne(account);
 
                 set(
@@ -203,8 +213,13 @@ export const usePaymentAccountStore = create<Store>()(
             get()._upsertOne(optimistic);
 
             try {
-                const res = await api.post(URL_AFTER_API, payload);
-                const created = res.data as PaymentAccount;
+                const res = await api.post<ApiResponse<PaymentAccount>>(URL_AFTER_API, payload);
+
+                if (!(res.data && res.data.data)) {
+                    throw new Error("Invalid response format");
+                }
+
+                const created = res.data.data;
 
                 set(
                     produce((s: PaymentAccountState) => {
@@ -254,8 +269,11 @@ export const usePaymentAccountStore = create<Store>()(
             get()._upsertOne(optimisticMerge);
 
             try {
-                const res = await api.patch(`${URL_AFTER_API}/${id}`, payload);
-                const updated = res.data as PaymentAccount;
+                const res = await api.patch<ApiResponse<PaymentAccount>>(`${URL_AFTER_API}/${id}`, payload);
+                if (!(res.data && res.data.data)) {
+                    throw new Error("Invalid response format");
+                }
+                const updated = res.data.data;
                 get()._upsertOne(updated);
 
                 set(
@@ -298,9 +316,7 @@ export const usePaymentAccountStore = create<Store>()(
             get()._removeOne(id);
 
             try {
-                const res = await api.delete(`${URL_AFTER_API}/${id}`);
-                const success = res.data?.success ?? true;
-                if (!success) throw new Error("Delete failed");
+                await api.delete(`${URL_AFTER_API}/${id}`);
 
                 set(
                     produce((s) => {
@@ -333,8 +349,11 @@ export const usePaymentAccountStore = create<Store>()(
             get()._upsertOne({ ...prev, isActive: active, updatedAt: new Date().toISOString() });
 
             try {
-                const res = await api.patch(`${URL_AFTER_API}/${id}/active`, { isActive: active });
-                const updated = res.data as PaymentAccount;
+                const res = await api.patch<ApiResponse<PaymentAccount>>(`${URL_AFTER_API}/${id}/active`, { isActive: active });
+                if (!(res.data && res.data.data)) {
+                    throw new Error("Invalid response format");
+                }
+                const updated = res.data.data;
                 get()._upsertOne(updated);
                 showToast.success(active ? "Account activated" : "Account deactivated");
                 return updated;
@@ -353,8 +372,11 @@ export const usePaymentAccountStore = create<Store>()(
             get()._upsertOne({ ...prev, isBackup, updatedAt: new Date().toISOString() });
 
             try {
-                const res = await api.patch(`${URL_AFTER_API}/${id}/backup`, { isBackup });
-                const updated = res.data as PaymentAccount;
+                const res = await api.patch<ApiResponse<PaymentAccount>>(`${URL_AFTER_API}/${id}/backup`, { isBackup });
+                if (!(res.data && res.data.data)) {
+                    throw new Error("Invalid response format");
+                }
+                const updated = res.data.data;
                 get()._upsertOne(updated);
                 showToast.success(isBackup ? "Marked as backup" : "Unmarked backup");
                 return updated;

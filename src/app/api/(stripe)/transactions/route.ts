@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import ConnectDB from "@/config/db";
-import StripePaymentAccountModel from "@/models/site-settings/payment-account.model";
+import StripePaymentAccountModel from "@/models/payment-account.model";
 import { TransactionModel } from "@/models/transaction.model";
 import Stripe from "stripe";
 

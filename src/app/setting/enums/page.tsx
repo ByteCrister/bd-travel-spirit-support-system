@@ -1,4 +1,4 @@
-import  EnumSettingsPage  from "@/components/settings/enums/EnumSettingsPage"
+import  EnumSettingsPage  from "@/components/setting/enums/EnumSettingsPage"
 
 const page = () => {
     return (

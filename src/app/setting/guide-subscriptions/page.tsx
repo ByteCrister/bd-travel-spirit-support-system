@@ -1,4 +1,4 @@
-import GuideSubscriptionsPage from "@/components/settings/guide-subscriptions/GuideSubscriptionsPage"
+import GuideSubscriptionsPage from "@/components/setting/guide-subscriptions/GuideSubscriptionsPage"
 
 const page = () => {
   return (

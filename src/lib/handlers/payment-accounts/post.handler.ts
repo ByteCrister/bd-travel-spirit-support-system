@@ -1,227 +1,132 @@
-// api/payment-accounts/v1/route.ts
 import { NextRequest } from "next/server";
+import mongoose from "mongoose";
 import Stripe from "stripe";
-import {
-    PAYMENT_PROVIDER,
-    CardBrand,
-} from "@/constants/payment.const";
+
+import { PAYMENT_OWNER_TYPE } from "@/constants/payment.const";
 import {
     CreateStripePaymentMethodDTO,
     PaymentAccount,
-    SafeCardInfo,
 } from "@/types/site-settings/stripe-payment-account.type";
 import ConnectDB from "@/config/db";
-import paymentAccountModel from "@/models/site-settings/payment-account.model";
 import { ApiError, HandlerResult } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
+import { getUserIdFromSession } from "@/lib/auth/session.auth";
+import { validateUpdatedYupSchema } from "@/utils/validators/common/update-updated-yup-schema";
+import { createPaymentAccountSchema } from "@/utils/validators/site-settings/payment-account-setting.validator";
+import StripePaymentAccountModel from "@/models/payment-account.model";
+import { buildPaymentAccountResponse } from "@/lib/build-responses/build-payment-account-dt";
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 
-const stripeSecret = process.env.STRIPE_SECRET_KEY!;
-const stripe = stripeSecret
-    ? new Stripe(stripeSecret, { apiVersion: "2025-11-17.clover" })
-    : null;
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2025-11-17.clover",
+});
 
 type MongoId = { toString(): string };
-type LeanDoc = Omit<Partial<PaymentAccount>, "id" | "ownerId"> & {
-    _id?: MongoId | string;
-    ownerId?: MongoId | string | null;
-    createdAt?: Date | string;
-    updatedAt?: Date | string;
-    card?: Partial<SafeCardInfo> & {
-        exp_month?: number;
-        exp_year?: number;
-        last4?: string;
-        brand?: string;
-    };
-};
 
-// helper type guard
-function isDate(value: unknown): value is Date {
-    return Object.prototype.toString.call(value) === "[object Date]";
-}
-
-/** Convert Mongoose doc to frontend PaymentAccount shape */
-function normalizeDocToPaymentAccount(doc: LeanDoc): PaymentAccount {
-    if (!doc) throw new Error("No document to normalize");
-
-    const id =
-        typeof doc._id === "string"
-            ? doc._id
-            : doc._id && typeof doc._id.toString === "function"
-                ? doc._id.toString()
-                : "";
-
-    const createdAtRaw: Date | string | undefined = doc.createdAt;
-    const createdAt = isDate(createdAtRaw)
-        ? createdAtRaw.toISOString()
-        : String(createdAtRaw ?? new Date().toISOString());
-
-    const updatedAtRaw: Date | string | undefined = doc.updatedAt;
-    const updatedAt = isDate(updatedAtRaw)
-        ? updatedAtRaw.toISOString()
-        : String(updatedAtRaw ?? new Date().toISOString());
-
-    const card: SafeCardInfo | undefined = doc.card
-        ? {
-            brand: (doc.card.brand as CardBrand) ?? ("unknown" as CardBrand),
-            last4: doc.card.last4,
-            expMonth: doc.card.expMonth ?? doc.card.exp_month,
-            expYear: doc.card.expYear ?? doc.card.exp_year,
-        }
-        : undefined;
-
-    return {
-        id,
-        ownerType: doc.ownerType!,
-        ownerId: doc.ownerId?.toString() ?? null,
-        purpose: doc.purpose!,
-        isActive: !!doc.isActive,
-        isBackup: !!doc.isBackup,
-        createdAt,
-        updatedAt,
-        label: doc.label ?? undefined,
-        card,
-        stripeCustomerId: doc.stripeCustomerId!,
-        stripePaymentMethodId: doc.stripePaymentMethodId!,
-        stripeConnectedAccountId: doc.stripeConnectedAccountId,
-        isDeleted: doc.isDeleted ?? undefined,
-        deletedAt: doc.deletedAt ? new Date(doc.deletedAt).toISOString() : null,
-    };
-}
-
-/**
- * Main handler function for creating payment accounts
- */
 export default async function createPaymentAccountHandler(
     req: NextRequest
 ): Promise<HandlerResult<PaymentAccount>> {
+
+    // 1 Authenticate user
+    const userId = await getUserIdFromSession();
+    if (!userId) throw new ApiError("Unauthorized", 401);
+
+    const body = await req.json();
+
+    // 2 Validate request body
+    const validated = validateUpdatedYupSchema<CreateStripePaymentMethodDTO>(
+        createPaymentAccountSchema,
+        body
+    );
+
     await ConnectDB();
+    await VERIFY_USER_ROLE.ADMIN(userId);
 
-    const body = (await req.json()) as CreateStripePaymentMethodDTO;
+    // --------------------------------------------------
+    // 3 STRIPE VALIDATION (Before DB transaction)
+    // --------------------------------------------------
 
-    // Validate required fields
-    if (!body.ownerType) throw new ApiError("ownerType is required", 400);
-    if (!body.purpose) throw new ApiError("purpose is required", 400);
-    if (!body.email) throw new ApiError("email is required", 400);
-    if (!body.name) throw new ApiError("name is required", 400);
-    if (!body.stripeCustomerId && !body.stripePaymentMethodId) {
-        throw new ApiError("stripeCustomerId and stripePaymentMethodId are required", 400);
+    let paymentMethod: Stripe.PaymentMethod;
+
+    try {
+        paymentMethod = await stripe.paymentMethods.retrieve(
+            validated.stripePaymentMethodId
+        );
+    } catch {
+        throw new ApiError("Invalid Stripe payment method ID", 400);
     }
 
-    if (!stripe) {
-        throw new ApiError("Stripe is not configured on this server", 500);
+    if (!paymentMethod || paymentMethod.object !== "payment_method") {
+        throw new ApiError("Stripe payment method not found", 400);
     }
 
-    // Execute within a transaction
-    const result = await withTransaction(async (session) => {
-        // Try to find or create Stripe customer
-        let stripeCustomerId = body.stripeCustomerId;
-        if (!stripeCustomerId) {
-            const existing = await stripe.customers.list({
-                email: body.email,
-                limit: 1,
-            });
-            if (existing.data.length > 0) {
-                stripeCustomerId = existing.data[0].id;
-            } else {
-                const customer = await stripe.customers.create({
-                    email: body.email,
-                    name: body.name,
-                });
-                stripeCustomerId = customer.id;
-            }
-        }
+    if (paymentMethod.type !== "card") {
+        throw new ApiError("Only card payment methods are allowed", 400);
+    }
 
-        // Attach payment method to customer
-        await stripe.paymentMethods.attach(body.stripePaymentMethodId, {
-            customer: stripeCustomerId,
-        });
-        await stripe.customers.update(stripeCustomerId, {
-            invoice_settings: { default_payment_method: body.stripePaymentMethodId },
-        });
+    if (!paymentMethod.customer) {
+        throw new ApiError("Payment method is not attached to a customer", 400);
+    }
 
-        const pm = await stripe.paymentMethods.retrieve(body.stripePaymentMethodId);
-        const card: SafeCardInfo | undefined =
-            pm.type === "card" && pm.card
-                ? {
-                    brand: pm.card.brand as CardBrand,
-                    last4: pm.card.last4,
-                    expMonth: pm.card.exp_month,
-                    expYear: pm.card.exp_year,
-                }
-                : undefined;
+    if (paymentMethod.customer !== validated.stripeCustomerId) {
+        throw new ApiError(
+            "Payment method does not belong to the provided customer",
+            400
+        );
+    }
 
-        // Prevent duplicate account (Stripe only) - using session
-        const existingAccount = await paymentAccountModel.findOne(
-            {
-                ownerType: body.ownerType,
-                ownerId: body.ownerId ?? null,
-                purpose: body.purpose,
-                provider: PAYMENT_PROVIDER.STRIPE,
-                stripeCustomerId,
+    // Prevent duplicate storage
+    const existing = await StripePaymentAccountModel.findOne({
+        stripePaymentMethodId: validated.stripePaymentMethodId,
+    });
+
+    if (existing) {
+        throw new ApiError("This payment method is already saved", 400);
+    }
+
+    const card = paymentMethod.card!;
+
+    // --------------------------------------------------
+    //  4 DB TRANSACTION
+    // --------------------------------------------------
+
+    const paymentAccount = await withTransaction(async (session) => {
+
+        const docData = {
+            ownerType: validated.ownerType,
+            ownerId:
+                validated.ownerType === PAYMENT_OWNER_TYPE.ADMIN
+                    ? new mongoose.Types.ObjectId(userId)
+                    : null,
+
+            purpose: validated.purpose,
+            label: validated.label,
+            isBackup: validated.isBackup ?? false,
+
+            stripeCustomerId: validated.stripeCustomerId,
+            stripePaymentMethodId: validated.stripePaymentMethodId,
+
+            //  Card data comes ONLY from Stripe
+            card: {
+                brand: card.brand,
+                last4: card.last4,
+                expMonth: card.exp_month,
+                expYear: card.exp_year,
             },
-            null,
+
+            isActive: true,
+        };
+
+        const [newAccount] = await StripePaymentAccountModel.create(
+            [docData],
             { session }
         );
 
-        let saved: LeanDoc | null;
-        const now = new Date().toISOString();
-
-        if (existingAccount) {
-            // Update existing account with session
-            await paymentAccountModel.updateOne(
-                { _id: existingAccount._id },
-                {
-                    $set: {
-                        updatedAt: now,
-                        card,
-                        stripePaymentMethodId: body.stripePaymentMethodId,
-                        stripeConnectedAccountId: body.stripeConnectedAccountId,
-                    },
-                },
-                { session }
-            );
-            
-            saved = await paymentAccountModel
-                .findById(existingAccount._id)
-                .session(session)
-                .lean<LeanDoc>()
-                .exec();
-        } else {
-            // Create new account with session
-            const doc: LeanDoc = {
-                ownerType: body.ownerType,
-                ownerId: body.ownerId ?? null,
-                purpose: body.purpose,
-                isActive: true,
-                isBackup: !!body.isBackup,
-                createdAt: now,
-                updatedAt: now,
-                label: body.label,
-                card,
-                stripeCustomerId,
-                stripePaymentMethodId: body.stripePaymentMethodId,
-                stripeConnectedAccountId: body.stripeConnectedAccountId,
-            };
-            
-            // Use create with session
-            const [created] = await paymentAccountModel.create([doc], { session });
-            saved = await paymentAccountModel
-                .findById(created._id)
-                .session(session)
-                .lean<LeanDoc>()
-                .exec();
-        }
-
-        if (!saved) {
-            throw new ApiError("Failed to fetch saved payment account", 500);
-        }
-
-        return normalizeDocToPaymentAccount(saved);
+        return await buildPaymentAccountResponse(
+            (newAccount._id as MongoId).toString(),
+            session
+        );
     });
 
-    // Return successful result
-    return {
-        data: result,
-        status: 200
-    };
+    return { data: paymentAccount, status: 201 };
 }
