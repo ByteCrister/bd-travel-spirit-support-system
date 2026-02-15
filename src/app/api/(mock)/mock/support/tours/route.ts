@@ -413,12 +413,6 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
         } : undefined,
 
         // =============== COMPUTED/UI-ONLY FIELDS ===============
-        priceSummary: {
-            minAmount: basePrice.amount,
-            maxAmount: basePrice.amount + 500,
-            currency: basePrice.currency,
-            discountedAmount: hasActiveDiscount ? Math.round(basePrice.amount * 0.8) : undefined,
-        },
         bookingSummary: {
             totalSeats: seatsTotal,
             bookedSeats: seatsBooked,
