@@ -1,7 +1,6 @@
 "use client";
 
 import { motion, Variants } from "framer-motion";
-import { IEmployeeInfo } from "@/types/current-user.types";
 import {
     PAYROLL_STATUS,
     PayrollStatus,
@@ -31,6 +30,7 @@ import { FaBangladeshiTakaSign } from "react-icons/fa6";
 import { format } from "date-fns";
 import SupportEmployeeInfoSkeleton from "./skeletons/SupportEmployeeInfoSkeleton";
 import getDocLink from "@/utils/helpers/get-doc-links";
+import { IEmployeeInfo } from "@/types/user/current-user.types";
 
 interface SupportEmployeeInfoProps {
     employeeInfo: IEmployeeInfo | null;

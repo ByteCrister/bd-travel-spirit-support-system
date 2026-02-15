@@ -3,7 +3,7 @@ import { Types } from "mongoose";
 import AuditModel from "@/models/audit.model";
 import "@/models/assets/asset.model"; // for populate
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
-import { AuditLog } from "@/types/current-user.types";
+import { AuditLog } from "@/types/user/current-user.types";
 import { ContactInfoDTO, DocumentDTO, EmployeeDetailDTO, PayrollRecordDTO, SalaryHistoryDTO, UserSummaryDTO, CurrentMonthPaymentStatusDTO } from "@/types/employee/employee.types";
 import { UserRole } from "@/constants/user.const";
 import { ClientSession } from "mongoose";

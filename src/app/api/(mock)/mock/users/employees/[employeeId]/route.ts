@@ -5,7 +5,6 @@ import {
     EmployeeDetailDTO,
     PayrollRecordDTO,
 } from "@/types/employee/employee.types";
-import { AuditLog } from "@/types/current-user.types";
 import {
     EMPLOYEE_STATUS,
     EMPLOYMENT_TYPE,
@@ -16,6 +15,7 @@ import {
 import { decodeId } from "@/utils/helpers/mongodb-id-conversions";
 import { calculateCurrentMonthPayment, getActualPaymentStatus } from "@/lib/helpers/payment-calculator";
 import { AUDIT_ACTION } from "@/constants/audit-action.const";
+import { AuditLog } from "@/types/user/current-user.types";
 
 export async function GET(
     _req: NextRequest,

@@ -9,7 +9,7 @@ import {
     AuditListApiResponse,
     AuditDateFilter,
     AuditQueryParams,
-} from "@/types/current-user.types";
+} from "@/types/user/current-user.types";
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { showToast } from "@/components/global/showToast";
