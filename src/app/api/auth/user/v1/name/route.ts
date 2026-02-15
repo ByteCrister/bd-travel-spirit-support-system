@@ -5,11 +5,11 @@ import { withTransaction } from "@/lib/helpers/withTransaction";
 import { Types } from "mongoose";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { USER_ROLE } from "@/constants/user.const";
-import { IOwnerInfo, IEmployeeInfo } from "@/types/current-user.types";
 import UserModel, { IUserDoc } from "@/models/user.model";
 import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
 import mappedEmployeeUser from "@/lib/build-responses/build-mappedEmployeeUser";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { IEmployeeInfo, IOwnerInfo } from "@/types/user/current-user.types";
 
 // Request body type for name update
 interface UpdateNameRequest {

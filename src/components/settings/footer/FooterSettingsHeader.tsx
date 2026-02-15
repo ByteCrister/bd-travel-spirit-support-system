@@ -1,4 +1,5 @@
 // src/components/settings/settings/footer/FooterSettingsHeader.tsx
+"use client";
 
 import { motion } from "framer-motion";
 import { Settings, Info, Sparkles } from "lucide-react";

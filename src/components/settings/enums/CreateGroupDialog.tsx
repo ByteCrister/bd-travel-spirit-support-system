@@ -1,7 +1,7 @@
 // src/components/enums/CreateGroupDialog.tsx
 "use client";
 
-import React, { JSX } from "react";
+import { JSX } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";

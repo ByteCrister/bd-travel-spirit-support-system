@@ -1,6 +1,7 @@
+"use client";
 
 // Enhanced Profile Header Component
-import { IBaseUser, CurrentUser } from "@/types/current-user.types";
+import { IBaseUser, CurrentUser } from "@/types/user/current-user.types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";

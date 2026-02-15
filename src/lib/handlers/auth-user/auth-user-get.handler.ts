@@ -1,6 +1,6 @@
 // app/api/auth/user/v1/route.ts
 import UserModel from "@/models/user.model";
-import { IBaseUser } from "@/types/current-user.types";
+import { IBaseUser } from "@/types/user/current-user.types";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { Types } from "mongoose";
 import ConnectDB from "@/config/db";

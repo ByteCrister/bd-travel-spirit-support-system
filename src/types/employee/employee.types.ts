@@ -7,8 +7,8 @@ import {
   PayrollStatus,
   SalaryPaymentMode,
 } from "@/constants/employee.const";
-import { AuditLog } from "./current-user.types";
 import { Currency } from "@/constants/tour.const";
+import { AuditLog } from "../user/current-user.types";
 
 /* ---------------------------------------------------------------------
   1. PRIMITIVE / UTILITY TYPES

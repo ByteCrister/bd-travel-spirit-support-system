@@ -40,9 +40,9 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { AuditDateFilter, AuditLog } from "@/types/current-user.types";
 import { useCurrentUserStore } from "@/store/current-user.store";
 import { AUDIT_ACTION, AuditAction } from "@/constants/audit-action.const";
+import { AuditDateFilter, AuditLog } from "@/types/user/current-user.types";
 
 const itemVariants: Variants = {
     hidden: { opacity: 0, y: 8 },

@@ -1,7 +1,7 @@
 // src/components/enums/ValuesTable.tsx
 "use client";
 
-import React, { JSX, useCallback } from "react";
+import { JSX, useCallback } from "react";
 import { Edit, Trash2, Hash, Tag, Database } from "lucide-react";
 import { EnumValue } from "@/types/site-settings/enum-settings.types";
 import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";

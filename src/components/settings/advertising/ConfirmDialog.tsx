@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { HiExclamation, HiX } from "react-icons/hi";
+import { motion } from "framer-motion";
+import { HiExclamation } from "react-icons/hi";
 import {
   AlertDialog,
   AlertDialogAction,

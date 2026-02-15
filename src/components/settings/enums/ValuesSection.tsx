@@ -1,7 +1,7 @@
 // src/components/enums/ValuesSection.tsx
 "use client";
 
-import React, { JSX, useState } from "react";
+import { JSX, useState } from "react";
 import { Plus } from "lucide-react";
 import { EnumValue, EnumValueForm } from "@/types/site-settings/enum-settings.types";
 import { Button } from "@/components/ui/button";

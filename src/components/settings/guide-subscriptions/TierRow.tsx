@@ -1,5 +1,6 @@
 // components/GuideSubscriptions/TierRow.tsx
 "use client";
+
 import React from "react";
 import type { SubscriptionTierDTO, ID } from "@/types/site-settings/guide-subscription-settings.types";
 import { Switch } from "@/components/ui/switch";

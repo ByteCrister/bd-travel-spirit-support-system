@@ -10,7 +10,7 @@ import ProfileLoading from "./skeletons/ProfileLoading";
 import AuditLogsSection from "./AuditLogsSection";
 import PasswordUpdateForm from "./PasswordUpdateForm";
 import ProfileForm from "./ProfileForm";
-import { IEmployeeInfo } from "@/types/current-user.types";
+import { IEmployeeInfo } from "@/types/user/current-user.types";
 import { USER_ROLE } from "@/constants/user.const";
 import SupportEmployeeInfo from "./SupportEmployeeInfo";
 import { motion, AnimatePresence } from "framer-motion";

@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { motion } from "framer-motion";
 import { HiPlus, HiPencil, HiTrash, HiRefresh } from "react-icons/hi";

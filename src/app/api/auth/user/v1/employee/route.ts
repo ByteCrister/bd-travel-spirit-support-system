@@ -5,10 +5,10 @@ import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
 import { Types } from "mongoose";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
-import { IEmployeeInfo } from "@/types/current-user.types";
 import mappedEmployeeUser from "@/lib/build-responses/build-mappedEmployeeUser";
 import EmployeeModel from "@/models/employees/employees.model"; // Add this import
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { IEmployeeInfo } from "@/types/user/current-user.types";
 
 // Create the actual handler function that will be wrapped
 async function handler(): Promise<{ data: IEmployeeInfo }> {

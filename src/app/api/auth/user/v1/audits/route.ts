@@ -5,8 +5,8 @@ import { withErrorHandler, HandlerResult, ApiError } from "@/lib/helpers/withErr
 import AuditModel, { IAuditDoc, IAuditModel } from "@/models/audit.model";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { USER_ROLE } from "@/constants/user.const";
-import { AuditListApiResponse, AuditLog, AuditQueryParams } from "@/types/current-user.types";
 import VERIFY_USER_ROLE from "../../../../../../lib/auth/verify-user-role";
+import { AuditListApiResponse, AuditLog, AuditQueryParams } from "@/types/user/current-user.types";
 
 type ParsedAuditQueryParams =
     Required<Pick<AuditQueryParams, "page" | "pageSize">>

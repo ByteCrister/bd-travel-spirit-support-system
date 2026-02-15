@@ -1,6 +1,6 @@
 // Professional Profile Form Component
 import { useState } from "react";
-import { CurrentUser, RequestMeta } from "@/types/current-user.types";
+import { CurrentUser, RequestMeta } from "@/types/user/current-user.types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
