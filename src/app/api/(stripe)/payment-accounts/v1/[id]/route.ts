@@ -8,7 +8,7 @@ import {
     PaymentAccount,
     PaymentAccountUpdateDTO,
 } from "@/types/site-settings/stripe-payment-account.type";
-import StripePaymentAccountModel, { IStripePaymentAccount } from "@/models/payment-account.model";
+import StripePaymentAccountModel, { IStripePaymentAccount } from "@/models/site-settings/payment-account.model";
 
 function ok<T>(data: T) {
     return { success: true, data };
