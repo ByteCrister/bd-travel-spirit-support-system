@@ -7,7 +7,7 @@ import {
     SafeCardInfo,
 } from "@/types/site-settings/stripe-payment-account.type";
 import ConnectDB from "@/config/db";
-import paymentAccountModel from "@/models/payment-account.model";
+import paymentAccountModel from "@/models/payments/payment-account.model";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 
 type MongoId = { toString(): string };

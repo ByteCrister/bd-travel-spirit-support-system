@@ -13,7 +13,7 @@ import { withTransaction } from "@/lib/helpers/withTransaction";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { validateUpdatedYupSchema } from "@/utils/validators/common/update-updated-yup-schema";
 import { createPaymentAccountSchema } from "@/utils/validators/site-settings/payment-account-setting.validator";
-import StripePaymentAccountModel from "@/models/payment-account.model";
+import StripePaymentAccountModel from "@/models/payments/payment-account.model";
 import { buildPaymentAccountResponse } from "@/lib/build-responses/build-payment-account-dt";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 

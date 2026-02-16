@@ -1,8 +1,7 @@
 // models/transaction.model.ts
+import { TRANSACTION_STATUS, TransactionStatus } from "@/constants/transaction.const";
 import { defineModel } from "@/lib/helpers/defineModel";
 import mongoose, { Schema, Document } from "mongoose";
-
-export type TransactionStatus = "pending" | "succeeded" | "failed";
 
 export interface ITransaction extends Document {
   paymentAccountId: mongoose.Types.ObjectId; // link to StripePaymentAccount
@@ -32,8 +31,8 @@ const TransactionSchema = new Schema<ITransaction>(
     currency: { type: String, required: true },
     status: {
       type: String,
-      enum: ["pending", "succeeded", "failed"],
-      default: "pending",
+      enum: Object.values(TRANSACTION_STATUS),
+      default: TRANSACTION_STATUS.PENDING,
     },
     description: { type: String },
   },
