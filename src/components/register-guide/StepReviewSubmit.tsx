@@ -31,6 +31,7 @@ import { extractErrorMessage } from '@/utils/axios/extract-error-message'
 import api from '@/utils/axios'
 import { ConfirmationRegisterDialog } from './ConfirmationRegisterDialog'
 import { EmailVerificationService } from '@/utils/api/email-verification.api'
+import { jakarta } from '@/styles/fonts'
 
 interface StepReviewSubmitProps {
   onPrevious: () => void
@@ -154,14 +155,9 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-4xl mx-auto"
-        style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+        className={`w-full max-w-4xl mx-auto ${jakarta.className}`}
       >
-        <Card className="border-0 shadow-lg" style={{
-          background: 'rgba(255, 255, 255, 0.8)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)'
-        }}>
+        <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
           <CardContent className="pt-6">
             <div className="text-center space-y-8">
               <motion.div
@@ -170,7 +166,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
                 className="relative"
               >
-                <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-green-600 rounded-full mx-auto flex items-center justify-center shadow-lg" style={{ boxShadow: '0 0 30px -5px rgba(34, 197, 94, 0.4)' }}>
+                <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-full mx-auto flex items-center justify-center shadow-lg shadow-emerald-500/50">
                   <CheckCircle className="w-12 h-12 text-white" />
                 </div>
                 <motion.div
@@ -184,10 +180,10 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
               </motion.div>
 
               <div>
-                <h2 className="text-3xl font-bold text-green-600 mb-4" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
+                <h2 className="text-3xl font-semibold mb-4 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
                   Application Submitted Successfully!
                 </h2>
-                <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                <p className="text-slate-300 text-lg max-w-2xl mx-auto">
                   Thank you for your interest in becoming a guide with BD Travel Spirit.
                   We will review your application and get back to you within 3-5 business days.
                 </p>
@@ -198,19 +194,19 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200"
+                  className="bg-gradient-to-br from-slate-900 to-slate-900/60 rounded-2xl p-6 border border-slate-700"
                 >
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-xl flex items-center justify-center">
                       <Clock className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="font-semibold text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
+                    <h3 className="font-semibold text-lg text-gray-900">
                       What happens next?
                     </h3>
                   </div>
-                  <ul className="text-sm text-muted-foreground space-y-2">
+                  <ul className="text-sm text-gray-700 space-y-2">
                     <li className="flex items-start space-x-2">
-                      <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                       <span>Our team will review your application and documents</span>
                     </li>
                     <li className="flex items-start space-x-2">
@@ -232,17 +228,17 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 }}
-                  className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200"
+                  className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-100"
                 >
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-xl flex items-center justify-center">
                       <Award className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="font-semibold text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
+                    <h3 className="font-semibold text-lg text-gray-900">
                       Why choose us?
                     </h3>
                   </div>
-                  <ul className="text-sm text-muted-foreground space-y-2">
+                  <ul className="text-sm text-gray-700 space-y-2">
                     <li className="flex items-start space-x-2">
                       <Star className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                       <span>Join thousands of successful guides worldwide</span>
@@ -276,8 +272,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, x: -20 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-6xl mx-auto"
-        style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+        className={`w-full max-w-6xl mx-auto ${jakarta.className}`}
       >
         {/* Header Section */}
         <motion.div
@@ -286,18 +281,13 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           transition={{ delay: 0.1 }}
           className="text-center mb-8"
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-4 shadow-lg" style={{ boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' }}>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl mb-4 shadow-lg shadow-emerald-500/40">
             <Eye className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold mb-2" style={{
-            background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            fontFamily: "'Poppins', system-ui, sans-serif"
-          }}>
+          <h2 className="text-3xl font-semibold mb-2 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
             Review & Submit
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto">
             Please review your information before submitting your application. Make sure all details are accurate and complete.
           </p>
         </motion.div>
@@ -306,18 +296,14 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           {/* Main Review Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Personal Information Review */}
-            <Card className="border-0 shadow-lg" style={{
-              background: 'rgba(255, 255, 255, 0.8)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
+            <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
               <CardHeader className="pb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-blue-500/10 rounded-xl flex items-center justify-center">
-                    <User className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 rounded-xl flex items-center justify-center">
+                    <User className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
+                    <CardTitle className="text-xl text-gray-900">
                       Personal Information
                     </CardTitle>
                     <p className="text-sm text-gray-600">Your basic details</p>
@@ -330,21 +316,21 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                     <div className="flex items-center space-x-3">
                       <User className="w-5 h-5 text-gray-500" />
                       <div>
-                        <p className="font-semibold">{formData.personalInfo.name}</p>
+                        <p className="font-semibold text-gray-900">{formData.personalInfo.name}</p>
                         <p className="text-sm text-gray-500">Full Name</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
                       <Mail className="w-5 h-5 text-gray-500" />
                       <div>
-                        <p className="font-semibold">{formData.personalInfo.email}</p>
+                        <p className="font-semibold text-gray-900">{formData.personalInfo.email}</p>
                         <p className="text-sm text-gray-500">Email Address</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
                       <Phone className="w-5 h-5 text-gray-500" />
                       <div>
-                        <p className="font-semibold">{formData.personalInfo.phone}</p>
+                        <p className="font-semibold text-gray-900">{formData.personalInfo.phone}</p>
                         <p className="text-sm text-gray-500">Phone Number</p>
                       </div>
                     </div>
@@ -354,7 +340,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                     <div className="flex items-start space-x-3">
                       <MapPin className="w-5 h-5 text-gray-500 mt-1" />
                       <div>
-                        <p className="font-semibold">{formData.personalInfo.street}</p>
+                        <p className="font-semibold text-gray-900">{formData.personalInfo.street}</p>
                         <p className="text-sm text-gray-500">
                           {formData.personalInfo.city}, {formData.personalInfo.division} {formData.personalInfo.zip}
                         </p>
@@ -367,18 +353,14 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
             </Card>
 
             {/* Company Details Review */}
-            <Card className="border-0 shadow-lg" style={{
-              background: 'rgba(255, 255, 255, 0.8)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
+            <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
               <CardHeader className="pb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 rounded-xl flex items-center justify-center">
                     <Building2 className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
+                    <CardTitle className="text-xl text-gray-900">
                       Company Details
                     </CardTitle>
                     <p className="text-sm text-gray-600">Business information</p>
@@ -387,8 +369,8 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="font-semibold text-lg mb-2">{formData.companyDetails.companyName}</h4>
-                  <p className="text-gray-600 text-sm mb-4">{formData.companyDetails.bio}</p>
+                  <h4 className="font-semibold text-lg mb-2 text-gray-900">{formData.companyDetails.companyName}</h4>
+                  <p className="text-gray-700 text-sm mb-4">{formData.companyDetails.bio}</p>
                 </div>
 
                 {/* Social Links */}
@@ -401,7 +383,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                           href={social.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:underline"
+                          className="text-sm text-emerald-600 hover:underline"
                         >
                           {social.platform.charAt(0).toUpperCase() + social.platform.slice(1)}: {social.url}
                         </a>
@@ -413,18 +395,14 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
             </Card>
 
             {/* Documents Review */}
-            <Card className="border-0 shadow-lg" style={{
-              background: 'rgba(255, 255, 255, 0.8)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
+            <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
               <CardHeader className="pb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-amber-500/20 to-amber-500/10 rounded-xl flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-amber-600" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 rounded-xl flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-cyan-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
+                    <CardTitle className="text-xl text-gray-900">
                       Verification Documents ({totalDocuments})
                     </CardTitle>
                     <p className="text-sm text-gray-600">Uploaded files</p>
@@ -435,24 +413,24 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                 {totalDocuments > 0 ? (
                   <div className="space-y-3">
                     {Object.values(formData.documents || {}).flat().map((doc, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex items-center space-x-3">
                           {getFileIcon(doc.type)}
                           <div>
-                            <p className="font-medium text-sm">{doc.name}</p>
+                            <p className="font-medium text-sm text-gray-900">{doc.name}</p>
                             <p className="text-xs text-gray-500">
                               {formatFileSize(doc.size)} • {new Date(doc.uploadedAt).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
-                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        <CheckCircle className="w-5 h-5 text-emerald-500" />
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                     <AlertCircle className="w-4 h-4 text-red-500" />
-                    <p className="text-sm text-red-500">No documents uploaded</p>
+                    <p className="text-sm text-red-700">No documents uploaded</p>
                   </div>
                 )}
               </CardContent>
@@ -462,11 +440,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Terms and Conditions */}
-            <Card className="border-0 shadow-lg" style={{
-              background: 'rgba(255, 255, 255, 0.8)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
+            <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
               <CardHeader className="flex flex-row gap-2">
                 <Image
                   src="/images/register_as_guide/secure-data.png"
@@ -476,14 +450,13 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                   className="object-contain"
                 />
                 <CardTitle
-                  className="text-lg"
-                  style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}
+                  className="text-lg text-gray-900"
                 >
                   Terms & Conditions
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="text-sm text-gray-500 space-y-2">
+                <div className="text-sm text-gray-600 space-y-2">
                   <p>• By submitting this application, you agree to our terms of service and privacy policy</p>
                   <p>• You confirm that all information provided is accurate and truthful</p>
                   <p>• You have the right to submit the uploaded documents</p>
@@ -494,11 +467,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
             </Card>
 
             {/* Security Notice */}
-            <Card className="border-0 shadow-lg" style={{
-              background: 'rgba(255, 255, 255, 0.8)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
+            <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
               <CardHeader className="flex flex-row gap-2">
                 <Image
                   src="/images/register_as_guide/terms-and-conditions.png"
@@ -507,12 +476,12 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                   height={34}
                   className="object-contain"
                 />
-                <CardTitle className="text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
+                <CardTitle className="text-lg text-gray-900">
                   Security Notice
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="text-sm text-gray-500 space-y-2">
+                <div className="text-sm text-gray-600 space-y-2">
                   <p>• All your data is encrypted and stored securely</p>
                   <p>• We use industry-standard security measures</p>
                   <p>• Your personal information is never shared with third parties</p>
@@ -534,7 +503,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
             variant="outline"
             onClick={onPrevious}
             disabled={isSubmitting}
-            className="flex items-center space-x-2 px-6 py-3 h-12"
+            className="flex items-center space-x-2 px-6 py-3 h-12 border-gray-300 text-gray-700 hover:bg-gray-100"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Previous</span>
@@ -547,8 +516,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
             <Button
               onClick={() => setShowConfirmDialog(true)}
               disabled={hasSearchedApplication || isSubmitting || totalDocuments === 0}
-              className="flex items-center space-x-2 px-8 py-3 h-12 bg-gradient-to-r from-blue-500 to-blue-600 disabled:cursor-not-allowed disabled:opacity-60 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
-              style={{ boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' }}
+              className="flex items-center space-x-2 px-8 py-3 h-12 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 disabled:cursor-not-allowed disabled:opacity-60 hover:from-emerald-400 hover:to-cyan-400 text-white shadow-lg shadow-emerald-500/40"
             >
               {isSubmitting ? (
                 <>
