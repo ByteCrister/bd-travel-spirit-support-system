@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { withErrorHandler, HandlerResult, ApiError } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import ConnectDB from "@/config/db";
-import StripePaymentAccountModel from "@/models/payment-account.model";
+import StripePaymentAccountModel from "@/models/payments/payment-account.model";
 import { PaymentAccount } from "@/types/site-settings/stripe-payment-account.type";
 import { buildPaymentAccountResponse } from "@/lib/build-responses/build-payment-account-dt";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";

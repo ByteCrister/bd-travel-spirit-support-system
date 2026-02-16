@@ -10,7 +10,7 @@ import { withTransaction } from "@/lib/helpers/withTransaction";
 import ConnectDB from "@/config/db";
 import StripePaymentAccountModel, {
     IStripePaymentAccount,
-} from "@/models/payment-account.model";
+} from "@/models/payments/payment-account.model";
 import {
     PaymentAccount,
     PaymentAccountUpdateDTO,

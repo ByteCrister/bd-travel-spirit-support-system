@@ -2,8 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import ConnectDB from "@/config/db";
-import StripePaymentAccountModel from "@/models/payment-account.model";
-import { TransactionModel } from "@/models/transaction.model";
+import StripePaymentAccountModel from "@/models/payments/payment-account.model";
+import { TransactionModel } from "@/models/payments/transaction.model";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {

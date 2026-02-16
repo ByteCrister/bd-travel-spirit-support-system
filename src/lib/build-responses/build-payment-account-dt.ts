@@ -1,4 +1,4 @@
-import StripePaymentAccountModel from "@/models/payment-account.model";
+import StripePaymentAccountModel from "@/models/payments/payment-account.model";
 import { PaymentAccount } from "@/types/site-settings/stripe-payment-account.type";
 import { ClientSession, Types } from "mongoose";
 
