@@ -3,9 +3,8 @@ import mongoose from "mongoose";
 import { withErrorHandler, HandlerResult, ApiError } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import ConnectDB from "@/config/db";
-import StripePaymentAccountModel, { IStripePaymentAccount } from "@/models/payment-account.model";
+import StripePaymentAccountModel from "@/models/payment-account.model";
 import { PaymentAccount } from "@/types/site-settings/stripe-payment-account.type";
-import { Lean } from "@/types/common/mongoose-lean.types";
 import { buildPaymentAccountResponse } from "@/lib/build-responses/build-payment-account-dt";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
@@ -44,17 +43,45 @@ export const PATCH = withErrorHandler(
 
     // Execute update within a transaction for consistency
     const updated = await withTransaction(async (session) => {
-      const result = await StripePaymentAccountModel.findByIdAndUpdate(
-        id,
-        { isBackup: body.isBackup, updatedAt: new Date() },
-        { new: true, runValidators: true, session }
-      )
-        .lean<Lean<IStripePaymentAccount>>()
+      const account = await StripePaymentAccountModel.findById(id)
+        .session(session)
         .exec();
 
-      if (!result) {
+      if (!account || account.isDeleted) {
         throw new ApiError("Payment account not found", 404);
       }
+
+      const ownerId = account.ownerId ?? null;
+      const purpose = account.purpose;
+
+      // Count other main active accounts
+      const otherMainCount = await StripePaymentAccountModel.countDocuments({
+        _id: { $ne: account._id },
+        ownerId,
+        purpose,
+        isActive: true,
+        isBackup: false,
+        isDeleted: { $ne: true },
+      }).session(session);
+
+      const totalMainCount = otherMainCount + (account.isActive && !account.isBackup ? 1 : 0);
+
+      // If trying to set as backup
+      if (body.isBackup === true) {
+
+        // If this is the only main account
+        if (totalMainCount === 1 && account.isActive && !account.isBackup) {
+          throw new ApiError(
+            "Cannot convert the only main account into backup",
+            400
+          );
+        }
+
+        account.isBackup = true;
+      }
+
+      account.updatedAt = new Date();
+      await account.save({ session });
 
       return await buildPaymentAccountResponse(id.toString(), session);
     });

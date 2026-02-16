@@ -3,9 +3,8 @@ import mongoose from "mongoose";
 import { withErrorHandler, HandlerResult, ApiError } from "@/lib/helpers/withErrorHandler";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import ConnectDB from "@/config/db";
-import StripePaymentAccountModel, { IStripePaymentAccount } from "@/models/payment-account.model";
+import StripePaymentAccountModel from "@/models/payment-account.model";
 import { PaymentAccount } from "@/types/site-settings/stripe-payment-account.type";
-import { Lean } from "@/types/common/mongoose-lean.types";
 import { buildPaymentAccountResponse } from "@/lib/build-responses/build-payment-account-dt";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
@@ -44,20 +43,47 @@ export const PATCH = withErrorHandler(
 
         // Execute update within a transaction for consistency
         const updated = await withTransaction(async (session) => {
-            const result = await StripePaymentAccountModel.findByIdAndUpdate(
-                id,
-                { isActive: body.isActive, updatedAt: new Date() },
-                { new: true, runValidators: true, session }
-            )
-                .lean<Lean<IStripePaymentAccount>>()
+            const account = await StripePaymentAccountModel.findById(id)
+                .session(session)
                 .exec();
 
-            if (!result) {
+            if (!account || account.isDeleted) {
                 throw new ApiError("Payment account not found", 404);
             }
 
-            return await buildPaymentAccountResponse(id.toString(), session);
+            const ownerId = account.ownerId ?? null;
+            const purpose = account.purpose;
 
+            // Check other active main accounts
+            const otherActiveMain = await StripePaymentAccountModel.findOne({
+                _id: { $ne: account._id },
+                ownerId,
+                purpose,
+                isActive: true,
+                isBackup: false,
+                isDeleted: { $ne: true },
+            })
+                .session(session)
+                .exec();
+
+            if (body.isActive === false) {
+                // Trying to deactivate
+
+                if (!otherActiveMain) {
+                    throw new ApiError(
+                        "Cannot deactivate the only active main account",
+                        400
+                    );
+                }
+
+                account.isActive = false;
+                account.isBackup = true;
+            }
+
+            account.updatedAt = new Date();
+            await account.save({ session });
+
+            return await buildPaymentAccountResponse(id.toString(), session);
         });
 
         return { data: updated };

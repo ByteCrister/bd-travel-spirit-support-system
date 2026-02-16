@@ -79,25 +79,61 @@ export const PATCH = withErrorHandler(
 
         // Use a transaction to ensure consistency (optional but following pattern)
         const updated = await withTransaction(async (session) => {
+            const existing = await StripePaymentAccountModel.findById(id)
+                .session(session)
+                .exec();
+
+            if (!existing || existing.isDeleted) {
+                throw new ApiError("Payment account not found", 404);
+            }
+
+            const ownerId = existing.ownerId ?? null;
+            const purpose = existing.purpose;
+
+            // Check if another active main account exists
+            const otherActiveMain = await StripePaymentAccountModel.findOne({
+                _id: { $ne: existing._id },
+                ownerId,
+                purpose,
+                isActive: true,
+                isBackup: false,
+                isDeleted: { $ne: true },
+            })
+                .session(session)
+                .exec();
+
+            const isActive = payload.isActive ?? existing.isActive;
+            let isBackup = payload.isBackup ?? existing.isBackup;
+
+            // -------- BUSINESS RULE ENFORCEMENT --------
+
+            if (!otherActiveMain && isActive === true) {
+                // First account must be main
+                isBackup = false;
+            }
+
+            if (isActive === false) {
+                // Inactive accounts must be backup
+                isBackup = true;
+            }
+
             const updateDoc: Partial<IStripePaymentAccount> = {
                 ...payload,
                 ownerId: payload.ownerId
                     ? new Types.ObjectId(payload.ownerId)
-                    : undefined,
+                    : existing.ownerId,
+                isActive,
+                isBackup,
                 updatedAt: new Date(),
             };
 
-            const result = await StripePaymentAccountModel.findByIdAndUpdate(
+            await StripePaymentAccountModel.findByIdAndUpdate(
                 id,
                 updateDoc,
                 { new: true, runValidators: true, session },
             )
                 .lean<IStripePaymentAccount>()
                 .exec();
-
-            if (!result) {
-                throw new ApiError("Payment account not found", 404);
-            }
 
             return await buildPaymentAccountResponse(id.toString(), session);
         });
@@ -132,18 +168,43 @@ export const DELETE = withErrorHandler(
 
         // Use transaction to be safe (even though it's a single update)
         await withTransaction(async (session) => {
-            // Manually perform soft delete to use session (instead of static method)
-            const result = await StripePaymentAccountModel.findByIdAndUpdate(
-                id,
-                { isDeleted: true, deletedAt: new Date() },
-                { new: true, session },
-            ).exec();
+            // 1 Load target account
+            const account = await StripePaymentAccountModel.findById(id)
+                .session(session)
+                .exec();
 
-            if (!result) {
+            if (!account || account.isDeleted) {
                 throw new ApiError("Payment account not found", 404);
             }
 
-            return result;
+            // 2 If this is a main active account, enforce rule
+            if (account.isActive && !account.isBackup) {
+                const otherMainAccount = await StripePaymentAccountModel.findOne({
+                    _id: { $ne: account._id },
+                    ownerType: account.ownerType,
+                    ownerId: account.ownerId ?? null,
+                    purpose: account.purpose,
+                    isActive: true,
+                    isBackup: false,
+                    isDeleted: { $ne: true },
+                })
+                    .session(session)
+                    .exec();
+
+                if (!otherMainAccount) {
+                    throw new ApiError(
+                        "Cannot delete the only active main payment account",
+                        400
+                    );
+                }
+            }
+
+            // 3 Perform soft delete
+            account.isDeleted = true;
+            account.deletedAt = new Date();
+            await account.save({ session });
+
+            return account;
         });
 
         return { data: { success: true } };
