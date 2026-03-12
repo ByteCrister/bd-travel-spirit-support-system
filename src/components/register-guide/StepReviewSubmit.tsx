@@ -32,6 +32,7 @@ import api from '@/utils/axios'
 import { ConfirmationRegisterDialog } from './ConfirmationRegisterDialog'
 import { EmailVerificationService } from '@/utils/api/email-verification.api'
 import { jakarta } from '@/styles/fonts'
+import { EMAIL_VERIFICATION_PURPOSE } from '@/constants/email-verification-purpose.const'
 
 interface StepReviewSubmitProps {
   onPrevious: () => void
@@ -60,7 +61,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
     }
 
     try {
-      const result = await emailVerificationService.sendVerificationEmail()
+      const result = await emailVerificationService.sendVerificationEmail(EMAIL_VERIFICATION_PURPOSE.GUIDE_APPLICATION)
       if (result.success) {
         showToast.success(result.message)
       } else {

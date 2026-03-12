@@ -36,6 +36,7 @@ interface IEmailVerificationTokenModel
     findByToken(
         email: string,
         token: string,
+        purpose: EmailVerificationPurpose,
         session?: ClientSession
     ): Promise<IEmailVerificationToken | null>;
 
@@ -137,11 +138,30 @@ emailVerificationTokenSchema.statics.generateToken = async function (
     purpose: EmailVerificationPurpose = EMAIL_VERIFICATION_PURPOSE.GUIDE_APPLICATION,
     session?: ClientSession
 ): Promise<string> {
+
+    /**
+     * Remove or invalidate any existing tokens for this email and purpose
+     * to ensure only one valid token exists at a time.
+     */
     await this.invalidatePreviousTokens(email, purpose, session);
 
+    /**
+     * Generate a 6-digit numeric token.
+     * Range: 100000 - 999999
+     * This ensures the token always has exactly 6 characters.
+     */
     const token = Math.floor(100000 + Math.random() * 900000).toString();
+
+    /**
+     * Hash the token before storing it in the database.
+     * This prevents attackers from using the token if the database is compromised.
+     */
     const hashedToken = await bcrypt.hash(token, 10);
 
+    /**
+     * Store the hashed token with the associated email, purpose,
+     * and expiration time.
+     */
     await this.create([{
         email,
         token: hashedToken,
@@ -149,22 +169,28 @@ emailVerificationTokenSchema.statics.generateToken = async function (
         expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_EXPIRY[purpose]),
     }], { session });
 
+    /**
+     * Return the plain token so it can be sent to the user via email.
+     * The user will submit this token later for verification.
+     */
     return token;
 };
 
 emailVerificationTokenSchema.statics.findByToken = async function (
     email: string,
-    plainToken: string,
+    token: string,
+    purpose: EmailVerificationPurpose,
     session?: ClientSession
 ) {
     const tokens = await this.find({
         email,
+        purpose,
         usedAt: null,
         expiresAt: { $gt: new Date() },
     }).session(session || null);
 
     for (const tokenDoc of tokens) {
-        if (await tokenDoc.compareToken(plainToken)) {
+        if (await tokenDoc.compareToken(token)) {
             return tokenDoc;
         }
     }
