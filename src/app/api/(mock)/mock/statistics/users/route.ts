@@ -24,5 +24,5 @@ export async function GET() {
 
     const data: UsersStats = { signupsOverTime, statusDistribution, guideApplications };
 
-    return NextResponse.json(data);
+    return NextResponse.json({ data });
 }

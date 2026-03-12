@@ -5,7 +5,7 @@ import { motion, Variants } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, RefreshCw, X } from 'lucide-react';
+import { Calendar as CalendarIcon, RefreshCw, X, Check } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Preset, PresetEnum } from '@/types/dashboard/statistics.types';
 import { formatDateRange } from '@/utils/helpers/format';
@@ -26,9 +26,9 @@ const containerVariants: Variants = {
         transition: {
             duration: 0.5,
             ease: [0.22, 1, 0.36, 1],
-            staggerChildren: 0.05
-        }
-    }
+            staggerChildren: 0.05,
+        },
+    },
 };
 
 const itemVariants: Variants = {
@@ -36,12 +36,17 @@ const itemVariants: Variants = {
     visible: {
         opacity: 1,
         y: 0,
-        transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
-    }
+        transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+    },
 };
 
-export function FilterBar() {
-    const { filters, loading, setDateRange, setPreset, refreshAll } = useStatisticsStore();
+interface FilterBarProps {
+    onApplyFilters: () => void;   // applies filter changes and refreshes current tab
+    onRefresh: () => void;         // refreshes current tab with current filters
+}
+
+export function FilterBar({ onApplyFilters, onRefresh }: FilterBarProps) {
+    const { filters, loading, setDateRange, setPreset } = useStatisticsStore();
     const isLoading = Object.values(loading).some((loading) => loading);
 
     const from = filters.dateRange?.from ?? null;
@@ -80,10 +85,7 @@ export function FilterBar() {
             <div className="px-6 py-5">
                 <div className="flex flex-col lg:flex-row gap-5 items-start lg:items-center justify-between">
                     {/* Left section - Filters */}
-                    <motion.div 
-                        variants={itemVariants}
-                        className="flex flex-wrap gap-3 items-center w-full lg:w-auto"
-                    >
+                    <motion.div variants={itemVariants} className="flex flex-wrap gap-3 items-center w-full lg:w-auto">
                         {/* Preset Pills */}
                         <div className="flex gap-2 flex-wrap">
                             {presetOptions.slice(0, 3).map((preset) => (
@@ -99,18 +101,18 @@ export function FilterBar() {
                                         onClick={() => setPreset(preset.value)}
                                         disabled={isLoading}
                                         className={`
-                                            relative overflow-hidden font-medium transition-all duration-300
-                                            ${filters.preset === preset.value 
-                                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 border-0' 
+                      relative overflow-hidden font-medium transition-all duration-300
+                      ${filters.preset === preset.value
+                                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 border-0'
                                                 : 'hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30'
                                             }
-                                        `}
+                    `}
                                     >
                                         {filters.preset === preset.value && (
                                             <motion.div
                                                 layoutId="activePreset"
                                                 className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600"
-                                                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                                             />
                                         )}
                                         <span className="relative z-10">{preset.label}</span>
@@ -126,21 +128,18 @@ export function FilterBar() {
                         <motion.div variants={itemVariants}>
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <motion.div
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                    >
+                                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                                         <Button
                                             variant={isCustomRange ? 'default' : 'outline'}
                                             size="sm"
                                             disabled={isLoading}
                                             className={`
-                                                justify-start text-left font-medium min-w-[260px] transition-all duration-300
-                                                ${isCustomRange 
-                                                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 border-0' 
+                        justify-start text-left font-medium min-w-[260px] transition-all duration-300
+                        ${isCustomRange
+                                                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 border-0'
                                                     : 'hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30'
                                                 }
-                                            `}
+                      `}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             <span className="truncate">
@@ -189,10 +188,7 @@ export function FilterBar() {
                     </motion.div>
 
                     {/* Right section - Actions */}
-                    <motion.div 
-                        variants={itemVariants}
-                        className="flex gap-2 w-full lg:w-auto justify-end"
-                    >
+                    <motion.div variants={itemVariants} className="flex gap-2 w-full lg:w-auto justify-end">
                         {/* Clear Filters */}
                         {(isCustomRange || filters.preset !== 'LAST_30') && (
                             <motion.div
@@ -215,23 +211,33 @@ export function FilterBar() {
                             </motion.div>
                         )}
 
-                        {/* Refresh Button */}
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
+                        {/* Apply Filters Button */}
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={onApplyFilters}
+                                disabled={isLoading}
+                                className="font-medium bg-emerald-600 hover:bg-emerald-700 text-white 
+                                shadow-sm hover:shadow-md transition-all duration-200 
+                                focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 
+                                disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Check className="h-4 w-4 mr-2" />
+                                Apply Filters
+                            </Button>
+                        </motion.div>
+
+                        {/* Refresh Button (current tab) */}
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => refreshAll()}
+                                onClick={onRefresh}
                                 disabled={isLoading}
                                 className="font-medium hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
                             >
-                                <RefreshCw
-                                    className={`h-4 w-4 mr-2 transition-transform duration-500 ${
-                                        isLoading ? 'animate-spin' : ''
-                                    }`}
-                                />
+                                <RefreshCw className={`h-4 w-4 mr-2 transition-transform duration-500 ${isLoading ? 'animate-spin' : ''}`} />
                                 Refresh
                             </Button>
                         </motion.div>
@@ -245,7 +251,7 @@ export function FilterBar() {
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 origin-left"
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
+                    transition={{ duration: 0.8, ease: 'easeInOut' }}
                 />
             )}
         </motion.div>

@@ -22,5 +22,5 @@ export async function GET() {
     avgResponseTime: faker.number.float({ min: 1, max: 10, fractionDigits: 2 }),
   };
 
-  return NextResponse.json(data);
+  return NextResponse.json({ data });
 }
