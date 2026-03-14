@@ -13,7 +13,7 @@ import AssetModel from "@/models/assets/asset.model";
 import AssetFileModel from "@/models/assets/asset-file.model";
 import { ModerationStatus } from "@/constants/tour.const";
 import { PipelineStage } from "mongoose";
-import { TravelerModel } from "@/models/travellers/traveler.model";
+import { TravelerModel } from "@/models/travelers/traveler.model";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */

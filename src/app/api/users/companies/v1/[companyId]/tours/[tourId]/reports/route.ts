@@ -14,7 +14,7 @@ import UserModel from "@/models/user.model";
 import AssetModel from "@/models/assets/asset.model";
 import AssetFileModel from "@/models/assets/asset-file.model";
 import TourModel from "@/models/tours/tour.model";
-import { TravelerModel } from "@/models/travellers/traveler.model";
+import { TravelerModel } from "@/models/travelers/traveler.model";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */

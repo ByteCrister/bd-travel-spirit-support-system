@@ -1,15 +1,14 @@
 "use client";
 
-import React, { JSX } from "react";
-import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FiUsers, FiUser, FiUserCheck, FiUserX, FiPieChart } from "react-icons/fi";
+import { JSX, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Users, UserCheck, User, UserX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RoleDistribution } from "@/types/dashboard/dashboard.types";
+import { Pie, type PieProps } from "recharts";
 
 import {
   PieChart,
-  Pie,
   Cell,
   ResponsiveContainer,
   Tooltip,
@@ -18,6 +17,18 @@ import {
 } from "recharts";
 import { ActiveShape } from "recharts/types/util/types";
 import { PieSectorDataItem } from "recharts/types/polar/Pie";
+
+
+type ExtendedPieProps = PieProps & {
+  activeIndex?: number;
+};
+
+type CustomTooltipProps = {
+  active?: boolean;
+  payload?: {
+    payload: ChartDatum;
+  }[];
+};
 
 interface RolePieChartProps {
   data: RoleDistribution | null;
@@ -30,7 +41,9 @@ type MyActiveShapeProps = SectorProps & {
   value?: number;
 };
 
-const renderActiveShape: ActiveShape<PieSectorDataItem> = (props: MyActiveShapeProps): JSX.Element => {
+const renderActiveShape: ActiveShape<PieSectorDataItem> = (
+  props: MyActiveShapeProps
+): JSX.Element => {
   const {
     cx = 0,
     cy = 0,
@@ -39,8 +52,6 @@ const renderActiveShape: ActiveShape<PieSectorDataItem> = (props: MyActiveShapeP
     startAngle = 0,
     endAngle = 0,
     fill = "#000",
-    percent = 0,
-    value = 0,
   } = props;
 
   return (
@@ -48,64 +59,75 @@ const renderActiveShape: ActiveShape<PieSectorDataItem> = (props: MyActiveShapeP
       <Sector
         cx={cx}
         cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 8}
+        innerRadius={innerRadius - 2}
+        outerRadius={outerRadius + 10}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
-        stroke="rgba(255,255,255,0.12)"
+        opacity={0.95}
       />
-      <text x={cx} y={cy - 6} textAnchor="middle" dominantBaseline="central" className="font-semibold text-slate-900 dark:text-slate-100">
-        {value?.toLocaleString?.() ?? String(value)}
-      </text>
-      <text x={cx} y={cy + 12} textAnchor="middle" dominantBaseline="central" className="text-xs text-slate-500 dark:text-slate-400">
-        {(percent ?? 0) * 100 === 0 ? "0.0%" : `${((percent ?? 0) * 100).toFixed(1)}%`}
-      </text>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={outerRadius + 14}
+        outerRadius={outerRadius + 17}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        opacity={0.3}
+      />
     </g>
   );
 };
 
-/** Role config — keep `as const` so keys are literal types */
 const roleConfig = {
   travelers: {
     label: "Travelers",
-    icon: FiUsers,
-    color: "bg-blue-500",
-    fillColor: "#3b82f6",
-    gradientFrom: "#60a5fa",
-    gradientTo: "#1d4ed8",
-    bgColor: "bg-blue-50 dark:bg-blue-950/20",
-    textColor: "text-blue-600 dark:text-blue-400",
+    icon: Users,
+    fillColor: "#6366f1",
+    trackColor: "bg-indigo-500",
+    glowColor: "shadow-indigo-500/30",
+    badgeBg: "bg-indigo-500/10 dark:bg-indigo-500/20",
+    badgeText: "text-indigo-600 dark:text-indigo-400",
+    iconBg: "bg-indigo-500/10",
+    iconColor: "text-indigo-500",
+    borderAccent: "border-l-indigo-500",
   },
   organizers: {
     label: "Organizers",
-    icon: FiUserCheck,
-    color: "bg-green-500",
-    fillColor: "#22c55e",
-    gradientFrom: "#86efac",
-    gradientTo: "#16a34a",
-    bgColor: "bg-green-50 dark:bg-green-950/20",
-    textColor: "text-green-600 dark:text-green-400",
+    icon: UserCheck,
+    fillColor: "#10b981",
+    trackColor: "bg-emerald-500",
+    glowColor: "shadow-emerald-500/30",
+    badgeBg: "bg-emerald-500/10 dark:bg-emerald-500/20",
+    badgeText: "text-emerald-600 dark:text-emerald-400",
+    iconBg: "bg-emerald-500/10",
+    iconColor: "text-emerald-500",
+    borderAccent: "border-l-emerald-500",
   },
   support: {
     label: "Support",
-    icon: FiUser,
-    color: "bg-purple-500",
-    fillColor: "#a855f7",
-    gradientFrom: "#c4b5fd",
-    gradientTo: "#7c3aed",
-    bgColor: "bg-purple-50 dark:bg-purple-950/20",
-    textColor: "text-purple-600 dark:text-purple-400",
+    icon: User,
+    fillColor: "#f59e0b",
+    trackColor: "bg-amber-500",
+    glowColor: "shadow-amber-500/30",
+    badgeBg: "bg-amber-500/10 dark:bg-amber-500/20",
+    badgeText: "text-amber-600 dark:text-amber-400",
+    iconBg: "bg-amber-500/10",
+    iconColor: "text-amber-500",
+    borderAccent: "border-l-amber-500",
   },
   banned: {
     label: "Banned",
-    icon: FiUserX,
-    color: "bg-red-500",
-    fillColor: "#ef4444",
-    gradientFrom: "#fca5a5",
-    gradientTo: "#dc2626",
-    bgColor: "bg-red-50 dark:bg-red-950/20",
-    textColor: "text-red-600 dark:text-red-400",
+    icon: UserX,
+    fillColor: "#f43f5e",
+    trackColor: "bg-rose-500",
+    glowColor: "shadow-rose-500/30",
+    badgeBg: "bg-rose-500/10 dark:bg-rose-500/20",
+    badgeText: "text-rose-600 dark:text-rose-400",
+    iconBg: "bg-rose-500/10",
+    iconColor: "text-rose-500",
+    borderAccent: "border-l-rose-500",
   },
 } as const;
 
@@ -116,108 +138,107 @@ type ChartDatum = {
   key: RoleKey;
   value: number;
   fill: string;
-  gradientFrom: string;
-  gradientTo: string;
 };
 
-type ActiveShapeProps = SectorProps & {
-  percent: number;
-  value: number;
-};
-
-const RenderActiveShape: React.FC<ActiveShapeProps> = ({
-  cx = 0,
-  cy = 0,
-  innerRadius = 0,
-  outerRadius = 0,
-  startAngle = 0,
-  endAngle = 0,
-  fill = "#000",
-  percent = 0,
-  value = 0,
-}) => {
+// ── Loading skeleton ──────────────────────────────────────────────────────────
+function LoadingSkeleton({ className }: { className?: string }) {
   return (
-    <g>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 8}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-        stroke="rgba(255,255,255,0.12)"
-      />
-      <text
-        x={cx}
-        y={cy - 6}
-        textAnchor="middle"
-        dominantBaseline="central"
-        className="font-semibold text-slate-900 dark:text-slate-100"
-      >
-        {value.toLocaleString()}
-      </text>
-      <text
-        x={cx}
-        y={cy + 12}
-        textAnchor="middle"
-        dominantBaseline="central"
-        className="text-xs text-slate-500 dark:text-slate-400"
-      >
-        {(percent * 100).toFixed(1)}%
-      </text>
-    </g>
+    <div
+      className={cn(
+        "rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6",
+        className
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="space-y-2">
+          <div className="h-4 w-36 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+          <div className="h-3 w-52 rounded-full bg-slate-100 dark:bg-slate-800/60 animate-pulse" />
+        </div>
+        <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+      </div>
+
+      <div className="flex gap-6 items-center">
+        {/* Donut placeholder */}
+        <div className="relative flex-shrink-0">
+          <div className="h-44 w-44 rounded-full bg-slate-100 dark:bg-slate-800 animate-pulse" />
+          <div className="absolute inset-8 rounded-full bg-white dark:bg-slate-900" />
+        </div>
+        {/* Legend placeholders */}
+        <div className="flex-1 space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-800"
+            >
+              <div className="h-8 w-8 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 w-20 rounded bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 animate-pulse" />
+              </div>
+              <div className="h-5 w-14 rounded-full bg-slate-100 dark:bg-slate-800 animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+function EmptyState({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6",
+        className
+      )}
+    >
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="h-14 w-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+          <Users className="h-6 w-6 text-slate-400 dark:text-slate-500" />
+        </div>
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No distribution data</p>
+        <p className="text-xs text-slate-400 dark:text-slate-600 mt-1">Role breakdown will appear here</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Custom tooltip ────────────────────────────────────────────────────────────
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (!active || !payload?.length) return null;
+
+  const entry = payload[0].payload;
+  const cfg = roleConfig[entry.key];
+  const Icon = cfg.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.92, y: 4 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl shadow-black/10"
+    >
+      <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", cfg.iconBg)}>
+        <Icon className={cn("h-3.5 w-3.5", cfg.iconColor)} />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">{entry.name}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{entry.value.toLocaleString()} users</p>
+      </div>
+    </motion.div>
   );
 };
 
+// ── Main component ────────────────────────────────────────────────────────────
 export function RolePieChart({ data, loading = false, className }: RolePieChartProps) {
-  if (loading) {
-    return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FiPieChart className="h-5 w-5" />
-            Role Distribution
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="h-48 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse" />
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="h-4 w-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse flex-1" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  if (!data) {
-    return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FiPieChart className="h-5 w-5" />
-            Role Distribution
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <FiPieChart className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-500 dark:text-slate-400">No data available</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  if (loading) return <LoadingSkeleton className={className} />;
+  if (!data) return <EmptyState className={className} />;
 
-  const total = data.travelers + data.organizers + data.support + data.banned;
   const roleKeys: RoleKey[] = ["travelers", "organizers", "support", "banned"];
+  const total = roleKeys.reduce((sum, k) => sum + data[k], 0);
 
   const chartData: ChartDatum[] = roleKeys
     .map((key) => ({
@@ -225,116 +246,218 @@ export function RolePieChart({ data, loading = false, className }: RolePieChartP
       key,
       value: data[key],
       fill: roleConfig[key].fillColor,
-      gradientFrom: roleConfig[key].gradientFrom,
-      gradientTo: roleConfig[key].gradientTo,
     }))
     .filter((d) => d.value > 0);
 
-  const tooltipFormatter =(value: number, name: string) => [`${value.toLocaleString()}`, name];
+  const activeEntry = activeIndex !== null ? chartData[activeIndex] : null;
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FiPieChart className="h-5 w-5" />
-          Role Distribution
-        </CardTitle>
-        <div className="text-xs text-slate-500 dark:text-slate-400">User roles breakdown with percentages</div>
-      </CardHeader>
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className={cn(
+        "rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden",
+        className
+      )}
+    >
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800/80">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+            Role Distribution
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            User breakdown across all roles
+          </p>
+        </div>
 
-      <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-          {/* Donut Chart */}
-          <div className="h-56">
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="h-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Tooltip
-                    formatter={tooltipFormatter}
-                    wrapperStyle={{ outline: "none", boxShadow: "0 4px 14px rgba(0,0,0,0.08)" }}
-                    contentStyle={{ borderRadius: 8 }}
-                  />
-                  <Pie
-                    data={chartData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="52%"
-                    outerRadius="72%"
-                    paddingAngle={2}
-                    cornerRadius={6}
-                    // Provide typed activeShape
-                    activeShape={renderActiveShape}
-                    isAnimationActive
+        {/* Total badge */}
+        <div className="flex flex-col items-end">
+          <span className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
+            {total.toLocaleString()}
+          </span>
+          <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+            Total Users
+          </span>
+        </div>
+      </div>
+
+      {/* ── Body ── */}
+      <div className="px-6 py-5">
+        <div className="flex flex-col gap-5">
+
+          {/* Donut chart */}
+          <div className="relative h-52 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Tooltip content={<CustomTooltip />} />
+                <Pie
+                  {...({
+                    data: chartData,
+                    dataKey: "value",
+                    nameKey: "name",
+                    cx: "50%",
+                    cy: "50%",
+                    innerRadius: "56%",
+                    outerRadius: "76%",
+                    paddingAngle: 3,
+                    cornerRadius: 5,
+                    activeIndex: activeIndex ?? undefined,
+                    activeShape: renderActiveShape,
+                    onMouseEnter: (_, index) => setActiveIndex(index),
+                    onMouseLeave: () => setActiveIndex(null),
+                    isAnimationActive: true,
+                    animationBegin: 100,
+                    animationDuration: 800,
+                    animationEasing: "ease-out",
+                  } satisfies ExtendedPieProps)}
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell
+                      key={entry.key}
+                      fill={entry.fill}
+                      opacity={activeIndex === null || activeIndex === index ? 1 : 0.35}
+                      stroke="transparent"
+                      style={{ cursor: "pointer", transition: "opacity 0.2s" }}
+                    />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+
+            {/* Center overlay */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                {activeEntry ? (
+                  <motion.div
+                    key={activeEntry.key}
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.18 }}
+                    className="text-center"
                   >
-                    {chartData.map((entry) => (
-                      <Cell key={entry.key} fill={entry.fill} stroke="transparent" />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-
-              {/* Central KPI overlay */}
-              <div className="relative -mt-56 h-56 pointer-events-none">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{total.toLocaleString()}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">Total Users</div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+                    <div
+                      className="text-xl font-bold tabular-nums leading-none"
+                      style={{ color: activeEntry.fill }}
+                    >
+                      {activeEntry.value.toLocaleString()}
+                    </div>
+                    <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1">
+                      {activeEntry.name}
+                    </div>
+                    <div className="text-[10px] text-slate-400 dark:text-slate-600 mt-0.5">
+                      {total > 0 ? ((activeEntry.value / total) * 100).toFixed(1) : 0}%
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="total"
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.18 }}
+                    className="text-center"
+                  >
+                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
+                      {total.toLocaleString()}
+                    </div>
+                    <div className="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-1">
+                      All Users
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
-          {/* Legend / Details */}
-          <div className="space-y-3">
+          {/* ── Role rows ── */}
+          <div className="space-y-2">
             {roleKeys.map((key, index) => {
               const cfg = roleConfig[key];
+              const Icon = cfg.icon;
               const value = data[key];
-              const percentage = total > 0 ? (value / total) * 100 : 0;
+              const pct = total > 0 ? (value / total) * 100 : 0;
+              const isActive = activeEntry?.key === key;
+              const isDimmed = activeEntry !== null && !isActive;
 
-              const roleCard = (
-                <div
+              return (
+                <motion.div
+                  key={key}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.07 + 0.2, duration: 0.3 }}
+                  onMouseEnter={() => {
+                    const idx = chartData.findIndex((d) => d.key === key);
+                    if (idx !== -1) setActiveIndex(idx);
+                  }}
+                  onMouseLeave={() => setActiveIndex(null)}
                   className={cn(
-                    "p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm",
-                    value === 0 ? "opacity-60" : ""
+                    "group relative flex items-center gap-3 px-3.5 py-3 rounded-xl border cursor-default transition-all duration-200",
+                    isActive
+                      ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 shadow-sm"
+                      : "border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/40",
+                    isDimmed ? "opacity-40" : "opacity-100"
                   )}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={cn("h-3 w-3 rounded-full shrink-0", cfg.color)} />
-                      <div className="flex items-center gap-2 min-w-0">
-                        <cfg.icon className={cn("h-4 w-4", cfg.textColor)} />
-                        <span className={cn("text-sm font-medium truncate", value === 0 ? "text-slate-500" : "text-slate-900 dark:text-slate-100")}>
-                          {cfg.label}
+                  {/* Color accent bar */}
+                  <div
+                    className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full transition-all duration-200"
+                    style={{
+                      backgroundColor: isActive ? cfg.fillColor : "transparent",
+                    }}
+                  />
+
+                  {/* Icon */}
+                  <div
+                    className={cn(
+                      "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
+                      cfg.iconBg
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4", cfg.iconColor)} strokeWidth={1.8} />
+                  </div>
+
+                  {/* Label + bar */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight">
+                        {cfg.label}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                            cfg.badgeBg,
+                            cfg.badgeText
+                          )}
+                        >
+                          {pct.toFixed(1)}%
+                        </span>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 tabular-nums">
+                          {value.toLocaleString()}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                        {percentage.toFixed(1)}%
-                      </span>
-                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{value.toLocaleString()}</div>
+                    {/* Progress bar */}
+                    <div className="h-1 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ delay: index * 0.07 + 0.35, duration: 0.6, ease: "easeOut" }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: cfg.fillColor }}
+                      />
                     </div>
                   </div>
-
-                  <div className="mt-2 h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                    <div className={cn("h-2", cfg.color)} style={{ width: `${percentage}%` }} />
-                  </div>
-                </div>
-              );
-
-              return (
-                <motion.div key={key} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.06 + 0.2 }}>
-                  {roleCard}
                 </motion.div>
               );
             })}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </motion.div>
   );
 }

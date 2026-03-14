@@ -2,7 +2,7 @@
 import { NextRequest } from "next/server";
 import { FilterQuery } from "mongoose";
 import ConnectDB from "@/config/db";
-import { TravelerModel, ITraveler } from "@/models/travellers/traveler.model";
+import { TravelerModel, ITraveler } from "@/models/travelers/traveler.model";
 import GuideModel, { IGuide } from "@/models/guide/guide.model";
 import { GUIDE_STATUS } from "@/constants/guide.const";
 import { withErrorHandler, HandlerResult } from "@/lib/helpers/withErrorHandler";

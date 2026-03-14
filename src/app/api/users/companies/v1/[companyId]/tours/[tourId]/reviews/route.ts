@@ -15,7 +15,7 @@ import { getCollectionName } from "@/lib/helpers/get-collection-name";
 import UserModel from "@/models/user.model";
 import AssetFileModel from "@/models/assets/asset-file.model";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
-import { TravelerModel } from "@/models/travellers/traveler.model";
+import { TravelerModel } from "@/models/travelers/traveler.model";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
