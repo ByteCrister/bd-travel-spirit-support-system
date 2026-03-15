@@ -11,7 +11,6 @@ import {
   RoleDistribution,
   AdminNotification,
   AnalyticsData,
-  TrendingInsight,
   DashboardFilters,
   DateRangeFilter,
   PaginationFilter,
@@ -22,6 +21,7 @@ import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { ApiResponse } from "@/types/common/api.types";
 
 const URL_AFTER_API = "/mock/dashboard";
+// const URL_AFTER_API = "/dashboard/v1/overview/v1";
 
 // TTL for client cache in ms
 const DEFAULT_TTL = Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 30 * 1000;
@@ -46,6 +46,16 @@ interface CacheEntry<T> {
   ttl: number;
 }
 
+type PaginatedResponse<T> = {
+  items: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+};
+
 interface DashboardState {
   // per-slice loading / errors
   loading: Record<LoadingKey, boolean>;
@@ -59,7 +69,6 @@ interface DashboardState {
   roleDistribution: RoleDistribution | null;
   adminNotifications: AdminNotification[];
   analytics: AnalyticsData | null;
-  trendingInsights: TrendingInsight[];
 
   // per‑component filter states
   statsDateRange: DateRangeFilter;          // for stats cards
@@ -77,7 +86,6 @@ interface DashboardState {
     roleDistribution: CacheEntry<RoleDistribution>;
     adminNotifications: CacheEntry<AdminNotification[]>;
     analytics: CacheEntry<AnalyticsData>;
-    trendingInsights: CacheEntry<TrendingInsight[]>;
   };
 
   _inFlight: Partial<Record<string, Promise<unknown>>>;
@@ -194,7 +202,6 @@ export const useDashboardStore = create<DashboardState>()(
       roleDistribution: makeCacheEntry<RoleDistribution | null>(null),
       adminNotifications: makeCacheEntry<AdminNotification[] | null>(null),
       analytics: makeCacheEntry<AnalyticsData | null>(null),
-      trendingInsights: makeCacheEntry<TrendingInsight[] | null>(null),
     },
     _inFlight: {},
 
@@ -227,7 +234,6 @@ export const useDashboardStore = create<DashboardState>()(
             roleDistribution: makeCacheEntry<RoleDistribution>(null),
             adminNotifications: makeCacheEntry<AdminNotification[]>(null),
             analytics: makeCacheEntry<AnalyticsData>(null),
-            trendingInsights: makeCacheEntry<TrendingInsight[]>(null),
           };
           return { _cache: newCache };
         }
@@ -312,12 +318,12 @@ export const useDashboardStore = create<DashboardState>()(
             page: String(pagination.page),
             limit: String(pagination.limit),
           });
-          const res = await api.get<ApiResponse<RecentActivity[]>>(`${URL_AFTER_API}/recent-activity?${params}`);
+          const res = await api.get<ApiResponse<PaginatedResponse<RecentActivity>>>(`${URL_AFTER_API}/recent-activity?${params}`);
           if (!res.data?.data) throw new Error("Invalid response");
-          const data = res.data.data;
+          const { items } = res.data.data;
           set((s) => ({
-            recentActivity: data,
-            _cache: { ...s._cache, recentActivity: makeCacheEntry(data) },
+            recentActivity: items,
+            _cache: { ...s._cache, recentActivity: makeCacheEntry(items) },
           }));
         } catch (err) {
           set((s) => ({ errors: { ...s.errors, recentActivity: extractErrorMessage(err) } }));
@@ -407,12 +413,12 @@ export const useDashboardStore = create<DashboardState>()(
             page: String(pagination.page),
             limit: String(pagination.limit),
           });
-          const res = await api.get<ApiResponse<Booking[]>>(`${URL_AFTER_API}/recent-bookings?${params}`);
+          const res = await api.get<ApiResponse<PaginatedResponse<Booking>>>(`${URL_AFTER_API}/recent-bookings?${params}`);
           if (!res.data?.data) throw new Error("Invalid response");
-          const data = res.data.data;
+          const { items } = res.data.data;
           set((s) => ({
-            recentBookings: data,
-            _cache: { ...s._cache, recentBookings: makeCacheEntry(data) },
+            recentBookings: items,
+            _cache: { ...s._cache, recentBookings: makeCacheEntry(items) },
           }));
         } catch (err) {
           set((s) => ({ errors: { ...s.errors, recentBookings: extractErrorMessage(err) } }));
@@ -503,12 +509,12 @@ export const useDashboardStore = create<DashboardState>()(
             page: String(pagination.page),
             limit: String(pagination.limit),
           });
-          const res = await api.get<ApiResponse<AdminNotification[]>>(`${URL_AFTER_API}/admin-notifications?${params}`);
+          const res = await api.get<ApiResponse<PaginatedResponse<AdminNotification>>>(`${URL_AFTER_API}/admin-notifications?${params}`);
           if (!res.data?.data) throw new Error("Invalid response");
-          const data = res.data.data;
+          const { items } = res.data.data;
           set((s) => ({
-            adminNotifications: data,
-            _cache: { ...s._cache, adminNotifications: makeCacheEntry(data) },
+            adminNotifications: items,
+            _cache: { ...s._cache, adminNotifications: makeCacheEntry(items) },
           }));
         } catch (err) {
           set((s) => ({ errors: { ...s.errors, adminNotifications: extractErrorMessage(err) } }));
@@ -564,60 +570,6 @@ export const useDashboardStore = create<DashboardState>()(
       await promise;
     },
 
-    fetchTrendingInsights: async (opts = { force: false }) => {
-      const key = "trendingInsights";
-      const cache = get()._cache.trendingInsights;
-
-      if (
-        !opts.force &&
-        cache.data &&
-        cache.lastFetched &&
-        now() - cache.lastFetched < cache.ttl
-      ) {
-        set({ trendingInsights: cache.data });
-        return;
-      }
-
-      if (get()._inFlight[key]) {
-        await get()._inFlight[key];
-        return;
-      }
-
-      set((s) => ({
-        loading: { ...s.loading, trendingInsights: true },
-        errors: { ...s.errors, trendingInsights: null },
-      }));
-
-      const promise = (async () => {
-        try {
-          const res = await api.get<ApiResponse<TrendingInsight[]>>(
-            `${URL_AFTER_API}/trending-insights`,
-          );
-          if (!res.data || !res.data.data)
-            throw new Error("Invalid api response.");
-          const data = res.data.data || [];
-          set((s) => ({
-            trendingInsights: data,
-            _cache: { ...s._cache, trendingInsights: makeCacheEntry(data) },
-          }));
-        } catch (err) {
-          set((s) => ({
-            errors: { ...s.errors, trendingInsights: extractErrorMessage(err) },
-          }));
-        } finally {
-          set((s) => ({ loading: { ...s.loading, trendingInsights: false } }));
-          set((s) => {
-            const m = { ...s._inFlight };
-            delete m[key];
-            return { _inFlight: m };
-          });
-        }
-      })();
-
-      set((s) => ({ _inFlight: { ...s._inFlight, [key]: promise } }));
-      await promise;
-    },
-
     // orchestrator – now accepts an isAdmin flag
     refreshAll: async (isAdmin = false) => {
       await Promise.all([
@@ -632,7 +584,6 @@ export const useDashboardStore = create<DashboardState>()(
         await Promise.all([
           get().fetchRoleDistribution({ force: true }),
           get().fetchAnalytics({ force: true }),
-          get().fetchTrendingInsights({ force: true }),
         ]);
       }
     },

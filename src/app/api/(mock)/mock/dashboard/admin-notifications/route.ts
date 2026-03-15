@@ -15,5 +15,15 @@ export async function GET() {
         isRead: faker.datatype.boolean(),
         actionRequired: faker.datatype.boolean(),
     }));
-    return NextResponse.json({ data: items });
+    return NextResponse.json({
+        data: {
+            items,
+            pagination: {
+                page: 1,
+                limit: 10,
+                total: items.length,
+                pages: 1,
+            },
+        }
+    });
 }

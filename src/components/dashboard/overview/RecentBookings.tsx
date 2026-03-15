@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  FiCalendar,  
-  FiMapPin, 
+import {
+  FiCalendar,
+  FiMapPin,
   FiEye,
   FiClock,
   FiCheckCircle,
@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Booking } from "@/types/dashboard/dashboard.types";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
+import { BOOKING_STATUS, BookingStatus } from "@/constants/tour-booking.const";
 
 interface RecentBookingsProps {
   bookings: Booking[];
@@ -25,35 +26,44 @@ interface RecentBookingsProps {
   className?: string;
 }
 
-const getStatusIcon = (status: Booking['status']) => {
+const getStatusIcon = (status: BookingStatus) => {
   switch (status) {
-    case 'confirmed':
+    case BOOKING_STATUS.CONFIRMED:
       return <FiCheckCircle className="h-4 w-4" />;
-    case 'pending':
+    case BOOKING_STATUS.PENDING:
       return <FiClock className="h-4 w-4" />;
-    case 'cancelled':
+    case BOOKING_STATUS.CANCELLED:
       return <FiXCircle className="h-4 w-4" />;
-    case 'completed':
+    case BOOKING_STATUS.COMPLETED:
+      return <FiCheckCircle className="h-4 w-4" />;
+    case BOOKING_STATUS.NO_SHOW:
+      return <FiAlertCircle className="h-4 w-4" />;
+    case BOOKING_STATUS.REFUNDED:
       return <FiCheckCircle className="h-4 w-4" />;
     default:
       return <FiAlertCircle className="h-4 w-4" />;
   }
 };
 
-const getStatusColor = (status: Booking['status']) => {
+const getStatusColor = (status: BookingStatus) => {
   switch (status) {
-    case 'confirmed':
+    case BOOKING_STATUS.CONFIRMED:
       return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-    case 'pending':
+    case BOOKING_STATUS.PENDING:
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-    case 'cancelled':
+    case BOOKING_STATUS.CANCELLED:
       return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-    case 'completed':
+    case BOOKING_STATUS.COMPLETED:
       return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+    case BOOKING_STATUS.NO_SHOW:
+      return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+    case BOOKING_STATUS.REFUNDED:
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
     default:
       return 'bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400';
   }
 };
+
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -73,6 +83,9 @@ const formatCurrency = (amount: number) => {
 };
 
 export function RecentBookings({ bookings, loading = false, onView, className }: RecentBookingsProps) {
+  console.log("Bookings:", bookings);
+  console.log("Is array:", Array.isArray(bookings));
+
   if (loading) {
     return (
       <Card className={className}>
@@ -137,7 +150,7 @@ export function RecentBookings({ bookings, loading = false, onView, className }:
                       <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-medium text-sm">
                         {booking.user.name.charAt(0).toUpperCase()}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
@@ -150,11 +163,11 @@ export function RecentBookings({ bookings, loading = false, onView, className }:
                             </div>
                           </Badge>
                         </div>
-                        
+
                         <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
                           {booking.tour.title}
                         </p>
-                        
+
                         <div className="flex items-center gap-2 mt-1">
                           <FiMapPin className="h-3 w-3 text-slate-400" />
                           <span className="text-xs text-slate-500 dark:text-slate-500">
@@ -163,7 +176,7 @@ export function RecentBookings({ bookings, loading = false, onView, className }:
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="text-right ml-4">
                       <div className="flex items-center gap-1 mb-1">
                         <FaBangladeshiTakaSign className="h-3 w-3 text-green-600 dark:text-green-400" />
@@ -171,14 +184,14 @@ export function RecentBookings({ bookings, loading = false, onView, className }:
                           {formatCurrency(booking.amount)}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center gap-1 mb-2">
                         <FiClock className="h-3 w-3 text-slate-400" />
                         <span className="text-xs text-slate-500 dark:text-slate-500">
                           {formatDate(booking.bookingDate)}
                         </span>
                       </div>
-                      
+
                       {onView && (
                         <Button
                           size="sm"

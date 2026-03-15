@@ -1,7 +1,7 @@
 // src/types/dashboard.types.ts
 // Production-ready types for dashboard domain
 
-import { BookingType } from "@/constants/tour-booking.const";
+import { BookingStatus } from "@/constants/tour-booking.const";
 
 
 export interface DashboardStats {
@@ -59,7 +59,7 @@ export interface Booking {
   user: { id: string; name: string; email: string };
   tour: { id: string; title: string; destination: string };
   bookingDate: string;
-  status: BookingType;
+  status: BookingStatus;
   amount: number;
 }
 
@@ -101,17 +101,6 @@ export interface AnalyticsData {
 
 export type TrendingType = 'destination' | 'category' | 'tour_type';
 export type TrendDirection = 'up' | 'down' | 'stable';
-
-export interface TrendingInsight {
-  id: string;
-  type: TrendingType;
-  title: string;
-  description: string;
-  trend: TrendDirection;
-  percentage: number;
-  confidence: number; // 0..1
-  generatedAt?: string;
-}
 
 export interface DashboardFilters {
   dateRange: { start: string; end: string };

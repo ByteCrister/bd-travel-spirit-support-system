@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 // import ConnectDB from '@/config/db';
 // import { PendingActionModel } from '@/models/admin/pending-action.model';
-import { ApiResponse } from '@/types/common/api.types';
 import { PendingAction } from '@/types/dashboard/dashboard.types';
 
 export async function GET(request: NextRequest) {
@@ -52,14 +51,16 @@ export async function GET(request: NextRequest) {
         const transformed: PendingAction[] = [];
 
         return NextResponse.json({
-            data: transformed,
-            pagination: {
-                page,
-                limit,
-                total: 0,
-                pages: 0,
-            },
-        } as ApiResponse<PendingAction[]>);
+            data: {
+                items: transformed,
+                pagination: {
+                    page,
+                    limit,
+                    total: 0,
+                    pages: 0,
+                },
+            }
+        });
 
     } catch (error) {
         console.error('Failed to fetch pending actions:', error);

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 // import ConnectDB from '@/config/db';
 // import { AdminNotificationModel } from '@/models/admin/admin-notification.model';
-import { ApiResponse } from '@/types/common/api.types';
 import { AdminNotification } from '@/types/dashboard/dashboard.types';
 
 export async function GET(request: NextRequest) {
@@ -47,14 +46,16 @@ export async function GET(request: NextRequest) {
         const transformed: AdminNotification[] = [];
 
         return NextResponse.json({
-            data: transformed,
-            pagination: {
-                page,
-                limit,
-                total: 0,
-                pages: 0,
-            },
-        } as ApiResponse<AdminNotification[]>);
+            data: {
+                items: transformed,
+                pagination: {
+                    page,
+                    limit,
+                    total: 0,
+                    pages: 0,
+                },
+            }
+        });
 
     } catch (error) {
         console.error('Failed to fetch admin notifications:', error);

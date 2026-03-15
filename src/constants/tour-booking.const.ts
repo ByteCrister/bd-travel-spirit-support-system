@@ -6,7 +6,7 @@ export enum BOOKING_STATUS {
   NO_SHOW = 'no-show',
   REFUNDED = 'refunded',
 }
-export type BookingType = `${BOOKING_STATUS}`;
+export type BookingStatus = `${BOOKING_STATUS}`; 
 
 export enum BOOKING_PAYMENT_STATUS {
   PENDING = 'pending',
@@ -15,6 +15,5 @@ export enum BOOKING_PAYMENT_STATUS {
   REFUNDED = 'refunded',
 }
 
-export type BookingStatus = `${BOOKING_STATUS}`; 
 
 export type BookingPaymentStatus = `${BOOKING_PAYMENT_STATUS}`;
