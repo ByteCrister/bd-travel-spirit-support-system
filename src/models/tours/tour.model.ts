@@ -42,6 +42,7 @@ import { FilterQuery } from "mongoose";
 import { ClientSession } from "mongoose";
 import { Schema, Types, Document, Model, UpdateQuery } from "mongoose";
 import { HydratedEmployeeDocument } from "../employees/employees.model";
+import generateTourCode from "@/lib/helpers/generateTourCode";
 
 // =============== PRICE & DISCOUNT TYPES ===============
 export type IPrice = {
@@ -211,6 +212,7 @@ export interface ITour extends Document {
   companyId: Types.ObjectId; // Tour operator/guide
   title: string;
   slug: string;
+  uniqueTourCode: string;
   status: TourStatus;
   summary: string;
   heroImage?: Types.ObjectId;
@@ -452,6 +454,13 @@ const TourSchema = new Schema<ITour>(
       unique: true,
       lowercase: true,
       trim: true,
+    },
+    uniqueTourCode: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      index: true,
     },
     status: {
       type: String,
@@ -1063,6 +1072,36 @@ TourSchema.statics.findOneWithDeleted = function (
 
 // Pre-save hook to ensure unique slug
 TourSchema.pre("save", async function (this: HydratedDocument<ITour>) {
+  // Only generate if it's a new document or the code is missing
+  if (this.isNew || !this.uniqueTourCode) {
+    let code: string;
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 5;
+
+    while (!isUnique && attempts < maxAttempts) {
+      // Generate a random 10-character alphanumeric string
+      code = generateTourCode(10);
+
+      // Check if it already exists
+      const existing = await (this.constructor as ITourModel).findOne({
+        uniqueTourCode: code,
+        _id: { $ne: this._id },
+      });
+
+      if (!existing) {
+        isUnique = true;
+        this.uniqueTourCode = code;
+      }
+      attempts++;
+    }
+
+    if (!isUnique) {
+      throw new Error("Failed to generate a unique tour code after multiple attempts");
+    }
+  }
+
+  // Original slug generation logic remains unchanged
   if (!this.isModified("title")) return;
 
   const baseSlug = this.title

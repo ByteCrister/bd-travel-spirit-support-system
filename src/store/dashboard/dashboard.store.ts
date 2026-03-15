@@ -24,7 +24,7 @@ const URL_AFTER_API = "/mock/dashboard";
 // const URL_AFTER_API = "/dashboard/v1/overview/v1";
 
 // TTL for client cache in ms
-const DEFAULT_TTL = Number(process.env.NEXT_PUBLIC_CACHE_TTL) || 30 * 1000;
+const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
 
 type LoadingKey =
   | "stats"
@@ -130,7 +130,7 @@ interface DashboardState {
   fetchTrendingInsights: (opts?: { force?: boolean }) => Promise<void>;
 
   // orchestrator
-  refreshAll: (isAdmin?: boolean) => Promise<void>;
+  refreshAll: (isAdmin?: boolean, force?: boolean) => Promise<void>;
 }
 
 const now = () => Date.now();
@@ -571,19 +571,19 @@ export const useDashboardStore = create<DashboardState>()(
     },
 
     // orchestrator – now accepts an isAdmin flag
-    refreshAll: async (isAdmin = false) => {
+    refreshAll: async (isAdmin = false, force = false) => {
       await Promise.all([
-        get().fetchStats({ force: true }),
-        get().fetchRecentActivity({ force: true }),
-        get().fetchPendingActions({ force: true }),
-        get().fetchRecentBookings({ force: true }),
-        get().fetchAdminNotifications({ force: true }),
+        get().fetchStats({ force }),
+        get().fetchRecentActivity({ force }),
+        get().fetchPendingActions({ force }),
+        get().fetchRecentBookings({ force }),
+        get().fetchAdminNotifications({ force }),
       ]);
 
       if (isAdmin) {
         await Promise.all([
-          get().fetchRoleDistribution({ force: true }),
-          get().fetchAnalytics({ force: true }),
+          get().fetchRoleDistribution({ force }),
+          get().fetchAnalytics({ force }),
         ]);
       }
     },

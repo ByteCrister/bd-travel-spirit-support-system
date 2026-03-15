@@ -255,12 +255,12 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (baseUser) {
-            refreshAll(baseUser.role === USER_ROLE.ADMIN);
+            refreshAll(baseUser.role === USER_ROLE.ADMIN, false);
         }
     }, [baseUser, refreshAll]);
 
     const handleRefresh = () => {
-        if (baseUser) refreshAll(baseUser.role === USER_ROLE.ADMIN);
+        if (baseUser) refreshAll(baseUser.role === USER_ROLE.ADMIN, true);
     };
 
     const isAdmin = baseUser?.role === USER_ROLE.ADMIN;

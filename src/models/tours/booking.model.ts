@@ -56,6 +56,8 @@ export interface ICancellation {
 export interface IBooking extends Document {
     bookingReference: string;
 
+    uniqueTourCode: string;
+
     traveler: Types.ObjectId;
     tour: Types.ObjectId | ITour;
 
@@ -162,6 +164,12 @@ const BookingSchema = new Schema<IBooking>(
             type: String,
             required: true,
             unique: true,
+            trim: true,
+        },
+
+        uniqueTourCode: {
+            type: String,
+            required: true,
             trim: true,
         },
 

@@ -83,8 +83,6 @@ const formatCurrency = (amount: number) => {
 };
 
 export function RecentBookings({ bookings, loading = false, onView, className }: RecentBookingsProps) {
-  console.log("Bookings:", bookings);
-  console.log("Is array:", Array.isArray(bookings));
 
   if (loading) {
     return (
