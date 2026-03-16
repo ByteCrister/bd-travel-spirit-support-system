@@ -148,8 +148,8 @@ export interface TravelerBooking {
     paymentStatus: BookingPaymentStatus;
     bookedAt: string;
     cancellation?: {
-        cancelledAt: string;
-        reason: string;
+        cancelledAt?: string;
+        reason?: string;
         refundAmount?: number;
     };
 }

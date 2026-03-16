@@ -712,7 +712,9 @@ export default function TravelerDetails({ id }: { id: string }) {
                                                                                         <TableCell className={cn(cellCls, 'font-medium')}>{c.tour.title}</TableCell>
                                                                                         <TableCell className={cn(cellCls, 'font-semibold text-red-500')}>${c.totalPaid}</TableCell>
                                                                                         <TableCell className={cn(cellCls, 'text-slate-500 tabular-nums')}>
-                                                                                            {c.cancellation ? format(new Date(c.cancellation.cancelledAt), 'PP') : <span className="text-slate-400">—</span>}
+                                                                                            {c.cancellation?.cancelledAt
+                                                                                                ? format(new Date(c.cancellation.cancelledAt), 'PP')
+                                                                                                : <span className="text-slate-400">—</span>}
                                                                                         </TableCell>
                                                                                         <TableCell className={cn(cellCls, 'max-w-[200px] truncate text-slate-500')}>
                                                                                             {c.cancellation?.reason ?? <span className="text-slate-400">—</span>}

@@ -28,6 +28,7 @@ import { extractErrorMessage } from '@/utils/axios/extract-error-message';
 enableMapSet();
 
 const URL_AFTER_API = `/mock/users/travelers`
+// const URL_AFTER_API = `/users/travelers/v1`
 
 // ----------------------------------------------------------------------
 // API endpoint constants
@@ -44,10 +45,10 @@ const API = {
     TRAVELER_VIEWED_TOURS: (id: string) => `${URL_AFTER_API}/${id}/viewed-tours`,
     TRAVELER_VIEWED_ARTICLES: (id: string) => `${URL_AFTER_API}/${id}/viewed-articles`,
     TRAVELER_CANCELLATIONS: (id: string) => `${URL_AFTER_API}/${id}/cancellations`,
-    TRAVELER_SUSPEND: (id: string) => `${URL_AFTER_API}/${id}/suspend`,
-    TRAVELER_UNSUSPEND: (id: string) => `${URL_AFTER_API}/${id}/unsuspend`,
-    TRAVELER_LOCK: (id: string) => `${URL_AFTER_API}/${id}/lock`,
-    TRAVELER_UNLOCK: (id: string) => `${URL_AFTER_API}/${id}/unlock`,
+    TRAVELER_SUSPEND: (id: string) => `${URL_AFTER_API}/${id}/actions/suspend`,
+    TRAVELER_UNSUSPEND: (id: string) => `${URL_AFTER_API}/${id}/actions/unsuspend`,
+    TRAVELER_LOCK: (id: string) => `${URL_AFTER_API}/${id}/actions/lock`,
+    TRAVELER_UNLOCK: (id: string) => `${URL_AFTER_API}/${id}/actions/unlock`,
 };
 
 // ----------------------------------------------------------------------
