@@ -27,8 +27,8 @@ import { ApiResponse } from '@/types/common/api.types';
 import { extractErrorMessage } from '@/utils/axios/extract-error-message';
 enableMapSet();
 
-const URL_AFTER_API = `/mock/users/travelers`
-// const URL_AFTER_API = `/users/travelers/v1`
+// const URL_AFTER_API = `/mock/users/travelers`
+const URL_AFTER_API = `/users/travelers/v1`
 
 // ----------------------------------------------------------------------
 // API endpoint constants

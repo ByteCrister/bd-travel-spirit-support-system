@@ -16,6 +16,7 @@ import UserModel from "@/models/user.model";
 import AssetFileModel from "@/models/assets/asset-file.model";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import { TravelerModel } from "@/models/travelers/traveler.model";
+import ConnectDB from "@/config/db";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -38,12 +39,12 @@ interface PopulatedUser {
 }
 
 type AggregatedReplies = Pick<IReviewReply,
-    "_id" |
     "message" |
     "isApproved" |
     "createdAt" |
     "deletedAt" |
     "updatedAt"> & {
+        id: Types.ObjectId,
         employee: PopulatedUser,
     }
 
@@ -335,6 +336,7 @@ export class ReviewResponseService {
                                             createdAt: "$$r.createdAt",
                                             updatedAt: "$$r.updatedAt",
                                             employee: {
+                                                id: "$$r.employee",
                                                 name: {
                                                     $arrayElemAt: ["$replyUsers.name", 0],
                                                 },
@@ -349,108 +351,41 @@ export class ReviewResponseService {
                         },
                     ],
 
-                    /* -------------------------- SUMMARY --------------------------- */
-                    summary: [
-                        {
-                            $group: {
-                                _id: null,
-                                totalReviews: { $sum: 1 },
-
-                                isApproved: {
-                                    $sum: {
-                                        $cond: [{ $eq: ["$isApproved", true] }, 1, 0],
-                                    },
-                                },
-
-                                averageRating: {
-                                    $avg: {
-                                        $cond: [
-                                            { $eq: ["$isApproved", true] },
-                                            "$rating",
-                                            null,
-                                        ],
-                                    },
-                                },
-
-                                ratingBreakdown: {
-                                    $push: "$rating",
-                                },
-                            },
-                        },
-                        {
-                            $project: {
-                                _id: 0,
-                                totalReviews: 1,
-                                isApproved: 1,
-                                averageRating: { $round: ["$averageRating", 1] },
-
-                                ratingBreakdown: {
-                                    1: {
-                                        $size: {
-                                            $filter: {
-                                                input: "$ratingBreakdown",
-                                                as: "r",
-                                                cond: { $eq: ["$$r", 1] },
-                                            },
-                                        },
-                                    },
-                                    2: {
-                                        $size: {
-                                            $filter: {
-                                                input: "$ratingBreakdown",
-                                                as: "r",
-                                                cond: { $eq: ["$$r", 2] },
-                                            },
-                                        },
-                                    },
-                                    3: {
-                                        $size: {
-                                            $filter: {
-                                                input: "$ratingBreakdown",
-                                                as: "r",
-                                                cond: { $eq: ["$$r", 3] },
-                                            },
-                                        },
-                                    },
-                                    4: {
-                                        $size: {
-                                            $filter: {
-                                                input: "$ratingBreakdown",
-                                                as: "r",
-                                                cond: { $eq: ["$$r", 4] },
-                                            },
-                                        },
-                                    },
-                                    5: {
-                                        $size: {
-                                            $filter: {
-                                                input: "$ratingBreakdown",
-                                                as: "r",
-                                                cond: { $eq: ["$$r", 5] },
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    ],
-
                     /* --------------------------- TOTAL ----------------------------- */
                     total: [{ $count: "count" }],
                 },
             },
         ]);
 
+        // /* -------------------------- SUMMARY --------------------------- */
+        const [summaryResult] = await ReviewModel.aggregate([
+            { $match: buildQuery(tourId, params) },
+            {
+                $group: {
+                    _id: null,
+                    totalReviews: { $sum: 1 },
+                    isApproved: { $sum: { $cond: [{ $eq: ["$isApproved", true] }, 1, 0] } },
+                    avgRating: { $avg: "$rating" },
+                    ratingBreakdown: { $push: "$rating" },
+                },
+            },
+        ]);
+
+        const ratingBreakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        (summaryResult?.ratingBreakdown || []).forEach((r: number) => {
+            (ratingBreakdown as Record<number, number>)[r] = ((ratingBreakdown as Record<number, number>)[r] || 0) + 1;
+        });
+
+        const summary: ReviewSummaryDTO = {
+            totalReviews: summaryResult?.totalReviews ?? 0,
+            averageRating: summaryResult?.avgRating ?? 0,
+            isApproved: summaryResult?.isApproved ?? 0,
+            ratingBreakdown,
+        };
+
         const facet = aggregation[0];
 
         const reviews = facet.docs as AggregatedReviewDoc[];
-
-        const summary: ReviewSummaryDTO = facet.summary[0] ?? {
-            totalReviews: 0,
-            averageRating: 0,
-            isApproved: 0,
-            ratingBreakdown: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-        };
 
         const total = facet.total[0]?.count ?? 0;
 
@@ -461,9 +396,9 @@ export class ReviewResponseService {
             id: review._id.toString(),
             tourId: review.tour.toString(),
             user: {
-                id: review.user.id.toString(),
-                name: review.user.name,
-                avatar: review.user.avatar
+                id: review.user?.id?.toString() ?? '',
+                name: review.user?.name ?? 'Unknown',
+                avatar: review.user?.avatar
             },
             rating: review.rating,
             title: review.title,
@@ -475,16 +410,16 @@ export class ReviewResponseService {
             helpfulCount: review.helpfulCount ?? 0,
             createdAt: review.createdAt.toISOString(),
             replies: (review.replies ?? []).map((item) => ({
-                id: item._id.toString(),
+                id: item.id?.toString() ?? '',
                 employee: {
-                    id: item.employee.id.toString(),
-                    name: item.employee.name,
-                    avatar: item.employee.avatar
+                    id: item.employee?.id?.toString() ?? '',
+                    name: item.employee?.name ?? 'Unknown',
+                    avatar: item.employee?.avatar
                 },
                 message: item.message,
                 isApproved: item.isApproved,
-                createdAt: item.createdAt.toISOString(),
-                updatedAt: item.updatedAt.toISOString(),
+                createdAt: item.createdAt?.toISOString() ?? new Date().toISOString(),
+                updatedAt: item.updatedAt?.toISOString() ?? new Date().toISOString(),
                 deletedAt: item.deletedAt?.toISOString()
             })),
         }));
@@ -539,6 +474,9 @@ async function getReviewsHandler(
             : undefined,
         approvedOnly: sp.get("approvedOnly") === "true",
     };
+    
+    // Connect to Database
+    await ConnectDB();
 
     const data = await ReviewResponseService.getTourReviews(companyId.toString(), tourId.toString(), queryParams);
 

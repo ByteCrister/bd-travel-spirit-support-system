@@ -19,6 +19,7 @@ import {
 //   TransportMode,
   DIVISION,
   DISTRICT,
+  TOUR_DISCOUNT_TYPE,
 } from "@/constants/tour.const";
 
 // --- Helper: pick random enum value ---
@@ -64,8 +65,13 @@ function generateFakeTour(companyId: string): TourListItemDTO {
 
   // Generate optional active discount
   const hasActiveDiscount = faker.datatype.boolean();
-  const activeDiscountValue = hasActiveDiscount 
-    ? faker.number.int({ min: 5, max: 30 })
+  const activeDiscountType = hasActiveDiscount
+    ? randomEnum(Object.values(TOUR_DISCOUNT_TYPE))
+    : undefined;
+  const activeDiscountValue = hasActiveDiscount
+    ? activeDiscountType === TOUR_DISCOUNT_TYPE.FLAT_AMOUNT
+      ? faker.number.int({ min: 100, max: 2000 })
+      : faker.number.int({ min: 5, max: 30 })
     : undefined;
 
   return {
@@ -85,6 +91,7 @@ function generateFakeTour(companyId: string): TourListItemDTO {
     // Pricing
     basePrice: basePrice,
     hasActiveDiscount: hasActiveDiscount,
+    activeDiscountType: activeDiscountType,
     activeDiscountValue: activeDiscountValue,
 
     // Schedule

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronLeft, FiChevronRight, FiRefreshCw, FiSearch, FiThumbsUp, FiThumbsDown, FiX } from "react-icons/fi";
 import clsx from "clsx";
 
-import { useCompanyDetailStore } from "@/store/company/company-detail.store";
+import { TourFaqFilterParams, useCompanyDetailStore } from "@/store/company/company-detail.store";
 import type { TourFAQDTO } from "@/types/tour/tour-detail-faqs.types";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
@@ -26,15 +26,11 @@ const DEFAULT_TOUR_PARAMS = {
     order: DEFAULT_ORDER,
     search: ""
 };
-const makeCacheKey = (params: {
-    page: number;
-    limit: number;
-    sort?: string;
-    order?: string;
-    search?: string
-}) => {
+const makeFaqCacheKey = (params: TourFaqFilterParams) => {
     const paginationKey = `${params.page}-${params.limit}-${params.sort ?? ""}-${params.order ?? ""}`;
-    const filterKey = JSON.stringify({ search: params.search || "" });
+    const filterKey = JSON.stringify({
+        search: params.search ?? "",   // ← normalise undefined to ""
+    });
     return `${paginationKey}-${filterKey}`;
 };
 
@@ -68,7 +64,7 @@ export default function TourFaqs({ companyId, tourId, active = true }: Props) {
     }, [tourParams.search, localSearch]);
 
     const cacheKey = useMemo(
-        () => makeCacheKey({
+        () => makeFaqCacheKey({
             page,
             limit,
             sort: tourParams.sort,

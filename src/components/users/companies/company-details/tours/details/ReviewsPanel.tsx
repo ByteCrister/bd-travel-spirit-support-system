@@ -406,7 +406,10 @@ export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
                     <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                         <div className="flex items-center gap-3 overflow-x-auto">
                             {([5, 4, 3, 2, 1] as const).map((star) => {
-                                const count = summary.ratingBreakdown[star] ?? 0;
+                                const ratingBreakdown = Array.isArray(summary.ratingBreakdown)
+                                    ? summary.ratingBreakdown[0] ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+                                    : summary.ratingBreakdown;
+                                const count = ratingBreakdown[star] ?? 0;
                                 const pct = Math.round((count / Math.max(1, summary.totalReviews)) * 100);
                                 return (
                                     <div key={star} className="flex items-center gap-2 min-w-[140px]">
@@ -471,7 +474,7 @@ export default function ReviewsPanel({ companyId, tourId }: ReviewsPanelProps) {
 
                     {storeError && (
                         <div className="text-sm text-rose-600 px-2 py-2 rounded-md bg-rose-50 border border-rose-100">
-                            {storeError}
+                            {typeof storeError === 'string' ? storeError : JSON.stringify(storeError)}
                         </div>
                     )}
                 </div>

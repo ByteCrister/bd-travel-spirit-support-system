@@ -34,7 +34,7 @@ import {
     MdGroup,
 } from "react-icons/md";
 
-import { TOUR_STATUS, MODERATION_STATUS, ModerationStatus, DifficultyLevel, DIFFICULTY_LEVEL, TourStatus } from "@/constants/tour.const";
+import { TOUR_STATUS, MODERATION_STATUS, ModerationStatus, DifficultyLevel, DIFFICULTY_LEVEL, TourStatus, TOUR_DISCOUNT_TYPE } from "@/constants/tour.const";
 import { TourListItemDTO } from "@/types/tour/tour.types";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 import Image from "next/image";
@@ -217,8 +217,20 @@ export function ToursTable({
                         const published = tour.publishedAt ? dateFormatter.format(new Date(tour.publishedAt)) : "—";
                         const nextDeparture = tour.nextDeparture ? dateFormatter.format(new Date(tour.nextDeparture)) : "—";
                         const basePrice = currencyFormatter(tour.basePrice.currency, tour.basePrice.amount);
+
+                        // Determine discount type: use explicit type if available,
+                        // otherwise infer from value (model caps percentage at 100, so >100 = flat)
+                        const isFlat = tour.activeDiscountType
+                            ? tour.activeDiscountType === TOUR_DISCOUNT_TYPE.FLAT_AMOUNT
+                            : (tour.activeDiscountValue ?? 0) > 100;
+
                         const discountedPrice = tour.hasActiveDiscount && tour.activeDiscountValue
-                            ? currencyFormatter(tour.basePrice.currency, tour.basePrice.amount * (1 - tour.activeDiscountValue / 100))
+                            ? currencyFormatter(
+                                tour.basePrice.currency,
+                                isFlat
+                                    ? Math.max(0, tour.basePrice.amount - tour.activeDiscountValue)
+                                    : tour.basePrice.amount * (1 - tour.activeDiscountValue / 100)
+                            )
                             : null;
 
                         return (
@@ -332,7 +344,10 @@ export function ToursTable({
                                                                 {tour.hasActiveDiscount && tour.activeDiscountValue && (
                                                                     <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 shadow-sm animate-pulse">
                                                                         <MdLocalOffer className="h-3.5 w-3.5 mr-1" />
-                                                                        -{tour.activeDiscountValue}% off
+                                                                        {isFlat
+                                                                            ? `-৳${tour.activeDiscountValue} off`
+                                                                            : `-${tour.activeDiscountValue}% off`
+                                                                        }
                                                                     </Badge>
                                                                 )}
                                                             </div>
@@ -350,7 +365,7 @@ export function ToursTable({
                                                     href={`/users/companies/${encodeId(
                                                         encodeURIComponent(companyId)
                                                     )}/${encodeId(encodeURIComponent(tour.id))}`}
-                                                    target="_blank"
+                                                    // target="_blank"
                                                     rel="noopener noreferrer"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
@@ -389,7 +404,10 @@ export function ToursTable({
                                                                     <div className="flex items-center gap-2">
                                                                         <MdLocalOffer className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                                                                         <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                                                                            Active discount applied: {tour.activeDiscountValue}% off
+                                                                            Active discount applied: {isFlat
+                                                                                ? `৳${tour.activeDiscountValue} off`
+                                                                                : `${tour.activeDiscountValue}% off`
+                                                                            }
                                                                         </span>
                                                                     </div>
                                                                 </div>

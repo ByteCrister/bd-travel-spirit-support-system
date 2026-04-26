@@ -14,6 +14,7 @@ import AssetFileModel from "@/models/assets/asset-file.model";
 import { ModerationStatus } from "@/constants/tour.const";
 import { PipelineStage } from "mongoose";
 import { TravelerModel } from "@/models/travelers/traveler.model";
+import ConnectDB from "@/config/db";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -475,7 +476,12 @@ async function getFAQsHandler(
         status: sp.get("status") as ModerationStatus ?? undefined,
     };
 
+    // Connect to Database
+    await ConnectDB();
+
     const data = await FAQResponseService.getTourFAQs(tourId.toString(), queryParams);
+
+    // console.log(JSON.stringify(data, null, 2));
 
     return { data, status: 200 };
 }

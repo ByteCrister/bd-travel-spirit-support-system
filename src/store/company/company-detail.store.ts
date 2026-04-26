@@ -39,7 +39,7 @@ interface ExtraParams extends PaginationParams {
 
 type TourFilterParams = ExtraParams;
 type EmployeeFilterParams = ExtraParams;
-type TourFaqFilterParams = ExtraParams;
+export type TourFaqFilterParams = ExtraParams;
 
 interface TourReviewFilterParams extends PaginationParams {
   search?: string;
@@ -123,7 +123,7 @@ interface CompanyDetailState {
 const makeCacheKey = (params: PaginationParams) => `${params.page}-${params.limit}-${params.sort ?? ""}-${params.order ?? ""}`;
 const defaultParams: PaginationParams = { page: 1, limit: 10 };
 const defaultReviewParams: TourReviewFilterParams = { page: 1, limit: 10 };
-const defaultFaqParams: TourFaqFilterParams = { page: 1, limit: 10 };
+const defaultFaqParams: TourFaqFilterParams = { page: 1, limit: 10, search: "" };
 
 const tourDetailLoadingKey = (id: string) => `tourDetail:${id}`;
 const employeeDetailLoadingKey = (id: string) => `employeeDetail:${id}`;
@@ -683,7 +683,12 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
           if (!state.params.tourFaqs[tourId]) state.params.tourFaqs[tourId] = { ...defaultFaqParams };
 
           const currentParams = state.params.tourFaqs[tourId];
-          const params: TourFaqFilterParams = { ...defaultFaqParams, ...currentParams, ...overrideParams };
+          const params: TourFaqFilterParams = {
+            ...defaultFaqParams,
+            ...currentParams,
+            ...overrideParams,
+            search: (overrideParams.search ?? currentParams.search ?? defaultFaqParams.search) ?? "",
+          };
           const cacheKey = makeFaqCacheKey(params);
 
           const cached = state.listCache.tourFaqs?.[tourId]?.[cacheKey];
@@ -714,6 +719,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
               if (!(res.data && res.data.data)) {
                 throw new Error("Invalid response body.");
               }
+              // console.log(JSON.stringify(res.data.data.docs, null, 2));
               const list: ListCache<TourFAQDTO> = {
                 items: res.data.data.docs,
                 total: res.data.data.total,
@@ -751,7 +757,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
         },
 
       }),
-      
+
       {
         name: "company-detail.store",
         partialize: (state) => ({
