@@ -9,8 +9,10 @@ import {
     ContactInfoDTO,
     ShiftDTO,
     DocumentDTO,
+    PaymentCardDTO,
 } from "@/types/employee/employee.types";
 import { EMPLOYEE_STATUS, EMPLOYMENT_TYPE, EMPLOYEE_ROLE, EmployeeStatus, EmploymentType, SALARY_PAYMENT_MODE, SalaryPaymentMode } from "@/constants/employee.const";
+import { CARD_BRAND, CardBrand } from "@/constants/payment.const";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -87,6 +89,7 @@ type UpdateEmployeeForm = Partial<
         | "salary"
         | "currency"
         | "paymentMode"
+        | "paymentCard"
     >
 >;
 
@@ -162,6 +165,7 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                     avatar: d.avatar,
                     salary: d.salary,
                     paymentMode: d.paymentMode,
+                    paymentCard: d.paymentCard ?? undefined,
                     dateOfJoining: d.dateOfJoining,
                     dateOfLeaving: d.dateOfLeaving,
                     contactInfo: d.contactInfo,
@@ -292,6 +296,7 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                 salary: (form.salary ?? detail.salary) as UpdateEmployeePayload["salary"],
                 currency: (form.currency ?? detail.currency) as UpdateEmployeePayload["currency"],
                 paymentMode: form.paymentMode,
+                paymentCard: form.paymentCard ?? detail.paymentCard ?? undefined,
                 contactInfo: form.contactInfo ?? detail.contactInfo,
                 shifts: form.shifts ?? detail.shifts,
                 notes: form.notes ?? detail.notes ?? "",
@@ -318,6 +323,7 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                 salary: updated.salary,
                 currency: updated.currency,
                 paymentMode: updated.paymentMode,
+                paymentCard: updated.paymentCard ?? undefined,
                 contactInfo: updated.contactInfo,
                 shifts: updated.shifts,
                 notes: updated.notes,
@@ -954,6 +960,139 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                                         <Input value={latestEffectiveFrom(detail.salaryHistory) ?? "—"} disabled className="bg-slate-50" />
                                     </FormRow>
                                 </div>
+                            </InfoCard>
+
+                            {/* Payment Card Details */}
+                            <InfoCard icon={CreditCard} title="Payment Card">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    {/* Card Brand */}
+                                    <FormRow label="Card Brand" icon={CreditCard}>
+                                        <Select
+                                            value={form?.paymentCard?.brand ?? detail.paymentCard?.brand ?? CARD_BRAND.UNKNOWN}
+                                            onValueChange={(v) => {
+                                                const current = form?.paymentCard ?? detail.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expMonth: 1, expYear: new Date().getFullYear() };
+                                                setField("paymentCard", { ...current, brand: v as CardBrand } as PaymentCardDTO);
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Select brand" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {Object.values(CARD_BRAND).map((brand) => (
+                                                    <SelectItem key={brand} value={brand}>
+                                                        {brand.charAt(0).toUpperCase() + brand.slice(1)}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormRow>
+
+                                    {/* Last 4 Digits */}
+                                    <FormRow label="Last 4 Digits" icon={Lock}>
+                                        <Input
+                                            type="text"
+                                            inputMode="numeric"
+                                            maxLength={4}
+                                            placeholder="1234"
+                                            value={form?.paymentCard?.last4 ?? detail.paymentCard?.last4 ?? ""}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                                                const current = form?.paymentCard ?? detail.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, expMonth: 1, expYear: new Date().getFullYear() };
+                                                setField("paymentCard", { ...current, last4: val } as PaymentCardDTO);
+                                            }}
+                                            className="font-mono tracking-widest"
+                                        />
+                                    </FormRow>
+
+                                    {/* Exp Month */}
+                                    <FormRow label="Exp. Month">
+                                        <Select
+                                            value={String(form?.paymentCard?.expMonth ?? detail.paymentCard?.expMonth ?? 1)}
+                                            onValueChange={(v) => {
+                                                const current = form?.paymentCard ?? detail.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expYear: new Date().getFullYear() };
+                                                setField("paymentCard", { ...current, expMonth: parseInt(v, 10) } as PaymentCardDTO);
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Month" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                                                    <SelectItem key={m} value={String(m)}>
+                                                        {String(m).padStart(2, "0")}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormRow>
+
+                                    {/* Exp Year */}
+                                    <FormRow label="Exp. Year">
+                                        <Select
+                                            value={String(form?.paymentCard?.expYear ?? detail.paymentCard?.expYear ?? new Date().getFullYear())}
+                                            onValueChange={(v) => {
+                                                const current = form?.paymentCard ?? detail.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expMonth: 1 };
+                                                setField("paymentCard", { ...current, expYear: parseInt(v, 10) } as PaymentCardDTO);
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Year" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map((y) => (
+                                                    <SelectItem key={y} value={String(y)}>
+                                                        {y}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormRow>
+
+                                    {/* Cardholder Name */}
+                                    <div className="md:col-span-2 lg:col-span-4">
+                                        <FormRow label="Cardholder Name" icon={User}>
+                                            <Input
+                                                type="text"
+                                                placeholder="Name as shown on card"
+                                                value={form?.paymentCard?.cardholderName ?? detail.paymentCard?.cardholderName ?? ""}
+                                                onChange={(e) => {
+                                                    const current = form?.paymentCard ?? detail.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expMonth: 1, expYear: new Date().getFullYear() };
+                                                    setField("paymentCard", { ...current, cardholderName: e.target.value } as PaymentCardDTO);
+                                                }}
+                                            />
+                                        </FormRow>
+                                    </div>
+                                </div>
+
+                                {/* Card Preview */}
+                                {(form?.paymentCard?.last4 || detail.paymentCard?.last4) && (
+                                    <div className="mt-4 p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl text-white shadow-lg">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Payment Card</span>
+                                            <span className="text-sm font-bold capitalize">
+                                                {form?.paymentCard?.brand ?? detail.paymentCard?.brand ?? "unknown"}
+                                            </span>
+                                        </div>
+                                        <div className="text-lg font-mono tracking-[0.25em] mb-4">
+                                            •••• •••• •••• {form?.paymentCard?.last4 ?? detail.paymentCard?.last4}
+                                        </div>
+                                        <div className="flex justify-between items-end">
+                                            <div>
+                                                <p className="text-[10px] text-slate-400 uppercase">Cardholder</p>
+                                                <p className="text-sm font-medium">
+                                                    {form?.paymentCard?.cardholderName ?? detail.paymentCard?.cardholderName ?? "—"}
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] text-slate-400 uppercase">Expires</p>
+                                                <p className="text-sm font-medium">
+                                                    {String(form?.paymentCard?.expMonth ?? detail.paymentCard?.expMonth ?? 1).padStart(2, "0")}
+                                                    /{String(form?.paymentCard?.expYear ?? detail.paymentCard?.expYear ?? "").slice(-2)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </InfoCard>
                         </TabsContent>
 

@@ -129,6 +129,7 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
             salary: body.salary,
             currency: body.currency,
             paymentMode: body.paymentMode,
+            paymentCard: body.paymentCard ?? undefined,
             dateOfJoining: toDate(body.dateOfJoining),
             dateOfLeaving: toDate(body.dateOfLeaving),
             contactInfo: body.contactInfo,

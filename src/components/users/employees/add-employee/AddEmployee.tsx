@@ -19,6 +19,7 @@ import Image from "next/image";
 import { CreateEmployeeFormValues, createEmployeeValidationSchema } from "@/utils/validators/employee/employee.validator";
 import { CreateEmployeePayload, ShiftDTO, DayOfWeek, DocumentDTO } from "@/types/employee/employee.types";
 import { EMPLOYMENT_TYPE, SALARY_PAYMENT_MODE, SalaryPaymentMode } from "@/constants/employee.const";
+import { CARD_BRAND, CardBrand } from "@/constants/payment.const";
 import { CURRENCY } from "@/constants/tour.const";
 import {
     fileToDocumentDTO,
@@ -66,6 +67,7 @@ const getInitialValues = (): CreateEmployeeFormValues => ({
     salary: null,
     currency: CURRENCY.BDT,
     paymentMode: SALARY_PAYMENT_MODE.AUTO,
+    paymentCard: null,
     dateOfJoining: new Date(),
     contactInfo: { phone: "", email: "", emergencyContact: { name: "", phone: "", relation: "" } },
     shifts: [],
@@ -238,6 +240,7 @@ export default function AddEmployeePage() {
                 salary: pendingSubmission.values.salary,
                 currency: pendingSubmission.values.currency,
                 paymentMode: pendingSubmission.values.paymentMode,
+                paymentCard: pendingSubmission.values.paymentCard ?? undefined,
                 dateOfJoining: pendingSubmission.values.dateOfJoining.toISOString(),
                 contactInfo: pendingSubmission.values.contactInfo,
                 shifts: pendingSubmission.values.shifts,
@@ -581,6 +584,155 @@ export default function AddEmployeePage() {
                                                     <FormMessage>{touched.paymentMode && errors.paymentMode}</FormMessage>
                                                 </FormItem>
                                             </div>
+
+                                            {/* Payment Card Details — shown when paymentMode is AUTO */}
+                                            {values.paymentMode === SALARY_PAYMENT_MODE.AUTO && (
+                                                <div className="md:col-span-2">
+                                                    <motion.div
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: "auto" }}
+                                                        exit={{ opacity: 0, height: 0 }}
+                                                        transition={{ duration: 0.3 }}
+                                                        className="bg-white/80 backdrop-blur-sm border-2 border-green-300 rounded-xl p-5 space-y-4 shadow-inner"
+                                                    >
+                                                        <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                                                            <div className="p-1.5 bg-green-100 rounded-lg">
+                                                                <CreditCard className="h-4 w-4 text-green-600" />
+                                                            </div>
+                                                            Payment Card Details *
+                                                        </h4>
+
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            {/* Card Brand */}
+                                                            <FormItem>
+                                                                <FormLabel>Card Brand *</FormLabel>
+                                                                <Select
+                                                                    value={values.paymentCard?.brand ?? CARD_BRAND.UNKNOWN}
+                                                                    onValueChange={(v) => {
+                                                                        if (showVerificationDialog) return;
+                                                                        setFieldValue("paymentCard", {
+                                                                            ...(values.paymentCard ?? { last4: "", expMonth: 1, expYear: new Date().getFullYear(), brand: CARD_BRAND.UNKNOWN }),
+                                                                            brand: v as CardBrand,
+                                                                        });
+                                                                    }}
+                                                                    disabled={showVerificationDialog}
+                                                                >
+                                                                    <SelectTrigger className="bg-white/80 border-green-300 focus:border-green-500">
+                                                                        <SelectValue placeholder="Select card brand" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {Object.values(CARD_BRAND).map((brand) => (
+                                                                            <SelectItem key={brand} value={brand}>
+                                                                                {brand.charAt(0).toUpperCase() + brand.slice(1)}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </FormItem>
+
+                                                            {/* Last 4 Digits */}
+                                                            <FormItem>
+                                                                <FormLabel>Last 4 Digits *</FormLabel>
+                                                                <Input
+                                                                    type="text"
+                                                                    inputMode="numeric"
+                                                                    maxLength={4}
+                                                                    placeholder="1234"
+                                                                    disabled={showVerificationDialog}
+                                                                    value={values.paymentCard?.last4 ?? ""}
+                                                                    onChange={(e) => {
+                                                                        const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                                                                        setFieldValue("paymentCard", {
+                                                                            ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, expMonth: 1, expYear: new Date().getFullYear() }),
+                                                                            last4: val,
+                                                                        });
+                                                                    }}
+                                                                    className="bg-white/80 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 font-mono tracking-widest"
+                                                                />
+                                                            </FormItem>
+
+                                                            {/* Expiration Month */}
+                                                            <FormItem>
+                                                                <FormLabel>Exp. Month *</FormLabel>
+                                                                <Select
+                                                                    value={String(values.paymentCard?.expMonth ?? 1)}
+                                                                    onValueChange={(v) => {
+                                                                        if (showVerificationDialog) return;
+                                                                        setFieldValue("paymentCard", {
+                                                                            ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expYear: new Date().getFullYear() }),
+                                                                            expMonth: parseInt(v, 10),
+                                                                        });
+                                                                    }}
+                                                                    disabled={showVerificationDialog}
+                                                                >
+                                                                    <SelectTrigger className="bg-white/80 border-green-300 focus:border-green-500">
+                                                                        <SelectValue placeholder="Month" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                                                                            <SelectItem key={m} value={String(m)}>
+                                                                                {String(m).padStart(2, "0")}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </FormItem>
+
+                                                            {/* Expiration Year */}
+                                                            <FormItem>
+                                                                <FormLabel>Exp. Year *</FormLabel>
+                                                                <Select
+                                                                    value={String(values.paymentCard?.expYear ?? new Date().getFullYear())}
+                                                                    onValueChange={(v) => {
+                                                                        if (showVerificationDialog) return;
+                                                                        setFieldValue("paymentCard", {
+                                                                            ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expMonth: 1 }),
+                                                                            expYear: parseInt(v, 10),
+                                                                        });
+                                                                    }}
+                                                                    disabled={showVerificationDialog}
+                                                                >
+                                                                    <SelectTrigger className="bg-white/80 border-green-300 focus:border-green-500">
+                                                                        <SelectValue placeholder="Year" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map((y) => (
+                                                                            <SelectItem key={y} value={String(y)}>
+                                                                                {y}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </FormItem>
+
+                                                            {/* Cardholder Name */}
+                                                            <div className="md:col-span-2">
+                                                                <FormItem>
+                                                                    <FormLabel>Cardholder Name</FormLabel>
+                                                                    <Input
+                                                                        type="text"
+                                                                        placeholder="Name as shown on card"
+                                                                        disabled={showVerificationDialog}
+                                                                        value={values.paymentCard?.cardholderName ?? ""}
+                                                                        onChange={(e) => {
+                                                                            setFieldValue("paymentCard", {
+                                                                                ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expMonth: 1, expYear: new Date().getFullYear() }),
+                                                                                cardholderName: e.target.value,
+                                                                            });
+                                                                        }}
+                                                                        className="bg-white/80 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200"
+                                                                    />
+                                                                </FormItem>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-start gap-2 text-sm text-gray-600 mt-2">
+                                                            <Info className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                                            <span>Card details are stored securely and used only for automatic salary disbursement.</span>
+                                                        </div>
+                                                    </motion.div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

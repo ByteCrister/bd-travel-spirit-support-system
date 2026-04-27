@@ -33,7 +33,7 @@ type TourLeanPopulated =
     };
 
 /**
- * GET api/operations/tours/v1
+ * GET api/users/companies/v1/[companyId]/tours
  * Fetch paginated & filtered tours
  */
 const GetTourListHandler = async (req: NextRequest) => {

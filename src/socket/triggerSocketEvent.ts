@@ -1,32 +1,40 @@
-// G:\Projects\meeting-sync\src\utils\socket\triggerSocketEvent.ts (next.js)
-import { SOCKET_NAMESPACES, SocketNamespaces, SocketTTriggerTypes } from "@/constants/socket.const";
+// G:\Projects\bd-travel-spirit-support-system\src\socket\triggerSocketEvent.ts (next.js)
+import { SOCKET_NAMESPACES, SocketNamespacesTypes, SocketTTriggerTypes } from "@/constants/socket.const";
 import axios from "axios";
 
 interface TriggerSocketParams {
     userId: string;
     type: SocketTTriggerTypes;
-    triggeredData: unknown;
-    namespace?: SocketNamespaces;
+    data: unknown;
+    namespace?: SocketNamespacesTypes;
 }
 
 export const triggerSocketEvent = async ({
     userId,
     type,
-    triggeredData,
-    namespace = SOCKET_NAMESPACES.USER_CHAT,
+    data,
+    namespace = SOCKET_NAMESPACES.USER_ONLINE,
 }: TriggerSocketParams) => {
     try {
+        const SOCKET_API_URL = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL || process.env.SOCKET_SERVER_URL
+        const SOCKET_API_KEY = process.env.SOCKET_API_SECRET_KEY || process.env.NEXT_PUBLIC_SOCKET_API_SECRET_KEY
+
+        if (!SOCKET_API_URL || !SOCKET_API_KEY) {
+            console.error("Socket API URL or Key is not defined");
+            return;
+        }
+
         await axios.post(
-            `${process.env.NEXT_PUBLIC_SOCKET_SERVER_URL || process.env.SOCKET_SERVER_URL}/api/trigger-event`,
+            `${SOCKET_API_URL}/api/trigger-socket-event`,
             {
                 userId,
                 type,
-                triggeredData,
+                data,
                 namespace,
             },
             {
                 headers: {
-                    "x-api-key": process.env.SOCKET_API_SECRET_KEY || process.env.NEXT_PUBLIC_SOCKET_API_SECRET_KEY,
+                    "x-api-key": SOCKET_API_KEY,
                 },
             }
         );

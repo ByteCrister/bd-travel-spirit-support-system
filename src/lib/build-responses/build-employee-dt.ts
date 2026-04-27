@@ -4,7 +4,7 @@ import AuditModel from "@/models/audit.model";
 import "@/models/assets/asset.model"; // for populate
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
 import { AuditLog } from "@/types/user/current-user.types";
-import { ContactInfoDTO, DocumentDTO, EmployeeDetailDTO, PayrollRecordDTO, SalaryHistoryDTO, UserSummaryDTO, CurrentMonthPaymentStatusDTO } from "@/types/employee/employee.types";
+import { ContactInfoDTO, DocumentDTO, EmployeeDetailDTO, PaymentCardDTO, PayrollRecordDTO, SalaryHistoryDTO, UserSummaryDTO, CurrentMonthPaymentStatusDTO } from "@/types/employee/employee.types";
 import { UserRole } from "@/constants/user.const";
 import { ClientSession } from "mongoose";
 import { PopulatedAssetLean } from "@/types/common/populated-asset.types";
@@ -261,6 +261,15 @@ export async function buildEmployeeDTO(
         salary: employee.salary,
         currency: employee.currency,
         paymentMode: employee.paymentMode,
+        paymentCard: employee.paymentCard
+            ? {
+                  brand: employee.paymentCard.brand,
+                  last4: employee.paymentCard.last4,
+                  expMonth: employee.paymentCard.expMonth,
+                  expYear: employee.paymentCard.expYear,
+                  cardholderName: employee.paymentCard.cardholderName,
+              } as PaymentCardDTO
+            : undefined,
         currentMonthPayment, // Added current month payment status
         salaryHistory,
         dateOfJoining: employee.dateOfJoining.toISOString(),

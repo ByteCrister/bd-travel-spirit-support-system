@@ -7,6 +7,7 @@ import {
   PayrollStatus,
   SalaryPaymentMode,
 } from "@/constants/employee.const";
+import { CardBrand } from "@/constants/payment.const";
 import { Currency } from "@/constants/tour.const";
 import { AuditLog } from "../user/current-user.types";
 
@@ -69,6 +70,15 @@ export interface PayrollRecordDTO {
   paidBy?: ObjectIdString; // admin/user who paid manually
 }
 
+/** Payment card details embedded on employee */
+export interface PaymentCardDTO {
+  brand: CardBrand;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  cardholderName?: string;
+}
+
 export interface UserSummaryDTO {
   name: string;
   email: string;
@@ -114,6 +124,7 @@ export interface EmployeeListItemDTO {
   salary: number;
   currency: string;
   paymentMode: SalaryPaymentMode; // auto | manual
+  paymentCard?: PaymentCardDTO;   // card details for auto payments
   currentMonthPayment?: CurrentMonthPaymentStatusDTO; // current month payment status
 
   // Dates
@@ -156,6 +167,7 @@ export interface EmployeeDetailDTO {
   currency: Currency;
   salaryHistory: SalaryHistoryDTO[];
   paymentMode: SalaryPaymentMode; // auto | manual
+  paymentCard?: PaymentCardDTO;   // card details for auto payments
   currentMonthPayment?: CurrentMonthPaymentStatusDTO; // current month payment status
 
   // Dates
@@ -190,6 +202,7 @@ export interface CreateEmployeePayload {
   salary: number | null;
   currency: Currency;
   paymentMode: SalaryPaymentMode; // auto | manual
+  paymentCard?: PaymentCardDTO;   // card details (required if paymentMode is auto)
   dateOfJoining: ISODateString;
   contactInfo: ContactInfoDTO; // phone is required
   shifts: ShiftDTO[];

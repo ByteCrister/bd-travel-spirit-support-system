@@ -1,7 +1,8 @@
 // /types/chatMessage.types.ts
 
 import { ModerationStatusType } from "@/constants/chatmessage.const";
-import { USER_ROLE } from "@/constants/user.const";
+import { UserRole } from "@/constants/user.const";
+import { ApiResponse } from "./common/api.types";
 
 /**
  * =========================
@@ -14,7 +15,7 @@ export interface IUserRef {
     _id: string;
     name: string;
     avatar?: string;
-    role: USER_ROLE;
+    role: UserRole;
 }
 
 /** Chat message entity (frontend-safe, no mongoose Document) */
@@ -81,13 +82,6 @@ export interface ChatMessageQuery {
  * API RESPONSE TYPES
  * =========================
  */
-
-export interface ApiResponse<T> {
-    success: boolean;
-    message?: string;
-    data?: T;
-    errors?: Record<string, string>;
-}
 
 export interface PaginatedResponse<T> {
     items: T[];

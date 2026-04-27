@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { StatsBar } from './StatsBar';
 import { UserSidebar } from './UserSidebar';
 import { ChatWindow } from './ChatWindow';
@@ -14,11 +14,12 @@ import {
 } from '@/components/ui/accordion';
 import { FiMenu, FiX, FiBarChart2 } from 'react-icons/fi';
 import { useChatMessageStore } from '@/store/chat-message.store';
+import { useCurrentUserStore } from '@/store/current-user.store';
 import { Breadcrumbs } from '../../../global/Breadcrumbs';
 
 export default function CustomerSupportPage() {
-    // TODO: replace with your auth/session user id provider
-    const adminId = useMemo(() => 'ADMIN_ID_FROM_AUTH', []);
+    const { baseUser } = useCurrentUserStore();
+    const adminId = baseUser?._id ?? '';
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
