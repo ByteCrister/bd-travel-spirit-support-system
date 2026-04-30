@@ -1,55 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-
-interface Admin {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  isOnline: boolean;
-  role: string;
-}
-
-const mockAdmins: Admin[] = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    email: "sarah@travelspirit.com",
-    avatar: "/avatars/sarah.jpg",
-    isOnline: true,
-    role: "Admin",
-  },
-  {
-    id: "2",
-    name: "Mike Chen",
-    email: "mike@travelspirit.com",
-    avatar: "/avatars/mike.jpg",
-    isOnline: true,
-    role: "Support",
-  },
-  {
-    id: "3",
-    name: "Emily Davis",
-    email: "emily@travelspirit.com",
-    avatar: "/avatars/emily.jpg",
-    isOnline: false,
-    role: "Moderator",
-  },
-];
+import type { Agent } from "@/types/user/agent";
+import { useOnlineAgentsStore } from "@/store/online-agents.store";
 
 export function AdminAvatars() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [hoveredAdmin, setHoveredAdmin] = useState<string | null>(null);
-  const onlineAdmins = mockAdmins.filter(admin => admin.isOnline);
+
+  // --- store wiring ---
+  const { agents, fetchOnlineAgents } = useOnlineAgentsStore();
+
+  // fetch once when the component mounts
+  useEffect(() => {
+    fetchOnlineAgents();
+  }, [fetchOnlineAgents]);
+
+  // all agents in the store are online → no need for isOnline filtering
+  const onlineAdmins: Agent[] = Object.values(agents);
+  // --------------------
 
   const getInitials = (name: string) => {
     return name
       .split(" ")
-      .map(word => word[0])
+      .map((word) => word[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);
@@ -80,11 +57,11 @@ export function AdminAvatars() {
               key={admin.id}
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ 
+              transition={{
                 delay: index * 0.1,
                 type: "spring",
                 stiffness: 200,
-                damping: 15
+                damping: 15,
               }}
               className="relative group"
               onMouseEnter={() => setHoveredAdmin(admin.id)}
@@ -101,21 +78,21 @@ export function AdminAvatars() {
                   </AvatarFallback>
                 </Avatar>
               </motion.div>
-              
-              {/* Online indicator with pulse animation */}
-              <motion.div 
+
+              {/* Online indicator with pulse animation (always online) */}
+              <motion.div
                 className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 bg-gradient-to-r from-green-400 to-emerald-500 shadow-sm"
-                animate={{ 
+                animate={{
                   scale: [1, 1.2, 1],
-                  opacity: [1, 0.7, 1]
+                  opacity: [1, 0.7, 1],
                 }}
-                transition={{ 
+                transition={{
                   duration: 2,
                   repeat: Infinity,
-                  ease: "easeInOut"
+                  ease: "easeInOut",
                 }}
               />
-              
+
               {/* Hover tooltip */}
               <AnimatePresence>
                 {hoveredAdmin === admin.id && (
@@ -155,10 +132,10 @@ export function AdminAvatars() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.2 }}
-                          className="absolute right-0 top-10 z-50 w-64 rounded-xl border border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-2 shadow-xl shadow-slate-200/20 dark:shadow-slate-900/20"
+            className="absolute right-0 top-10 z-50 w-64 rounded-xl border border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-2 shadow-xl shadow-slate-200/20 dark:shadow-slate-900/20"
           >
             <div className="space-y-1">
-              {mockAdmins.map((admin, index) => (
+              {onlineAdmins.map((admin, index) => (
                 <motion.div
                   key={admin.id}
                   initial={{ opacity: 0, x: -10 }}
@@ -178,15 +155,16 @@ export function AdminAvatars() {
                         {getInitials(admin.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className={cn(
-                      "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900",
-                      admin.isOnline ? "bg-gradient-to-r from-green-400 to-emerald-500" : "bg-slate-400"
-                    )} />
+                    {/* Always online → green dot */}
+                    <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 bg-gradient-to-r from-green-400 to-emerald-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">{admin.name}</p>
+                    <p className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">
+                      {admin.name}
+                    </p>
+                    {/* Show only the role, no online/offline text */}
                     <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                      {admin.role} • {admin.isOnline ? "Online" : "Offline"}
+                      {admin.role}
                     </p>
                   </div>
                 </motion.div>

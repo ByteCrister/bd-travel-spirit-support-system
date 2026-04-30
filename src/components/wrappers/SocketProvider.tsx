@@ -3,35 +3,50 @@
 
 import { useEffect } from "react";
 import { useCurrentUserStore } from "@/store/current-user.store";
-import { EMIT_SOCKET, LISTEN_SOCKET, SOCKET_NAMESPACES } from "@/constants/socket.const";
+import {
+    EMIT_SOCKET,
+    LISTEN_SOCKET_AGET_EVENT,
+    LISTEN_SOCKET_CHAT_EVENT,
+    SOCKET_NAMESPACES,
+} from "@/constants/socket.const";
 import { disconnectSocket, getSocket } from "@/socket/initiateSocket";
 import { useChatMessageStore } from "@/store/chat-message.store";
 import type { ChatMessage } from "@/types/chatMessage.types";
+import { useOnlineAgentsStore } from "@/store/online-agents.store";
+import { Agent } from "@/types/user/agent";
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
     const { baseUser } = useCurrentUserStore();
     const { handleEvent } = useChatMessageStore();
+    const { fetchOnlineAgents, registerAgent, removeAgent } = useOnlineAgentsStore();
 
     useEffect(() => {
-        if (!baseUser?._id) return; // wait for user
+        // 🔓 Only require a logged‑in user – normal users have no owner_id
+        if (!baseUser?._id) return;
 
         const socket = getSocket(SOCKET_NAMESPACES.USER_ONLINE);
         socket.connect();
 
-        // Register the user once connected
+        // ── Register on connect ────────────────────────────────
         const onConnect = () => {
             console.log("Socket connected, registering user", baseUser._id);
-            socket.emit(EMIT_SOCKET.REGISTER_USER, { userId: baseUser._id });
+            socket.emit(EMIT_SOCKET.REGISTER_USER, {
+                userId: baseUser._id,
+                owner_id: baseUser.owner_id, // undefined for normal users → fine
+            });
         };
 
         socket.on("connect", onConnect);
 
-        // If already connected, register immediately
         if (socket.connected) {
             onConnect();
+            // Company users fetch initial agent list
+            if (baseUser.owner_id) {
+                fetchOnlineAgents();
+            }
         }
 
-        // ─── Chat event listeners ───────────────────────────────
+        // ── Chat listeners (work for EVERYONE) ─────────────────
         const onNewMessage = (payload: { userId: string; data: ChatMessage }) => {
             console.log("[Socket] New chat message received:", payload);
             handleEvent({ type: "created", payload: payload.data });
@@ -39,7 +54,6 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
         const onDeleteMessage = (payload: { userId: string; data: { _id: string } }) => {
             console.log("[Socket] Chat message deleted:", payload);
-            // Build a minimal ChatMessage to satisfy the event type
             handleEvent({
                 type: "deleted",
                 payload: { _id: payload.data._id } as ChatMessage,
@@ -56,25 +70,45 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
         const onUnseenCount = (payload: { userId: string; data: unknown }) => {
             console.log("[Socket] Unseen message count updated:", payload);
-            // This can trigger a sidebar refresh or badge update
-            // For now, the user-list refetch on openConversation handles this
         };
 
-        socket.on(LISTEN_SOCKET.SEND_NEW_CHAT_MESSAGE, onNewMessage);
-        socket.on(LISTEN_SOCKET.DELETE_CHAT_MESSAGE, onDeleteMessage);
-        socket.on(LISTEN_SOCKET.MARK_AS_SEEN, onMarkSeen);
-        socket.on(LISTEN_SOCKET.INCREASE_UNSEEN_MESSAGE_COUNT, onUnseenCount);
+        socket.on(LISTEN_SOCKET_CHAT_EVENT.SEND_NEW_CHAT_MESSAGE, onNewMessage);
+        socket.on(LISTEN_SOCKET_CHAT_EVENT.DELETE_CHAT_MESSAGE, onDeleteMessage);
+        socket.on(LISTEN_SOCKET_CHAT_EVENT.MARK_AS_SEEN, onMarkSeen);
+        socket.on(LISTEN_SOCKET_CHAT_EVENT.INCREASE_UNSEEN_MESSAGE_COUNT, onUnseenCount);
 
-        // Cleanup on user change or unmount
+        // ── Agent listeners (only for company users) ────────────
+        let cleanupAgentListeners = () => { };
+
+        if (baseUser.owner_id) {
+            const onUserConnected = (payload: { data: Agent }) => {
+                registerAgent(payload.data);
+            };
+
+            const onUserDisconnected = (payload: { userId: string }) => {
+                removeAgent(payload.userId);
+            };
+
+            socket.on(LISTEN_SOCKET_AGET_EVENT.USER_CONNECTED, onUserConnected);
+            socket.on(LISTEN_SOCKET_AGET_EVENT.USER_DISCONNECTED, onUserDisconnected);
+
+            cleanupAgentListeners = () => {
+                socket.off(LISTEN_SOCKET_AGET_EVENT.USER_CONNECTED, onUserConnected);
+                socket.off(LISTEN_SOCKET_AGET_EVENT.USER_DISCONNECTED, onUserDisconnected);
+            };
+        }
+
+        // ── Cleanup on user change or unmount ───────────────────
         return () => {
             socket.off("connect", onConnect);
-            socket.off(LISTEN_SOCKET.SEND_NEW_CHAT_MESSAGE, onNewMessage);
-            socket.off(LISTEN_SOCKET.DELETE_CHAT_MESSAGE, onDeleteMessage);
-            socket.off(LISTEN_SOCKET.MARK_AS_SEEN, onMarkSeen);
-            socket.off(LISTEN_SOCKET.INCREASE_UNSEEN_MESSAGE_COUNT, onUnseenCount);
+            socket.off(LISTEN_SOCKET_CHAT_EVENT.SEND_NEW_CHAT_MESSAGE, onNewMessage);
+            socket.off(LISTEN_SOCKET_CHAT_EVENT.DELETE_CHAT_MESSAGE, onDeleteMessage);
+            socket.off(LISTEN_SOCKET_CHAT_EVENT.MARK_AS_SEEN, onMarkSeen);
+            socket.off(LISTEN_SOCKET_CHAT_EVENT.INCREASE_UNSEEN_MESSAGE_COUNT, onUnseenCount);
+            cleanupAgentListeners();
             disconnectSocket(SOCKET_NAMESPACES.USER_ONLINE);
         };
-    }, [baseUser?._id, handleEvent]); // re-run only when user ID changes
+    }, [baseUser?._id, baseUser?.owner_id, handleEvent, fetchOnlineAgents, registerAgent, removeAgent]);
 
     return <>{children}</>;
 }

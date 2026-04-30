@@ -16,6 +16,7 @@ export type AdminRole = `${USER_ROLE.ADMIN}` | `${USER_ROLE.SUPPORT}`;
  */
 export interface IBaseUser {
     _id: string;
+    owner_id: string; // employees owner id
     email: string;
     role: AdminRole;
     createdAt: string; // ISO
