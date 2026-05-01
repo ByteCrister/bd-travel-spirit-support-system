@@ -1,49 +1,143 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiSearch, FiX, FiCommand } from "react-icons/fi";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+interface SearchResult {
+  title: string;
+  route: string;   // e.g. "/users/companies/"
+  ids: string[];   // raw MongoDB ObjectId strings
+}
 
 interface SearchBarProps {
   isMobile?: boolean;
   onClose?: () => void;
 }
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
   const [searchValue, setSearchValue] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isCommandMode, setIsCommandMode] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
 
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // -----------------------------------------------------------------------
+  // Actual search function (called by debounced version and on form submit)
+  // -----------------------------------------------------------------------
+  const fetchSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/dashboard/v1/search?q=${encodeURIComponent(query)}`
+      );
+      const json = await res.json();
+      // API returns { data: { results } } with the new error handler
+      const found = json.data?.results ?? json.results ?? [];
+      setResults(found);
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Debounced version for live typing
+  const debouncedFetch = useDebouncedCallback(fetchSearch, 300);
+
+  // Trigger debounced search when searchValue changes
+  useEffect(() => {
+    if (!searchValue.trim()) {
+      setResults([]);
+      return;
+    }
+    debouncedFetch(searchValue.trim());
+    // Cancel debounce on unmount
+    return () => {
+      debouncedFetch.cancel?.();
+    };
+  }, [searchValue, debouncedFetch]);
+
+  // -----------------------------------------------------------------------
+  // Form submit: cancel any pending debounce and fetch immediately
+  // -----------------------------------------------------------------------
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchValue.trim()) {
-      if (isCommandMode) {
-        console.log("Running command:", searchValue);
-        // Handle command execution here
-      } else {
-        console.log("Searching for:", searchValue);
-        // Handle search logic here
-      }
+      debouncedFetch.cancel?.(); // cancel pending debounced call
+      fetchSearch(searchValue.trim());
     }
   };
 
-  const handleMobileToggle = () => {
-    if (isMobile) {
-      setIsExpanded(!isExpanded);
-      if (isExpanded && onClose) onClose();
-    }
-  };
-
+  // -----------------------------------------------------------------------
+  // Clear search
+  // -----------------------------------------------------------------------
   const clearSearch = () => {
     setSearchValue("");
+    setResults([]);
     inputRef.current?.focus();
   };
 
-  // Keyboard shortcut: Ctrl/⌘ + K opens command mode
+  // -----------------------------------------------------------------------
+  // Close dropdown when clicking outside
+  // -----------------------------------------------------------------------
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setResults([]);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // -----------------------------------------------------------------------
+  // Navigate on result click (encrypt IDs client‑side)
+  // -----------------------------------------------------------------------
+  const handleResultClick = async (result: SearchResult) => {
+    try {
+      const encodedIds = await Promise.all(
+        result.ids.map((rawId) => encodeId(encodeURIComponent(rawId)))
+      );
+      const path = `${result.route}${encodedIds.join("/")}`;
+      router.push(path);
+      // Reset UI
+      setSearchValue("");
+      setResults([]);
+      if (isMobile && onClose) onClose();
+    } catch (error) {
+      console.error("Failed to encrypt IDs:", error);
+    }
+  };
+
+  // -----------------------------------------------------------------------
+  // Keyboard shortcut: Ctrl/⌘ + K
+  // -----------------------------------------------------------------------
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -60,6 +154,19 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isMobile]);
 
+  // -----------------------------------------------------------------------
+  // Mobile expand/collapse
+  // -----------------------------------------------------------------------
+  const handleMobileToggle = () => {
+    if (isMobile) {
+      setIsExpanded(!isExpanded);
+      if (isExpanded && onClose) onClose();
+    }
+  };
+
+  // -----------------------------------------------------------------------
+  // Placeholder with icon
+  // -----------------------------------------------------------------------
   const PlaceholderWithIcon = () => (
     <span className="flex items-center gap-2 text-slate-400">
       <FiSearch className="h-4 w-4" />
@@ -67,6 +174,9 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
     </span>
   );
 
+  // -----------------------------------------------------------------------
+  // Input field with dropdown
+  // -----------------------------------------------------------------------
   const InputField = (
     <div className="relative flex-1">
       {/* Input */}
@@ -75,7 +185,7 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
         onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onBlur={() => setTimeout(() => setIsFocused(false), 150)}
         placeholder=""
         className={cn(
           "pl-10 pr-28 h-10 rounded-xl bg-white/80 dark:bg-slate-800/80",
@@ -83,8 +193,8 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
           "focus:bg-white dark:focus:bg-slate-800",
           "focus:border-blue-400 dark:focus:border-blue-500",
           "transition-all duration-200 backdrop-blur-sm",
-          "focus:outline-none focus:ring-0 focus:shadow-none", // 🚫 disable green browser highlight
-          isFocused && "ring-2 ring-blue-500" // 🔵 professional blue
+          "focus:outline-none focus:ring-0 focus:shadow-none",
+          isFocused && "ring-2 ring-blue-500"
         )}
       />
 
@@ -158,11 +268,45 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
           </>
         )}
       </div>
+
+      {/* Results dropdown */}
+      <AnimatePresence>
+        {results.length > 0 && (
+          <motion.div
+            ref={dropdownRef}
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.2 }}
+            className="absolute left-0 right-0 top-12 z-50 max-h-80 overflow-y-auto rounded-xl border border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-2 shadow-xl"
+          >
+            {loading && (
+              <p className="p-2 text-sm text-slate-400">Loading...</p>
+            )}
+            {results.map((item, idx) => (
+              <button
+                key={`${item.route}-${item.ids.join("-")}-${idx}`}
+                type="button"
+                onClick={() => handleResultClick(item)}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  {item.title}
+                </p>
+                <p className="text-xs text-slate-400 truncate">
+                  {item.route}...
+                </p>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 
-
-
+  // -----------------------------------------------------------------------
+  // Mobile layout
+  // -----------------------------------------------------------------------
   if (isMobile) {
     return (
       <div className="relative">
@@ -195,6 +339,9 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
     );
   }
 
+  // -----------------------------------------------------------------------
+  // Desktop layout
+  // -----------------------------------------------------------------------
   return (
     <motion.form
       onSubmit={handleSearch}
