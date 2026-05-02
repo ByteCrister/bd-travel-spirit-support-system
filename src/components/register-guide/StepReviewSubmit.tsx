@@ -82,7 +82,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
     }
 
     try {
-      const result = await emailVerificationService.verifyToken(token)
+      const result = await emailVerificationService.verifyToken(token, EMAIL_VERIFICATION_PURPOSE.GUIDE_APPLICATION)
       if (result.success) {
         showToast.success(result.message)
       } else {

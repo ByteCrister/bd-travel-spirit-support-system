@@ -1,25 +1,38 @@
-import { NOTIFICATION_PRIORITY, USER_NOTIFICATION_TYPE } from "../constants/customer-notification.const";
+// types/notification.types.ts
+import {
+    AdminNotificationType,
+    AdminNotificationPriority,
+} from "@/constants/support-system-notification.const";
 
 /**
- * Notification DTO for frontend
+ * Plain-object representation of a Support System Notification.
+ * This is the shape returned by the API and used in the frontend.
+ * It does NOT extend Mongoose Document – safe for Zustand stores and components.
  */
-export interface UserNotificationDTO {
-    id: string;
-    recipientId: string;
-    type: USER_NOTIFICATION_TYPE;
-    priority: NOTIFICATION_PRIORITY;
-
+export interface SupportSystemNotificationType {
+    _id: string;
+    type: AdminNotificationType;
     title: string;
     message: string;
     link?: string;
-
-    relatedModel?: string;   // Tour, Booking, etc.
-    relatedId?: string;
-
+    icon?: string;
+    relatedModel?: string;
+    relatedId?: string;                  // always a string once serialised
+    priority: AdminNotificationPriority;
+    meta?: Record<string, unknown>;
+    expiresAt?: string;                  // ISO date string
     isRead: boolean;
-    deliveredAt?: string;
-    readAt?: string;
-
+    isDeleted: boolean;
     createdAt: string;
     updatedAt: string;
+}
+
+/**
+ * Standard response shape for cursor‑based pagination.
+ */
+export interface FetchNotificationsResponseType {
+    notifications: SupportSystemNotificationType[];
+    nextCursor: string | null;
+    hasMore: boolean;
+    totalUnread: number;
 }

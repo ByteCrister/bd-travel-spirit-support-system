@@ -3,7 +3,8 @@ import { SOCKET_NAMESPACES, SocketNamespacesTypes, SocketTTriggerTypes } from "@
 import axios from "axios";
 
 interface TriggerSocketParams {
-    userId: string;
+    userId?: string;
+    ownerId?: string;
     type: SocketTTriggerTypes;
     data: unknown;
     namespace?: SocketNamespacesTypes;
@@ -11,6 +12,7 @@ interface TriggerSocketParams {
 
 export const triggerSocketEvent = async ({
     userId,
+    ownerId,
     type,
     data,
     namespace = SOCKET_NAMESPACES.USER_ONLINE,
@@ -28,6 +30,7 @@ export const triggerSocketEvent = async ({
             `${SOCKET_API_URL}/api/trigger-socket-event`,
             {
                 userId,
+                ownerId,
                 type,
                 data,
                 namespace,

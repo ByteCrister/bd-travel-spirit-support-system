@@ -27,6 +27,12 @@ import {
 } from "@/types/guide/register-as-guide.types";
 import { cleanupAssets } from "@/lib/cloudinary/delete.cloudinary";
 import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
+import { triggerSocketEvent } from "@/socket/triggerSocketEvent";
+import { getOwnerId } from "@/lib/helpers/get-owner-id";
+import { ADMIN_NOTIFICATION_PRIORITY, ADMIN_NOTIFICATION_TYPE } from "@/constants/support-system-notification.const";
+import { SOCKET_TRIGGERS } from "@/constants/socket.const";
+import { SupportSystemNotificationModel } from "@/models/notifications/support-system-notification.model";
+import { getCollectionName } from "@/lib/helpers/get-collection-name";
 
 /**
  * 
@@ -300,9 +306,25 @@ export default async function GuideAppPostHandler(req: NextRequest) {
     });
 
     /* ------------------------------------------------------------------------ */
-    /* STEP 7: SEND EMAIL (OUTSIDE TRANSACTION)                                  */
+    /* STEP 7: CREATE ADMIN NOTIFICATION & SEND EMAIL / SOCKET                   */
     /* ------------------------------------------------------------------------ */
 
+    // 1. Persist notification to support system notification schema
+    const notification = await SupportSystemNotificationModel.create({
+        type: ADMIN_NOTIFICATION_TYPE.NEW_GUIDE_REGISTRATION,
+        title: "New Guide Application",
+        message: `${form.companyDetails.companyName} applied to become a guide.`,
+        priority: ADMIN_NOTIFICATION_PRIORITY.HIGH,
+        relatedModel: getCollectionName(GuideModel),
+        relatedId: result.guide._id,
+        meta: {
+            guideId: result.guide._id,
+            status: result.guide.status,
+            companyName: form.companyDetails.companyName,
+        },
+    });
+
+    // 2. Send email
     await mailer(
         result.user.email,
         plainPasswordForMail
@@ -315,6 +337,24 @@ export default async function GuideAppPostHandler(req: NextRequest) {
             "You'r current password will be your next temporary password."
         )
     );
+
+    // 3. Trigger real‑time socket event with the full notification payload
+    const ownerId = (await getOwnerId())?.toString() ?? undefined;
+    await triggerSocketEvent({
+        ownerId,                                // sends to the room
+        type: SOCKET_TRIGGERS.NEW_GUIDE_REGISTRATION,
+        data: {
+            id: notification._id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            priority: notification.priority,
+            relatedModel: notification.relatedModel,
+            relatedId: notification.relatedId,
+            meta: notification.meta,
+            createdAt: notification.createdAt,
+        },
+    });
 
     return {
         data: {
