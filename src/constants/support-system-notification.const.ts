@@ -15,8 +15,8 @@ export enum ADMIN_NOTIFICATION_TYPE {
 
   // --- Password Resets ---
   GUIDE_FORGOT_PASSWORD = "guide_forgot_password", // A guide initiated password reset
-  SUPPORT_EMPLOYEE_FORGOT_PASSWORD = "support_employee_forgot_password", // Support staff password reset
-  GUIDE_EMPLOYEE_FORGOT_PASSWORD = "guide_employee_forgot_password", // A guide’s employee (sub‑account) forgot password
+  SUPPORT_EMP_FORGOT_PASSWORD = "support_emp_forgot_password", // Support staff password reset
+  GUIDE_EMP_FORGOT_PASSWORD = "guide_emp_forgot_password", // A guide’s employee (sub‑account) forgot password
 
   // --- Bookings & Transactions: This is for Guide not for Support System ---
   NEW_BOOKING = "new_booking", // A new tour/activity booking was made

@@ -9,7 +9,7 @@ import type {
 
 const URL_AFTER_API = `/dashboard/notifications/v1`
 
-interface AdminNotificationState {
+interface SupportSystemNotificationState {
     // Data
     notifications: SupportSystemNotificationType[];
     cursor: string | null;
@@ -31,7 +31,7 @@ interface AdminNotificationState {
     reset: () => void;
 }
 
-export const useAdminNotificationStore = create<AdminNotificationState>()(
+export const useSupportSystemNotificationStore = create<SupportSystemNotificationState>()(
     devtools(
         (set, get) => ({
             notifications: [],

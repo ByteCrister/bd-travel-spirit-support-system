@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { getSocket } from "@/socket/initiateSocket";
-import { useAdminNotificationStore } from "@/store/notification.store";
+import { useSupportSystemNotificationStore } from "@/store/support-system-notification.store";
 import { ADMIN_NOTIFICATION_TYPE } from "@/constants/support-system-notification.const";
 import { SOCKET_NAMESPACES } from "@/constants/socket.const";
 import { SupportSystemNotificationType } from "@/types/notification.types";
@@ -17,21 +17,25 @@ const notificationMeta: Record<
   ADMIN_NOTIFICATION_TYPE,
   { icon: React.ElementType; color: string }
 > = {
-  [ADMIN_NOTIFICATION_TYPE.NEW_USER_SIGNUP]: { icon: FiMessageCircle, color: "bg-blue-500" },
-  [ADMIN_NOTIFICATION_TYPE.NEW_GUIDE_REGISTRATION]: { icon: FiMessageCircle, color: "bg-green-500" },
-  [ADMIN_NOTIFICATION_TYPE.GUIDE_VERIFIED]: { icon: FiSettings, color: "bg-emerald-500" },
-  [ADMIN_NOTIFICATION_TYPE.GUIDE_FORGOT_PASSWORD]: { icon: FiAlertCircle, color: "bg-yellow-500" },
-  [ADMIN_NOTIFICATION_TYPE.SUPPORT_EMPLOYEE_FORGOT_PASSWORD]: { icon: FiAlertCircle, color: "bg-orange-500" },
-  [ADMIN_NOTIFICATION_TYPE.GUIDE_EMPLOYEE_FORGOT_PASSWORD]: { icon: FiAlertCircle, color: "bg-orange-500" },
+  [ADMIN_NOTIFICATION_TYPE.NEW_USER_SIGNUP]: { icon: FiMessageCircle, color: "bg-blue-500" }, /* --- Part of Support System --- */
+  [ADMIN_NOTIFICATION_TYPE.NEW_GUIDE_REGISTRATION]: { icon: FiMessageCircle, color: "bg-green-500" }, /* --- Part of Support System --- */
+
+  [ADMIN_NOTIFICATION_TYPE.GUIDE_VERIFIED]: { icon: FiSettings, color: "bg-emerald-500" }, /* --- Part of Support System --- */
+  [ADMIN_NOTIFICATION_TYPE.GUIDE_FORGOT_PASSWORD]: { icon: FiAlertCircle, color: "bg-yellow-500" }, /* --- Part of Support System --- */
+  [ADMIN_NOTIFICATION_TYPE.SUPPORT_EMP_FORGOT_PASSWORD]: { icon: FiAlertCircle, color: "bg-orange-500" }, /* --- Part of Support System --- */
+  [ADMIN_NOTIFICATION_TYPE.GUIDE_EMP_FORGOT_PASSWORD]: { icon: FiAlertCircle, color: "bg-orange-500" },
+
   [ADMIN_NOTIFICATION_TYPE.NEW_BOOKING]: { icon: FiMessageCircle, color: "bg-blue-500" },
   [ADMIN_NOTIFICATION_TYPE.BOOKING_CANCELLED]: { icon: FiFlag, color: "bg-red-500" },
-  [ADMIN_NOTIFICATION_TYPE.FAILED_PAYMENT]: { icon: FiAlertCircle, color: "bg-red-500" },
-  [ADMIN_NOTIFICATION_TYPE.REFUND_REQUESTED]: { icon: FiFlag, color: "bg-amber-500" },
+  [ADMIN_NOTIFICATION_TYPE.FAILED_PAYMENT]: { icon: FiAlertCircle, color: "bg-red-500" }, /* --- Part of Support System --- */
   [ADMIN_NOTIFICATION_TYPE.CONTENT_FLAGGED]: { icon: FiFlag, color: "bg-red-500" },
-  [ADMIN_NOTIFICATION_TYPE.NEW_REVIEW]: { icon: FiMessageCircle, color: "bg-purple-500" },
-  [ADMIN_NOTIFICATION_TYPE.SYSTEM_ERROR]: { icon: FiAlertCircle, color: "bg-red-600" },
-  [ADMIN_NOTIFICATION_TYPE.HIGH_TRAFFIC_ALERT]: { icon: FiAlertCircle, color: "bg-yellow-600" },
+
+  [ADMIN_NOTIFICATION_TYPE.SYSTEM_ERROR]: { icon: FiAlertCircle, color: "bg-red-600" }, /* --- Part of Support System --- */
+  [ADMIN_NOTIFICATION_TYPE.HIGH_TRAFFIC_ALERT]: { icon: FiAlertCircle, color: "bg-yellow-600" }, /* --- Part of Support System --- */
   [ADMIN_NOTIFICATION_TYPE.LOW_INVENTORY]: { icon: FiAlertCircle, color: "bg-orange-500" },
+
+  [ADMIN_NOTIFICATION_TYPE.NEW_REVIEW]: { icon: FiMessageCircle, color: "bg-purple-500" },
+  [ADMIN_NOTIFICATION_TYPE.REFUND_REQUESTED]: { icon: FiFlag, color: "bg-amber-500" },
 };
 
 export function NotificationMenu() {
@@ -46,7 +50,7 @@ export function NotificationMenu() {
     markAsRead,
     markAllAsRead,
     addNotificationFromSocket,
-  } = useAdminNotificationStore();
+  } = useSupportSystemNotificationStore();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -67,14 +71,12 @@ export function NotificationMenu() {
       addNotificationFromSocket(payload.data);
     };
 
+    /* New guide application listener */
     socket.on(ADMIN_NOTIFICATION_TYPE.NEW_GUIDE_REGISTRATION, handleNewAdminNotification);
-    // Add more types as needed
-    socket.on(ADMIN_NOTIFICATION_TYPE.NEW_BOOKING, handleNewAdminNotification);
     socket.on(ADMIN_NOTIFICATION_TYPE.SYSTEM_ERROR, handleNewAdminNotification);
 
     return () => {
       socket.off(ADMIN_NOTIFICATION_TYPE.NEW_GUIDE_REGISTRATION, handleNewAdminNotification);
-      socket.off(ADMIN_NOTIFICATION_TYPE.NEW_BOOKING, handleNewAdminNotification);
       socket.off(ADMIN_NOTIFICATION_TYPE.SYSTEM_ERROR, handleNewAdminNotification);
     };
   }, [addNotificationFromSocket]);
