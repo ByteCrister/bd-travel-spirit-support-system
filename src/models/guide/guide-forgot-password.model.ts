@@ -2,8 +2,8 @@
 import { Document, Schema, Types, Model, ClientSession } from "mongoose";
 import { defineModel } from "@/lib/helpers/defineModel";
 import {
-    FORGOT_PASSWORD_STATUS,
-    ForgotPasswordStatus,
+  FORGOT_PASSWORD_STATUS,
+  ForgotPasswordStatus,
 } from "@/constants/guide-forgot-password.const";
 
 /**
@@ -12,28 +12,35 @@ import {
  * -----------------------------
  */
 export interface IGuideForgotPassword extends Document {
-    guideId: Types.ObjectId;
+  guideId: Types.ObjectId;
 
-    // Request info
-    reason: string;
-    status: ForgotPasswordStatus;
+  // Request info
+  reason: string;
+  status: ForgotPasswordStatus;
 
-    // Review info
-    reviewedBy?: Types.ObjectId; // support employee / super admin
-    reviewedAt?: Date;
-    rejectionReason?: string;
+  // Review info
+  reviewedBy?: Types.ObjectId; // support employee / super admin
+  reviewedAt?: Date;
+  rejectionReason?: string;
 
-    // Security / lifecycle
-    expiresAt: Date;
-    emailSentAt?: Date;
+  // Security / lifecycle
+  expiresAt: Date;
+  emailSentAt?: Date;
 
-    createdAt: Date;
-    updatedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
 
-    // Instance methods
-    approve(adminId: Types.ObjectId, options?: { session?: ClientSession | null }): Promise<void>;
-    reject(adminId: Types.ObjectId, reason: string, options?: { session?: ClientSession | null }): Promise<void>;
-    markEmailSent(options?: { session?: ClientSession | null }): Promise<void>;
+  // Instance methods
+  approve(
+    adminId: Types.ObjectId,
+    options?: { session?: ClientSession | null },
+  ): Promise<void>;
+  reject(
+    adminId: Types.ObjectId,
+    reason: string,
+    options?: { session?: ClientSession | null },
+  ): Promise<void>;
+  markEmailSent(options?: { session?: ClientSession | null }): Promise<void>;
 }
 
 /**
@@ -41,24 +48,20 @@ export interface IGuideForgotPassword extends Document {
  * MODEL TYPE (OPTIONAL BUT CLEAN)
  * -----------------------------
  */
-export interface IGuideForgotPasswordModel
-    extends Model<IGuideForgotPassword> {
-    // Instance methods (transaction-safe)
-    approve(
-        adminId: Types.ObjectId,
-        options?: { session?: ClientSession | null }
-    ): Promise<void>;
+export interface IGuideForgotPasswordModel extends Model<IGuideForgotPassword> {
+  // Instance methods (transaction-safe)
+  approve(
+    adminId: Types.ObjectId,
+    options?: { session?: ClientSession | null },
+  ): Promise<void>;
 
-    reject(
-        adminId: Types.ObjectId,
-        reason: string,
-        options?: { session?: ClientSession | null }
-    ): Promise<void>;
+  reject(
+    adminId: Types.ObjectId,
+    reason: string,
+    options?: { session?: ClientSession | null },
+  ): Promise<void>;
 
-    markEmailSent(
-        options?: { session?: ClientSession | null }
-    ): Promise<void>;
-
+  markEmailSent(options?: { session?: ClientSession | null }): Promise<void>;
 }
 
 /**
@@ -67,61 +70,59 @@ export interface IGuideForgotPasswordModel
  * -----------------------------
  */
 const GuideForgotPasswordSchema = new Schema<
-    IGuideForgotPassword,
-    IGuideForgotPasswordModel
+  IGuideForgotPassword,
+  IGuideForgotPasswordModel
 >(
-    {
-        guideId: {
-            type: Schema.Types.ObjectId,
-            ref: "Guide",
-            required: true,
-            index: true,
-        },
-
-        reason: {
-            type: String,
-            required: true,
-            trim: true,
-            minlength: 10,
-            maxlength: 500,
-        },
-
-        status: {
-            type: String,
-            enum: Object.values(FORGOT_PASSWORD_STATUS),
-            default: FORGOT_PASSWORD_STATUS.PENDING,
-            index: true,
-        },
-
-        reviewedBy: {
-            type: Schema.Types.ObjectId,
-            ref: "User",
-        },
-
-        reviewedAt: {
-            type: Date,
-        },
-
-        rejectionReason: {
-            type: String,
-            trim: true,
-            maxlength: 300,
-        },
-
-        expiresAt: {
-            type: Date,
-            required: true,
-            index: true,
-        },
-
-        emailSentAt: {
-            type: Date,
-        },
+  {
+    guideId: {
+      type: Schema.Types.ObjectId,
+      ref: "Guide",
+      required: true,
     },
-    {
-        timestamps: true,
-        versionKey: false,
-    }
+
+    reason: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 10,
+      maxlength: 500,
+    },
+
+    status: {
+      type: String,
+      enum: Object.values(FORGOT_PASSWORD_STATUS),
+      default: FORGOT_PASSWORD_STATUS.PENDING,
+      index: true,
+    },
+
+    reviewedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    reviewedAt: {
+      type: Date,
+    },
+
+    rejectionReason: {
+      type: String,
+      trim: true,
+      maxlength: 300,
+    },
+
+    expiresAt: {
+      type: Date,
+      required: true,
+    },
+
+    emailSentAt: {
+      type: Date,
+    },
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+  },
 );
 
 /**
@@ -132,20 +133,17 @@ const GuideForgotPasswordSchema = new Schema<
 
 // Only one active pending request per guide
 GuideForgotPasswordSchema.index(
-    { guideId: 1 },
-    {
-        unique: true,
-        partialFilterExpression: {
-            status: FORGOT_PASSWORD_STATUS.PENDING,
-        },
-    }
+  { guideId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: FORGOT_PASSWORD_STATUS.PENDING,
+    },
+  },
 );
 
 // Auto-delete expired requests
-GuideForgotPasswordSchema.index(
-    { expiresAt: 1 },
-    { expireAfterSeconds: 0 }
-);
+GuideForgotPasswordSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 /**
  * -----------------------------
@@ -154,52 +152,52 @@ GuideForgotPasswordSchema.index(
  */
 
 GuideForgotPasswordSchema.methods.approve = async function (
-    this: IGuideForgotPassword,
-    adminId: Types.ObjectId,
-    options?: { session?: ClientSession | null }
+  this: IGuideForgotPassword,
+  adminId: Types.ObjectId,
+  options?: { session?: ClientSession | null },
 ) {
-    const session = options?.session ?? null;
+  const session = options?.session ?? null;
 
-    if (this.status !== FORGOT_PASSWORD_STATUS.PENDING) {
-        throw new Error("Only pending requests can be approved");
-    }
+  if (this.status !== FORGOT_PASSWORD_STATUS.PENDING) {
+    throw new Error("Only pending requests can be approved");
+  }
 
-    this.status = FORGOT_PASSWORD_STATUS.APPROVED;
-    this.reviewedBy = adminId;
-    this.reviewedAt = new Date();
+  this.status = FORGOT_PASSWORD_STATUS.APPROVED;
+  this.reviewedBy = adminId;
+  this.reviewedAt = new Date();
 
-    await this.save({ session });
+  await this.save({ session });
 };
 
 GuideForgotPasswordSchema.methods.reject = async function (
-    this: IGuideForgotPassword,
-    adminId: Types.ObjectId,
-    reason: string,
-    options?: { session?: ClientSession | null }
+  this: IGuideForgotPassword,
+  adminId: Types.ObjectId,
+  reason: string,
+  options?: { session?: ClientSession | null },
 ) {
-    const session = options?.session ?? null;
+  const session = options?.session ?? null;
 
-    if (this.status !== FORGOT_PASSWORD_STATUS.PENDING) {
-        throw new Error("Only pending requests can be rejected");
-    }
+  if (this.status !== FORGOT_PASSWORD_STATUS.PENDING) {
+    throw new Error("Only pending requests can be rejected");
+  }
 
-    this.status = FORGOT_PASSWORD_STATUS.REJECTED;
-    this.reviewedBy = adminId;
-    this.reviewedAt = new Date();
-    this.rejectionReason = reason;
+  this.status = FORGOT_PASSWORD_STATUS.REJECTED;
+  this.reviewedBy = adminId;
+  this.reviewedAt = new Date();
+  this.rejectionReason = reason;
 
-    await this.save({ session });
+  await this.save({ session });
 };
 
 GuideForgotPasswordSchema.methods.markEmailSent = async function (
-    this: IGuideForgotPassword,
-    options?: { session?: ClientSession | null }
+  this: IGuideForgotPassword,
+  options?: { session?: ClientSession | null },
 ) {
-    const session = options?.session ?? null;
+  const session = options?.session ?? null;
 
-    this.emailSentAt = new Date();
+  this.emailSentAt = new Date();
 
-    await this.save({ session });
+  await this.save({ session });
 };
 
 /**
@@ -207,10 +205,9 @@ GuideForgotPasswordSchema.methods.markEmailSent = async function (
  * EXPORT USING YOUR WRAPPER ✅
  * -----------------------------
  */
-const GuideForgotPasswordModel =
-    defineModel<IGuideForgotPassword, IGuideForgotPasswordModel>(
-        "GuideForgotPassword",
-        GuideForgotPasswordSchema
-    );
+const GuideForgotPasswordModel = defineModel<
+  IGuideForgotPassword,
+  IGuideForgotPasswordModel
+>("GuideForgotPassword", GuideForgotPasswordSchema);
 
 export default GuideForgotPasswordModel;

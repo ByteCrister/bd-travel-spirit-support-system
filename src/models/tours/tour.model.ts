@@ -42,7 +42,7 @@ import { FilterQuery } from "mongoose";
 import { ClientSession } from "mongoose";
 import { Schema, Types, Document, Model, UpdateQuery } from "mongoose";
 import { HydratedEmployeeDocument } from "../employees/employees.model";
-import generateTourCode from "@/lib/helpers/generateTourCode";
+import generateTourCode from "@/lib/helpers/generate-tour-code";
 
 // =============== PRICE & DISCOUNT TYPES ===============
 export type IPrice = {
@@ -52,8 +52,8 @@ export type IPrice = {
 
 export type IDiscount = {
   type: TourDiscountType;
-  discount: TourDiscount;
-  value: number; // Percentage 0-100
+  discount: TourDiscount; 
+  value: number; // For percentage, value between 0-100; for flat amount, value in currency units
   code?: string;
   validFrom?: Date;
   validUntil?: Date;

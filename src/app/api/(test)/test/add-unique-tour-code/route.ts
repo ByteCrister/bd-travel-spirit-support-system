@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import generateTourCode from '@/lib/helpers/generateTourCode';
+import generateTourCode from '@/lib/helpers/generate-tour-code';
 import ConnectDB from '@/config/db';
 import TourModel from '@/models/tours/tour.model';
 

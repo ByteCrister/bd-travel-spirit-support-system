@@ -14,6 +14,7 @@ import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
 import { buildGuidePasswordDto } from '@/lib/build-responses/build-guide-password-dto';
 import guideUpdatePasswordRejectHtml from '@/lib/html/guide-password-reject.html';
 import { mailer } from '@/config/node-mailer';
+import GuideModel from '@/models/guide/guide.model';
 
 interface RouteParams {
     params: Promise<{
@@ -29,7 +30,6 @@ async function rejectRequestHandler(
     request: NextRequest,
     { params }: RouteParams
 ): Promise<HandlerResult<PasswordRequestDto>> {
-
     await ConnectDB();
 
     const id = resolveMongoId((await params).id);
@@ -38,7 +38,6 @@ async function rejectRequestHandler(
         throw new ApiError('Invalid request ID format', 400);
     }
 
-    // ---- BODY ----
     let body: RejectRequestBody;
     try {
         body = await request.json();
@@ -60,7 +59,6 @@ async function rejectRequestHandler(
 
     const requestId = new mongoose.Types.ObjectId(id);
 
-    // ---- ADMIN FROM SESSION (like approve) ----
     const adminObjectId = await getUserIdFromSession();
 
     if (!adminObjectId) {
@@ -69,33 +67,47 @@ async function rejectRequestHandler(
 
     await VERIFY_USER_ROLE.SUPPORT(adminObjectId);
 
-    let givenReason: string | null = null;
+    let userEmail: string | null = null;
 
     const updatedRequest = await withTransaction(async (session) => {
-
-        const requestDoc = await GuideForgotPasswordModel.findById(requestId)
+        // Fetch request with guide and user email
+        const requestWithGuide = await GuideForgotPasswordModel.findById(requestId)
+            .populate<{ guideId: { owner: { user: { email: string } } } }>({
+                path: 'guideId',
+                model: GuideModel,
+                select: 'owner.user',
+                populate: {
+                    path: 'owner.user',
+                    select: 'email'
+                }
+            })
             .session(session || undefined);
 
-        if (!requestDoc) {
+        if (!requestWithGuide) {
             throw new ApiError('Password reset request not found', 404);
         }
 
-        if (requestDoc.status === FORGOT_PASSWORD_STATUS.APPROVED) {
+        if (requestWithGuide.status === FORGOT_PASSWORD_STATUS.APPROVED) {
             throw new ApiError('Request is already approved', 400);
         }
 
-        if (requestDoc.status === FORGOT_PASSWORD_STATUS.REJECTED) {
+        if (requestWithGuide.status === FORGOT_PASSWORD_STATUS.REJECTED) {
             throw new ApiError('Request is already rejected', 400);
         }
 
-        if (requestDoc.expiresAt < new Date()) {
+        if (requestWithGuide.expiresAt < new Date()) {
             throw new ApiError('Cannot reject an expired request', 400);
         }
 
-        givenReason = trimmedReason;
+        const guide = requestWithGuide.guideId;
+        if (!guide?.owner?.user || !guide.owner.user.email) {
+            throw new ApiError('Associated user email not found', 404);
+        }
+
+        userEmail = guide.owner.user.email;
 
         // Call model method
-        await requestDoc.reject(
+        await requestWithGuide.reject(
             new Types.ObjectId(adminObjectId),
             trimmedReason,
             { session }
@@ -104,12 +116,15 @@ async function rejectRequestHandler(
         return await buildGuidePasswordDto(id.toString(), session);
     });
 
-    if (!givenReason) {
-        throw new ApiError("Password not updated yet!");
+    // Send rejection email (outside transaction)
+    if (userEmail) {
+        try {
+            const html = guideUpdatePasswordRejectHtml(userEmail, trimmedReason);
+            await mailer(userEmail, "Guide Password Reset Rejected", html);
+        } catch (emailError) {
+            console.error("Failed to send rejection email:", emailError);
+        }
     }
-
-    const html = guideUpdatePasswordRejectHtml(updatedRequest.user.email, givenReason);
-    await mailer("Guide Reject Password Rest", updatedRequest.user.email, html);
 
     return {
         data: updatedRequest,
