@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Clock, LogOut, Lock, UserCircle, Zap, Sparkles } from "lucide-react";
+import { Shield, Clock, LogOut, Lock, UserCircle, Zap, Sparkles, RefreshCw } from "lucide-react";
 import { useCurrentUserStore } from "@/store/current-user.store";
 import ProfileLoading from "./skeletons/ProfileLoading";
 import AuditLogsSection from "./AuditLogsSection";
@@ -48,6 +48,12 @@ export default function ProfilePage() {
 
     const handleLogoutClick = useCallback(() => setShowLogoutConfirm(true), []);
     const handleLogoutCancel = useCallback(() => setShowLogoutConfirm(false), []);
+
+    const handleRefresh = useCallback(() => {
+        if (baseUser?.role) {
+            fetchFullUser(baseUser.role, { force: true });
+        }
+    }, [baseUser?.role, fetchFullUser]);
 
     useEffect(() => {
         const loadUserData = async () => {
@@ -195,6 +201,23 @@ export default function ProfilePage() {
                                     <Sparkles className="h-4 w-4" />
                                     {baseUser.role}
                                 </Badge>
+                            </motion.div>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.35, type: "spring" }}
+                            >
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleRefresh}
+                                    disabled={fullMeta.loading}
+                                    className="gap-2 border-slate-300 dark:border-slate-700 hover:border-primary/30 dark:hover:border-primary/30 hover:bg-primary/5"
+                                    title="Refresh profile data"
+                                >
+                                    <RefreshCw className={`h-4 w-4 ${fullMeta.loading ? "animate-spin" : ""}`} />
+                                    <span className="hidden sm:inline">Refresh</span>
+                                </Button>
                             </motion.div>
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
