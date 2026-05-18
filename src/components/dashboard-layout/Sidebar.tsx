@@ -23,7 +23,7 @@ import { HiOutlineChartSquareBar, HiOutlineUser } from 'react-icons/hi';
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { Compass, KeyRound, ShieldCheck } from "lucide-react";
+import { Compass, KeyRound, ShieldCheck, Sparkles } from "lucide-react";
 import { MdBusiness, MdTravelExplore } from 'react-icons/md';
 import { usePathname } from "next/navigation";
 import { TbPasswordFingerprint, TbReceipt } from "react-icons/tb";
@@ -58,6 +58,7 @@ const navigationGroups: NavGroup[] = [
       { href: "/dashboard/overview", label: "Dashboard", icon: FiHome },
       { href: "/dashboard/statistics", label: "Statistics", icon: HiOutlineChartSquareBar, adminOnly: true },
       { href: "/dashboard/profile", label: "Profile", icon: HiOutlineUser },
+      { href: "/dashboard/ai-chat", label: "AI Assistant", icon: Sparkles },
     ],
   },
   {
