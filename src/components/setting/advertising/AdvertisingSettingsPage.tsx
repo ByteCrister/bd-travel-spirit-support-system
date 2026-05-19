@@ -58,7 +58,7 @@ const AdvertisingSettingsPage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50">
+        <div className="min-h-screen p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50">
             <Breadcrumbs items={breadcrumbItems} />
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}

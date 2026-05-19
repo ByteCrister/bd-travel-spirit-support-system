@@ -47,8 +47,8 @@ export function StatisticsPage() {
     }, [activeTab, refreshSection]);
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <Breadcrumbs items={breadcrumbItems} />
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 ">
+            <Breadcrumbs className="p-4 lg:p-6" items={breadcrumbItems} />
 
             {/* Header */}
             <motion.header

@@ -78,7 +78,7 @@ export default function EmployeesPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-4 lg:p-6">
             <Breadcrumbs items={breadcrumbItems} />
 
             <div className="flex items-center justify-between">

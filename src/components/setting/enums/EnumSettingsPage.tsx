@@ -44,7 +44,7 @@ export default function EnumSettingsPage(): JSX.Element {
     const StatusIcon = currentStatus.icon;
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+        <main className="min-h-screen p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
             <Breadcrumbs items={breadcrumbItems} />
             <div className="max-w-7xl mx-auto">
                 <motion.div

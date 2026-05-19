@@ -49,10 +49,10 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                     className="flex h-full flex-col overflow-hidden md:w-80 lg:w-72"
                     style={{
                         background:
-                            "linear-gradient(180deg, rgba(252,252,253,0.97) 0%, rgba(246,246,249,0.97) 100%)",
+                            "linear-gradient(180deg, rgba(239,246,255,0.97) 0%, rgba(219,234,254,0.97) 100%)",
                         backdropFilter: "blur(20px)",
                         WebkitBackdropFilter: "blur(20px)",
-                        borderRight: "1px solid rgba(200,200,210,0.5)",
+                        borderRight: "1px solid rgba(147,197,253,0.5)",
                         boxShadow: "1px 0 0 0 rgba(255,255,255,0.7)",
                         minWidth: open ? undefined : 0,
                     }}
@@ -60,7 +60,7 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                     {/* Header */}
                     <header
                         className="shrink-0 p-3"
-                        style={{ borderBottom: "1px solid rgba(200,200,210,0.4)" }}
+                        style={{ borderBottom: "1px solid rgba(147,197,253,0.4)" }}
                     >
                         <motion.button
                             type="button"
@@ -69,16 +69,16 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                             whileTap={{ scale: 0.98 }}
                             className="relative w-full overflow-hidden rounded-xl px-4 py-2.5 text-sm font-medium text-white"
                             style={{
-                                background: "linear-gradient(145deg, #2a2a2a 0%, #111111 100%)",
+                                background: "linear-gradient(145deg, #1d4ed8 0%, #1e3a8a 100%)",
                                 boxShadow:
-                                    "0 0 0 1px rgba(255,255,255,0.10) inset, 0 3px 12px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.2)",
+                                    "0 0 0 1px rgba(255,255,255,0.15) inset, 0 3px 12px rgba(29,78,216,0.35), 0 1px 2px rgba(30,58,138,0.3)",
                                 fontFamily: "var(--font-dm-sans), sans-serif",
                                 letterSpacing: "-0.01em",
                             }}
                         >
                             {/* Gloss */}
                             <span
-                                className="pointer-events-none absolute inset-x-3 top-1 h-[45%] rounded-lg opacity-[0.15]"
+                                className="pointer-events-none absolute inset-x-3 top-1 h-[45%] rounded-lg opacity-[0.2]"
                                 style={{ background: "linear-gradient(180deg, #fff 0%, transparent 100%)" }}
                             />
                             <span className="relative flex items-center justify-center gap-2">
@@ -92,13 +92,13 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                     <div className="shrink-0 px-4 pb-1 pt-4">
                         <span
                             className="text-[10px] font-semibold uppercase tracking-[0.12em]"
-                            style={{ color: "#a1a1aa", fontFamily: "var(--font-dm-sans), sans-serif" }}
+                            style={{ color: "#93c5fd", fontFamily: "var(--font-dm-sans), sans-serif" }}
                         >
                             Recent chats
                         </span>
                     </div>
 
-                    {/* Scrollable list — only this part scrolls */}
+                    {/* Scrollable list */}
                     <section
                         ref={listRef}
                         onScroll={handleScroll}
@@ -113,7 +113,7 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                                             className="h-[64px] w-full rounded-xl"
                                             style={{
                                                 background:
-                                                    "linear-gradient(90deg, rgba(220,220,225,0.5) 0%, rgba(235,235,240,0.5) 50%, rgba(220,220,225,0.5) 100%)",
+                                                    "linear-gradient(90deg, rgba(191,219,254,0.5) 0%, rgba(219,234,254,0.5) 50%, rgba(191,219,254,0.5) 100%)",
                                             }}
                                         />
                                     </li>
@@ -128,13 +128,13 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                                 <span
                                     className="flex h-12 w-12 items-center justify-center rounded-2xl"
                                     style={{
-                                        background: "rgba(200,200,210,0.25)",
-                                        border: "1px solid rgba(200,200,210,0.5)",
+                                        background: "rgba(147,197,253,0.2)",
+                                        border: "1px solid rgba(147,197,253,0.45)",
                                     }}
                                 >
-                                    <MessageSquare className="h-5 w-5" style={{ color: "#a1a1aa" }} />
+                                    <MessageSquare className="h-5 w-5" style={{ color: "#93c5fd" }} />
                                 </span>
-                                <p className="text-sm" style={{ color: "#a1a1aa", fontFamily: "var(--font-dm-sans)" }}>
+                                <p className="text-sm" style={{ color: "#93c5fd", fontFamily: "var(--font-dm-sans)" }}>
                                     No chats yet.
                                     <br />
                                     Start a new conversation.
@@ -163,7 +163,7 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
 
                         {sessionsLoading && sessions.length > 0 && (
                             <div className="flex justify-center py-4">
-                                <Loader2 className="h-4 w-4 animate-spin" style={{ color: "#a1a1aa" }} />
+                                <Loader2 className="h-4 w-4 animate-spin" style={{ color: "#93c5fd" }} />
                             </div>
                         )}
                     </section>
@@ -182,7 +182,7 @@ function SessionItem({
     isActive: boolean;
     onSelect: () => void;
 }) {
-    const MAX_PREVIEW_LENGTH = 20; // adjust to taste
+    const MAX_PREVIEW_LENGTH = 20;
     const rawPreview = session.lastMessagePreview || "No messages yet";
     const preview =
         rawPreview.length > MAX_PREVIEW_LENGTH
@@ -202,10 +202,10 @@ function SessionItem({
             className="relative w-full overflow-hidden rounded-xl px-3 py-2.5 text-left transition-all duration-200"
             style={{
                 background: isActive
-                    ? "linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(245,245,248,0.9) 100%)"
+                    ? "linear-gradient(145deg, rgba(239,246,255,0.98) 0%, rgba(219,234,254,0.92) 100%)"
                     : "transparent",
                 boxShadow: isActive
-                    ? "0 0 0 1px rgba(180,180,195,0.5), 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)"
+                    ? "0 0 0 1px rgba(147,197,253,0.55), 0 2px 8px rgba(29,78,216,0.1), 0 1px 2px rgba(29,78,216,0.06)"
                     : "none",
                 fontFamily: "var(--font-dm-sans), sans-serif",
             }}
@@ -213,30 +213,30 @@ function SessionItem({
             {isActive && (
                 <span
                     className="pointer-events-none absolute inset-x-2 top-1 h-[40%] rounded-t-lg opacity-50"
-                    style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.8) 0%, transparent 100%)" }}
+                    style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, transparent 100%)" }}
                 />
             )}
             {!isActive && (
                 <span
                     className="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition-opacity duration-200 hover:opacity-100"
-                    style={{ background: "rgba(200,200,210,0.18)" }}
+                    style={{ background: "rgba(147,197,253,0.15)" }}
                 />
             )}
             <span
                 className="relative block truncate text-sm font-semibold"
-                style={{ color: isActive ? "#18181b" : "#3f3f46", letterSpacing: "-0.01em" }}
+                style={{ color: isActive ? "#1e3a8a" : "#1e40af", letterSpacing: "-0.01em" }}
             >
                 {session.title}
             </span>
             <span
                 className="relative mt-0.5 block truncate text-xs"
-                style={{ color: isActive ? "#52525b" : "#a1a1aa" }}
+                style={{ color: isActive ? "#3b82f6" : "#93c5fd" }}
             >
                 {preview}
             </span>
             <span
                 className="relative mt-1 flex items-center gap-1 text-[10px]"
-                style={{ color: "#c4c4cc" }}
+                style={{ color: "#bfdbfe" }}
             >
                 <Clock className="h-2.5 w-2.5" />
                 {timeLabel}

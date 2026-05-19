@@ -121,7 +121,7 @@ export default function GuideBannersPage() {
     const optimisticTempKeys = Object.keys(optimisticRegistry).filter((k) => k.startsWith("temp:"));
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 space-y-6">
+        <div className="min-h-screen p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 space-y-6">
             <Breadcrumbs items={breadcrumbItems} />
             {/* Header Section */}
             <motion.div

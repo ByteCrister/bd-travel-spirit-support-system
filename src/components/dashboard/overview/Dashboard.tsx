@@ -310,7 +310,7 @@ export default function Dashboard() {
             variants={containerVariants}
             initial="hidden"
             animate="show"
-            className="space-y-7 pb-10"
+            className="space-y-7 pb-10  p-4 lg:p-6"
         >
             {/* Breadcrumbs */}
             <motion.div variants={itemVariants}>

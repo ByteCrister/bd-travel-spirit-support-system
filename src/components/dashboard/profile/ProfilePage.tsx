@@ -157,7 +157,7 @@ export default function ProfilePage() {
 
     return (
         <>
-            <div className="container mx-auto max-w-7xl px-1 sm:px-1 lg:px-2 pb-2">
+            <div className="container mx-auto max-w-7xl p-4 lg:p-6">
                 {/* Decorative background elements */}
                 <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
                     <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />

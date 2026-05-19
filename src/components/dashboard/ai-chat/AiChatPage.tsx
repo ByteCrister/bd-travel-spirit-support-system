@@ -27,19 +27,22 @@ export function AiChatPage() {
         <div
             className={`${inter.variable} ${playfair.variable} flex h-[calc(100vh-4rem)] flex-col overflow-hidden`}
             style={{
-                background: "linear-gradient(160deg, #f8f8f9 0%, #f1f1f3 50%, #ebebee 100%)",
+                background:
+                    "linear-gradient(160deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%)",
                 fontFamily: "var(--font-inter), sans-serif",
             }}
         >
-            {/* Header — fixed, never scrolls */}
+            {/* Header */}
             <div
                 className="shrink-0 border-b px-4 py-4 md:px-6"
                 style={{
-                    background: "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(248,248,250,0.88) 100%)",
+                    background:
+                        "linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(219,234,254,0.9) 100%)",
                     backdropFilter: "blur(20px) saturate(180%)",
                     WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                    borderColor: "rgba(200,200,210,0.5)",
-                    boxShadow: "0 1px 0 0 rgba(255,255,255,0.8) inset, 0 1px 3px 0 rgba(0,0,0,0.04)",
+                    borderColor: "rgba(147,197,253,0.5)",
+                    boxShadow:
+                        "0 1px 0 0 rgba(255,255,255,0.8) inset, 0 1px 3px 0 rgba(29,78,216,0.06)",
                 }}
             >
                 <Breadcrumbs items={breadcrumbItems} />
@@ -56,9 +59,9 @@ export function AiChatPage() {
                         transition={{ delay: 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                         className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
                         style={{
-                            background: "linear-gradient(145deg, #2d2d2d 0%, #1a1a1a 100%)",
+                            background: "linear-gradient(145deg, #1d4ed8 0%, #1e3a8a 100%)",
                             boxShadow:
-                                "0 0 0 1px rgba(255,255,255,0.12) inset, 0 4px 16px rgba(0,0,0,0.22), 0 1px 3px rgba(0,0,0,0.15)",
+                                "0 0 0 1px rgba(255,255,255,0.15) inset, 0 4px 16px rgba(29,78,216,0.35), 0 1px 3px rgba(30,58,138,0.25)",
                         }}
                     >
                         <Sparkles className="h-5 w-5 text-white/90" />
@@ -76,7 +79,7 @@ export function AiChatPage() {
                         <h1
                             className="text-xl font-semibold tracking-[-0.02em]"
                             style={{
-                                color: "#18181b",
+                                color: "#1e3a8a",
                                 fontFamily: "var(--font-playfair), serif",
                                 letterSpacing: "-0.025em",
                             }}
@@ -85,18 +88,25 @@ export function AiChatPage() {
                         </h1>
                         <p
                             className="mt-0.5 text-sm"
-                            style={{ color: "#71717a", fontFamily: "var(--font-inter), sans-serif" }}
+                            style={{
+                                color: "#60a5fa",
+                                fontFamily: "var(--font-inter), sans-serif",
+                            }}
                         >
-                            Query travelers, guides, tours, bookings &amp; revenue in natural language.
+                            Query travelers, guides, tours, bookings &amp; revenue in natural
+                            language.
                         </p>
                     </div>
                 </motion.div>
             </div>
 
-            {/* Body — fills remaining height, no overflow */}
+            {/* Body */}
             <div className="flex min-h-0 flex-1 overflow-hidden">
                 <SessionSidebar open={sidebarOpen} />
-                <ChatPanel sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((v) => !v)} />
+                <ChatPanel
+                    sidebarOpen={sidebarOpen}
+                    onToggleSidebar={() => setSidebarOpen((v) => !v)}
+                />
             </div>
         </div>
     );

@@ -95,7 +95,7 @@ export default function PaymentAccountsPage() {
     }
 
     return (
-        <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50/50 ${jakarta.className}`}>
+        <div className={`min-h-screen p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-white to-slate-50/50 ${jakarta.className}`}>
             <Breadcrumbs items={breadcrumbItems} />
             <motion.div
                 className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12"

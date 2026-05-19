@@ -126,7 +126,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="min-h-full p-4 lg:p-6"
+          className="min-h-full"
         >
           <div className="mx-auto max-w-7xl">{children}</div>
         </motion.main>

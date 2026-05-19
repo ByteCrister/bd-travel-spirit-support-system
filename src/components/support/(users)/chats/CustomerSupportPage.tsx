@@ -67,7 +67,7 @@ export default function CustomerSupportPage() {
 
     return (
         <div className="flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
-            <Breadcrumbs items={breadcrumbItems} className='pb-4' />
+            <Breadcrumbs items={breadcrumbItems} className="p-4 lg:p-6 xl:p-8" />
             {/* Top stats bar — collapsible with accordion */}
             <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
                 <Accordion type="single" collapsible defaultValue="stats">

@@ -36,7 +36,7 @@ export default function FooterSettingsPage() {
     const error = fetchStatus === "error";
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/20">
+        <div className="min-h-screen p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/20">
             <Breadcrumbs items={breadcrumbItems} />
             <motion.div
                 initial={{ opacity: 0, y: 30 }}

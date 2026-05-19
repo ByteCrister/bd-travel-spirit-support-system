@@ -30,7 +30,7 @@ export default function ArticleCommentsPage() {
     const totalPages = store.tableGroupCache[groupKey]?.meta.pagination.totalPages ?? 1;
 
     return (
-        <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+        <main className="min-h-screen p-4 lg:p-6 xl:p-8 bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
             <Breadcrumbs items={breadcrumbItems} />
             <div className="mx-auto max-w-7xl px-1 py-2">
                 {/* Header */}

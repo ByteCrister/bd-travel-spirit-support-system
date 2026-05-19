@@ -29,21 +29,21 @@ export function ChatPanel({ sidebarOpen, onToggleSidebar }: ChatPanelProps) {
         <section
             className="flex h-full min-w-0 flex-1 flex-col overflow-hidden"
             style={{
-                background: "linear-gradient(180deg, #f9f9fb 0%, #f4f4f7 100%)",
+                background: "linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)",
                 fontFamily: "var(--font-dm-sans), sans-serif",
             }}
         >
-            {/* Panel Header — fixed, never scrolls */}
+            {/* Panel Header */}
             <header
                 className="shrink-0 flex items-center gap-3 px-5 py-4"
                 style={{
                     background:
-                        "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(250,250,252,0.85) 100%)",
+                        "linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(219,234,254,0.9) 100%)",
                     backdropFilter: "blur(16px)",
                     WebkitBackdropFilter: "blur(16px)",
-                    borderBottom: "1px solid rgba(200,200,210,0.45)",
+                    borderBottom: "1px solid rgba(147,197,253,0.45)",
                     boxShadow:
-                        "0 1px 0 rgba(255,255,255,0.8) inset, 0 1px 4px rgba(0,0,0,0.04)",
+                        "0 1px 0 rgba(255,255,255,0.8) inset, 0 1px 4px rgba(29,78,216,0.06)",
                 }}
             >
                 {/* Sidebar toggle button */}
@@ -54,9 +54,9 @@ export function ChatPanel({ sidebarOpen, onToggleSidebar }: ChatPanelProps) {
                     whileTap={{ scale: 0.93 }}
                     className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-150"
                     style={{
-                        background: "rgba(200,200,210,0.2)",
-                        border: "1px solid rgba(200,200,210,0.4)",
-                        color: "#71717a",
+                        background: "rgba(147,197,253,0.2)",
+                        border: "1px solid rgba(147,197,253,0.4)",
+                        color: "#3b82f6",
                     }}
                     title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
                 >
@@ -74,12 +74,12 @@ export function ChatPanel({ sidebarOpen, onToggleSidebar }: ChatPanelProps) {
                     transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                     className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                     style={{
-                        background: "linear-gradient(145deg, #e8e8ec 0%, #d8d8de 100%)",
+                        background: "linear-gradient(145deg, #dbeafe 0%, #bfdbfe 100%)",
                         boxShadow:
-                            "0 0 0 1px rgba(255,255,255,0.8) inset, 0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06)",
+                            "0 0 0 1px rgba(255,255,255,0.8) inset, 0 2px 8px rgba(29,78,216,0.12), 0 1px 2px rgba(29,78,216,0.08)",
                     }}
                 >
-                    <Bot className="h-5 w-5" style={{ color: "#3f3f46" }} />
+                    <Bot className="h-5 w-5" style={{ color: "#1d4ed8" }} />
                     <span
                         className="pointer-events-none absolute inset-x-2 top-1 h-[40%] rounded-t-lg opacity-60"
                         style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, transparent 100%)" }}
@@ -92,7 +92,7 @@ export function ChatPanel({ sidebarOpen, onToggleSidebar }: ChatPanelProps) {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.05, duration: 0.3 }}
                         className="truncate text-base font-semibold"
-                        style={{ color: "#18181b", letterSpacing: "-0.02em" }}
+                        style={{ color: "#1e3a8a", letterSpacing: "-0.02em" }}
                     >
                         {activeSessionTitle}
                     </motion.h2>
@@ -105,11 +105,11 @@ export function ChatPanel({ sidebarOpen, onToggleSidebar }: ChatPanelProps) {
                         <span
                             className="h-1.5 w-1.5 rounded-full"
                             style={{
-                                background: activeSessionId ? "#22c55e" : "#a1a1aa",
+                                background: activeSessionId ? "#22c55e" : "#93c5fd",
                                 boxShadow: activeSessionId ? "0 0 6px rgba(34,197,94,0.5)" : "none",
                             }}
                         />
-                        <p className="text-xs" style={{ color: "#a1a1aa" }}>
+                        <p className="text-xs" style={{ color: "#93c5fd" }}>
                             {activeSessionId ? "Session active" : "New conversation"}
                         </p>
                     </motion.div>
@@ -119,15 +119,15 @@ export function ChatPanel({ sidebarOpen, onToggleSidebar }: ChatPanelProps) {
                 <span
                     className="flex h-8 w-8 items-center justify-center rounded-lg"
                     style={{
-                        background: "rgba(200,200,210,0.2)",
-                        border: "1px solid rgba(200,200,210,0.4)",
+                        background: "rgba(147,197,253,0.2)",
+                        border: "1px solid rgba(147,197,253,0.4)",
                     }}
                 >
-                    <Wifi className="h-3.5 w-3.5" style={{ color: "#a1a1aa" }} />
+                    <Wifi className="h-3.5 w-3.5" style={{ color: "#93c5fd" }} />
                 </span>
             </header>
 
-            {/* Error banner — fixed below header */}
+            {/* Error banner */}
             <AnimatePresence>
                 {error && (
                     <motion.div
@@ -162,7 +162,7 @@ export function ChatPanel({ sidebarOpen, onToggleSidebar }: ChatPanelProps) {
                 )}
             </AnimatePresence>
 
-            {/* Messages — this is the ONLY scrollable area */}
+            {/* Messages */}
             {messagesLoading && messages.length === 0 ? (
                 <div className="flex flex-1 items-center justify-center">
                     <div className="flex flex-col items-center gap-3">
@@ -170,9 +170,9 @@ export function ChatPanel({ sidebarOpen, onToggleSidebar }: ChatPanelProps) {
                             animate={{ rotate: 360 }}
                             transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
                             className="h-6 w-6 rounded-full border-2 border-transparent"
-                            style={{ borderTopColor: "#71717a", borderRightColor: "rgba(113,113,122,0.3)" }}
+                            style={{ borderTopColor: "#3b82f6", borderRightColor: "rgba(59,130,246,0.25)" }}
                         />
-                        <p className="text-sm" style={{ color: "#a1a1aa", fontFamily: "var(--font-dm-sans)" }}>
+                        <p className="text-sm" style={{ color: "#93c5fd", fontFamily: "var(--font-dm-sans)" }}>
                             Loading messages…
                         </p>
                     </div>
@@ -187,7 +187,7 @@ export function ChatPanel({ sidebarOpen, onToggleSidebar }: ChatPanelProps) {
                 />
             )}
 
-            {/* Input — fixed at bottom, never scrolls */}
+            {/* Input */}
             <div className="shrink-0">
                 <ChatInput onSend={sendMessage} sending={sending} />
             </div>

@@ -204,48 +204,39 @@
 
 
 
-/* Firefox (uncomment to work in Firefox, although other properties will not work!)  */
-/** {
-  scrollbar-width: thin;
-  scrollbar-color: #303030 #F2FDFF;
-}*/
-
-/* Chrome, Edge and Safari */
-/* Modern slim scrollbar – WebKit (Chrome, Edge, Safari) */
+/* Chrome, Edge and Safari – ultra-thin */
 *::-webkit-scrollbar {
-  width: 5px;          /* Slim but slightly wider for better usability */
-  height: 5px;         /* For horizontal scrollbars */
+  width: 1px;          /* was 2px, now thinner */
+  height: 1px;         /* was 5px, now thinner */
 }
 
 *::-webkit-scrollbar-track {
-  background: rgba(0, 115, 230, 0.08); /* Very light blue track */
+  background: rgba(0, 115, 230, 0.08);
   border-radius: 10px;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(0, 115, 230, 0.6); /* Semi‑transparent blue thumb */
+  background: rgba(0, 115, 230, 0.6);
   border-radius: 10px;
   transition: background 0.2s ease;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 115, 230, 0.9); /* Darker on hover */
+  background: rgba(50, 52, 53, 0.9);
 }
 
 *::-webkit-scrollbar-thumb:active {
-  background: rgba(0, 115, 230, 1);   /* Solid blue when active */
+  background: rgb(50, 51, 53);
 }
 
-/* Optional corner (appears when both scrollbars are present) */
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Firefox support (modern, keeps slim look) */
+/* Firefox – already at minimum thinness */
 * {
-  scrollbar-width: thin;               /* "thin" or "auto" – thin is slimmer */
-  scrollbar-color: rgba(0, 115, 230, 0.6) rgba(0, 115, 230, 0.08);
-  /* thumb color, track color */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(36, 38, 39, 0.6) rgba(0, 115, 230, 0.08);
 }
 
 

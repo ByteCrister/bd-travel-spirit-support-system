@@ -79,7 +79,7 @@ export function MessageList({
         <div
             ref={containerRef}
             className="flex-1 overflow-y-auto px-4 py-6"
-            style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(200,200,210,0.4) transparent" }}
+            style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(147,197,253,0.4) transparent" }}
         >
             {/* Load more indicator */}
             {hasMore && (
@@ -89,8 +89,8 @@ export function MessageList({
                             className="flex items-center gap-2 rounded-full px-4 py-1.5 text-xs"
                             style={{
                                 background: "rgba(255,255,255,0.9)",
-                                border: "1px solid rgba(200,200,210,0.5)",
-                                color: "#a1a1aa",
+                                border: "1px solid rgba(147,197,253,0.5)",
+                                color: "#93c5fd",
                                 fontFamily: "var(--font-dm-sans)",
                             }}
                         >
@@ -101,9 +101,9 @@ export function MessageList({
                         <span
                             className="rounded-full px-4 py-1.5 text-xs"
                             style={{
-                                background: "rgba(255,255,255,0.8)",
-                                border: "1px solid rgba(200,200,210,0.4)",
-                                color: "#c4c4cc",
+                                background: "rgba(239,246,255,0.85)",
+                                border: "1px solid rgba(147,197,253,0.4)",
+                                color: "#bfdbfe",
                                 fontFamily: "var(--font-dm-sans)",
                             }}
                         >
@@ -131,9 +131,9 @@ export function MessageList({
                                 transition={{ delay: 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                                 className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl"
                                 style={{
-                                    background: "linear-gradient(145deg, #e8e8ec 0%, #d4d4da 100%)",
+                                    background: "linear-gradient(145deg, #dbeafe 0%, #bfdbfe 100%)",
                                     boxShadow:
-                                        "0 0 0 1px rgba(255,255,255,0.8) inset, 0 8px 24px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.07)",
+                                        "0 0 0 1px rgba(255,255,255,0.8) inset, 0 8px 24px rgba(29,78,216,0.15), 0 2px 6px rgba(29,78,216,0.1)",
                                 }}
                             >
                                 <span
@@ -144,7 +144,7 @@ export function MessageList({
                                     className="relative h-9 w-9"
                                     viewBox="0 0 24 24"
                                     fill="none"
-                                    stroke="#71717a"
+                                    stroke="#1d4ed8"
                                     strokeWidth="1.5"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -164,7 +164,7 @@ export function MessageList({
                                 <p
                                     className="text-lg font-semibold tracking-tight"
                                     style={{
-                                        color: "#18181b",
+                                        color: "#1e3a8a",
                                         fontFamily: "var(--font-instrument-serif), serif",
                                         fontStyle: "italic",
                                         letterSpacing: "-0.02em",
@@ -174,7 +174,7 @@ export function MessageList({
                                 </p>
                                 <p
                                     className="mt-1.5 text-sm"
-                                    style={{ color: "#a1a1aa", fontFamily: "var(--font-dm-sans)" }}
+                                    style={{ color: "#93c5fd", fontFamily: "var(--font-dm-sans)" }}
                                 >
                                     Ask anything about travelers, guides, tours, bookings, or revenue.
                                 </p>
@@ -196,24 +196,24 @@ export function MessageList({
                                         className="relative overflow-hidden rounded-xl px-3 py-2.5 text-left cursor-default"
                                         style={{
                                             background:
-                                                "linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(245,245,248,0.85) 100%)",
-                                            border: "1px solid rgba(200,200,210,0.5)",
+                                                "linear-gradient(145deg, rgba(255,255,255,0.92) 0%, rgba(239,246,255,0.88) 100%)",
+                                            border: "1px solid rgba(147,197,253,0.5)",
                                             boxShadow:
-                                                "0 0 0 1px rgba(255,255,255,0.7) inset, 0 2px 6px rgba(0,0,0,0.05)",
+                                                "0 0 0 1px rgba(255,255,255,0.7) inset, 0 2px 6px rgba(29,78,216,0.07)",
                                         }}
                                     >
                                         <span
                                             className="pointer-events-none absolute inset-x-2 top-1 h-[40%] rounded-t-lg opacity-50"
-                                            style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.8) 0%, transparent 100%)" }}
+                                            style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, transparent 100%)" }}
                                         />
                                         <Icon
                                             className="relative mb-1.5 h-3.5 w-3.5"
-                                            style={{ color: "#71717a" }}
+                                            style={{ color: "#3b82f6" }}
                                         />
                                         <p
                                             className="relative text-xs font-medium"
                                             style={{
-                                                color: "#52525b",
+                                                color: "#1e40af",
                                                 fontFamily: "var(--font-dm-sans)",
                                                 lineHeight: "1.4",
                                             }}
@@ -246,14 +246,14 @@ export function MessageList({
                             <div
                                 className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full"
                                 style={{
-                                    background: "linear-gradient(145deg, #eaeaed 0%, #d8d8de 100%)",
+                                    background: "linear-gradient(145deg, #dbeafe 0%, #bfdbfe 100%)",
                                     boxShadow:
-                                        "0 0 0 1px rgba(255,255,255,0.8) inset, 0 2px 6px rgba(0,0,0,0.08)",
+                                        "0 0 0 1px rgba(255,255,255,0.8) inset, 0 2px 6px rgba(29,78,216,0.1)",
                                 }}
                             >
                                 <span
                                     className="h-3.5 w-3.5 rounded-full"
-                                    style={{ background: "rgba(113,113,122,0.3)" }}
+                                    style={{ background: "rgba(59,130,246,0.3)" }}
                                 />
                             </div>
 
@@ -262,10 +262,10 @@ export function MessageList({
                                 className="flex items-center gap-1.5 rounded-2xl px-4 py-3"
                                 style={{
                                     background:
-                                        "linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(248,248,251,0.95) 100%)",
-                                    border: "1px solid rgba(200,200,210,0.5)",
+                                        "linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(239,246,255,0.95) 100%)",
+                                    border: "1px solid rgba(147,197,253,0.5)",
                                     boxShadow:
-                                        "0 0 0 1px rgba(255,255,255,0.8) inset, 0 4px 14px rgba(0,0,0,0.06)",
+                                        "0 0 0 1px rgba(255,255,255,0.8) inset, 0 4px 14px rgba(29,78,216,0.08)",
                                     borderRadius: "18px 18px 18px 4px",
                                 }}
                             >
@@ -273,7 +273,7 @@ export function MessageList({
                                     <motion.span
                                         key={i}
                                         className="h-1.5 w-1.5 rounded-full"
-                                        style={{ background: "#c4c4cc" }}
+                                        style={{ background: "#93c5fd" }}
                                         animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
                                         transition={{
                                             duration: 1.2,

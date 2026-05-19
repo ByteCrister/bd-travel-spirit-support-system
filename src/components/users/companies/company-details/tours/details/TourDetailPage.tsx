@@ -39,7 +39,7 @@ export default function TourDetailPage({ companyId, tourId }: Props) {
     ];
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto p-4 lg:p-6">
             <Breadcrumbs items={breadcrumbItems} className="pb-4" />
             {/* Hero Header */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-blue-500 to-cyan-500 p-[1px] shadow-lg">
