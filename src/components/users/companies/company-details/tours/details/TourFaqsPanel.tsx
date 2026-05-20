@@ -36,7 +36,7 @@ const makeFaqCacheKey = (params: TourFaqFilterParams) => {
 
 const EMPTY_OBJ = {};
 
-export default function TourFaqs({ companyId, tourId, active = true }: Props) {
+export default function TourFaqsPanel({ companyId, tourId, active = true }: Props) {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
     const [forceReloadToken, setForceReloadToken] = useState(0);
