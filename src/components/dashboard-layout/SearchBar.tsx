@@ -3,19 +3,40 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiSearch, FiX, FiCommand } from "react-icons/fi";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+// ─── Neumorphism style tokens ────────────────────────────────
+const NEU_INPUT =
+  "w-full rounded-xl bg-[#E7E5E4] text-[#1E2938] placeholder:text-[#1E2938]/40 " +
+  "font-[family-name:var(--font-jetbrains-mono)] text-sm " +
+  "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+  "focus:outline-none focus:ring-2 focus:ring-[#006666]/40 transition-all duration-200";
+const NEU_BTN_ICON =
+  "rounded-lg flex items-center justify-center bg-[#E7E5E4] text-[#1E2938]/50 " +
+  "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] " +
+  "hover:text-[#006666] hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] " +
+  "transition-all duration-200";
+const NEU_BTN_ICON_ACTIVE =
+  "rounded-lg flex items-center justify-center bg-[#006666] text-white " +
+  "shadow-[inset_2px_2px_4px_#004d4d,inset_-2px_-2px_4px_#008080]";
+const NEU_DROPDOWN =
+  "absolute left-0 right-0 top-12 z-50 max-h-80 overflow-y-auto rounded-2xl " +
+  "bg-[#E7E5E4] shadow-[8px_8px_20px_#c8c6c5,-8px_-8px_20px_#ffffff] border border-white/60 p-2";
+const NEU_RESULT_ITEM =
+  "w-full text-left px-3 py-2 rounded-xl " +
+  "font-[family-name:var(--font-jetbrains-mono)] " +
+  "text-[#1E2938]/70 hover:text-[#006666] " +
+  "hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] " +
+  "transition-all duration-200";
+// ─────────────────────────────────────────────────────────────
+
 interface SearchResult {
   title: string;
-  route: string;   // e.g. "/users/companies/"
-  ids: string[];   // raw MongoDB ObjectId strings
+  route: string;
+  ids: string[];
 }
 
 interface SearchBarProps {
@@ -23,9 +44,6 @@ interface SearchBarProps {
   onClose?: () => void;
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
   const [searchValue, setSearchValue] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
@@ -38,21 +56,12 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // -----------------------------------------------------------------------
-  // Actual search function (called by debounced version and on form submit)
-  // -----------------------------------------------------------------------
   const fetchSearch = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
+    if (!query.trim()) { setResults([]); return; }
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/dashboard/v1/search?q=${encodeURIComponent(query)}`
-      );
+      const res = await fetch(`/api/dashboard/v1/search?q=${encodeURIComponent(query)}`);
       const json = await res.json();
-      // API returns { data: { results } } with the new error handler
       const found = json.data?.results ?? json.results ?? [];
       setResults(found);
     } catch {
@@ -62,52 +71,33 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
     }
   }, []);
 
-  // Debounced version for live typing
   const debouncedFetch = useDebouncedCallback(fetchSearch, 300);
 
-  // Trigger debounced search when searchValue changes
   useEffect(() => {
-    if (!searchValue.trim()) {
-      setResults([]);
-      return;
-    }
+    if (!searchValue.trim()) { setResults([]); return; }
     debouncedFetch(searchValue.trim());
-    // Cancel debounce on unmount
-    return () => {
-      debouncedFetch.cancel?.();
-    };
+    return () => { debouncedFetch.cancel?.(); };
   }, [searchValue, debouncedFetch]);
 
-  // -----------------------------------------------------------------------
-  // Form submit: cancel any pending debounce and fetch immediately
-  // -----------------------------------------------------------------------
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchValue.trim()) {
-      debouncedFetch.cancel?.(); // cancel pending debounced call
+      debouncedFetch.cancel?.();
       fetchSearch(searchValue.trim());
     }
   };
 
-  // -----------------------------------------------------------------------
-  // Clear search
-  // -----------------------------------------------------------------------
   const clearSearch = () => {
     setSearchValue("");
     setResults([]);
     inputRef.current?.focus();
   };
 
-  // -----------------------------------------------------------------------
-  // Close dropdown when clicking outside
-  // -----------------------------------------------------------------------
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(e.target as Node)
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+        inputRef.current && !inputRef.current.contains(e.target as Node)
       ) {
         setResults([]);
       }
@@ -116,9 +106,6 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // -----------------------------------------------------------------------
-  // Navigate on result click (encrypt IDs client‑side)
-  // -----------------------------------------------------------------------
   const handleResultClick = async (result: SearchResult) => {
     try {
       const encodedIds = await Promise.all(
@@ -126,7 +113,6 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
       );
       const path = `${result.route}${encodedIds.join("/")}`;
       router.push(path);
-      // Reset UI
       setSearchValue("");
       setResults([]);
       if (isMobile && onClose) onClose();
@@ -135,28 +121,19 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
     }
   };
 
-  // -----------------------------------------------------------------------
-  // Keyboard shortcut: Ctrl/⌘ + K
-  // -----------------------------------------------------------------------
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setIsCommandMode(true);
-        if (isMobile) {
-          setIsExpanded(true);
-        } else {
-          inputRef.current?.focus();
-        }
+        if (isMobile) { setIsExpanded(true); }
+        else { inputRef.current?.focus(); }
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isMobile]);
 
-  // -----------------------------------------------------------------------
-  // Mobile expand/collapse
-  // -----------------------------------------------------------------------
   const handleMobileToggle = () => {
     if (isMobile) {
       setIsExpanded(!isExpanded);
@@ -164,138 +141,102 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
     }
   };
 
-  // -----------------------------------------------------------------------
-  // Placeholder with icon
-  // -----------------------------------------------------------------------
-  const PlaceholderWithIcon = () => (
-    <span className="flex items-center gap-2 text-slate-400">
-      <FiSearch className="h-4 w-4" />
-      {isCommandMode ? "Type a command..." : "Search users, tours, reports..."}
-    </span>
-  );
-
-  // -----------------------------------------------------------------------
-  // Input field with dropdown
-  // -----------------------------------------------------------------------
+  // ── Shared input field ─────────────────────────────────────
   const InputField = (
     <div className="relative flex-1">
-      {/* Input */}
-      <Input
+      {/* Search icon inside input */}
+      <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#1E2938]/40 pointer-events-none" />
+
+      <input
         ref={inputRef}
+        type="text"
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setTimeout(() => setIsFocused(false), 150)}
-        placeholder=""
+        placeholder={
+          isCommandMode ? "Type a command..." : "Search users, tours, reports..."
+        }
         className={cn(
-          "pl-10 pr-28 h-10 rounded-xl bg-white/80 dark:bg-slate-800/80",
-          "border-slate-200/60 dark:border-slate-700/60",
-          "focus:bg-white dark:focus:bg-slate-800",
-          "focus:border-blue-400 dark:focus:border-blue-500",
-          "transition-all duration-200 backdrop-blur-sm",
-          "focus:outline-none focus:ring-0 focus:shadow-none",
-          isFocused && "ring-2 ring-blue-500"
+          NEU_INPUT,
+          "h-10 pl-9",
+          searchValue ? "pr-20" : "pr-10",
+          isFocused && "ring-2 ring-[#006666]/40"
         )}
       />
 
-      {/* Floating placeholder */}
-      {!searchValue && (
-        <div className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none text-sm text-slate-500 dark:text-slate-400">
-          <PlaceholderWithIcon />
-        </div>
-      )}
-
-      {/* Right-side utilities wrapper */}
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-        {/* Clear button */}
+      {/* Right controls */}
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
         {searchValue && (
           <motion.button
             type="button"
             onClick={clearSearch}
-            className="h-5 w-5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            className="h-5 w-5 flex items-center justify-center text-[#1E2938]/40 hover:text-[#FF2157] transition-colors"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             aria-label="Clear search"
           >
-            <FiX className="h-4 w-4" />
+            <FiX className="h-3.5 w-3.5" />
           </motion.button>
         )}
 
-        {/* Desktop-only: shortcut hint + command toggle */}
         {!isMobile && (
           <>
-            {/* Shortcut hint */}
-            <div className="hidden sm:flex items-center">
-              <kbd
-                className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono 
-               bg-slate-100 dark:bg-slate-700 
-               text-slate-600 dark:text-slate-300 
-               rounded-md border border-slate-300 dark:border-slate-600 
-               shadow-sm"
-              >
-                {navigator.platform.includes("Mac") ? (
-                  <>
-                    <span className="text-base leading-none">⌘</span>
-                    <span>K</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-xs leading-none">Ctrl</span>
-                    <span>K</span>
-                  </>
-                )}
-              </kbd>
-            </div>
+            {/* Keyboard shortcut badge */}
+            <kbd
+              className={cn(
+                "hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px]",
+                "font-[family-name:var(--font-space-mono)]",
+                "bg-[#E7E5E4] text-[#1E2938]/50",
+                "shadow-[1px_1px_3px_#c8c6c5,-1px_-1px_3px_#ffffff] border border-white/60"
+              )}
+            >
+              {typeof navigator !== "undefined" && navigator.platform.includes("Mac") ? "⌘" : "Ctrl"} K
+            </kbd>
 
-            {/* Command toggle */}
+            {/* Command mode toggle */}
             <motion.button
               type="button"
               onClick={() => setIsCommandMode((prev) => !prev)}
               className={cn(
-                "p-1 rounded-md transition-colors",
-                isCommandMode
-                  ? "bg-blue-500 text-white hover:bg-blue-600"
-                  : "bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600"
+                "h-6 w-6",
+                isCommandMode ? NEU_BTN_ICON_ACTIVE : NEU_BTN_ICON
               )}
-              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Toggle command mode"
             >
-              <FiCommand className="h-4 w-4" />
+              <FiCommand className="h-3.5 w-3.5" />
             </motion.button>
           </>
         )}
       </div>
 
-      {/* Results dropdown */}
+      {/* Dropdown results */}
       <AnimatePresence>
         {results.length > 0 && (
           <motion.div
             ref={dropdownRef}
-            initial={{ opacity: 0, y: -5 }}
+            initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.2 }}
-            className="absolute left-0 right-0 top-12 z-50 max-h-80 overflow-y-auto rounded-xl border border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-2 shadow-xl"
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18 }}
+            className={NEU_DROPDOWN}
           >
             {loading && (
-              <p className="p-2 text-sm text-slate-400">Loading...</p>
+              <p className="px-3 py-2 text-xs text-[#1E2938]/40 font-[family-name:var(--font-jetbrains-mono)]">
+                Searching…
+              </p>
             )}
             {results.map((item, idx) => (
               <button
                 key={`${item.route}-${item.ids.join("-")}-${idx}`}
                 type="button"
                 onClick={() => handleResultClick(item)}
-                className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className={NEU_RESULT_ITEM}
               >
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {item.title}
-                </p>
-                <p className="text-xs text-slate-400 truncate">
-                  {item.route}...
-                </p>
+                <p className="text-sm font-medium truncate">{item.title}</p>
+                <p className="text-xs text-[#1E2938]/40 truncate">{item.route}…</p>
               </button>
             ))}
           </motion.div>
@@ -304,16 +245,19 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
     </div>
   );
 
-  // -----------------------------------------------------------------------
-  // Mobile layout
-  // -----------------------------------------------------------------------
+  // ── Mobile ─────────────────────────────────────────────────
   if (isMobile) {
     return (
       <div className="relative">
         <motion.button
           onClick={handleMobileToggle}
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200"
-          whileHover={{ scale: 1.05 }}
+          className={cn(
+            "h-10 w-10 flex items-center justify-center rounded-xl",
+            "bg-[#E7E5E4] text-[#1E2938]/60",
+            "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]",
+            "hover:text-[#006666] hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]",
+            "transition-all duration-200"
+          )}
           whileTap={{ scale: 0.95 }}
           aria-label="Open search"
         >
@@ -327,11 +271,12 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="absolute right-0 top-12 z-50 w-80 rounded-xl border border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-2 shadow-xl"
+              className={cn(
+                "absolute right-0 top-12 z-50 w-80 rounded-2xl p-2",
+                "bg-[#E7E5E4] shadow-[8px_8px_20px_#c8c6c5,-8px_-8px_20px_#ffffff] border border-white/60"
+              )}
             >
-              <form onSubmit={handleSearch} className="flex items-center gap-2">
-                {InputField}
-              </form>
+              <form onSubmit={handleSearch}>{InputField}</form>
             </motion.div>
           )}
         </AnimatePresence>
@@ -339,9 +284,7 @@ export function SearchBar({ isMobile = false, onClose }: SearchBarProps) {
     );
   }
 
-  // -----------------------------------------------------------------------
-  // Desktop layout
-  // -----------------------------------------------------------------------
+  // ── Desktop ────────────────────────────────────────────────
   return (
     <motion.form
       onSubmit={handleSearch}

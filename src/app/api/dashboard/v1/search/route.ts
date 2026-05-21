@@ -19,6 +19,7 @@ import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 import { GUIDE_STATUS } from "@/constants/guide.const";
+import ConnectDB from "@/config/db";
 
 // Limits per collection
 const LIMIT = 5;
@@ -39,6 +40,8 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
         throw new ApiError("Unauthorized", 401);
     }
 
+    await ConnectDB();
+
     // 2. Authorization – must be admin or support
     await VERIFY_USER_ROLE.MULTIPLE(userId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
 
@@ -56,7 +59,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     }
 
     // 5. Check Redis cache
-    const cacheKey = `BD_TRAVEL_SPIRIT_SUPPORT_SYSTEM:search:global:${sanitized}`;
+    const cacheKey = `bd-travel-spirit-support-system:search:global:${sanitized}`;
     const cached = await redisCache.get(cacheKey);
     if (cached) {
         let results;

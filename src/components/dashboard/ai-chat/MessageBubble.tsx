@@ -7,9 +7,22 @@ import { Bot, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AiChatMessage } from "@/types/ai-chat";
 
-type MessageBubbleProps = {
-    message: AiChatMessage;
-};
+// ── Neumorphism style tokens ──────────────────────────────────────────────────
+const NEU_AVATAR_USER =
+    "bg-[#006666] shadow-[3px_3px_7px_#004d4d,-2px_-2px_5px_#008080]";
+const NEU_AVATAR_BOT =
+    "bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]";
+
+// User bubble: raised from surface with teal brand color
+const NEU_BUBBLE_USER =
+    "bg-[#006666] text-white shadow-[4px_4px_10px_#004d4d,-2px_-2px_6px_#008080]";
+// Bot bubble: raised white-tinted panel
+const NEU_BUBBLE_BOT =
+    "bg-[#E7E5E4] shadow-[4px_4px_10px_#c8c6c5,-4px_-4px_10px_#ffffff] border border-white/70";
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+type MessageBubbleProps = { message: AiChatMessage };
 
 export function MessageBubble({ message }: MessageBubbleProps) {
     const isUser = message.role === "user";
@@ -18,105 +31,67 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         <motion.article
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             className={cn("flex gap-3", isUser ? "flex-row-reverse" : "flex-row")}
         >
-            {/* Avatar */}
+            {/* ── Avatar ── */}
             <div className="flex shrink-0 flex-col items-center">
                 <motion.div
                     initial={{ scale: 0.7, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.05, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full"
-                    style={
-                        isUser
-                            ? {
-                                background: "linear-gradient(145deg, #1d4ed8 0%, #1e3a8a 100%)",
-                                boxShadow:
-                                    "0 0 0 1px rgba(255,255,255,0.15) inset, 0 2px 8px rgba(29,78,216,0.35)",
-                            }
-                            : {
-                                background: "linear-gradient(145deg, #dbeafe 0%, #bfdbfe 100%)",
-                                boxShadow:
-                                    "0 0 0 1px rgba(255,255,255,0.8) inset, 0 2px 6px rgba(29,78,216,0.1)",
-                            }
-                    }
+                    transition={{ delay: 0.05, duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                    className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-full",
+                        isUser ? NEU_AVATAR_USER : NEU_AVATAR_BOT
+                    )}
                 >
-                    {/* Gloss */}
-                    <span
-                        className="pointer-events-none absolute inset-x-1 top-0.5 h-[45%] rounded-t-full opacity-[0.22]"
-                        style={{ background: "linear-gradient(180deg, #fff 0%, transparent 100%)" }}
-                    />
                     {isUser ? (
-                        <User className="relative h-3.5 w-3.5 text-white/90" />
+                        <User className="h-3.5 w-3.5 text-white" strokeWidth={2} />
                     ) : (
-                        <Bot className="relative h-3.5 w-3.5" style={{ color: "#1d4ed8" }} />
+                        <Bot className="h-3.5 w-3.5 text-[#006666]" strokeWidth={1.8} />
                     )}
                 </motion.div>
             </div>
 
-            {/* Bubble */}
+            {/* ── Bubble ── */}
             <motion.div
                 initial={{ opacity: 0, x: isUser ? 10 : -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.04, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                className="relative max-w-[82%] overflow-hidden rounded-2xl px-4 py-3 text-sm"
-                style={
-                    isUser
-                        ? {
-                            background: "linear-gradient(150deg, #1d4ed8 0%, #1e3a8a 100%)",
-                            color: "rgba(255,255,255,0.94)",
-                            boxShadow:
-                                "0 0 0 1px rgba(255,255,255,0.12) inset, 0 4px 14px rgba(29,78,216,0.3), 0 1px 3px rgba(30,58,138,0.2)",
-                            borderRadius: "18px 18px 4px 18px",
-                        }
-                        : {
-                            background:
-                                "linear-gradient(150deg, rgba(255,255,255,0.98) 0%, rgba(239,246,255,0.95) 100%)",
-                            color: "#1e3a8a",
-                            border: "1px solid rgba(147,197,253,0.5)",
-                            boxShadow:
-                                "0 0 0 1px rgba(255,255,255,0.8) inset, 0 4px 14px rgba(29,78,216,0.07), 0 1px 3px rgba(29,78,216,0.05)",
-                            borderRadius: "18px 18px 18px 4px",
-                        }
-                }
+                transition={{ delay: 0.04, duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className={cn(
+                    "relative max-w-[82%] overflow-hidden px-4 py-3 text-sm",
+                    isUser ? NEU_BUBBLE_USER : NEU_BUBBLE_BOT,
+                    isUser ? "rounded-[18px_18px_4px_18px]" : "rounded-[18px_18px_18px_4px]"
+                )}
             >
-                {/* Gloss overlay */}
-                <span
-                    className="pointer-events-none absolute inset-x-3 top-1.5 h-[35%] rounded-t-xl"
-                    style={{
-                        opacity: isUser ? 0.14 : 0.5,
-                        background: "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, transparent 100%)",
-                    }}
-                />
-
                 {isUser ? (
                     <p
-                        className="relative whitespace-pre-wrap leading-relaxed"
-                        style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: "0.875rem" }}
+                        className="whitespace-pre-wrap leading-relaxed font-[family-name:var(--font-jetbrains-mono)] text-white/95"
+                        style={{ fontSize: "0.875rem" }}
                     >
                         {message.content}
                     </p>
                 ) : (
                     <div
                         className={cn(
-                            "relative prose prose-sm max-w-none",
+                            "prose prose-sm max-w-none",
+                            // Paragraph spacing
                             "prose-p:my-1 prose-p:leading-relaxed",
-                            "prose-headings:my-2 prose-headings:font-semibold prose-headings:tracking-tight",
-                            "prose-ul:my-1 prose-ol:my-1",
-                            "prose-li:my-0.5",
+                            // Headings
+                            "prose-headings:my-2 prose-headings:font-[family-name:var(--font-space-mono)] prose-headings:font-bold prose-headings:text-[#1E2938] prose-headings:tracking-tight",
+                            // Lists
+                            "prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5",
+                            // Inline code
                             "prose-code:rounded-md prose-code:px-1.5 prose-code:py-0.5 prose-code:text-xs prose-code:font-medium",
-                            "prose-pre:rounded-xl prose-pre:text-xs",
-                            "prose-a:text-blue-700 prose-a:underline prose-a:underline-offset-2",
+                            // Links
+                            "prose-a:text-[#006666] prose-a:underline prose-a:underline-offset-2",
+                            // Tables
                             "prose-table:w-full prose-table:text-xs prose-table:border-collapse",
-                            "prose-th:border prose-th:border-blue-100 prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:font-semibold prose-th:text-blue-700",
-                            "prose-td:border prose-td:border-blue-100 prose-td:px-3 prose-td:py-2 prose-td:text-blue-800",
-                            "prose-tr:even:bg-blue-50/50"
+                            "prose-th:border prose-th:border-[#1E2938]/10 prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:text-[#1E2938] prose-th:font-[family-name:var(--font-space-mono)] prose-th:font-bold",
+                            "prose-td:border prose-td:border-[#1E2938]/10 prose-td:px-3 prose-td:py-2 prose-td:text-[#1E2938]/80",
+                            "prose-tr:even:bg-[#006666]/5"
                         )}
-                        style={{
-                            fontFamily: "var(--font-dm-sans), sans-serif",
-                            color: "#1e3a8a",
-                        }}
+                        style={{ fontFamily: "var(--font-jetbrains-mono)", color: "#1E2938" }}
                     >
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
@@ -126,21 +101,25 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                                         href={href}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        style={{ color: "#1d4ed8", textDecoration: "underline" }}
+                                        style={{ color: "#006666", textDecoration: "underline" }}
                                     >
                                         {children}
                                     </a>
                                 ),
-                                code: ({ inline, children, ...props }: React.ComponentPropsWithoutRef<"code"> & { inline?: boolean }) =>
+                                code: ({
+                                    inline,
+                                    children,
+                                    ...props
+                                }: React.ComponentPropsWithoutRef<"code"> & { inline?: boolean }) =>
                                     inline ? (
                                         <code
                                             style={{
-                                                background: "rgba(147,197,253,0.22)",
+                                                background: "rgba(0,102,102,0.1)",
                                                 borderRadius: "5px",
                                                 padding: "1px 6px",
                                                 fontSize: "0.78em",
-                                                color: "#1d4ed8",
-                                                fontFamily: "var(--font-dm-mono), monospace",
+                                                color: "#006666",
+                                                fontFamily: "var(--font-jetbrains-mono), monospace",
                                             }}
                                             {...props}
                                         >
@@ -148,7 +127,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                                         </code>
                                     ) : (
                                         <code
-                                            style={{ fontFamily: "var(--font-dm-mono), monospace" }}
+                                            style={{ fontFamily: "var(--font-jetbrains-mono), monospace" }}
                                             {...props}
                                         >
                                             {children}
@@ -157,14 +136,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                                 pre: ({ children }) => (
                                     <pre
                                         style={{
-                                            background: "linear-gradient(145deg, rgba(219,234,254,0.9), rgba(191,219,254,0.8))",
-                                            border: "1px solid rgba(147,197,253,0.4)",
+                                            background:
+                                                "linear-gradient(145deg, #d8d6d5, #f0eeee)",
+                                            boxShadow:
+                                                "inset 3px 3px 6px #c8c6c5, inset -3px -3px 6px #ffffff",
                                             borderRadius: "12px",
                                             padding: "12px 14px",
                                             overflowX: "auto",
-                                            fontFamily: "var(--font-dm-mono), monospace",
+                                            fontFamily: "var(--font-jetbrains-mono), monospace",
                                             fontSize: "0.78rem",
-                                            color: "#1e3a8a",
+                                            color: "#1E2938",
                                         }}
                                     >
                                         {children}

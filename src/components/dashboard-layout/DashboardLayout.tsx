@@ -10,6 +10,12 @@ import { LogoutConfirmation } from "./LogoutConfirmation";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
 
+// ─── Neumorphism style tokens ────────────────────────────────
+const NEU_PAGE_BG = "min-h-screen bg-[#E7E5E4]";
+const NEU_SCROLLBAR =
+  "scrollbar-thin scrollbar-thumb-[#c8c6c5] scrollbar-track-transparent";
+// ─────────────────────────────────────────────────────────────
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
@@ -17,11 +23,8 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
-  // Sidebar collapse state (shared)
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Modal states
   const [showViewProfile, setShowViewProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -35,56 +38,40 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     checkMobile();
-
     let timeoutId: NodeJS.Timeout;
     const handleResize = () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(checkMobile, 150);
     };
-
     window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      clearTimeout(timeoutId);
-    };
+    return () => { window.removeEventListener("resize", handleResize); clearTimeout(timeoutId); };
   }, [checkMobile]);
 
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
-  const toggleMenuClick = useCallback(() => setIsMobileMenuOpen((prev) => !prev), []);
-
+  const toggleMenuClick = useCallback(() => setIsMobileMenuOpen((p) => !p), []);
   const handleLogoutClick = useCallback(() => setShowLogoutConfirm(true), []);
-
   const handleLogoutCancel = useCallback(() => setShowLogoutConfirm(false), []);
 
   useEffect(() => {
-    if (isMobile && isMobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    document.body.style.overflow = isMobile && isMobileMenuOpen ? "hidden" : "unset";
+    return () => { document.body.style.overflow = "unset"; };
   }, [isMobile, isMobileMenuOpen]);
 
   const handleConfirmLogout = async () => {
     setIsLoggingOut(true);
     try {
-      // NextAuth sign out
       await signOut({ callbackUrl: "/" });
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 300);
+      setTimeout(() => { window.location.href = "/"; }, 300);
     } catch (err) {
       console.error("Logout error:", err);
       setIsLoggingOut(false);
     }
   };
-  // Dynamic left offset for desktop
-  const desktopLeft = isCollapsed ? "lg:left-20" : "lg:left-72"; // 80px vs 288px
+
+  const desktopLeft = isCollapsed ? "lg:left-20" : "lg:left-72";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+    <div className={NEU_PAGE_BG}>
       {/* Sidebar */}
       {isMobile ? (
         <Sidebar
@@ -97,7 +84,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       ) : (
         <Sidebar
           isMobile={false}
-          onClose={() => { }}
+          onClose={() => {}}
           isOpen={true}
           isCollapsed={isCollapsed}
           setIsCollapsed={setIsCollapsed}
@@ -114,25 +101,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         onLogout={handleLogoutClick}
       />
 
-      {/* Main Content Area */}
+      {/* Main content */}
       <div
         className={cn(
           "fixed top-16 bottom-0 overflow-y-auto transition-all duration-300 ease-in-out",
-          "scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent",
+          NEU_SCROLLBAR,
           isMobile ? "left-0 right-0" : `right-0 ${desktopLeft}`
         )}
       >
         <motion.main
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
           className="min-h-full"
         >
           <div className="mx-auto max-w-7xl">{children}</div>
         </motion.main>
       </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile overlay */}
       <AnimatePresence>
         {isMobile && isMobileMenuOpen && (
           <motion.div
@@ -140,7 +127,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-40 bg-[#1E2938]/40 backdrop-blur-sm lg:hidden"
             onClick={closeMobileMenu}
             aria-hidden="true"
           />

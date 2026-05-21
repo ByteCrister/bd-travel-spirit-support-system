@@ -4,13 +4,36 @@ import { useCallback, useEffect, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2, Plus, MessageSquare, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useAiChatStore } from "@/store/ai-chat/ai-chat.store";
+import { cn } from "@/lib/utils";
 import type { AiChatSession } from "@/types/ai-chat";
 
-type SessionSidebarProps = {
-    open: boolean;
-};
+// ── Neumorphism style tokens ──────────────────────────────────────────────────
+const NEU_SIDEBAR_BG =
+    "bg-[#E7E5E4] shadow-[4px_0_12px_#c8c6c5] border-r border-white/70";
+const NEU_BTN_PRIMARY =
+    "w-full rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold text-sm tracking-wide " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
+const NEU_LABEL =
+    "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+const NEU_MUTED =
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_SKELETON = "rounded-xl bg-[#d0cecd] animate-pulse";
+const NEU_DIVIDER = "border-[#1E2938]/10";
+const NEU_ICON_WELL =
+    "rounded-xl bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]";
+const NEU_SESSION_ACTIVE =
+    "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] bg-[#E7E5E4]";
+const NEU_SESSION_IDLE =
+    "shadow-[3px_3px_7px_#c8c6c5,-3px_-3px_7px_#ffffff] bg-[#E7E5E4] " +
+    "hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]";
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+type SessionSidebarProps = { open: boolean };
 
 export function SessionSidebar({ open }: SessionSidebarProps) {
     const {
@@ -46,59 +69,32 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                     animate={{ width: "auto", opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                    className="flex h-full flex-col overflow-hidden md:w-80 lg:w-72"
-                    style={{
-                        background:
-                            "linear-gradient(180deg, rgba(239,246,255,0.97) 0%, rgba(219,234,254,0.97) 100%)",
-                        backdropFilter: "blur(20px)",
-                        WebkitBackdropFilter: "blur(20px)",
-                        borderRight: "1px solid rgba(147,197,253,0.5)",
-                        boxShadow: "1px 0 0 0 rgba(255,255,255,0.7)",
-                        minWidth: open ? undefined : 0,
-                    }}
+                    className={cn(
+                        NEU_SIDEBAR_BG,
+                        "flex h-full flex-col overflow-hidden md:w-72 lg:w-72"
+                    )}
+                    style={{ minWidth: open ? undefined : 0 }}
                 >
-                    {/* Header */}
-                    <header
-                        className="shrink-0 p-3"
-                        style={{ borderBottom: "1px solid rgba(147,197,253,0.4)" }}
-                    >
+                    {/* ── Sidebar header ── */}
+                    <header className={cn("shrink-0 p-3 border-b", NEU_DIVIDER)}>
                         <motion.button
                             type="button"
                             onClick={startNewSession}
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.98 }}
-                            className="relative w-full overflow-hidden rounded-xl px-4 py-2.5 text-sm font-medium text-white"
-                            style={{
-                                background: "linear-gradient(145deg, #1d4ed8 0%, #1e3a8a 100%)",
-                                boxShadow:
-                                    "0 0 0 1px rgba(255,255,255,0.15) inset, 0 3px 12px rgba(29,78,216,0.35), 0 1px 2px rgba(30,58,138,0.3)",
-                                fontFamily: "var(--font-dm-sans), sans-serif",
-                                letterSpacing: "-0.01em",
-                            }}
+                            className={cn(NEU_BTN_PRIMARY, "flex items-center justify-center gap-2 px-4 py-2.5")}
                         >
-                            {/* Gloss */}
-                            <span
-                                className="pointer-events-none absolute inset-x-3 top-1 h-[45%] rounded-lg opacity-[0.2]"
-                                style={{ background: "linear-gradient(180deg, #fff 0%, transparent 100%)" }}
-                            />
-                            <span className="relative flex items-center justify-center gap-2">
-                                <Plus className="h-4 w-4" />
-                                New conversation
-                            </span>
+                            <Plus className="h-4 w-4" strokeWidth={2.5} />
+                            New conversation
                         </motion.button>
                     </header>
 
-                    {/* Label */}
+                    {/* ── Section label ── */}
                     <div className="shrink-0 px-4 pb-1 pt-4">
-                        <span
-                            className="text-[10px] font-semibold uppercase tracking-[0.12em]"
-                            style={{ color: "#93c5fd", fontFamily: "var(--font-dm-sans), sans-serif" }}
-                        >
-                            Recent chats
-                        </span>
+                        <span className={NEU_LABEL}>Recent chats</span>
                     </div>
 
-                    {/* Scrollable list */}
+                    {/* ── Scrollable session list ── */}
                     <section
                         ref={listRef}
                         onScroll={handleScroll}
@@ -106,17 +102,9 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                         style={{ scrollbarWidth: "none" }}
                     >
                         {sessionsLoading && sessions.length === 0 ? (
-                            <ul className="mt-2 space-y-1.5 px-1">
+                            <ul className="mt-2 space-y-2 px-1">
                                 {Array.from({ length: 6 }).map((_, i) => (
-                                    <li key={i}>
-                                        <Skeleton
-                                            className="h-[64px] w-full rounded-xl"
-                                            style={{
-                                                background:
-                                                    "linear-gradient(90deg, rgba(191,219,254,0.5) 0%, rgba(219,234,254,0.5) 50%, rgba(191,219,254,0.5) 100%)",
-                                            }}
-                                        />
-                                    </li>
+                                    <li key={i} className={cn(NEU_SKELETON, "h-16 w-full")} />
                                 ))}
                             </ul>
                         ) : sessions.length === 0 ? (
@@ -125,16 +113,10 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                                 animate={{ opacity: 1 }}
                                 className="mt-8 flex flex-col items-center gap-3 px-4 text-center"
                             >
-                                <span
-                                    className="flex h-12 w-12 items-center justify-center rounded-2xl"
-                                    style={{
-                                        background: "rgba(147,197,253,0.2)",
-                                        border: "1px solid rgba(147,197,253,0.45)",
-                                    }}
-                                >
-                                    <MessageSquare className="h-5 w-5" style={{ color: "#93c5fd" }} />
+                                <span className={cn(NEU_ICON_WELL, "flex h-12 w-12 items-center justify-center")}>
+                                    <MessageSquare className="h-5 w-5 text-[#1E2938]/40" strokeWidth={1.5} />
                                 </span>
-                                <p className="text-sm" style={{ color: "#93c5fd", fontFamily: "var(--font-dm-sans)" }}>
+                                <p className={cn(NEU_MUTED, "text-xs")}>
                                     No chats yet.
                                     <br />
                                     Start a new conversation.
@@ -142,7 +124,7 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                             </motion.div>
                         ) : (
                             <AnimatePresence initial={false}>
-                                <ul className="mt-1 space-y-0.5">
+                                <ul className="mt-2 space-y-1.5">
                                     {sessions.map((session, i) => (
                                         <motion.li
                                             key={session.sessionId}
@@ -163,7 +145,7 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
 
                         {sessionsLoading && sessions.length > 0 && (
                             <div className="flex justify-center py-4">
-                                <Loader2 className="h-4 w-4 animate-spin" style={{ color: "#93c5fd" }} />
+                                <Loader2 className="h-4 w-4 animate-spin text-[#006666]" />
                             </div>
                         )}
                     </section>
@@ -173,6 +155,7 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
     );
 }
 
+// ── Session item ──────────────────────────────────────────────────────────────
 function SessionItem({
     session,
     isActive,
@@ -182,11 +165,11 @@ function SessionItem({
     isActive: boolean;
     onSelect: () => void;
 }) {
-    const MAX_PREVIEW_LENGTH = 20;
+    const MAX_PREVIEW_LENGTH = 22;
     const rawPreview = session.lastMessagePreview || "No messages yet";
     const preview =
         rawPreview.length > MAX_PREVIEW_LENGTH
-            ? `${rawPreview.slice(0, MAX_PREVIEW_LENGTH)}...`
+            ? `${rawPreview.slice(0, MAX_PREVIEW_LENGTH)}…`
             : rawPreview;
 
     const timeLabel = session.lastMessageAt
@@ -197,47 +180,36 @@ function SessionItem({
         <motion.button
             type="button"
             onClick={onSelect}
-            whileHover={{ scale: 1.005 }}
-            whileTap={{ scale: 0.995 }}
-            className="relative w-full overflow-hidden rounded-xl px-3 py-2.5 text-left transition-all duration-200"
-            style={{
-                background: isActive
-                    ? "linear-gradient(145deg, rgba(239,246,255,0.98) 0%, rgba(219,234,254,0.92) 100%)"
-                    : "transparent",
-                boxShadow: isActive
-                    ? "0 0 0 1px rgba(147,197,253,0.55), 0 2px 8px rgba(29,78,216,0.1), 0 1px 2px rgba(29,78,216,0.06)"
-                    : "none",
-                fontFamily: "var(--font-dm-sans), sans-serif",
-            }}
+            whileTap={{ scale: 0.99 }}
+            className={cn(
+                "relative w-full rounded-xl px-3 py-2.5 text-left transition-all duration-200",
+                isActive ? NEU_SESSION_ACTIVE : NEU_SESSION_IDLE
+            )}
         >
+            {/* Active accent bar */}
             {isActive && (
                 <span
-                    className="pointer-events-none absolute inset-x-2 top-1 h-[40%] rounded-t-lg opacity-50"
-                    style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, transparent 100%)" }}
+                    className="absolute left-0 top-2.5 bottom-2.5 w-0.5 rounded-full bg-[#006666]"
                 />
             )}
-            {!isActive && (
-                <span
-                    className="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition-opacity duration-200 hover:opacity-100"
-                    style={{ background: "rgba(147,197,253,0.15)" }}
-                />
-            )}
+
+            {/* Title */}
             <span
-                className="relative block truncate text-sm font-semibold"
-                style={{ color: isActive ? "#1e3a8a" : "#1e40af", letterSpacing: "-0.01em" }}
+                className={cn(
+                    "block truncate text-xs font-bold font-[family-name:var(--font-space-mono)]",
+                    isActive ? "text-[#006666]" : "text-[#1E2938]"
+                )}
             >
                 {session.title}
             </span>
-            <span
-                className="relative mt-0.5 block truncate text-xs"
-                style={{ color: isActive ? "#3b82f6" : "#93c5fd" }}
-            >
+
+            {/* Preview */}
+            <span className="mt-0.5 block truncate font-[family-name:var(--font-jetbrains-mono)] text-[11px] text-[#1E2938]/50">
                 {preview}
             </span>
-            <span
-                className="relative mt-1 flex items-center gap-1 text-[10px]"
-                style={{ color: "#bfdbfe" }}
-            >
+
+            {/* Timestamp */}
+            <span className="mt-1 flex items-center gap-1 font-[family-name:var(--font-jetbrains-mono)] text-[10px] text-[#1E2938]/30">
                 <Clock className="h-2.5 w-2.5" />
                 {timeLabel}
             </span>
