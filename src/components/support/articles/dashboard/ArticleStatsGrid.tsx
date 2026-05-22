@@ -3,82 +3,88 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ArticleDashboardStats } from '@/types/article/article.types';
-import { HiDocumentText, HiEye, HiHeart, HiShare, HiClock, HiCheckCircle, HiDocumentDuplicate, HiArchiveBox } from 'react-icons/hi2';
+import {
+    HiDocumentText,
+    HiEye,
+    HiHeart,
+    HiShare,
+    HiClock,
+    HiCheckCircle,
+    HiDocumentDuplicate,
+    HiArchiveBox,
+} from 'react-icons/hi2';
+
+// ── Style tokens ──────────────────────────────────────────────
+const S = {
+    grid: 'grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-5',
+    card:
+        'rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60 p-5 flex flex-col gap-4 hover:shadow-[10px_10px_20px_#c8c6c5,-10px_-10px_20px_#ffffff] hover:-translate-y-0.5 transition-all duration-300',
+    iconWell:
+        'w-10 h-10 rounded-xl flex items-center justify-center shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] flex-shrink-0',
+    label:
+        'font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest',
+    value:
+        'font-[family-name:var(--font-jetbrains-mono)] font-bold text-[#1E2938] text-2xl xl:text-3xl',
+    skeleton:
+        'rounded-lg bg-[#d0cecd] animate-pulse',
+    skeletonCard:
+        'rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60 p-5 flex flex-col gap-4',
+} as const;
+
+// Icon background colours (soft tints on the neu surface)
+const iconBg: Record<string, string> = {
+    total: 'bg-[#006666]/10 text-[#006666]',
+    published: 'bg-[#00A63D]/10 text-[#00A63D]',
+    drafts: 'bg-[#FE9900]/10 text-[#FE9900]',
+    archived: 'bg-[#1E2938]/10 text-[#1E2938]/60',
+    views: 'bg-[#006666]/10 text-[#006666]',
+    likes: 'bg-[#FF2157]/10 text-[#FF2157]',
+    shares: 'bg-[#006666]/15 text-[#006666]',
+    time: 'bg-[#FE9900]/10 text-[#FE9900]',
+};
 
 type Props = {
     stats?: ArticleDashboardStats;
     isLoading: boolean;
 };
 
-const statIcons = {
-    total: HiDocumentText,
-    published: HiCheckCircle,
-    drafts: HiDocumentDuplicate,
-    archived: HiArchiveBox,
-    views: HiEye,
-    likes: HiHeart,
-    shares: HiShare,
-    time: HiClock,
-};
-
-const statColors = {
-    total: 'from-blue-500 to-cyan-500',
-    published: 'from-green-500 to-emerald-500',
-    drafts: 'from-amber-500 to-orange-500',
-    archived: 'from-slate-500 to-gray-500',
-    views: 'from-purple-500 to-pink-500',
-    likes: 'from-rose-500 to-red-500',
-    shares: 'from-indigo-500 to-blue-500',
-    time: 'from-teal-500 to-cyan-500',
-};
-
 type StatCardProps = {
     label: string;
     value: number | undefined;
     icon: React.ElementType;
-    gradient: string;
+    colorKey: string;
     index: number;
 };
 
-const StatCard: React.FC<StatCardProps> = ({ label, value, icon: Icon, gradient, index }) => (
+const StatCard: React.FC<StatCardProps> = ({ label, value, icon: Icon, colorKey, index }) => (
     <motion.div
+        className={S.card}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: index * 0.05 }}
-        whileHover={{ y: -4, transition: { duration: 0.2 } }}
     >
-        <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-900">
-            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradient} opacity-10 rounded-full -mr-16 -mt-16`} />
-            <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{label}</span>
-                    <motion.div
-                        className={`p-2 bg-gradient-to-br ${gradient} rounded-lg shadow-md`}
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                        transition={{ type: "spring", stiffness: 400 }}
-                    >
-                        <Icon className="w-4 h-4 text-white" />
-                    </motion.div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {value === undefined ? (
-                    <Skeleton className="h-8 w-20" />
-                ) : (
-                    <motion.div
-                        className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent"
-                        initial={{ scale: 0.5 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", stiffness: 200 }}
-                    >
-                        {value.toLocaleString()}
-                    </motion.div>
-                )}
-            </CardContent>
-        </Card>
+        <div className="flex items-center justify-between">
+            <span className={S.label}>{label}</span>
+            <div className={`${S.iconWell} ${iconBg[colorKey]}`}>
+                <Icon className="w-4 h-4" />
+            </div>
+        </div>
+
+        {value === undefined ? (
+            <div className="space-y-1.5">
+                <div className={`${S.skeleton} h-8 w-20`} />
+            </div>
+        ) : (
+            <motion.span
+                className={S.value}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 200, delay: index * 0.05 + 0.1 }}
+            >
+                {value.toLocaleString()}
+            </motion.span>
+        )}
     </motion.div>
 );
 
@@ -87,41 +93,40 @@ export default function ArticleStatsGrid({ stats, isLoading }: Props) {
 
     if (isLoading && !summary) {
         return (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
+            <div className={S.grid}>
                 {Array.from({ length: 8 }).map((_, i) => (
-                    <Card key={i} className="border-0 shadow-lg">
-                        <CardHeader>
-                            <Skeleton className="h-4 w-24" />
-                        </CardHeader>
-                        <CardContent>
-                            <Skeleton className="h-8 w-20" />
-                        </CardContent>
-                    </Card>
+                    <div key={i} className={S.skeletonCard}>
+                        <div className="flex items-center justify-between">
+                            <div className={`${S.skeleton} h-3 w-24`} />
+                            <div className={`${S.skeleton} w-10 h-10 rounded-xl`} />
+                        </div>
+                        <div className={`${S.skeleton} h-8 w-20`} />
+                    </div>
                 ))}
             </div>
         );
     }
 
     const statsData = [
-        { label: "Total Articles", value: summary?.totalArticles, icon: statIcons.total, gradient: statColors.total },
-        { label: "Published", value: summary?.publishedCount, icon: statIcons.published, gradient: statColors.published },
-        { label: "Drafts", value: summary?.draftCount, icon: statIcons.drafts, gradient: statColors.drafts },
-        { label: "Archived", value: summary?.archivedCount, icon: statIcons.archived, gradient: statColors.archived },
-        { label: "Total Views", value: summary?.totalViews, icon: statIcons.views, gradient: statColors.views },
-        { label: "Total Likes", value: summary?.totalLikes, icon: statIcons.likes, gradient: statColors.likes },
-        { label: "Total Shares", value: summary?.totalShares, icon: statIcons.shares, gradient: statColors.shares },
-        { label: "Avg Reading Time", value: summary?.averageReadingTime, icon: statIcons.time, gradient: statColors.time },
+        { label: 'Total Articles', value: summary?.totalArticles, icon: HiDocumentText, colorKey: 'total' },
+        { label: 'Published', value: summary?.publishedCount, icon: HiCheckCircle, colorKey: 'published' },
+        { label: 'Drafts', value: summary?.draftCount, icon: HiDocumentDuplicate, colorKey: 'drafts' },
+        { label: 'Archived', value: summary?.archivedCount, icon: HiArchiveBox, colorKey: 'archived' },
+        { label: 'Total Views', value: summary?.totalViews, icon: HiEye, colorKey: 'views' },
+        { label: 'Total Likes', value: summary?.totalLikes, icon: HiHeart, colorKey: 'likes' },
+        { label: 'Total Shares', value: summary?.totalShares, icon: HiShare, colorKey: 'shares' },
+        { label: 'Avg Reading Time', value: summary?.averageReadingTime, icon: HiClock, colorKey: 'time' },
     ];
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
+        <div className={S.grid}>
             {statsData.map((stat, index) => (
                 <StatCard
                     key={stat.label}
                     label={stat.label}
                     value={stat.value}
                     icon={stat.icon}
-                    gradient={stat.gradient}
+                    colorKey={stat.colorKey}
                     index={index}
                 />
             ))}

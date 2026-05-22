@@ -2,7 +2,7 @@
 "use client";
 
 import { useTourApproval } from "@/store/tour-approval.store";
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, Play, Loader2, CheckCircle, Info } from "lucide-react";
 import {
@@ -15,6 +15,38 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_SURFACE = "bg-[#E7E5E4]";
+const NEU_CARD =
+    "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_BTN_GHOST =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+    "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+    "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+    "transition-all duration-200";
+const NEU_BTN_PRIMARY =
+    "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
+const NEU_INPUT =
+    "w-full rounded-xl bg-[#E7E5E4] text-[#1E2938] placeholder:text-[#1E2938]/40 " +
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm " +
+    "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+    "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200 resize-none";
+const NEU_SURFACE_INSET =
+    "bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff]";
+const NEU_HEADING =
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_MUTED =
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_LABEL =
+    "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+const NEU_ICON_WELL_SUCCESS =
+    "p-2.5 rounded-xl bg-[#00A63D]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
 
 type UnsuspendDialogProps = {
     open: boolean;
@@ -52,39 +84,41 @@ export function UnsuspendDialog({ open, onOpenChange, tourId, tourTitle }: Unsus
 
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
-            <AlertDialogContent className="max-w-2xl">
-                <AlertDialogHeader>
-                    <div className="flex items-start gap-4">
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center"
-                        >
-                            <Play className="w-6 h-6 text-green-600" />
-                        </motion.div>
-                        <div className="flex-1">
-                            <AlertDialogTitle className="text-xl font-bold text-gray-900">
-                                Unsuspend Tour
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className="mt-2 text-gray-600">
-                                Reactivate the suspended tour{" "}
-                                <span className="font-semibold text-gray-900">&quot;{tourTitle}&quot;</span>.
-                                This will make the tour available for bookings again.
-                            </AlertDialogDescription>
+            <AlertDialogContent className={`max-w-2xl border-none p-0 overflow-hidden ${NEU_SURFACE} ${NEU_CARD}`}>
+                <div className="p-6 space-y-5">
+                    <AlertDialogHeader>
+                        <div className="flex items-start gap-4">
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                className={`flex-shrink-0 w-12 h-12 flex items-center justify-center ${NEU_ICON_WELL_SUCCESS}`}
+                            >
+                                <Play className="w-6 h-6 text-[#00A63D]" />
+                            </motion.div>
+                            <div className="flex-1 pt-1">
+                                <AlertDialogTitle className={`text-lg ${NEU_HEADING}`}>
+                                    Unsuspend Tour
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className={`mt-1.5 ${NEU_MUTED}`}>
+                                    Reactivate{" "}
+                                    <span className="font-semibold text-[#1E2938]">&quot;{tourTitle}&quot;</span>.
+                                    This will make the tour available for bookings again.
+                                </AlertDialogDescription>
+                            </div>
                         </div>
-                    </div>
-                </AlertDialogHeader>
+                    </AlertDialogHeader>
 
-                <div className="space-y-6 py-4">
-                    {/* Reason Input */}
+                    {/* Reason */}
                     <div className="space-y-2">
-                        <label htmlFor="unsuspension-reason" className="text-sm font-semibold text-gray-700">
-                            Unsuspension Reason <span className="text-red-500">*</span>
+                        <label htmlFor="unsuspension-reason" className={NEU_LABEL}>
+                            Unsuspension Reason <span className="text-[#FF2157]">*</span>
                         </label>
                         <textarea
                             id="unsuspension-reason"
-                            className="w-full min-h-[120px] px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all resize-none"
-                            placeholder="Please provide a reason for reactivating the tour..."
+                            rows={4}
+                            className={`${NEU_INPUT} min-h-[100px] px-4 py-3`}
+                            placeholder="Please provide a reason for reactivating the tour…"
                             value={reason}
                             onChange={(e) => {
                                 setReason(e.target.value);
@@ -92,21 +126,21 @@ export function UnsuspendDialog({ open, onOpenChange, tourId, tourTitle }: Unsus
                             }}
                             disabled={isProcessing}
                         />
-                        <div className="flex items-start gap-2 text-xs text-gray-500">
-                            <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                            <p>
+                        <div className="flex items-start gap-1.5">
+                            <Info className="w-3 h-3 text-[#1E2938]/40 mt-0.5 flex-shrink-0" />
+                            <p className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/40">
                                 This helps maintain a record of why the tour was reactivated.
                             </p>
                         </div>
                     </div>
 
-                    {/* Confirmation Section */}
-                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    {/* Confirmation checklist */}
+                    <div className={`rounded-xl p-4 ${NEU_SURFACE_INSET}`}>
                         <div className="flex items-start gap-2">
-                            <CheckCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm text-amber-700">
-                                <p className="font-medium mb-1">Please confirm the following:</p>
-                                <ul className="list-disc pl-5 space-y-1">
+                            <CheckCircle className="w-4 h-4 text-[#FE9900] mt-0.5 flex-shrink-0" />
+                            <div className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/60 space-y-1">
+                                <p className="font-bold text-[#1E2938]/80">Please confirm the following:</p>
+                                <ul className="list-disc pl-4 space-y-0.5">
                                     <li>The issues that led to suspension have been resolved</li>
                                     <li>The tour complies with all platform policies</li>
                                     <li>All content is up-to-date and accurate</li>
@@ -116,13 +150,13 @@ export function UnsuspendDialog({ open, onOpenChange, tourId, tourTitle }: Unsus
                         </div>
                     </div>
 
-                    {/* Info Box */}
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    {/* Info box */}
+                    <div className={`rounded-xl p-4 ${NEU_SURFACE_INSET}`}>
                         <div className="flex items-start gap-2">
-                            <Info className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm text-green-700">
-                                <p className="font-medium mb-1">What happens when a tour is unsuspended?</p>
-                                <ul className="list-disc pl-5 space-y-1">
+                            <Info className="w-4 h-4 text-[#006666] mt-0.5 flex-shrink-0" />
+                            <div className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/60 space-y-1">
+                                <p className="font-bold text-[#1E2938]/80">What happens when a tour is unsuspended?</p>
+                                <ul className="list-disc pl-4 space-y-0.5">
                                     <li>The tour will be visible in public listings again</li>
                                     <li>New bookings can be made immediately</li>
                                     <li>Moderation status will change to &quot;Approved&quot;</li>
@@ -132,48 +166,48 @@ export function UnsuspendDialog({ open, onOpenChange, tourId, tourTitle }: Unsus
                         </div>
                     </div>
 
-                    {/* Error Message */}
+                    {/* Error */}
                     <AnimatePresence>
                         {error && (
                             <motion.div
-                                initial={{ opacity: 0, y: -10 }}
+                                initial={{ opacity: 0, y: -8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg"
+                                exit={{ opacity: 0, y: -8 }}
+                                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#FF2157]/5 shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]"
                             >
-                                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                                <p className="text-sm text-red-700">{error}</p>
+                                <AlertCircle className="w-4 h-4 text-[#FF2157] flex-shrink-0" />
+                                <p className="font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#FF2157]">{error}</p>
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
 
-                <AlertDialogFooter className="gap-2">
-                    <AlertDialogCancel
-                        onClick={handleCancel}
-                        disabled={isProcessing}
-                        className="px-4 py-2 border-2 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
-                    >
-                        Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={confirm}
-                        disabled={isProcessing || !reason.trim()}
-                        className="px-5 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isProcessing ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                Unsuspending...
-                            </>
-                        ) : (
-                            <>
-                                <Play className="w-4 h-4 mr-2" />
-                                Unsuspend Tour
-                            </>
-                        )}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
+                    <AlertDialogFooter className="flex flex-row gap-3 pt-1">
+                        <AlertDialogCancel
+                            onClick={handleCancel}
+                            disabled={isProcessing}
+                            className={`flex-1 px-4 py-2.5 text-sm border-none ${NEU_BTN_GHOST} disabled:opacity-40 disabled:cursor-not-allowed`}
+                        >
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirm}
+                            disabled={isProcessing || !reason.trim()}
+                            className={`flex-1 px-5 py-2.5 text-sm inline-flex items-center justify-center gap-2 border-none ${NEU_BTN_PRIMARY} disabled:opacity-40 disabled:cursor-not-allowed`}
+                        >
+                            {isProcessing ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span>Unsuspending…</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Play className="w-4 h-4" />
+                                    <span>Unsuspend Tour</span>
+                                </>
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </div>
             </AlertDialogContent>
         </AlertDialog>
     );

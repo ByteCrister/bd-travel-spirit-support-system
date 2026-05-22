@@ -1,84 +1,46 @@
+// components/skeletons/RequestSkeletonRow.tsx
 "use client";
 
-import React from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
+import { NEU_SKELETON } from "@/styles/neu.styles";
 
 /**
- * Self-contained skeleton row that injects required CSS via an inline <style>.
- * Keeps theme-aware base via Tailwind classes (bg-slate-100 dark:bg-slate-800)
+ * Neumorphic skeleton row for use inside a <TableBody>.
+ * Replaces the previous inline <style> injection with the shared
+ * NEU_SKELETON token (bg-[#d0cecd] animate-pulse rounded-lg).
  */
 export default function RequestSkeletonRow({ compact = false }: { compact?: boolean }) {
-    const h = compact ? "h-6" : "h-8";
-    const baseBg = "bg-slate-100 dark:bg-slate-800";
+    const h = compact ? "h-5" : "h-7";
 
     return (
-        <>
-            <style
-                dangerouslySetInnerHTML={{
-                    __html: `
-/* Inline-scoped skeleton styles (applies globally but included inline for portability) */
-@keyframes rs-skeleton-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
-}
+        <TableRow className="border-b border-white/40 hover:bg-transparent">
+            {/* Name / primary field */}
+            <TableCell>
+                <div className={`${NEU_SKELETON} ${h} w-48 rounded-xl`} />
+            </TableCell>
 
-/* Use a specific class name to avoid colliding with other rules */
-.rs-skeleton {
-  position: relative;
-  overflow: hidden;
-  border-radius: 0.375rem;
-}
+            {/* Secondary field */}
+            <TableCell>
+                <div className={`${NEU_SKELETON} ${h} w-36 rounded-xl`} />
+            </TableCell>
 
-/* Shimmer overlay */
-.rs-skeleton::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0.10) 50%,
-    rgba(255,255,255,0) 100%);
-  mix-blend-mode: overlay;
-  transform: translateX(-100%);
-  animation: rs-skeleton-shimmer 1.2s linear infinite;
-  pointer-events: none;
-}
+            {/* Status badge */}
+            <TableCell>
+                <div className={`${NEU_SKELETON} ${h} w-24 rounded-xl`} />
+            </TableCell>
 
-/* Slight dark-mode tweak if your app doesn't use the dark utility above */
-.dark .rs-skeleton::after {
-  background: linear-gradient(90deg,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0.06) 50%,
-    rgba(255,255,255,0) 100%);
-}
-`,
-                }}
-            />
+            {/* Date */}
+            <TableCell>
+                <div className={`${NEU_SKELETON} ${h} w-32 rounded-xl`} />
+            </TableCell>
 
-            <TableRow className="animate-[fadeIn_120ms_ease-in]">
-                <TableCell>
-                    <div className={`${baseBg} ${h} w-48 rounded-md rs-skeleton`} />
-                </TableCell>
-
-                <TableCell>
-                    <div className={`${baseBg} ${h} w-36 rounded-md rs-skeleton`} />
-                </TableCell>
-
-                <TableCell>
-                    <div className={`${baseBg} ${h} w-24 rounded-md rs-skeleton`} />
-                </TableCell>
-
-                <TableCell>
-                    <div className={`${baseBg} ${h} w-32 rounded-md rs-skeleton`} />
-                </TableCell>
-
-                <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                        <div className={`${baseBg} ${h} w-12 rounded-md rs-skeleton`} />
-                        <div className={`${baseBg} ${h} w-12 rounded-md rs-skeleton`} />
-                    </div>
-                </TableCell>
-            </TableRow>
-        </>
+            {/* Action buttons */}
+            <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                    <div className={`${NEU_SKELETON} ${h} w-14 rounded-xl`} />
+                    <div className={`${NEU_SKELETON} ${h} w-14 rounded-xl`} />
+                </div>
+            </TableCell>
+        </TableRow>
     );
 }

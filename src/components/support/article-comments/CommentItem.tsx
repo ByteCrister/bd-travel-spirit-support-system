@@ -2,17 +2,131 @@
 
 import { memo, useState } from 'react';
 import { CommentDetailDTO, CommentFiltersDTO } from '@/types/article/article-comment.types';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { HiArrowUturnLeft, HiCheckCircle, HiXCircle, HiChevronDown, HiEllipsisHorizontal, HiArrowPath } from 'react-icons/hi2';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    HiArrowUturnLeft,
+    HiCheckCircle,
+    HiXCircle,
+    HiChevronDown,
+    HiEllipsisHorizontal,
+    HiArrowPath,
+} from 'react-icons/hi2';
+import { HiTrash } from 'react-icons/hi';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { ReplyEditor } from './ReplyEditor';
 import { ModerationReasonDialog } from './ModerationReasonDialog';
 import { useArticleCommentsStore } from '@/store/article/article-comment.store';
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
-import { HiTrash } from 'react-icons/hi';
+
+// ── Style constants ────────────────────────────────────────────
+const S = {
+    card:
+        'group rounded-2xl bg-[#E7E5E4] border border-white/60 p-4 ' +
+        'shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff] ' +
+        'hover:shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] ' +
+        'hover:-translate-y-0.5 transition-all duration-200',
+
+    layout: 'flex items-start gap-3',
+
+    // avatar
+    avatarFallback:
+        'h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center ' +
+        'bg-[#006666]/10 shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]',
+    avatarInitial:
+        'font-[family-name:var(--font-space-mono)] font-bold text-sm text-[#006666]',
+    avatarImg: 'rounded-xl ring-2 ring-white/60 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]',
+
+    // header
+    header: 'flex items-center gap-2 flex-wrap mb-2',
+    authorName: 'font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] text-sm',
+    roleBadge:
+        'inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold ' +
+        'bg-[#E7E5E4] text-[#1E2938]/60 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]',
+    timestamp:
+        'font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/40',
+
+    // status badges
+    badgeApproved:
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold ' +
+        'bg-[#00A63D]/10 text-[#00A63D] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]',
+    badgeRejected:
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold ' +
+        'bg-[#FF2157]/10 text-[#FF2157] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]',
+    badgePending:
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold ' +
+        'bg-[#FE9900]/10 text-[#FE9900] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]',
+
+    // content
+    content:
+        'mb-3 font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/80 ' +
+        'leading-relaxed whitespace-pre-wrap break-words',
+
+    // action bar
+    actions: 'flex flex-wrap items-center gap-2',
+
+    btnApprove:
+        'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm ' +
+        'font-[family-name:var(--font-space-mono)] font-bold text-[#00A63D] ' +
+        'bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] ' +
+        'hover:bg-[#00A63D]/10 hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'transition-all duration-200',
+
+    btnReject:
+        'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm ' +
+        'font-[family-name:var(--font-space-mono)] font-bold text-[#FF2157] ' +
+        'bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] ' +
+        'hover:bg-[#FF2157]/10 hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'transition-all duration-200',
+
+    btnGhost:
+        'flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm ' +
+        'font-[family-name:var(--font-space-mono)] text-[#1E2938]/60 ' +
+        'bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] ' +
+        'hover:text-[#006666] hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'transition-all duration-200',
+
+    btnIcon:
+        'h-8 w-8 rounded-xl flex items-center justify-center ' +
+        'bg-[#E7E5E4] text-[#1E2938]/50 ' +
+        'shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] ' +
+        'hover:text-[#006666] hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'transition-all duration-200',
+
+    // reply section
+    replyDivider: 'mt-4 pt-4 border-t border-[#1E2938]/10',
+
+    // skeleton / loading
+    loadingWrap: 'mt-4 space-y-3 pl-4 border-l-2 border-[#1E2938]/10',
+    skeletonAvatar: 'h-8 w-8 rounded-xl bg-[#d0cecd] animate-pulse flex-shrink-0',
+    skeletonLine: 'rounded-lg bg-[#d0cecd] animate-pulse',
+
+    // children thread
+    childrenWrap: 'mt-4 space-y-3 pl-4 border-l-2 border-[#006666]/20',
+
+    loadMoreBtn:
+        'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs ' +
+        'font-[family-name:var(--font-space-mono)] font-bold text-[#006666] ' +
+        'bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] ' +
+        'hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200',
+};
+
+const STATUS_BADGE: Record<string, string> = {
+    [COMMENT_STATUS.APPROVED]: S.badgeApproved,
+    [COMMENT_STATUS.REJECTED]: S.badgeRejected,
+    [COMMENT_STATUS.PENDING]: S.badgePending,
+};
+const STATUS_LABEL: Record<string, string> = {
+    [COMMENT_STATUS.APPROVED]: 'Approved',
+    [COMMENT_STATUS.REJECTED]: 'Rejected',
+    [COMMENT_STATUS.PENDING]: 'Pending',
+};
 
 export const CommentItem = memo(function CommentItem({
     node,
@@ -32,46 +146,22 @@ export const CommentItem = memo(function CommentItem({
         deleteComment,
         restoreComment,
         loadMoreComments,
-        threadLoading
+        threadLoading,
     } = useArticleCommentsStore();
+
     const [replyOpen, setReplyOpen] = useState(false);
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+    const [toggleShow, setToggleShow] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+
     const threadKeyChildren = threadKeyOf(articleId, node.id);
     const childCache = selectThreadByKey(threadKeyChildren);
     const childLoading = threadLoading[threadKeyChildren];
-    const [loadingMore, setLoadingMore] = useState(false);
-
-    const [toggleShow, setToggleShow] = useState<boolean>(false);
-
-    const statusConfig = {
-        [COMMENT_STATUS.APPROVED]: {
-            badge: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/50',
-            label: 'Approved',
-            icon: '✓',
-        },
-        [COMMENT_STATUS.REJECTED]: {
-            badge: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-300 dark:border-red-800/50',
-            label: 'Rejected',
-            icon: '✕',
-        },
-        [COMMENT_STATUS.PENDING]: {
-            badge: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-800/50',
-            label: 'Pending',
-            icon: '○',
-        },
-    };
-
-    const currentStatus = statusConfig[node.status];
     const isPending = node.status === COMMENT_STATUS.PENDING;
 
     const handleToggleShow = async () => {
-        if (toggleShow) {
-            setToggleShow(false);
-            return;
-        }
-
+        if (toggleShow) { setToggleShow(false); return; }
         setToggleShow(true);
-
         if (!childCache) {
             await fetchChildComments({
                 articleId,
@@ -88,9 +178,9 @@ export const CommentItem = memo(function CommentItem({
                 initial={{ opacity: 0.95, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                className="group rounded-lg border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm transition-all duration-200"
+                className={S.card}
             >
-                <div className="flex items-start gap-3">
+                <div className={S.layout}>
                     {/* Avatar */}
                     <div className="flex-shrink-0">
                         {node.author.avatarUrl ? (
@@ -99,11 +189,11 @@ export const CommentItem = memo(function CommentItem({
                                 alt={node.author.name}
                                 width={40}
                                 height={40}
-                                className="rounded-full ring-2 ring-slate-200 dark:ring-slate-800"
+                                className={S.avatarImg}
                             />
                         ) : (
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 ring-2 ring-slate-200 dark:ring-slate-800 flex items-center justify-center">
-                                <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                            <div className={S.avatarFallback}>
+                                <span className={S.avatarInitial}>
                                     {node.author.name.charAt(0).toUpperCase()}
                                 </span>
                             </div>
@@ -111,104 +201,70 @@ export const CommentItem = memo(function CommentItem({
                     </div>
 
                     <div className="flex-1 min-w-0">
-                        {/* Header with author info */}
-                        <div className="flex items-center gap-2 flex-wrap mb-2">
-                            <span className="font-semibold text-slate-900 dark:text-white">
-                                {node.author.name}
+                        {/* Header */}
+                        <div className={S.header}>
+                            <span className={S.authorName}>{node.author.name}</span>
+                            <span className={S.roleBadge}>{node.author.role}</span>
+                            <span className={STATUS_BADGE[node.status] ?? S.badgePending}>
+                                {STATUS_LABEL[node.status] ?? 'Unknown'}
                             </span>
-                            <Badge variant="outline" className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700">
-                                {node.author.role}
-                            </Badge>
-                            <Badge className={`text-xs border font-medium ${currentStatus.badge}`}>
-                                {currentStatus.label}
-                            </Badge>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                            <span className={S.timestamp}>
                                 {new Date(node.createdAt).toLocaleDateString()}
                             </span>
                         </div>
 
                         {/* Content */}
-                        <div className="mb-3">
-                            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                                {node.content}
-                            </p>
-                        </div>
+                        <p className={S.content}>{node.content}</p>
 
                         {/* Actions */}
-                        <div className="flex flex-wrap items-center gap-2">
-                            {/* Moderation buttons - only for pending */}
+                        <div className={S.actions}>
                             {isPending && (
-                                <div className="flex gap-2">
-                                    <Button
-                                        size="sm"
+                                <>
+                                    <button
                                         onClick={async () =>
                                             await updateStatus({ commentId: node.id, status: COMMENT_STATUS.APPROVED })
                                         }
-                                        className="flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-1.5 
-                 text-sm font-medium text-white shadow-sm 
-                 hover:bg-emerald-700 focus:outline-none 
-                 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 
-                 dark:bg-emerald-700 dark:hover:bg-emerald-800"
+                                        className={S.btnApprove}
                                     >
                                         <HiCheckCircle className="h-4 w-4" />
                                         Approve
-                                    </Button>
-
-                                    <Button
-                                        size="sm"
-                                        variant="destructive"
+                                    </button>
+                                    <button
                                         onClick={() => setRejectDialogOpen(true)}
-                                        className="flex items-center gap-2 rounded-md bg-red-600 px-3 py-1.5 
-                 text-sm font-medium text-white shadow-sm 
-                 hover:bg-red-700 focus:outline-none 
-                 focus:ring-2 focus:ring-red-500 focus:ring-offset-1 
-                 dark:bg-red-700 dark:hover:bg-red-800"
+                                        className={S.btnReject}
                                     >
                                         <HiXCircle className="h-4 w-4" />
                                         Reject
-                                    </Button>
-                                </div>
+                                    </button>
+                                </>
                             )}
 
-
-                            {/* Reply button */}
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setReplyOpen((o) => !o)}
-                                className="text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 gap-1"
-                            >
+                            <button onClick={() => setReplyOpen(!replyOpen)} className={S.btnGhost}>
                                 <HiArrowUturnLeft className="h-4 w-4" />
                                 Reply
-                            </Button>
+                            </button>
 
-                            {/* View replies button */}
                             {node.replyCount > 0 && (
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
+                                <button
                                     onClick={handleToggleShow}
-                                    className="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 gap-1"
                                     aria-expanded={!!toggleShow}
+                                    className={S.btnGhost}
                                 >
-                                    <HiChevronDown className={`h-4 w-4 transition-transform ${toggleShow ? 'rotate-180' : ''}`} />
+                                    <HiChevronDown
+                                        className={`h-4 w-4 transition-transform duration-200 ${toggleShow ? 'rotate-180' : ''}`}
+                                    />
                                     <span className="text-xs">
                                         {toggleShow ? 'Hide' : 'Show'} replies ({node.replyCount})
                                     </span>
-                                </Button>
+                                </button>
                             )}
 
                             {/* More menu */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                                    >
+                                    <button className={S.btnIcon} aria-label="More options">
                                         <HiEllipsisHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">More options</span>
-                                    </Button>
+                                    </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem
@@ -217,39 +273,27 @@ export const CommentItem = memo(function CommentItem({
                                     >
                                         View JSON
                                     </DropdownMenuItem>
-
-                                    {/* Add Delete option */}
                                     <DropdownMenuItem
                                         onClick={async () => {
                                             if (confirm(`Delete comment by ${node.author.name}?`)) {
-                                                try {
-                                                    await deleteComment({ commentId: node.id });
-                                                    // You might want to add a toast notification here
-                                                } catch (error) {
-                                                    console.error('Failed to delete comment:', error);
-                                                }
+                                                try { await deleteComment({ commentId: node.id }); }
+                                                catch (e) { console.error('Failed to delete comment:', e); }
                                             }
                                         }}
-                                        className="text-sm cursor-pointer text-red-600 dark:text-red-400"
+                                        className="text-sm cursor-pointer text-[#FF2157]"
                                     >
                                         <HiTrash className="h-4 w-4 mr-2" />
                                         Delete Comment
                                     </DropdownMenuItem>
-
-                                    {/* Add Restore option (only show if comment is deleted) */}
                                     {node.status === COMMENT_STATUS.REJECTED && (
                                         <DropdownMenuItem
                                             onClick={async () => {
                                                 if (confirm(`Restore comment by ${node.author.name}?`)) {
-                                                    try {
-                                                        await restoreComment({ commentId: node.id });
-                                                        // You might want to add a toast notification here
-                                                    } catch (error) {
-                                                        console.error('Failed to restore comment:', error);
-                                                    }
+                                                    try { await restoreComment({ commentId: node.id }); }
+                                                    catch (e) { console.error('Failed to restore comment:', e); }
                                                 }
                                             }}
-                                            className="text-sm cursor-pointer text-green-600 dark:text-green-400"
+                                            className="text-sm cursor-pointer text-[#00A63D]"
                                         >
                                             <HiArrowPath className="h-4 w-4 mr-2" />
                                             Restore Comment
@@ -265,7 +309,7 @@ export const CommentItem = memo(function CommentItem({
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800"
+                                className={S.replyDivider}
                             >
                                 <ReplyEditor
                                     onSubmit={async (content) => {
@@ -277,32 +321,31 @@ export const CommentItem = memo(function CommentItem({
                             </motion.div>
                         )}
 
-                        {/* Children loading */}
+                        {/* Child loading skeletons */}
                         {childLoading && (
-                            <div className="mt-4 space-y-3 pl-4 border-l border-slate-200 dark:border-slate-800">
+                            <div className={S.loadingWrap}>
                                 {Array.from({ length: 3 }).map((_, i) => (
                                     <div key={i} className="flex gap-3">
-                                        <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-800 flex-shrink-0" />
+                                        <div className={S.skeletonAvatar} />
                                         <div className="flex-1 space-y-2">
-                                            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-24" />
-                                            <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-full" />
+                                            <div className={`${S.skeletonLine} h-4 w-24`} />
+                                            <div className={`${S.skeletonLine} h-3 w-full`} />
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         )}
 
-                        {/* Children list */}
+                        {/* Children thread */}
                         {toggleShow && childCache?.nodes?.length ? (
-                            <div className="mt-4 space-y-3 pl-4 border-l-2 border-slate-300 dark:border-slate-700">
+                            <div className={S.childrenWrap}>
                                 {childCache.nodes.map((child) => (
                                     <CommentItem key={child.id} node={child} articleId={articleId} />
                                 ))}
-
                                 {childCache?.meta.pagination.hasNextPage && (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
+                                    <button
+                                        className={S.loadMoreBtn}
+                                        disabled={loadingMore}
                                         onClick={async () => {
                                             setLoadingMore(true);
                                             await loadMoreComments({
@@ -314,19 +357,16 @@ export const CommentItem = memo(function CommentItem({
                                             });
                                             setLoadingMore(false);
                                         }}
-                                        disabled={loadingMore}
                                     >
-                                        {loadingMore ? 'Loading...' : 'Load more replies'}
-                                    </Button>
+                                        {loadingMore ? 'Loading…' : 'Load more replies'}
+                                    </button>
                                 )}
                             </div>
                         ) : null}
-
                     </div>
                 </div>
             </motion.div>
 
-            {/* Moderation reason dialog */}
             <ModerationReasonDialog
                 open={rejectDialogOpen}
                 onOpenChange={setRejectDialogOpen}

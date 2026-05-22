@@ -4,28 +4,45 @@
 import { useTourApproval } from "@/store/tour-approval.store";
 import { useEffect } from "react";
 import { motion, Variants } from "framer-motion";
-import { RefreshCw, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { RefreshCw, RotateCcw, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import Kpis from "./Kpis";
 import FiltersBar from "./FiltersBar";
 import ToursTable from "./ToursTable";
 import Pagination from "./Pagination";
 
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_PAGE_BG = "min-h-screen bg-[#E7E5E4]";
+const NEU_CARD =
+    "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_SURFACE_INSET_SM =
+    "bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]";
+const NEU_BTN_PRIMARY =
+    "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
+const NEU_BTN_GHOST =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+    "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+    "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
+const NEU_HEADING =
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_MUTED =
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_DIVIDER = "border-[#1E2938]/10";
+
+// ── Animation variants ────────────────────────────────────────
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: { staggerChildren: 0.1, delayChildren: 0.1 },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
 };
-
 const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.5, ease: "easeOut" },
-    },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
 export default function SupportToursPage() {
@@ -38,98 +55,100 @@ export default function SupportToursPage() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
+        <div className={NEU_PAGE_BG}>
             <motion.div
                 initial="hidden"
                 animate="visible"
                 variants={containerVariants}
-                className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8"
+                className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6 md:space-y-7"
             >
-                {/* Enhanced Header */}
-                <motion.header variants={itemVariants} className="space-y-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="space-y-2">
-                            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
-                                Tour Management Center
-                            </h1>
-                            <p className="text-sm md:text-base text-slate-600">
-                                Review, approve, and manage tour submissions
-                            </p>
+                {/* ── Header ─────────────────────────────────────────── */}
+                <motion.header variants={itemVariants}>
+                    <div className={cn(NEU_CARD, "p-5 md:p-6")}>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="space-y-1">
+                                <h1 className={cn(NEU_HEADING, "text-2xl md:text-3xl")}>
+                                    Tour Management Center
+                                </h1>
+                                <p className={NEU_MUTED}>
+                                    Review, approve, and manage tour submissions
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() =>
+                                        fetchTours(filters || {}, pagination.page, pagination.limit)
+                                    }
+                                    className={cn(NEU_BTN_GHOST, "h-10 px-4 flex items-center gap-2 text-sm group")}
+                                    aria-label="Refresh"
+                                >
+                                    <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                                    Refresh
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        clearFilters();
+                                        fetchTours({}, 1, pagination.limit);
+                                    }}
+                                    className={cn(NEU_BTN_PRIMARY, "h-10 px-4 flex items-center gap-2 text-sm")}
+                                    aria-label="Reset filters"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                    Reset Filters
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="flex gap-3">
-                            <Button
-                                variant="outline"
-                                onClick={() =>
-                                    fetchTours(filters || {}, pagination.page, pagination.limit)
-                                }
-                                className="border-2 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm hover:shadow-md group"
-                            >
-                                <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
-                                Refresh
-                            </Button>
-                            <Button
-                                onClick={() => {
-                                    clearFilters();
-                                    fetchTours({}, 1, pagination.limit);
-                                }}
-                                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all"
-                            >
-                                <RotateCcw className="w-4 h-4 mr-2" />
-                                Reset Filters
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Loading/Error States with Animation */}
-                    {(isLoading || error) && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="rounded-2xl overflow-hidden shadow-md"
-                        >
-                            {isLoading && (
-                                <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-200 p-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="relative w-5 h-5">
-                                            <div className="absolute inset-0 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                                        </div>
-                                        <p className="text-sm font-medium text-blue-900">
-                                            Loading tours...
+                        {/* Status banners */}
+                        {(isLoading || error) && (
+                            <div className={cn("mt-4 pt-4 border-t space-y-2", NEU_DIVIDER)}>
+                                {isLoading && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.97 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className={cn(NEU_SURFACE_INSET_SM, "flex items-center gap-3 px-4 py-3 rounded-xl")}
+                                    >
+                                        <Loader2 className="w-4 h-4 animate-spin text-[#006666] flex-shrink-0" />
+                                        <p className="font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#006666] font-medium">
+                                            Loading tours…
                                         </p>
-                                    </div>
-                                </div>
-                            )}
-                            {error && (
-                                <div className="bg-gradient-to-r from-red-500/10 to-rose-500/10 border border-red-200 p-4">
-                                    <p className="text-sm font-medium text-red-900">{error}</p>
-                                </div>
-                            )}
-                        </motion.div>
-                    )}
+                                    </motion.div>
+                                )}
+                                {error && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.97 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#FF2157]/10 shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]"
+                                    >
+                                        <p className="font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#FF2157] font-medium">
+                                            {error}
+                                        </p>
+                                    </motion.div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </motion.header>
 
-                {/* KPIs Section */}
+                {/* ── KPIs ───────────────────────────────────────────── */}
                 <motion.div variants={itemVariants}>
                     <Kpis />
                 </motion.div>
 
-                {/* Filters Section */}
+                {/* ── Filters ────────────────────────────────────────── */}
                 <motion.div variants={itemVariants}>
                     <FiltersBar />
                 </motion.div>
 
-                {/* Tours Table Section */}
-                <motion.div
-                    variants={itemVariants}
-                    className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/50 overflow-hidden"
-                >
-                    <div className="p-6">
+                {/* ── Tours table ────────────────────────────────────── */}
+                <motion.div variants={itemVariants} className={cn(NEU_CARD, "overflow-hidden")}>
+                    <div className="p-5 md:p-6">
                         <ToursTable />
                     </div>
                 </motion.div>
 
-                {/* Pagination Section */}
+                {/* ── Pagination ─────────────────────────────────────── */}
                 <motion.div variants={itemVariants}>
                     <Pagination />
                 </motion.div>

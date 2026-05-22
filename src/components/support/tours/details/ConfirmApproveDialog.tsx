@@ -15,6 +15,31 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_SURFACE = "bg-[#E7E5E4]";
+const NEU_CARD =
+    "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_BTN_PRIMARY =
+    "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
+const NEU_BTN_GHOST =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+    "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+    "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+    "transition-all duration-200";
+const NEU_SURFACE_INSET =
+    "bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff]";
+const NEU_HEADING =
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_MUTED =
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_ICON_WELL_SUCCESS =
+    "p-2.5 rounded-xl bg-[#00A63D]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
+
 type ConfirmApproveDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -33,61 +58,64 @@ export function ConfirmApproveDialog({ open, onOpenChange, tourId, tourTitle }: 
 
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
-            <AlertDialogContent className="max-w-lg">
-                <AlertDialogHeader>
-                    <div className="flex items-start gap-4">
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center"
-                        >
-                            <CheckCircle2 className="w-6 h-6 text-green-600" />
-                        </motion.div>
-                        <div className="flex-1">
-                            <AlertDialogTitle className="text-xl font-bold text-gray-900">
-                                Approve Tour
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className="mt-2 text-gray-600">
-                                Are you sure you want to approve{" "}
-                                <span className="font-semibold text-gray-900">&quot;{tourTitle}&quot;</span>?
-                            </AlertDialogDescription>
+            <AlertDialogContent className={`max-w-lg border-none p-0 overflow-hidden ${NEU_SURFACE} ${NEU_CARD}`}>
+                <div className="p-6 space-y-5">
+                    <AlertDialogHeader>
+                        <div className="flex items-start gap-4">
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                className={`flex-shrink-0 w-12 h-12 flex items-center justify-center ${NEU_ICON_WELL_SUCCESS}`}
+                            >
+                                <CheckCircle2 className="w-6 h-6 text-[#00A63D]" />
+                            </motion.div>
+                            <div className="flex-1 pt-1">
+                                <AlertDialogTitle className={`text-lg ${NEU_HEADING}`}>
+                                    Approve Tour
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className={`mt-1.5 ${NEU_MUTED}`}>
+                                    Are you sure you want to approve{" "}
+                                    <span className="font-semibold text-[#1E2938]">&quot;{tourTitle}&quot;</span>?
+                                </AlertDialogDescription>
+                            </div>
                         </div>
-                    </div>
-                </AlertDialogHeader>
+                    </AlertDialogHeader>
 
-                <div className="py-4">
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-sm text-blue-800">
-                            <strong>Note:</strong> Once approved, this tour will be published and visible to all users.
+                    {/* Info note */}
+                    <div className={`rounded-xl p-4 ${NEU_SURFACE_INSET}`}>
+                        <p className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/70 leading-relaxed">
+                            <span className="font-bold text-[#006666]">Note —</span>{" "}
+                            Once approved, this tour will be published and visible to all users on the platform.
                         </p>
                     </div>
-                </div>
 
-                <AlertDialogFooter className="gap-2">
-                    <AlertDialogCancel
-                        disabled={isProcessing}
-                        className="px-4 py-2 border-2 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
-                    >
-                        Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={confirm}
-                        disabled={isProcessing}
-                        className="px-5 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isProcessing ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                Approving...
-                            </>
-                        ) : (
-                            <>
-                                <CheckCircle2 className="w-4 h-4 mr-2" />
-                                Approve Tour
-                            </>
-                        )}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
+                    <AlertDialogFooter className="flex flex-row gap-3 pt-1">
+                        <AlertDialogCancel
+                            disabled={isProcessing}
+                            className={`flex-1 px-4 py-2.5 text-sm border-none ${NEU_BTN_GHOST} disabled:opacity-40 disabled:cursor-not-allowed`}
+                        >
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirm}
+                            disabled={isProcessing}
+                            className={`flex-1 px-5 py-2.5 text-sm inline-flex items-center justify-center gap-2 border-none ${NEU_BTN_PRIMARY} disabled:opacity-40 disabled:cursor-not-allowed`}
+                        >
+                            {isProcessing ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span>Approving…</span>
+                                </>
+                            ) : (
+                                <>
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <span>Approve Tour</span>
+                                </>
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </div>
             </AlertDialogContent>
         </AlertDialog>
     );

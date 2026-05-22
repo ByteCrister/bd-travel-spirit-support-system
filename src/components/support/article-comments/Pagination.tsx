@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useArticleCommentsStore } from '@/store/article/article-comment.store';
 import {
     HiChevronLeft,
@@ -10,6 +8,47 @@ import {
     HiArrowLongLeft,
     HiArrowLongRight,
 } from 'react-icons/hi2';
+
+// ── Style constants ────────────────────────────────────────────
+const S = {
+    root: 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-6 px-4',
+
+    info:
+        'font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/60',
+    infoStrong:
+        'font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938]',
+    dot: 'mx-2 text-[#1E2938]/30',
+
+    controls: 'flex flex-wrap items-center justify-end gap-2',
+
+    // raised button
+    btn:
+        'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm ' +
+        'font-[family-name:var(--font-space-mono)] text-[#1E2938] ' +
+        'bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] ' +
+        'hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] ' +
+        'active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] ' +
+        'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40',
+
+    // inset page-input chip
+    pageChip:
+        'flex items-center gap-1.5 px-3 py-2 rounded-xl ' +
+        'bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]',
+    pageInput:
+        'w-10 text-center bg-transparent border-none p-0 text-sm ' +
+        'font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] ' +
+        'focus:outline-none focus:ring-0',
+    pageSep:
+        'text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/40',
+
+    // keyboard hint
+    hint: 'hidden lg:flex items-center gap-1 text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/40',
+    kbd:
+        'px-1.5 py-0.5 text-xs font-bold rounded-lg ' +
+        'bg-[#E7E5E4] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] ' +
+        'text-[#1E2938]/60',
+};
 
 export function Pagination({ totalPages }: { totalPages: number }) {
     const store = useArticleCommentsStore();
@@ -23,42 +62,23 @@ export function Pagination({ totalPages }: { totalPages: number }) {
         setInputValue(String(safe));
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setInputValue(e.target.value);
-    };
-
     const handleInputBlur = () => {
         const value = Number(inputValue);
-        if (!isNaN(value)) {
-            setPage(value);
-        } else {
-            setInputValue(String(page));
-        }
+        if (!isNaN(value)) setPage(value);
+        else setInputValue(String(page));
     };
 
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            handleInputBlur();
-        }
-        if (e.key === 'Escape') {
-            setInputValue(String(page));
-        }
+        if (e.key === 'Enter') handleInputBlur();
+        if (e.key === 'Escape') setInputValue(String(page));
     };
 
-    useEffect(() => {
-        setInputValue(String(page));
-    }, [page]);
+    useEffect(() => { setInputValue(String(page)); }, [page]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
-            if (e.altKey && e.key === 'ArrowLeft') {
-                e.preventDefault();
-                setPage(page - 1);
-            }
-            if (e.altKey && e.key === 'ArrowRight') {
-                e.preventDefault();
-                setPage(page + 1);
-            }
+            if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); setPage(page - 1); }
+            if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); setPage(page + 1); }
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
@@ -67,101 +87,59 @@ export function Pagination({ totalPages }: { totalPages: number }) {
 
     const isFirstPage = page === 1;
     const isLastPage = page >= totalPages;
-    const pageRange = `${Math.min(page, totalPages)} / ${totalPages}`;
 
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-6 px-2">
-            {/* Info section */}
-            <div className="text-sm text-slate-600 dark:text-slate-400">
-                <span className="font-medium text-slate-900 dark:text-white">
-                    Page {pageRange}
-                </span>
-                <span className="mx-2">•</span>
-                <span>{totalPages === 1 ? '1 page total' : `${totalPages} pages total`}</span>
-            </div>
+        <div className={S.root}>
+            {/* Info */}
+            <p className={S.info}>
+                <span className={S.infoStrong}>Page {Math.min(page, totalPages)}</span>
+                <span className={S.dot}>•</span>
+                {totalPages === 1 ? '1 page total' : `${totalPages} pages total`}
+            </p>
 
-            {/* Controls section */}
-            <div className="flex flex-wrap items-center justify-end gap-2">
-                {/* First button */}
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(1)}
-                    disabled={isFirstPage}
-                    title="Go to first page (Alt+Left)"
-                    className="text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed gap-1"
-                >
+            {/* Controls */}
+            <div className={S.controls}>
+                <button onClick={() => setPage(1)} disabled={isFirstPage} title="First page (Alt+Left)" className={S.btn}>
                     <HiArrowLongLeft className="h-4 w-4" />
                     <span className="hidden sm:inline">First</span>
-                </Button>
+                </button>
 
-                {/* Previous button */}
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page - 1)}
-                    disabled={isFirstPage}
-                    title="Previous page"
-                    className="text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed gap-1"
-                >
+                <button onClick={() => setPage(page - 1)} disabled={isFirstPage} title="Previous page" className={S.btn}>
                     <HiChevronLeft className="h-4 w-4" />
                     <span className="hidden sm:inline">Prev</span>
-                </Button>
+                </button>
 
-                {/* Page input */}
-                <div className="flex items-center gap-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg">
-                    <Input
+                <div className={S.pageChip}>
+                    <input
                         type="number"
                         min={1}
                         max={totalPages}
                         value={inputValue}
-                        onChange={handleInputChange}
+                        onChange={(e) => setInputValue(e.target.value)}
                         onBlur={handleInputBlur}
                         onKeyDown={handleInputKeyDown}
                         aria-label="Jump to page"
-                        className="w-12 text-center border-0 bg-transparent p-0 text-sm font-medium text-slate-900 dark:text-white focus:ring-0 focus:outline-none"
+                        className={S.pageInput}
                     />
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        / {totalPages}
-                    </span>
+                    <span className={S.pageSep}>/ {totalPages}</span>
                 </div>
 
-                {/* Next button */}
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page + 1)}
-                    disabled={isLastPage}
-                    title="Next page (Alt+Right)"
-                    className="text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed gap-1"
-                >
+                <button onClick={() => setPage(page + 1)} disabled={isLastPage} title="Next page (Alt+Right)" className={S.btn}>
                     <span className="hidden sm:inline">Next</span>
                     <HiChevronRight className="h-4 w-4" />
-                </Button>
+                </button>
 
-                {/* Last button */}
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(totalPages)}
-                    disabled={isLastPage}
-                    title="Go to last page (Alt+Right)"
-                    className="text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed gap-1"
-                >
+                <button onClick={() => setPage(totalPages)} disabled={isLastPage} title="Last page" className={S.btn}>
                     <span className="hidden sm:inline">Last</span>
                     <HiArrowLongRight className="h-4 w-4" />
-                </Button>
+                </button>
             </div>
 
-            {/* Keyboard hints */}
-            <div className="text-xs text-slate-500 dark:text-slate-400 hidden lg:block whitespace-nowrap">
-                <kbd className="px-2 py-0.5 mx-0.5 text-xs font-semibold bg-slate-200 dark:bg-slate-700 rounded border border-slate-300 dark:border-slate-600">
-                    Alt
-                </kbd>
+            {/* Keyboard hint */}
+            <div className={S.hint}>
+                <kbd className={S.kbd}>Alt</kbd>
                 <span>+</span>
-                <kbd className="px-2 py-0.5 mx-0.5 text-xs font-semibold bg-slate-200 dark:bg-slate-700 rounded border border-slate-300 dark:border-slate-600">
-                    ←/→
-                </kbd>
+                <kbd className={S.kbd}>←/→</kbd>
             </div>
         </div>
     );

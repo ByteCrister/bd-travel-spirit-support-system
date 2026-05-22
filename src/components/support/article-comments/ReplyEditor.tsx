@@ -1,11 +1,72 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import { showToast } from '../../global/showToast';
 import { HiPaperAirplane, HiXMark } from 'react-icons/hi2';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// ── Style constants ────────────────────────────────────────────
+const S = {
+    root:
+        'space-y-3 p-4 rounded-2xl bg-[#E7E5E4] ' +
+        'shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff] ' +
+        'border border-white/40',
+
+    // textarea (double inset = deeper well)
+    textarea:
+        'w-full min-h-24 resize-none px-4 py-3 rounded-xl ' +
+        'font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938] ' +
+        'placeholder:text-[#1E2938]/40 bg-[#E7E5E4] border-none ' +
+        'shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] ' +
+        'focus:outline-none focus:ring-2 focus:ring-[#006666]/50 ' +
+        'disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200',
+
+    // char counter row
+    charRow: 'flex items-center justify-between gap-2',
+    progressWrap: 'flex-1 h-1.5 rounded-full overflow-hidden bg-[#E7E5E4] shadow-[inset_1px_1px_3px_#c8c6c5,inset_-1px_-1px_3px_#ffffff]',
+    progressBar: (pct: number, over: boolean, warn: boolean) =>
+        `h-full rounded-full transition-all duration-200 ` +
+        (over ? 'bg-[#FF2157]' : warn ? 'bg-[#FE9900]' : 'bg-[#006666]'),
+
+    charCount: (over: boolean, warn: boolean) =>
+        'text-xs font-[family-name:var(--font-space-mono)] font-bold whitespace-nowrap ' +
+        (over ? 'text-[#FF2157]' : warn ? 'text-[#FE9900]' : 'text-[#1E2938]/40'),
+
+    // overflow error
+    overflowMsg:
+        'text-xs font-[family-name:var(--font-space-mono)] font-bold text-[#FF2157]',
+
+    // action row
+    actions: 'flex items-center gap-2',
+
+    btnSubmit:
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-sm ' +
+        'font-[family-name:var(--font-space-mono)] font-bold text-white ' +
+        'bg-[#006666] ' +
+        'shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] ' +
+        'hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] ' +
+        'active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] ' +
+        'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none ' +
+        'transition-all duration-200',
+
+    btnCancel:
+        'flex items-center gap-2 px-4 py-2 rounded-xl text-sm ' +
+        'font-[family-name:var(--font-space-mono)] text-[#1E2938] ' +
+        'bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] ' +
+        'hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200',
+
+    // keyboard hint
+    hint: 'flex items-center justify-between text-xs text-[#1E2938]/40',
+    hintKbdRow: 'hidden sm:flex items-center gap-1 font-[family-name:var(--font-jetbrains-mono)]',
+    kbd:
+        'px-1.5 py-0.5 text-xs font-bold rounded-lg ' +
+        'bg-[#E7E5E4] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] ' +
+        'text-[#1E2938]/60',
+    mdNote: 'font-[family-name:var(--font-jetbrains-mono)]',
+};
+
+const MAX_CHARS = 5000;
 
 export function ReplyEditor({
     onSubmit,
@@ -16,26 +77,21 @@ export function ReplyEditor({
 }) {
     const [value, setValue] = useState('');
     const [loading, setLoading] = useState(false);
-    const [characterCount, setCharacterCount] = useState(0);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const MAX_CHARS = 5000;
+
+    const charCount = value.length;
+    const pct = (charCount / MAX_CHARS) * 100;
+    const isOver = charCount > MAX_CHARS;
+    const isWarn = !isOver && pct > 90;
+    const isDisabled = loading || !value.trim() || isOver;
 
     const submit = async () => {
-        if (!value.trim()) {
-            showToast.error('Comment cannot be empty');
-            return;
-        }
-
-        if (value.length > MAX_CHARS) {
-            showToast.error(`Comment exceeds maximum length of ${MAX_CHARS} characters`);
-            return;
-        }
-
+        if (!value.trim()) { showToast.error('Comment cannot be empty'); return; }
+        if (isOver) { showToast.error(`Comment exceeds max length of ${MAX_CHARS}`); return; }
         setLoading(true);
         try {
             await onSubmit(value.trim());
             setValue('');
-            setCharacterCount(0);
             showToast.success('Reply posted successfully');
         } catch (e) {
             showToast.error('Failed to submit reply', e instanceof Error ? e.message : undefined);
@@ -44,32 +100,12 @@ export function ReplyEditor({
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const newValue = e.target.value;
-        setValue(newValue);
-        setCharacterCount(newValue.length);
-    };
-
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Escape') {
-            onCancel();
-        }
-        if (e.ctrlKey && e.key === 'Enter') {
-            submit();
-        }
-        if (e.metaKey && e.key === 'Enter') {
-            // For Mac
-            submit();
-        }
+        if (e.key === 'Escape') onCancel();
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submit();
     };
 
-    // Auto-focus on mount
-    useEffect(() => {
-        textareaRef.current?.focus();
-    }, []);
-
-    const isDisabled = loading || !value.trim() || value.length > MAX_CHARS;
-    const charCountPercentage = (characterCount / MAX_CHARS) * 100;
+    useEffect(() => { textareaRef.current?.focus(); }, []);
 
     return (
         <motion.div
@@ -77,104 +113,71 @@ export function ReplyEditor({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="space-y-3 p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800"
+            className={S.root}
         >
             {/* Textarea */}
             <div className="space-y-2">
-                <Textarea
+                <textarea
                     ref={textareaRef}
                     value={value}
-                    onChange={handleChange}
+                    onChange={(e) => setValue(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Share your thoughts... (Ctrl+Enter to submit, Esc to cancel)"
+                    placeholder="Share your thoughts… (Ctrl+Enter to submit, Esc to cancel)"
                     aria-label="Reply editor"
                     disabled={loading}
-                    className="min-h-24 resize-none bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={S.textarea}
                 />
 
-                {/* Character count with progress bar */}
-                <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1">
-                        <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${charCountPercentage}%` }}
-                                transition={{ duration: 0.2 }}
-                                className={`h-full rounded-full transition-colors ${value.length > MAX_CHARS * 0.9
-                                        ? 'bg-orange-500'
-                                        : value.length > MAX_CHARS * 0.7
-                                            ? 'bg-blue-500'
-                                            : 'bg-slate-400'
-                                    }`}
-                            />
-                        </div>
+                {/* Progress bar + count */}
+                <div className={S.charRow}>
+                    <div className={S.progressWrap}>
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min(pct, 100)}%` }}
+                            transition={{ duration: 0.2 }}
+                            className={S.progressBar(pct, isOver, isWarn)}
+                        />
                     </div>
-                    <span
-                        className={`text-xs font-medium whitespace-nowrap ${value.length > MAX_CHARS
-                                ? 'text-red-600 dark:text-red-400'
-                                : value.length > MAX_CHARS * 0.9
-                                    ? 'text-orange-600 dark:text-orange-400'
-                                    : 'text-slate-500 dark:text-slate-400'
-                            }`}
-                    >
-                        {characterCount}/{MAX_CHARS}
+                    <span className={S.charCount(isOver, isWarn)}>
+                        {charCount}/{MAX_CHARS}
                     </span>
                 </div>
 
-                {/* Validation error */}
                 <AnimatePresence>
-                    {value.length > MAX_CHARS && (
-                        <motion.div
+                    {isOver && (
+                        <motion.p
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
-                            className="text-xs text-red-600 dark:text-red-400 font-medium"
+                            className={S.overflowMsg}
                         >
-                            Comment exceeds maximum length by {value.length - MAX_CHARS} characters
-                        </motion.div>
+                            Comment exceeds max length by {charCount - MAX_CHARS} characters
+                        </motion.p>
                     )}
                 </AnimatePresence>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-                <Button
-                    onClick={submit}
-                    disabled={isDisabled}
-                    className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    size="sm"
-                >
+            {/* Action buttons */}
+            <div className={S.actions}>
+                <button onClick={submit} disabled={isDisabled} className={S.btnSubmit}>
                     <HiPaperAirplane className={`h-4 w-4 ${loading ? 'animate-pulse' : ''}`} />
-                    <span>{loading ? 'Posting…' : 'Post reply'}</span>
-                </Button>
-
-                <Button
-                    onClick={onCancel}
-                    disabled={loading}
-                    variant="outline"
-                    size="sm"
-                    className="text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
+                    {loading ? 'Posting…' : 'Post reply'}
+                </button>
+                <button onClick={onCancel} disabled={loading} className={S.btnCancel}>
                     <HiXMark className="h-4 w-4" />
                     Cancel
-                </Button>
+                </button>
             </div>
 
             {/* Keyboard hint */}
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                <div className="space-y-0.5">
-                    <div className="hidden sm:flex items-center gap-1">
-                        <kbd className="px-2 py-0.5 text-xs font-semibold bg-slate-200 dark:bg-slate-700 rounded border border-slate-300 dark:border-slate-600">
-                            Ctrl
-                        </kbd>
-                        <span>+</span>
-                        <kbd className="px-2 py-0.5 text-xs font-semibold bg-slate-200 dark:bg-slate-700 rounded border border-slate-300 dark:border-slate-600">
-                            Enter
-                        </kbd>
-                        <span>to submit</span>
-                    </div>
+            <div className={S.hint}>
+                <div className={S.hintKbdRow}>
+                    <kbd className={S.kbd}>Ctrl</kbd>
+                    <span>+</span>
+                    <kbd className={S.kbd}>Enter</kbd>
+                    <span className="ml-1">to submit</span>
                 </div>
-                <div>Markdown supported</div>
+                <span className={S.mdNote}>Markdown supported</span>
             </div>
         </motion.div>
     );
