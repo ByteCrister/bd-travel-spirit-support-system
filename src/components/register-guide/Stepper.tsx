@@ -4,6 +4,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { Check, User, Building2, FileText, Eye, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { jakarta } from '@/styles/fonts'
 
 interface StepperProps {
   currentStep: number
@@ -15,66 +16,57 @@ const steps = [
     id: 1,
     title: 'Personal Info',
     description: 'Your basic information',
-    icon: User,
-    color: 'from-blue-500 to-blue-600'
+    icon: User
   },
   {
     id: 2,
     title: 'Company Details',
     description: 'Business information',
-    icon: Building2,
-    color: 'from-emerald-500 to-emerald-600'
+    icon: Building2
   },
   {
     id: 3,
     title: 'Documents',
     description: 'Verification documents',
-    icon: FileText,
-    color: 'from-amber-500 to-amber-600'
+    icon: FileText
   },
   {
     id: 4,
     title: 'Review',
     description: 'Confirm & submit',
-    icon: Eye,
-    color: 'from-purple-500 to-purple-600'
+    icon: Eye
   }
 ]
 
 export const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps }) => {
   return (
-    <div className="w-full max-w-5xl mx-auto mb-12">
+    <div className={`w-full max-w-5xl mx-auto mb-12 ${jakarta.className}`}>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <h2 className="text-3xl font-bold mb-2" style={{ 
-          background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontFamily: "'Poppins', system-ui, sans-serif"
-        }}>
+        <h2 className="text-2xl sm:text-3xl font-semibold mb-2 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
           Registration Progress
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-gray-600">
           Complete all steps to become a verified guide
         </p>
       </motion.div>
 
       <div className="relative">
         {/* Background decoration */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-blue-500/5 rounded-2xl blur-3xl" />
-        
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 via-transparent to-cyan-500/5 rounded-2xl blur-3xl" />
+
         {/* Progress line */}
-        <div className="absolute top-8 left-0 right-0 h-1 bg-gradient-to-r from-gray-200 via-gray-200 to-gray-200 rounded-full -z-10">
+        <div className="absolute top-8 left-0 right-0 h-1 bg-gray-200 rounded-full -z-10 overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 rounded-full"
-            style={{ boxShadow: '0 0 10px -2px rgba(59, 130, 246, 0.3)' }}
+            className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-400 rounded-full"
+            style={{ boxShadow: '0 0 14px -4px rgba(16, 185, 129, 0.6)' }}
             initial={{ width: '0%' }}
-            animate={{ 
-              width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` 
+            animate={{
+              width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%`
             }}
             transition={{ duration: 0.8, ease: 'easeInOut' }}
           />
@@ -98,13 +90,22 @@ export const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps }) => 
                 {/* Step circle with enhanced styling */}
                 <motion.div
                   className={cn(
-                    "relative w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 shadow-lg",
-                    isCompleted && "bg-gradient-to-br from-blue-500 to-blue-600 border-blue-500 text-white",
-                    isCurrent && "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-500 text-blue-600 animate-bounce-gentle",
-                    isUpcoming && "border-gray-300 bg-white/50 text-gray-400 backdrop-blur-sm"
+                    'relative w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 shadow-lg',
+                    isCompleted &&
+                      'bg-gradient-to-br from-emerald-500 to-teal-500 border-emerald-400 text-white',
+                    isCurrent &&
+                      'bg-emerald-50 border-emerald-500 text-emerald-700 animate-bounce-gentle',
+                    isUpcoming &&
+                      'border-gray-300 bg-white text-gray-400'
                   )}
-                  style={isCompleted ? { boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.4)' } : isCurrent ? { boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' } : {}}
-                  whileHover={{ 
+                  style={
+                    isCompleted
+                      ? { boxShadow: '0 0 22px -6px rgba(16, 185, 129, 0.8)' }
+                      : isCurrent
+                      ? { boxShadow: '0 0 22px -6px rgba(56, 189, 248, 0.7)' }
+                      : {}
+                  }
+                  whileHover={{
                     scale: 1.1,
                     rotate: isCurrent ? [0, -5, 5, 0] : 0
                   }}
@@ -113,19 +114,19 @@ export const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps }) => 
                   {/* Glow effect for current step */}
                   {isCurrent && (
                     <motion.div
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/20 to-transparent"
-                      animate={{ 
+                      className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-transparent"
+                      animate={{
                         opacity: [0.5, 1, 0.5],
                         scale: [1, 1.1, 1]
                       }}
-                      transition={{ 
+                      transition={{
                         duration: 2,
                         repeat: Infinity,
-                        ease: "easeInOut"
+                        ease: 'easeInOut'
                       }}
                     />
                   )}
-                  
+
                   {/* Success sparkle effect */}
                   {isCompleted && (
                     <motion.div
@@ -134,7 +135,7 @@ export const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps }) => 
                       animate={{ scale: 1, rotate: 360 }}
                       transition={{ delay: 0.3, duration: 0.5 }}
                     >
-                      <Sparkles className="w-4 h-4 text-yellow-400" />
+                      <Sparkles className="w-4 h-4 text-emerald-300" />
                     </motion.div>
                   )}
 
@@ -143,15 +144,17 @@ export const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps }) => 
                       <motion.div
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
-                        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                        transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
                       >
                         <Check className="w-7 h-7" />
                       </motion.div>
                     ) : (
-                      <Icon className={cn(
-                        "w-7 h-7 transition-all duration-300",
-                        isCurrent && "animate-pulse"
-                      )} />
+                      <Icon
+                        className={cn(
+                          'w-7 h-7 transition-all duration-300',
+                          isCurrent && 'animate-pulse'
+                        )}
+                      />
                     )}
                   </div>
                 </motion.div>
@@ -165,20 +168,20 @@ export const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps }) => 
                 >
                   <h3
                     className={cn(
-                      "text-sm font-semibold transition-all duration-300",
-                      isCurrent && "text-blue-600 text-base",
-                      isCompleted && "text-blue-600",
-                      isUpcoming && "text-gray-500"
+                      'text-sm font-semibold transition-all duration-300',
+                      isCurrent && 'text-emerald-300 text-base',
+                      isCompleted && 'text-emerald-300',
+                      isUpcoming && 'text-slate-400'
                     )}
                   >
                     {step.title}
                   </h3>
                   <p
                     className={cn(
-                      "text-xs mt-1 transition-colors duration-300",
-                      isCurrent && "text-blue-500",
-                      isCompleted && "text-blue-500",
-                      isUpcoming && "text-gray-400"
+                      'text-xs mt-1 transition-colors duration-300',
+                      isCurrent && 'text-emerald-300/80',
+                      isCompleted && 'text-emerald-300/70',
+                      isUpcoming && 'text-slate-500'
                     )}
                   >
                     {step.description}
@@ -188,10 +191,11 @@ export const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps }) => 
                 {/* Step number badge */}
                 <motion.div
                   className={cn(
-                    "absolute -top-2 -left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300",
-                    isCompleted && "bg-blue-500 text-white shadow-lg",
-                    isCurrent && "bg-blue-100 text-blue-600 border-2 border-blue-500",
-                    isUpcoming && "bg-gray-200 text-gray-500"
+                    'absolute -top-2 -left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300',
+                    isCompleted && 'bg-emerald-500 text-white shadow-lg',
+                    isCurrent &&
+                      'bg-emerald-50 text-emerald-700 border-2 border-emerald-500',
+                    isUpcoming && 'bg-gray-200 text-gray-500'
                   )}
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -212,10 +216,10 @@ export const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps }) => 
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <div className="inline-flex items-center space-x-2 bg-gray-100 rounded-full px-4 py-2">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-          <span className="text-sm font-medium text-gray-600">
-            {Math.round((currentStep / totalSteps) * 100)}% Complete
+        <div className="inline-flex items-center space-x-2 rounded-full bg-gray-100 px-4 py-2 border border-gray-200">
+          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          <span className="text-sm font-medium text-gray-700">
+            {Math.round((currentStep / totalSteps) * 100)}% complete
           </span>
         </div>
       </motion.div>

@@ -7,7 +7,7 @@ import {
     SafeCardInfo,
 } from "@/types/site-settings/stripe-payment-account.type";
 import ConnectDB from "@/config/db";
-import paymentAccountModel from "@/models/site-settings/payment-account.model";
+import paymentAccountModel from "@/models/payments/payment-account.model";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 
 type MongoId = { toString(): string };
@@ -90,7 +90,14 @@ export default async function getPaymentAccounts(req: NextRequest) {
     );
     const skip = (page - 1) * pageSize;
 
-    const ADMIN_FILTER = { ownerType: PAYMENT_OWNER_TYPE.ADMIN };
+    const ADMIN_FILTER = {
+        ownerType: PAYMENT_OWNER_TYPE.ADMIN,
+        $or: [
+            { isDeleted: false },
+            { isDeleted: { $exists: false } },
+            { isDeleted: null }
+        ]
+    };
 
     // Using withTransaction for read operations ensures data consistency
     const { itemsRaw, total } = await withTransaction(async () => {

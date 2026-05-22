@@ -58,7 +58,7 @@ function RowWithTooltip({
                         <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10 rounded-lg">
                                 <AvatarImage
-                                    src={row.host.avatar || undefined}
+                                    src={row.host.logoUrl ?? undefined}
                                     alt={row.name}
                                 />
                                 <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 text-white font-semibold">

@@ -11,9 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
     Table,
     TableBody,
@@ -44,16 +42,179 @@ import { useCurrentUserStore } from "@/store/current-user.store";
 import { AUDIT_ACTION, AuditAction } from "@/constants/audit-action.const";
 import { AuditDateFilter, AuditLog } from "@/types/user/current-user.types";
 
+// ── Style tokens (neu design system) ──────────────────────────
+const STYLES = {
+    // Accordion
+    accordionItem:
+        "rounded-2xl overflow-hidden " +
+        "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] " +
+        "border border-white/60 bg-[#E7E5E4]",
+    accordionTrigger:
+        "px-5 sm:px-6 py-4 sm:py-5 hover:no-underline hover:bg-[#006666]/[0.04] " +
+        "transition-colors data-[state=open]:border-b data-[state=open]:border-[#1E2938]/10",
+    accordionContent: "px-4 sm:px-6 pb-6 pt-5",
+
+    // Trigger inner
+    iconWell:
+        "shrink-0 h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-[#006666]/10 " +
+        "flex items-center justify-center " +
+        "shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]",
+    triggerTitle:
+        "font-[family-name:var(--font-space-mono)] font-bold text-sm sm:text-base text-[#1E2938]",
+    triggerSub:
+        "font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/50 mt-0.5",
+
+    // Filter panel
+    filterPanel:
+        "mb-5 rounded-2xl bg-[#E7E5E4] p-4 " +
+        "shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff] " +
+        "border border-white/40",
+    filterHeader: "flex items-center justify-between",
+    filterLabel:
+        "flex items-center gap-2 text-xs font-bold uppercase tracking-widest " +
+        "font-[family-name:var(--font-space-mono)] text-[#1E2938]/60",
+
+    // Buttons
+    btnPrimary:
+        "flex-1 h-9 rounded-xl bg-[#006666] text-white text-xs " +
+        "font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+        "shadow-[3px_3px_6px_#004d4d,-2px_-2px_5px_#008080] " +
+        "hover:bg-[#007777] hover:shadow-[5px_5px_10px_#004d4d,-3px_-3px_7px_#008080] " +
+        "active:shadow-[inset_2px_2px_5px_#004d4d] " +
+        "transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
+        "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
+    btnGhost:
+        "flex-1 h-9 rounded-xl bg-[#E7E5E4] text-[#1E2938] text-xs " +
+        "font-[family-name:var(--font-space-mono)] " +
+        "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] " +
+        "hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+        "transition-all duration-200",
+    btnIcon:
+        "h-7 px-2.5 rounded-xl bg-[#E7E5E4] text-[#1E2938]/60 text-xs " +
+        "font-[family-name:var(--font-space-mono)] flex items-center gap-1 " +
+        "shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff] " +
+        "hover:text-[#FF2157] hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-1px_-1px_3px_#ffffff] " +
+        "transition-all duration-200",
+    btnToggle: (open: boolean) =>
+        `h-7 px-2.5 rounded-xl text-xs font-[family-name:var(--font-space-mono)] flex items-center gap-1 transition-all duration-200 ${open
+            ? "bg-[#006666] text-white shadow-[inset_2px_2px_5px_#004d4d]"
+            : "bg-[#E7E5E4] text-[#1E2938]/70 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff] hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-1px_-1px_3px_#ffffff]"
+        }`,
+
+    // Active filter badge
+    filterBadge:
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs " +
+        "font-[family-name:var(--font-space-mono)] font-bold " +
+        "bg-[#006666]/10 text-[#006666] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+
+    // Popover trigger button
+    popoverTrigger: (hasValue: boolean) =>
+        cn(
+            "w-full justify-start text-left font-normal h-9 rounded-xl border-none text-xs " +
+            "font-[family-name:var(--font-jetbrains-mono)] " +
+            "bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+            "focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200",
+            !hasValue && "text-[#1E2938]/40"
+        ),
+
+    // Filter labels
+    fieldLabel:
+        "text-xs font-bold uppercase tracking-widest " +
+        "font-[family-name:var(--font-space-mono)] text-[#1E2938]/50 " +
+        "flex items-center gap-1.5 mb-1.5",
+
+    // Table container
+    tableWrap:
+        "rounded-2xl overflow-hidden " +
+        "shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff] " +
+        "border border-white/60",
+    tableHeader:
+        "font-[family-name:var(--font-space-mono)] text-xs font-bold uppercase tracking-widest " +
+        "text-[#1E2938]/50 bg-[#E7E5E4] border-b border-[#1E2938]/10",
+    tableRow:
+        "bg-[#E7E5E4] border-b border-[#1E2938]/[0.06] last:border-0 " +
+        "hover:bg-[#006666]/[0.04] transition-colors duration-150",
+
+    // Target cell icon
+    targetIcon:
+        "shrink-0 h-7 w-7 rounded-lg bg-[#E7E5E4] flex items-center justify-center " +
+        "shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]",
+    targetModel:
+        "text-xs font-bold text-[#1E2938] font-[family-name:var(--font-space-mono)]",
+    targetId:
+        "text-xs text-[#1E2938]/40 font-[family-name:var(--font-jetbrains-mono)] truncate max-w-[120px]",
+
+    // IP code
+    ipCode:
+        "text-xs px-2 py-0.5 rounded-lg " +
+        "bg-[#E7E5E4] shadow-[inset_2px_2px_4px_#c8c6c5,inset_-1px_-1px_3px_#ffffff] " +
+        "font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/70",
+
+    // Timestamp
+    timestamp:
+        "text-xs text-[#1E2938]/50 font-[family-name:var(--font-jetbrains-mono)] whitespace-nowrap",
+
+    // Empty / error states
+    emptyWrap: "flex flex-col items-center gap-3 py-14",
+    emptyIcon:
+        "h-14 w-14 rounded-2xl bg-[#E7E5E4] flex items-center justify-center " +
+        "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff]",
+    emptyTitle:
+        "font-[family-name:var(--font-space-mono)] font-bold text-sm text-[#1E2938]",
+    emptyDesc:
+        "font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/40 mt-1 text-center",
+
+    // Stats footer
+    statRow:
+        "mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 " +
+        "px-4 py-3 rounded-xl " +
+        "bg-[#E7E5E4] shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+        "border border-white/40",
+    statText:
+        "text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50",
+    statValue: "font-bold text-[#1E2938]",
+
+    // Error card
+    errorCard:
+        "p-5 rounded-2xl bg-[#E7E5E4] " +
+        "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] " +
+        "border border-white/60",
+    errorIcon:
+        "h-10 w-10 rounded-xl bg-[#FF2157]/10 flex items-center justify-center " +
+        "shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]",
+    errorTitle:
+        "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] text-sm",
+    errorMsg:
+        "font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/50 mt-1 mb-4",
+} as const;
+
+// ── Badge helpers ──────────────────────────────────────────────
+const ACTION_BADGE: Record<string, string> = {
+    create:
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs " +
+        "font-[family-name:var(--font-space-mono)] font-bold " +
+        "bg-[#00A63D]/10 text-[#00A63D] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+    update:
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs " +
+        "font-[family-name:var(--font-space-mono)] font-bold " +
+        "bg-[#FE9900]/10 text-[#FE9900] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+    delete:
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs " +
+        "font-[family-name:var(--font-space-mono)] font-bold " +
+        "bg-[#FF2157]/10 text-[#FF2157] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+    read:
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs " +
+        "font-[family-name:var(--font-space-mono)] font-bold " +
+        "bg-[#006666]/10 text-[#006666] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+};
+
+// ── Framer variants ────────────────────────────────────────────
 const itemVariants: Variants = {
     hidden: { opacity: 0, y: 8 },
     visible: {
         opacity: 1,
         y: 0,
-        transition: {
-            type: "spring",
-            stiffness: 400,
-            damping: 28,
-        },
+        transition: { type: "spring", stiffness: 400, damping: 28 },
     },
 };
 
@@ -77,6 +238,7 @@ const filterVariants: Variants = {
     },
 };
 
+// ── Component ─────────────────────────────────────────────────
 export default function AuditLogsSection() {
     const {
         audits,
@@ -95,41 +257,22 @@ export default function AuditLogsSection() {
 
     const debounceRef = useRef<number | null>(null);
 
+    // Sync local date state with store filters
     useEffect(() => {
-        if (auditFilters.date) {
-            const parsedDate = new Date(auditFilters.date);
-            if (!isNaN(parsedDate.getTime())) {
-                setDate(parsedDate);
-            }
-        } else {
-            setDate(undefined);
-        }
-
-        if (auditFilters.startDate) {
-            const parsedStartDate = new Date(auditFilters.startDate);
-            if (!isNaN(parsedStartDate.getTime())) {
-                setStartDate(parsedStartDate);
-            }
-        } else {
-            setStartDate(undefined);
-        }
-
-        if (auditFilters.endDate) {
-            const parsedEndDate = new Date(auditFilters.endDate);
-            if (!isNaN(parsedEndDate.getTime())) {
-                setEndDate(parsedEndDate);
-            }
-        } else {
-            setEndDate(undefined);
-        }
+        const parse = (v: string | undefined) => {
+            if (!v) return undefined;
+            const d = new Date(v);
+            return isNaN(d.getTime()) ? undefined : d;
+        };
+        setDate(parse(auditFilters.date));
+        setStartDate(parse(auditFilters.startDate));
+        setEndDate(parse(auditFilters.endDate));
     }, [auditFilters.date, auditFilters.startDate, auditFilters.endDate]);
 
     const handleAccordionChange = useCallback(
         async (value: string) => {
-            if (value === "audits") {
-                if (auditsMeta.stale || audits.length === 0) {
-                    await fetchUserAudits();
-                }
+            if (value === "audits" && (auditsMeta.stale || audits.length === 0)) {
+                await fetchUserAudits();
             }
         },
         [audits.length, auditsMeta.stale, fetchUserAudits]
@@ -140,14 +283,9 @@ export default function AuditLogsSection() {
         if (date) {
             filters.date = date.toISOString();
         } else {
-            if (startDate) {
-                filters.startDate = startDate.toISOString();
-            }
-            if (endDate) {
-                filters.endDate = endDate.toISOString();
-            }
+            if (startDate) filters.startDate = startDate.toISOString();
+            if (endDate) filters.endDate = endDate.toISOString();
         }
-
         setAuditDateFilter(filters);
         await fetchUserAudits({ ...filters, force: true });
         setIsFilterOpen(false);
@@ -163,15 +301,9 @@ export default function AuditLogsSection() {
     }, [resetAuditFilters, fetchUserAudits]);
 
     const handleScroll = useCallback(() => {
-        if (debounceRef.current) {
-            clearTimeout(debounceRef.current);
-        }
-
+        if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = window.setTimeout(() => {
-            const scrollTop = document.documentElement.scrollTop;
-            const scrollHeight = document.documentElement.scrollHeight;
-            const clientHeight = document.documentElement.clientHeight;
-
+            const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
             if (
                 scrollTop + clientHeight >= scrollHeight - 100 &&
                 !auditsMeta.loading &&
@@ -186,63 +318,51 @@ export default function AuditLogsSection() {
         window.addEventListener("scroll", handleScroll);
         return () => {
             window.removeEventListener("scroll", handleScroll);
-            if (debounceRef.current) {
-                clearTimeout(debounceRef.current);
-            }
+            if (debounceRef.current) clearTimeout(debounceRef.current);
         };
     }, [handleScroll]);
 
-    const getActionColor = (action: AuditAction) => {
-        switch (action.toLowerCase()) {
-            case AUDIT_ACTION.CREATE:
-                return "bg-slate-100 text-slate-800 border-slate-300";
-            case AUDIT_ACTION.UPDATE:
-                return "bg-slate-100 text-slate-700 border-slate-300";
-            case AUDIT_ACTION.DELETE:
-                return "bg-slate-100 text-slate-800 border-slate-300";
-            case AUDIT_ACTION.READ:
-            default:
-                return "bg-slate-50 text-slate-600 border-slate-200";
-        }
-    };
+    const getActionBadgeClass = (action: AuditAction) =>
+        ACTION_BADGE[action.toLowerCase()] ?? ACTION_BADGE.read;
 
     const getActionIcon = (action: AuditAction) => {
         switch (action.toLowerCase()) {
-            case AUDIT_ACTION.CREATE:
-                return <TrendingUp className="h-3 w-3" />;
-            case AUDIT_ACTION.UPDATE:
-                return <Activity className="h-3 w-3" />;
-            case AUDIT_ACTION.DELETE:
-                return <X className="h-3 w-3" />;
-            case AUDIT_ACTION.READ:
-            default:
-                return <Shield className="h-3 w-3" />;
+            case AUDIT_ACTION.CREATE: return <TrendingUp className="h-3 w-3" />;
+            case AUDIT_ACTION.UPDATE: return <Activity className="h-3 w-3" />;
+            case AUDIT_ACTION.DELETE: return <X className="h-3 w-3" />;
+            default: return <Shield className="h-3 w-3" />;
         }
     };
 
+    // ── Error state ────────────────────────────────────────────
     if (auditsMeta.error) {
         return (
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-6 bg-slate-50 border border-slate-200 rounded-lg"
+                className={STYLES.errorCard}
             >
-                <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200">
-                        <AlertCircle className="h-5 w-5 text-slate-700" />
+                <div className="flex items-center gap-3 mb-2">
+                    <div className={STYLES.errorIcon}>
+                        <AlertCircle className="h-5 w-5 text-[#FF2157]" />
                     </div>
-                    <h3 className="font-semibold text-slate-900">Error Loading Audit Logs</h3>
+                    <h3 className={STYLES.errorTitle}>Error Loading Audit Logs</h3>
                 </div>
-                <p className="text-sm text-slate-600 mb-4">{auditsMeta.error}</p>
-                <Button
-                    variant="outline"
-                    size="sm"
+                <p className={STYLES.errorMsg}>{auditsMeta.error}</p>
+                <button
                     onClick={() => fetchUserAudits({ force: true })}
-                    className="group border-slate-300"
+                    className={
+                        "group flex items-center gap-2 h-9 px-4 rounded-xl text-xs " +
+                        "font-[family-name:var(--font-space-mono)] font-bold " +
+                        "bg-[#E7E5E4] text-[#1E2938] " +
+                        "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] " +
+                        "hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+                        "transition-all duration-200"
+                    }
                 >
-                    <RefreshCw className="h-4 w-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
+                    <RefreshCw className="h-3.5 w-3.5 group-hover:rotate-180 transition-transform duration-500" />
                     Retry
-                </Button>
+                </button>
             </motion.div>
         );
     }
@@ -251,116 +371,112 @@ export default function AuditLogsSection() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-
     return (
         <Accordion
             type="single"
             collapsible
             className="w-full"
             onValueChange={handleAccordionChange}
-            defaultValue="" // Changed from "audits" to "" to initially close
+            defaultValue=""
         >
-            <AccordionItem value="audits" className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                <AccordionTrigger className="hover:no-underline px-6 py-5 hover:bg-slate-50 transition-colors data-[state=open]:border-b data-[state=open]:border-slate-200">
-                    <div className="flex items-center gap-4">
-                        <div className="h-11 w-11 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200">
-                            <Shield className="h-5 w-5 text-slate-700" />
+            <AccordionItem value="audits" className={STYLES.accordionItem}>
+
+                {/* ── Trigger ─────────────────────────────────── */}
+                <AccordionTrigger className={STYLES.accordionTrigger}>
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        <div className={STYLES.iconWell}>
+                            <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-[#006666]" />
                         </div>
                         <div className="text-left">
-                            <h3 className="font-semibold text-base text-slate-900">Audit Logs</h3>
-                            <p className="text-sm text-slate-500 mt-0.5">
+                            <h3 className={STYLES.triggerTitle}>Audit Logs</h3>
+                            <p className={STYLES.triggerSub}>
                                 Track your account activity and changes
                             </p>
                         </div>
                     </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6 pt-6">
-                    {/* Filters */}
-                    <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                        <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium flex items-center gap-2 text-sm text-slate-900">
-                                <Filter className="h-4 w-4 text-slate-600" />
+
+                {/* ── Content ──────────────────────────────────── */}
+                <AccordionContent className={STYLES.accordionContent}>
+
+                    {/* Filter Panel */}
+                    <div className={STYLES.filterPanel}>
+                        <div className={STYLES.filterHeader}>
+                            <span className={STYLES.filterLabel}>
+                                <Filter className="h-3.5 w-3.5" />
                                 Filters
-                            </h4>
+                            </span>
+
                             <div className="flex items-center gap-2">
                                 <AnimatePresence>
                                     {hasActiveFilters && (
                                         <motion.div
-                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            initial={{ opacity: 0, scale: 0.88 }}
                                             animate={{ opacity: 1, scale: 1 }}
-                                            exit={{ opacity: 0, scale: 0.9 }}
+                                            exit={{ opacity: 0, scale: 0.88 }}
                                         >
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
+                                            <button
                                                 onClick={clearFilters}
-                                                className="h-8 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                                                className={STYLES.btnIcon}
+                                                aria-label="Clear filters"
                                             >
-                                                <X className="h-3 w-3 mr-1" />
+                                                <X className="h-3 w-3" />
                                                 Clear
-                                            </Button>
+                                            </button>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
-                                <Button
-                                    variant={isFilterOpen ? "secondary" : "outline"}
-                                    size="sm"
+
+                                <button
                                     onClick={() => setIsFilterOpen(!isFilterOpen)}
-                                    className="h-8 text-xs border-slate-300"
+                                    className={STYLES.btnToggle(isFilterOpen)}
+                                    aria-expanded={isFilterOpen}
                                 >
                                     {isFilterOpen ? "Hide" : "Show"}
                                     <ChevronDown
                                         className={cn(
-                                            "h-3.5 w-3.5 ml-1 transition-transform duration-200",
+                                            "h-3 w-3 transition-transform duration-200",
                                             isFilterOpen && "rotate-180"
                                         )}
                                     />
-                                </Button>
+                                </button>
                             </div>
                         </div>
 
-                        {/* Active filters display */}
+                        {/* Active filter pills */}
                         <AnimatePresence>
                             {hasActiveFilters && (
                                 <motion.div
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: "auto" }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="mb-3 overflow-hidden"
+                                    className="overflow-hidden"
                                 >
-                                    <div className="flex flex-wrap gap-2 pt-2">
+                                    <div className="flex flex-wrap gap-2 pt-3">
                                         {auditFilters.date && (
-                                            <Badge
-                                                variant="secondary"
-                                                className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-700 border-slate-300 text-xs"
-                                            >
+                                            <span className={STYLES.filterBadge}>
                                                 <CalendarIcon className="h-3 w-3" />
                                                 {format(new Date(auditFilters.date), "MMM d, yyyy")}
-                                            </Badge>
+                                            </span>
                                         )}
                                         {auditFilters.startDate && (
-                                            <Badge
-                                                variant="secondary"
-                                                className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-700 border-slate-300 text-xs"
-                                            >
+                                            <span className={STYLES.filterBadge}>
                                                 <CalendarIcon className="h-3 w-3" />
                                                 From: {format(new Date(auditFilters.startDate), "MMM d, yyyy")}
-                                            </Badge>
+                                            </span>
                                         )}
                                         {auditFilters.endDate && (
-                                            <Badge
-                                                variant="secondary"
-                                                className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-700 border-slate-300 text-xs"
-                                            >
+                                            <span className={STYLES.filterBadge}>
                                                 <CalendarIcon className="h-3 w-3" />
                                                 To: {format(new Date(auditFilters.endDate), "MMM d, yyyy")}
-                                            </Badge>
+                                            </span>
                                         )}
                                     </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
 
+                        {/* Expanded filter inputs */}
                         <AnimatePresence>
                             {isFilterOpen && (
                                 <motion.div
@@ -370,25 +486,20 @@ export default function AuditLogsSection() {
                                     exit="exit"
                                     className="overflow-hidden"
                                 >
-                                    <div className="space-y-4 pt-3">
-                                        <Separator className="bg-slate-200" />
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                            {/* Single Date */}
-                                            <div className="space-y-1.5">
-                                                <label className="text-xs font-medium flex items-center gap-1.5 text-slate-700">
-                                                    <CalendarIcon className="h-3 w-3 text-slate-500" />
+                                    <div className="pt-4 space-y-4">
+                                        <Separator className="bg-[#1E2938]/10" />
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            {/* Specific Date */}
+                                            <div>
+                                                <label className={STYLES.fieldLabel}>
+                                                    <CalendarIcon className="h-3 w-3" />
                                                     Specific Date
                                                 </label>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            className={cn(
-                                                                "w-full justify-start text-left font-normal h-9 bg-white hover:bg-slate-50 border-slate-300 text-sm",
-                                                                !date && "text-slate-500"
-                                                            )}
-                                                        >
-                                                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                                                        <Button className={STYLES.popoverTrigger(!!date)}>
+                                                            <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0" />
                                                             {date ? format(date, "PPP") : "Pick a date"}
                                                         </Button>
                                                     </PopoverTrigger>
@@ -396,20 +507,17 @@ export default function AuditLogsSection() {
                                                         <Calendar
                                                             mode="single"
                                                             selected={startDate}
-                                                            onSelect={(date) => {
-                                                                if (!date) return; // <-- handle undefined
-                                                                if (endDate && date > endDate) {
-                                                                    setEndDate(date); // auto-adjust endDate if startDate goes beyond it
-                                                                }
-                                                                setStartDate(date);
+                                                            onSelect={(d) => {
+                                                                if (!d) return;
+                                                                if (endDate && d > endDate) setEndDate(d);
+                                                                setStartDate(d);
                                                             }}
                                                             initialFocus
-                                                            disabled={(date) => {
-                                                                const d = new Date(date);
-                                                                d.setHours(0, 0, 0, 0);
-
-                                                                if (d > today) return true;
-                                                                if (endDate && d > endDate) return true;
+                                                            disabled={(d) => {
+                                                                const n = new Date(d);
+                                                                n.setHours(0, 0, 0, 0);
+                                                                if (n > today) return true;
+                                                                if (endDate && n > endDate) return true;
                                                                 return false;
                                                             }}
                                                         />
@@ -418,44 +526,33 @@ export default function AuditLogsSection() {
                                             </div>
 
                                             {/* Start Date */}
-                                            <div className="space-y-1.5">
-                                                <label className="text-xs font-medium flex items-center gap-1.5 text-slate-700">
-                                                    <CalendarDays className="h-3 w-3 text-slate-500" />
+                                            <div>
+                                                <label className={STYLES.fieldLabel}>
+                                                    <CalendarDays className="h-3 w-3" />
                                                     Start Date
                                                 </label>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            className={cn(
-                                                                "w-full justify-start text-left font-normal h-9 bg-white hover:bg-slate-50 border-slate-300 text-sm",
-                                                                !startDate && "text-slate-500"
-                                                            )}
-                                                        >
-                                                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                                                        <Button className={STYLES.popoverTrigger(!!startDate)}>
+                                                            <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0" />
                                                             {startDate ? format(startDate, "PPP") : "Start date"}
                                                         </Button>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-auto p-0" align="start">
-                                                        {/* Start Date */}
                                                         <Calendar
                                                             mode="single"
-                                                            selected={startDate} //  highlight startDate
-                                                            onSelect={(date) => {
-                                                                if (!date) return;
-                                                                // auto-adjust endDate if startDate goes beyond it
-                                                                if (endDate && date > endDate) {
-                                                                    setEndDate(date);
-                                                                }
-                                                                setStartDate(date); //  set startDate
+                                                            selected={startDate}
+                                                            onSelect={(d) => {
+                                                                if (!d) return;
+                                                                if (endDate && d > endDate) setEndDate(d);
+                                                                setStartDate(d);
                                                             }}
                                                             initialFocus
-                                                            disabled={(date) => {
-                                                                const d = new Date(date);
-                                                                d.setHours(0, 0, 0, 0);
-
-                                                                if (d > today) return true;       // prevent future dates
-                                                                if (endDate && d > endDate) return true;  // cannot be after end date
+                                                            disabled={(d) => {
+                                                                const n = new Date(d);
+                                                                n.setHours(0, 0, 0, 0);
+                                                                if (n > today) return true;
+                                                                if (endDate && n > endDate) return true;
                                                                 return false;
                                                             }}
                                                         />
@@ -464,21 +561,15 @@ export default function AuditLogsSection() {
                                             </div>
 
                                             {/* End Date */}
-                                            <div className="space-y-1.5">
-                                                <label className="text-xs font-medium flex items-center gap-1.5 text-slate-700">
-                                                    <CalendarDays className="h-3 w-3 text-slate-500" />
+                                            <div>
+                                                <label className={STYLES.fieldLabel}>
+                                                    <CalendarDays className="h-3 w-3" />
                                                     End Date
                                                 </label>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            className={cn(
-                                                                "w-full justify-start text-left font-normal h-9 bg-white hover:bg-slate-50 border-slate-300 text-sm",
-                                                                !endDate && "text-slate-500"
-                                                            )}
-                                                        >
-                                                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                                                        <Button className={STYLES.popoverTrigger(!!endDate)}>
+                                                            <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0" />
                                                             {endDate ? format(endDate, "PPP") : "End date"}
                                                         </Button>
                                                     </PopoverTrigger>
@@ -488,12 +579,11 @@ export default function AuditLogsSection() {
                                                             selected={endDate}
                                                             onSelect={setEndDate}
                                                             initialFocus
-                                                            disabled={(date) => {
-                                                                const d = new Date(date);
-                                                                d.setHours(0, 0, 0, 0);
-
-                                                                if (d > today) return true;        // no future dates
-                                                                if (startDate && d < startDate) return true; // not before start
+                                                            disabled={(d) => {
+                                                                const n = new Date(d);
+                                                                n.setHours(0, 0, 0, 0);
+                                                                if (n > today) return true;
+                                                                if (startDate && n < startDate) return true;
                                                                 return false;
                                                             }}
                                                         />
@@ -502,24 +592,23 @@ export default function AuditLogsSection() {
                                             </div>
                                         </div>
 
-                                        <div className="flex gap-2 pt-2">
-                                            <Button
+                                        <div className="flex gap-2 pt-1">
+                                            <button
                                                 onClick={applyFilters}
                                                 disabled={auditsMeta.loading}
-                                                className="flex-1 h-9 bg-slate-900 hover:bg-slate-800 text-white text-sm"
+                                                className={STYLES.btnPrimary}
                                             >
                                                 {auditsMeta.loading && (
-                                                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                                                 )}
                                                 Apply Filters
-                                            </Button>
-                                            <Button
-                                                variant="outline"
+                                            </button>
+                                            <button
                                                 onClick={() => setIsFilterOpen(false)}
-                                                className="flex-1 h-9 border-slate-300 text-sm"
+                                                className={STYLES.btnGhost}
                                             >
                                                 Cancel
-                                            </Button>
+                                            </button>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -527,160 +616,180 @@ export default function AuditLogsSection() {
                         </AnimatePresence>
                     </div>
 
-                    {/* Audit Logs Table */}
-                    <div className="rounded-lg border border-slate-200 overflow-hidden bg-white">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-slate-50 hover:bg-slate-50 border-b border-slate-200">
-                                    <TableHead className="font-semibold text-slate-700 text-xs">Action</TableHead>
-                                    <TableHead className="font-semibold text-slate-700 text-xs">Target</TableHead>
-                                    <TableHead className="font-semibold text-slate-700 text-xs">Changes</TableHead>
-                                    <TableHead className="font-semibold text-slate-700 text-xs">IP Address</TableHead>
-                                    <TableHead className="font-semibold text-slate-700 text-xs">
-                                        <div className="flex items-center gap-1.5">
-                                            <Clock className="h-3 w-3" />
-                                            Timestamp
-                                        </div>
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {auditsMeta.loading && audits.length === 0 ? (
-                                    Array.from({ length: 5 }).map((_, i) => (
-                                        <TableRow key={i}>
+                    {/* ── Table ──────────────────────────────────── */}
+                    <div className={STYLES.tableWrap}>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className={cn(STYLES.tableHeader, "hover:bg-transparent")}>
+                                        <TableHead className={STYLES.tableHeader}>Action</TableHead>
+                                        <TableHead className={STYLES.tableHeader}>Target</TableHead>
+                                        <TableHead className={STYLES.tableHeader}>Changes</TableHead>
+                                        <TableHead className={STYLES.tableHeader}>IP Address</TableHead>
+                                        <TableHead className={STYLES.tableHeader}>
+                                            <span className="flex items-center gap-1.5">
+                                                <Clock className="h-3 w-3" />
+                                                Timestamp
+                                            </span>
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+
+                                <TableBody>
+                                    {/* Loading skeletons */}
+                                    {auditsMeta.loading && audits.length === 0 &&
+                                        Array.from({ length: 5 }).map((_, i) => (
+                                            <TableRow key={i} className={STYLES.tableRow}>
+                                                <TableCell colSpan={5}>
+                                                    <div className="h-12 w-full rounded-xl bg-[#d0cecd] animate-pulse" />
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    }
+
+                                    {/* Empty state */}
+                                    {!auditsMeta.loading && audits.length === 0 && (
+                                        <TableRow className="bg-[#E7E5E4] hover:bg-[#E7E5E4]">
                                             <TableCell colSpan={5}>
-                                                <Skeleton className="h-14 w-full rounded bg-slate-100" />
+                                                <div className={STYLES.emptyWrap}>
+                                                    <div className={STYLES.emptyIcon}>
+                                                        <FileText className="h-6 w-6 text-[#1E2938]/30" />
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <p className={STYLES.emptyTitle}>No audit logs found</p>
+                                                        <p className={STYLES.emptyDesc}>
+                                                            Activity records will appear here when available
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                ) : audits.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center py-16">
-                                            <div className="flex flex-col items-center gap-3">
-                                                <div className="h-14 w-14 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200">
-                                                    <FileText className="h-6 w-6 text-slate-400" />
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium text-slate-900 text-sm">No audit logs found</p>
-                                                    <p className="text-xs text-slate-500 mt-1">
-                                                        Activity records will appear here when available
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    audits.map((log: AuditLog) => (
+                                    )}
+
+                                    {/* Data rows */}
+                                    {audits.map((log: AuditLog) => (
                                         <motion.tr
                                             key={log._id}
                                             variants={itemVariants}
                                             initial="hidden"
                                             animate="visible"
-                                            className="group hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
+                                            className={STYLES.tableRow}
                                         >
-                                            <TableCell className="py-3.5">
-                                                <Badge
-                                                    className={cn(
-                                                        "font-medium transition-all duration-200 flex items-center gap-1.5 w-fit text-xs",
-                                                        getActionColor(log.action)
-                                                    )}
-                                                >
+                                            <TableCell className="py-3.5 pl-4">
+                                                <span className={getActionBadgeClass(log.action)}>
                                                     {getActionIcon(log.action)}
                                                     {log.action}
-                                                </Badge>
+                                                </span>
                                             </TableCell>
+
                                             <TableCell className="py-3.5">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="h-8 w-8 rounded bg-slate-100 flex items-center justify-center border border-slate-200">
-                                                        <Database className="h-3.5 w-3.5 text-slate-600" />
+                                                    <div className={STYLES.targetIcon}>
+                                                        <Database className="h-3.5 w-3.5 text-[#006666]" />
                                                     </div>
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <span className="text-xs font-medium text-slate-900">{log.targetModel}</span>
-                                                        <span className="text-xs text-slate-500 font-mono">{log.target}</span>
+                                                    <div className="min-w-0">
+                                                        <p className={STYLES.targetModel}>{log.targetModel}</p>
+                                                        <p className={STYLES.targetId}>{log.target}</p>
                                                     </div>
                                                 </div>
                                             </TableCell>
+
                                             <TableCell className="py-3.5">
                                                 {log.changes ? (
-                                                    <div className="text-xs space-y-1">
+                                                    <div className="space-y-1">
                                                         {Object.keys(log.changes.before || {}).length > 0 && (
-                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                                                            <span
+                                                                className={
+                                                                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs " +
+                                                                    "font-[family-name:var(--font-space-mono)] font-bold " +
+                                                                    "bg-[#FE9900]/10 text-[#FE9900] " +
+                                                                    "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]"
+                                                                }
+                                                            >
                                                                 <Activity className="h-3 w-3" />
                                                                 Modified
                                                             </span>
                                                         )}
                                                         {log.note && (
-                                                            <span className="block text-slate-600 mt-1">
+                                                            <p className="text-xs text-[#1E2938]/50 font-[family-name:var(--font-jetbrains-mono)] mt-1">
                                                                 {log.note}
-                                                            </span>
+                                                            </p>
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-xs text-slate-500">{log.note || "—"}</span>
+                                                    <span className="text-xs text-[#1E2938]/40 font-[family-name:var(--font-jetbrains-mono)]">
+                                                        {log.note || "—"}
+                                                    </span>
                                                 )}
                                             </TableCell>
+
                                             <TableCell className="py-3.5">
-                                                <code className="text-xs px-2 py-1 rounded bg-slate-100 font-mono text-slate-700 border border-slate-200">
+                                                <code className={STYLES.ipCode}>
                                                     {log.ip || "—"}
                                                 </code>
                                             </TableCell>
-                                            <TableCell className="text-xs text-slate-600 py-3.5 font-mono">
+
+                                            <TableCell className={cn(STYLES.timestamp, "py-3.5 pr-4")}>
                                                 {format(new Date(log.createdAt), "MMM d, yyyy HH:mm")}
                                             </TableCell>
                                         </motion.tr>
-                                    ))
-                                )}
+                                    ))}
 
-                                {auditsMeta.loading && audits.length > 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center py-6 border-t border-slate-100">
-                                            <div className="flex items-center justify-center gap-2 text-slate-600">
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                <span className="text-sm">Loading more...</span>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                )}
+                                    {/* Inline loading more */}
+                                    {auditsMeta.loading && audits.length > 0 && (
+                                        <TableRow className={STYLES.tableRow}>
+                                            <TableCell colSpan={5} className="py-5 text-center">
+                                                <span className="inline-flex items-center gap-2 text-xs text-[#1E2938]/50 font-[family-name:var(--font-jetbrains-mono)]">
+                                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-[#006666]" />
+                                                    Loading more…
+                                                </span>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
 
-                                {!auditsMeta.loading && auditFilters.hasMore && audits.length > 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center py-4 border-t border-slate-100">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => loadMoreAudits()}
-                                                className="group h-8 text-xs border-slate-300"
-                                            >
-                                                <ChevronDown className="h-3.5 w-3.5 mr-1.5 group-hover:translate-y-0.5 transition-transform" />
-                                                Load More
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                    {/* Load More button */}
+                                    {!auditsMeta.loading && auditFilters.hasMore && audits.length > 0 && (
+                                        <TableRow className={cn(STYLES.tableRow, "border-0")}>
+                                            <TableCell colSpan={5} className="py-4 text-center">
+                                                <button
+                                                    onClick={() => loadMoreAudits()}
+                                                    className={
+                                                        "group inline-flex items-center gap-1.5 h-8 px-4 rounded-xl text-xs " +
+                                                        "font-[family-name:var(--font-space-mono)] font-bold text-[#006666] " +
+                                                        "bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] " +
+                                                        "hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+                                                        "transition-all duration-200"
+                                                    }
+                                                >
+                                                    <ChevronDown className="h-3.5 w-3.5 group-hover:translate-y-0.5 transition-transform" />
+                                                    Load More
+                                                </button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </div>
 
-                    {/* Stats */}
+                    {/* ── Stats footer ───────────────────────────── */}
                     {audits.length > 0 && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.2 }}
-                            className="mt-4 flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200"
+                            className={STYLES.statRow}
                         >
-                            <div className="flex items-center gap-2 text-xs">
-                                <Database className="h-3.5 w-3.5 text-slate-600" />
-                                <span className="text-slate-600">
-                                    Showing <span className="font-semibold text-slate-900">{audits.length}</span> {audits.length === 1 ? 'record' : 'records'}
+                            <span className={STYLES.statText}>
+                                Showing{" "}
+                                <span className={STYLES.statValue}>{audits.length}</span>{" "}
+                                {audits.length === 1 ? "record" : "records"}
+                            </span>
+                            {auditsMeta.total != null && (
+                                <span className={STYLES.statText}>
+                                    Total:{" "}
+                                    <span className={STYLES.statValue}>{auditsMeta.total}</span>
                                 </span>
-                            </div>
-                            {auditsMeta.total && (
-                                <div className="flex items-center gap-2 text-xs">
-                                    <span className="text-slate-600">
-                                        Total: <span className="font-semibold text-slate-900">{auditsMeta.total}</span>
-                                    </span>
-                                </div>
                             )}
                         </motion.div>
                     )}

@@ -20,5 +20,5 @@ export async function GET() {
         totalStorage: faker.number.int({ min: 100000, max: 10000000 }),
     };
 
-    return NextResponse.json(data);
+    return NextResponse.json({ data });
 }

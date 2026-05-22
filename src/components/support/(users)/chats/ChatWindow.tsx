@@ -117,18 +117,20 @@ export function ChatWindow({ adminId, userId }: Props) {
 
     // send message with optimistic UI handled by store
     const handleSend = useCallback(async () => {
-        if (!userId) return;
+        if (!userId || !query) return;
         const text = input.trim();
         if (!text) return;
         setInput('');
         try {
             await sendMessage({ receiver: userId, message: text });
-            // after send, ensure conversation list is kept consistent; store triggers background refetch
+            // Re-sync messages from the store after optimistic insert + server confirmation
+            setMessages(getConversation(query));
+            setMeta(getConversationMeta(query));
         } catch (err) {
             // optionally show toast (not included)
             console.error('sendMessage failed', err);
         }
-    }, [input, sendMessage, userId]);
+    }, [input, sendMessage, userId, query, getConversation, getConversationMeta]);
 
     // Load older messages (pagination)
     const loadOlder = useCallback(() => {

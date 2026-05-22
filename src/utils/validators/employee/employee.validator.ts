@@ -6,8 +6,9 @@ import {
     SALARY_PAYMENT_MODE,
     SalaryPaymentMode,
 } from "@/constants/employee.const";
+import { CARD_BRAND, CardBrand } from "@/constants/payment.const";
 import { CURRENCY, Currency } from "@/constants/tour.const";
-import { DayOfWeek, EmergencyContactDTO, ContactInfoDTO, ShiftDTO, DocumentDTO, CreateEmployeePayload } from "@/types/employee/employee.types";
+import { DayOfWeek, EmergencyContactDTO, ContactInfoDTO, ShiftDTO, DocumentDTO, CreateEmployeePayload, PaymentCardDTO } from "@/types/employee/employee.types";
 
 // Phone validation regex for Bangladesh
 export const phoneRegex = /^(?:\+88|88)?(01[3-9]\d{8})$/;
@@ -75,6 +76,28 @@ export const documentValidationSchema: yup.ObjectSchema<DocumentDTO> = yup.objec
     uploadedAt: yup.string().required(),
 });
 
+// Payment Card validation
+export const paymentCardValidationSchema: yup.ObjectSchema<PaymentCardDTO> = yup.object({
+    brand: yup
+        .mixed<CardBrand>()
+        .oneOf(Object.values(CARD_BRAND), "Invalid card brand")
+        .required("Card brand is required"),
+    last4: yup
+        .string()
+        .matches(/^\d{4}$/, "Must be exactly 4 digits")
+        .required("Last 4 digits are required"),
+    expMonth: yup
+        .number()
+        .min(1, "Month must be between 1 and 12")
+        .max(12, "Month must be between 1 and 12")
+        .required("Expiration month is required"),
+    expYear: yup
+        .number()
+        .min(new Date().getFullYear(), "Card has expired")
+        .required("Expiration year is required"),
+    cardholderName: yup.string().trim().optional(),
+});
+
 // Main validation schema
 export const createEmployeeValidationSchema = yup.object({
     name: yup.string()
@@ -107,6 +130,15 @@ export const createEmployeeValidationSchema = yup.object({
         .mixed<SalaryPaymentMode>()
         .oneOf(Object.values(SALARY_PAYMENT_MODE))
         .required("Payment mode is required"),
+    paymentCard: paymentCardValidationSchema
+        .optional()
+        .nullable()
+        .default(null)
+        .when("paymentMode", {
+            is: SALARY_PAYMENT_MODE.AUTO,
+            then: (schema) => schema.required("Payment card is required for automatic payments"),
+            otherwise: (schema) => schema.nullable().optional(),
+        }),
     dateOfJoining: yup
         .date()
         .min(new Date(), "Date cannot be in the past")
@@ -132,6 +164,7 @@ export type CreateEmployeeFormValues = {
     salary: number | null;
     currency: Currency;
     paymentMode: SalaryPaymentMode; // auto | manual
+    paymentCard: PaymentCardDTO | null;
     dateOfJoining: Date;
     contactInfo: ContactInfoDTO;
     shifts: ShiftDTO[];
@@ -150,6 +183,7 @@ export const transformToCreateEmployeePayload = (
         salary: values.salary,
         currency: values.currency,
         paymentMode: values.paymentMode,
+        paymentCard: values.paymentCard ?? undefined,
         employmentType: values.employmentType
             ? EMPLOYMENT_TYPE[values.employmentType as keyof typeof EMPLOYMENT_TYPE]
             : EMPLOYMENT_TYPE.FULL_TIME, // default

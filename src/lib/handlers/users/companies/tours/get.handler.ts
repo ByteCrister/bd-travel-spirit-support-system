@@ -33,7 +33,7 @@ type TourLeanPopulated =
     };
 
 /**
- * GET api/operations/tours/v1
+ * GET api/users/companies/v1/[companyId]/tours
  * Fetch paginated & filtered tours
  */
 const GetTourListHandler = async (req: NextRequest) => {
@@ -223,6 +223,7 @@ const GetTourListHandler = async (req: NextRequest) => {
             basePrice: t.basePrice,
 
             hasActiveDiscount: Array.isArray(t.discounts) && t.discounts.length > 0,
+            activeDiscountType: t.discounts?.[0]?.type,
             activeDiscountValue: t.discounts?.[0]?.value,
 
             duration: t.duration,

@@ -15,5 +15,5 @@ export async function GET() {
         activeEmployees: faker.number.int({ min: 10, max: 300 }),
     };
 
-    return NextResponse.json(data);
+    return NextResponse.json({ data });
 }

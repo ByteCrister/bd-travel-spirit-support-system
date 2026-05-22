@@ -3,6 +3,7 @@
 import { ApiResponse } from "@/types/common/api.types";
 import api from "../axios";
 import { extractErrorMessage } from "../axios/extract-error-message";
+import { EmailVerificationPurpose } from "@/constants/email-verification-purpose.const";
 
 interface ResponseTypes {
     success: boolean;
@@ -22,10 +23,11 @@ export class EmailVerificationService {
     /**
      * Send verification email to the user
      */
-    async sendVerificationEmail(): Promise<ResponseTypes> {
+    async sendVerificationEmail(purpose: EmailVerificationPurpose): Promise<ResponseTypes> {
         try {
             const response = await api.post<ApiResponse<ResponseTypes>>(this.API_URL, {
-                email: this.email
+                email: this.email,
+                purpose: purpose
             });
 
             return {
@@ -43,11 +45,12 @@ export class EmailVerificationService {
     /**
      * Verify the token entered by user
      */
-    async verifyToken(token: string): Promise<ResponseTypes> {
+    async verifyToken(token: string, purpose: EmailVerificationPurpose): Promise<ResponseTypes> {
         try {
             const response = await api.patch<ApiResponse<ResponseTypes>>(this.API_URL, {
                 email: this.email,
-                token: token.trim()
+                token: token.trim(),
+                purpose: purpose
             });
 
             return {

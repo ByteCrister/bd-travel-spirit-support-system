@@ -1,23 +1,42 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { motion } from "framer-motion";
 import {
-  FiUsers,
-  FiMapPin,
-  FiVolume2,
-  FiBarChart2,
-  FiMessageSquare,
-  FiInbox,
-  FiFlag,
-  FiSettings,
-  FiPlus,
-  FiEye,
-} from 'react-icons/fi';
-import { cn } from '@/lib/utils';
-import { UserRole } from '@/types/dashboard/dashboard.types';
-import { USER_ROLE } from '@/constants/user.const';
+  FiUsers, FiMapPin, FiVolume2, FiBarChart2, FiMessageSquare,
+  FiInbox, FiFlag, FiSettings, FiPlus, FiEye,
+} from "react-icons/fi";
+import { cn } from "@/lib/utils";
+import { USER_ROLE, UserRole } from "@/constants/user.const";
+
+// ── Neumorphic design tokens ──────────────────────────────────────────────────
+const NEU_CARD = "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_HEADING = "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_MUTED = "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_DIVIDER = "border-[#1E2938]/10";
+
+// Action button: raised neu look, pressed on active
+const NEU_ACTION_BTN =
+  "rounded-xl bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] border border-white/60 " +
+  "hover:shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff] hover:-translate-y-0.5 " +
+  "active:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] active:translate-y-0 " +
+  "transition-all duration-200 cursor-pointer text-left w-full";
+
+// ── Action definitions ────────────────────────────────────────────────────────
+const supportActions = [
+  { id: "manage-tickets",  title: "Manage Tickets",  description: "View and respond to support tickets",     icon: FiMessageSquare, accent: "#3B82F6" },
+  { id: "support-inbox",   title: "Support Inbox",   description: "Check messages and inquiries",            icon: FiInbox,         accent: "#00A63D" },
+  { id: "review-reports",  title: "Review Reports",  description: "Investigate user reports and complaints", icon: FiFlag,          accent: "#FE9900" },
+  { id: "user-management", title: "User Management", description: "Manage user accounts and permissions",    icon: FiUsers,         accent: "#8B5CF6" },
+];
+
+const adminActions = [
+  { id: "manage-users",        title: "Manage Users",        description: "View and manage all user accounts",     icon: FiUsers,       accent: "#3B82F6" },
+  { id: "view-tours",          title: "View Tours",          description: "Review and approve tour listings",      icon: FiMapPin,      accent: "#00A63D" },
+  { id: "add-announcement",    title: "Add Announcement",    description: "Create new system announcements",       icon: FiVolume2,     accent: "#FE9900" },
+  { id: "finance-reports",     title: "Finance Reports",     description: "View revenue and financial analytics",  icon: FiBarChart2,   accent: "#8B5CF6" },
+  { id: "system-settings",     title: "System Settings",     description: "Configure system-wide settings",        icon: FiSettings,    accent: "#6366F1" },
+  { id: "analytics-dashboard", title: "Analytics Dashboard", description: "View detailed analytics and insights",  icon: FiEye,         accent: "#006666" },
+];
 
 interface QuickActionsProps {
   userRole: UserRole;
@@ -25,169 +44,52 @@ interface QuickActionsProps {
   className?: string;
 }
 
-const supportActions = [
-  {
-    id: 'manage-tickets',
-    title: 'Manage Tickets',
-    description: 'View and respond to support tickets',
-    icon: FiMessageSquare,
-    color: 'bg-blue-500 hover:bg-blue-600',
-    bgColor: 'bg-blue-50 dark:bg-blue-900/30',
-    textColor: 'text-blue-700 dark:text-blue-200',
-  },
-  {
-    id: 'support-inbox',
-    title: 'Support Inbox',
-    description: 'Check messages and inquiries',
-    icon: FiInbox,
-    color: 'bg-green-500 hover:bg-green-600',
-    bgColor: 'bg-green-50 dark:bg-green-900/30',
-    textColor: 'text-green-700 dark:text-green-200',
-  },
-  {
-    id: 'review-reports',
-    title: 'Review Reports',
-    description: 'Investigate user reports and complaints',
-    icon: FiFlag,
-    color: 'bg-orange-500 hover:bg-orange-600',
-    bgColor: 'bg-orange-50 dark:bg-orange-900/30',
-    textColor: 'text-orange-700 dark:text-orange-200',
-  },
-  {
-    id: 'user-management',
-    title: 'User Management',
-    description: 'Manage user accounts and permissions',
-    icon: FiUsers,
-    color: 'bg-purple-500 hover:bg-purple-600',
-    bgColor: 'bg-purple-50 dark:bg-purple-900/30',
-    textColor: 'text-purple-700 dark:text-purple-200',
-  },
-];
-
-const adminActions = [
-  {
-    id: 'manage-users',
-    title: 'Manage Users',
-    description: 'View and manage all user accounts',
-    icon: FiUsers,
-    color: 'bg-blue-500 hover:bg-blue-600',
-    bgColor: 'bg-blue-50 dark:bg-blue-900/30',
-    textColor: 'text-blue-700 dark:text-blue-200',
-  },
-  {
-    id: 'view-tours',
-    title: 'View Tours',
-    description: 'Review and approve tour listings',
-    icon: FiMapPin,
-    color: 'bg-green-500 hover:bg-green-600',
-    bgColor: 'bg-green-50 dark:bg-green-900/30',
-    textColor: 'text-green-700 dark:text-green-200',
-  },
-  {
-    id: 'add-announcement',
-    title: 'Add Announcement',
-    description: 'Create new system announcements',
-    icon: FiVolume2,
-    color: 'bg-orange-500 hover:bg-orange-600',
-    bgColor: 'bg-orange-50 dark:bg-orange-900/30',
-    textColor: 'text-orange-700 dark:text-orange-200',
-  },
-  {
-    id: 'finance-reports',
-    title: 'Finance Reports',
-    description: 'View revenue and financial analytics',
-    icon: FiBarChart2,
-    color: 'bg-purple-500 hover:bg-purple-600',
-    bgColor: 'bg-purple-50 dark:bg-purple-900/30',
-    textColor: 'text-purple-700 dark:text-purple-200',
-  },
-  {
-    id: 'system-settings',
-    title: 'System Settings',
-    description: 'Configure system-wide settings',
-    icon: FiSettings,
-    color: 'bg-indigo-500 hover:bg-indigo-600',
-    bgColor: 'bg-indigo-50 dark:bg-indigo-900/30',
-    textColor: 'text-indigo-700 dark:text-indigo-200',
-  },
-  {
-    id: 'analytics-dashboard',
-    title: 'Analytics Dashboard',
-    description: 'View detailed analytics and insights',
-    icon: FiEye,
-    color: 'bg-teal-500 hover:bg-teal-600',
-    bgColor: 'bg-teal-50 dark:bg-teal-900/30',
-    textColor: 'text-teal-700 dark:text-teal-200',
-  },
-];
-
 export function QuickActions({ userRole, onAction, className }: QuickActionsProps) {
   const actions = userRole === USER_ROLE.ADMIN ? adminActions : supportActions;
 
   return (
-    <Card className={cn('w-full', className)}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FiPlus className="h-5 w-5" aria-hidden />
-          Quick Actions
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {actions.map((action, index) => {
-            const Icon = action.icon;
-            return (
-              <motion.div
-                key={action.id}
-                className="w-full"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.04, duration: 0.18 }}
-                whileHover={{ y: -4 }}
-                whileTap={{ scale: 0.985 }}
-              >
-                <Button
-                  variant="ghost"
-                  onClick={() => onAction?.(action.id)}
-                  aria-label={action.title}
-                  className={cn(
-                    // full width wrapper so the grid cell and inner contents match
-                    'w-full p-3 rounded-lg flex items-center gap-3 text-left transition-shadow duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                    // enforce a consistent min height so rows align even with 2-line descriptions
-                    'min-h-[64px]',
-                    // keep the button neutral so colored badge stands out
-                    'bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60'
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'flex-shrink-0 h-12 w-12 rounded-xl flex items-center justify-center',
-                      action.bgColor,
-                      'shadow-sm'
-                    )}
-                    aria-hidden
-                  >
-                    <Icon className={cn('h-5 w-5', action.textColor)} />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                        {action.title}
-                      </h4>
-                    </div>
-
-                    <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-300/90 line-clamp-2">
-                      {action.description}
-                    </p>
-                  </div>
-                </Button>
-              </motion.div>
-            );
-          })}
+    <div className={cn(NEU_CARD, "p-5", className)}>
+      {/* Header */}
+      <div className={cn("flex items-center gap-2.5 pb-4 mb-4 border-b", NEU_DIVIDER)}>
+        <div className="p-2 rounded-xl bg-[#006666]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]">
+          <FiPlus className="h-4 w-4 text-[#006666]" />
         </div>
-      </CardContent>
-    </Card>
+        <h3 className={cn(NEU_HEADING, "text-base")}>Quick Actions</h3>
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {actions.map((action, index) => {
+          const Icon = action.icon;
+          return (
+            <motion.button
+              key={action.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.04, duration: 0.2 }}
+              whileHover={{ y: -3 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onAction?.(action.id)}
+              aria-label={action.title}
+              className={cn(NEU_ACTION_BTN, "p-3.5 flex items-center gap-3 min-h-[72px]")}
+            >
+              {/* Icon badge */}
+              <div
+                className="flex-shrink-0 h-11 w-11 rounded-xl flex items-center justify-center shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]"
+                style={{ backgroundColor: `${action.accent}18` }}
+              >
+                <Icon className="h-5 w-5" style={{ color: action.accent }} />
+              </div>
+
+              {/* Text */}
+              <div className="flex-1 min-w-0">
+                <p className={cn(NEU_HEADING, "text-sm truncate")}>{action.title}</p>
+                <p className={cn(NEU_MUTED, "text-xs mt-0.5 line-clamp-2 leading-relaxed")}>{action.description}</p>
+              </div>
+            </motion.button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

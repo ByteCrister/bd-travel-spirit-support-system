@@ -337,6 +337,7 @@ export interface TourListItemDTO {
     // Pricing
     basePrice: PriceDTO;
     hasActiveDiscount?: boolean;
+    activeDiscountType?: TourDiscountType;
     activeDiscountValue?: number;
 
     // Schedule

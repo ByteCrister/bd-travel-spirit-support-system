@@ -65,13 +65,16 @@ const STATUS_CONFIG = {
   },
 };
 
-export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDialogProps) {
+export function PasswordRequestDialog({
+  open,
+  onOpenChange,
+}: PasswordRequestDialogProps) {
   const {
     selectedRequest,
     approveRequest,
     rejectRequest,
     isUpdating,
-    selectRequest
+    selectRequest,
   } = usePasswordRequestStore();
 
   const [rejectionReason, setRejectionReason] = useState("");
@@ -90,13 +93,19 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
       const password = generateStrongPassword(12);
       setGeneratedPassword(password);
       setIsGenerating(false);
-      showToast.success("Password Generated", "A secure password has been generated successfully.");
+      showToast.success(
+        "Password Generated",
+        "A secure password has been generated successfully.",
+      );
     }, 300);
   };
 
   const handleApprove = async () => {
     if (!generatedPassword) {
-      showToast.warning("Provide a Password!", "Please generate a valid password.");
+      showToast.warning(
+        "Provide a Password!",
+        "Please generate a valid password.",
+      );
       return;
     }
 
@@ -106,7 +115,10 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
 
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
-      showToast.warning("Provide a reason!", "Please provide a valid reason to reject the password reset request.");
+      showToast.warning(
+        "Provide a reason!",
+        "Please provide a valid reason to reject the password reset request.",
+      );
       return;
     }
 
@@ -122,7 +134,8 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
     setTimeout(() => selectRequest(null), 300);
   };
 
-  const statusConfig = STATUS_CONFIG[selectedRequest.status as keyof typeof STATUS_CONFIG];
+  const statusConfig =
+    STATUS_CONFIG[selectedRequest.status as keyof typeof STATUS_CONFIG];
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -153,23 +166,31 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
             <div className="flex-1 space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
-                  <h3 className="font-semibold text-slate-900">{selectedRequest.user.name}</h3>
+                  <h3 className="font-semibold text-slate-900">
+                    {selectedRequest.user.name}
+                  </h3>
                   <p className="text-sm text-slate-600 flex items-center gap-1.5">
                     <Mail className="h-3.5 w-3.5" />
                     {selectedRequest.user.email}
                   </p>
                 </div>
-                <Badge 
+                <Badge
                   variant={
-                    selectedRequest.status === FORGOT_PASSWORD_STATUS.PENDING ? "secondary" :
-                    selectedRequest.status === FORGOT_PASSWORD_STATUS.APPROVED ? "default" :
-                    selectedRequest.status === FORGOT_PASSWORD_STATUS.REJECTED ? "destructive" : "outline"
+                    selectedRequest.status === FORGOT_PASSWORD_STATUS.PENDING
+                      ? "secondary"
+                      : selectedRequest.status ===
+                          FORGOT_PASSWORD_STATUS.APPROVED
+                        ? "default"
+                        : selectedRequest.status ===
+                            FORGOT_PASSWORD_STATUS.REJECTED
+                          ? "destructive"
+                          : "outline"
                   }
                   className={cn(
                     "px-2.5 py-1 font-medium shadow-sm border",
                     statusConfig.bgColor,
                     statusConfig.color,
-                    statusConfig.borderColor
+                    statusConfig.borderColor,
                   )}
                 >
                   {selectedRequest.status}
@@ -182,26 +203,46 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Created</p>
-                    <p className="font-medium">{format(new Date(selectedRequest.createdAt), "MMM d, yyyy")}</p>
+                    <p className="font-medium">
+                      {format(
+                        new Date(selectedRequest.createdAt),
+                        "MMM d, yyyy",
+                      )}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-slate-700">
-                  <div className={cn(
-                    "p-1.5 rounded-md",
-                    new Date(selectedRequest.expiresAt) < new Date() ? "bg-rose-100" : "bg-slate-100"
-                  )}>
-                    <Clock className={cn(
-                      "h-3.5 w-3.5",
-                      new Date(selectedRequest.expiresAt) < new Date() ? "text-rose-600" : "text-slate-600"
-                    )} />
+                  <div
+                    className={cn(
+                      "p-1.5 rounded-md",
+                      new Date(selectedRequest.expiresAt) < new Date()
+                        ? "bg-rose-100"
+                        : "bg-slate-100",
+                    )}
+                  >
+                    <Clock
+                      className={cn(
+                        "h-3.5 w-3.5",
+                        new Date(selectedRequest.expiresAt) < new Date()
+                          ? "text-rose-600"
+                          : "text-slate-600",
+                      )}
+                    />
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Expires</p>
-                    <p className={cn(
-                      "font-medium",
-                      new Date(selectedRequest.expiresAt) < new Date() ? "text-rose-700" : ""
-                    )}>
-                      {format(new Date(selectedRequest.expiresAt), "MMM d, yyyy")}
+                    <p
+                      className={cn(
+                        "font-medium",
+                        new Date(selectedRequest.expiresAt) < new Date()
+                          ? "text-rose-700"
+                          : "",
+                      )}
+                    >
+                      {format(
+                        new Date(selectedRequest.expiresAt),
+                        "MMM d, yyyy",
+                      )}
                     </p>
                   </div>
                 </div>
@@ -211,7 +252,9 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
 
           {/* Reason for Request */}
           <div className="space-y-2">
-            <Label className="text-slate-700 font-medium">Reason for Password Reset</Label>
+            <Label className="text-slate-700 font-medium">
+              Reason for Password Reset
+            </Label>
             <Textarea
               value={selectedRequest.reason}
               readOnly
@@ -232,7 +275,9 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-slate-700" />
-                    <Label className="text-lg font-semibold text-slate-900">Generate New Password</Label>
+                    <Label className="text-lg font-semibold text-slate-900">
+                      Generate New Password
+                    </Label>
                   </div>
                   <Button
                     variant="outline"
@@ -241,7 +286,12 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
                     disabled={isGenerating}
                     className="border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all"
                   >
-                    <RefreshCw className={cn("h-4 w-4 mr-2", isGenerating && "animate-spin")} />
+                    <RefreshCw
+                      className={cn(
+                        "h-4 w-4 mr-2",
+                        isGenerating && "animate-spin",
+                      )}
+                    />
                     Generate Password
                   </Button>
                 </div>
@@ -257,10 +307,14 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
                       <div className="p-4 border border-emerald-200 rounded-lg bg-emerald-50/50">
                         <div className="flex items-center gap-2 mb-2">
                           <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                          <Label className="text-emerald-900 font-medium">Password Generated Successfully</Label>
+                          <Label className="text-emerald-900 font-medium">
+                            Password Generated Successfully
+                          </Label>
                         </div>
                         <p className="text-sm text-emerald-700">
-                          A secure {generatedPassword.length}-character password has been generated. The password will be sent to the user via email when you approve this request.
+                          A secure {generatedPassword.length}-character password
+                          has been generated. The password will be sent to the
+                          user via email when you approve this request.
                         </p>
                       </div>
                     </motion.div>
@@ -292,7 +346,9 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
                   >
                     <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                     <p className="text-sm text-amber-800">
-                      The password will be updated without notification. Make sure to communicate the password to the user through a secure channel.
+                      The password will be updated without notification. Make
+                      sure to communicate the password to the user through a
+                      secure channel.
                     </p>
                   </motion.div>
                 )}
@@ -303,7 +359,9 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
           {/* Rejection Reason Section */}
           {isPending && !isExpired && (
             <div className="space-y-2">
-              <Label className="text-slate-700 font-medium">Rejection Reason (Optional)</Label>
+              <Label className="text-slate-700 font-medium">
+                Rejection Reason (Optional)
+              </Label>
               <Textarea
                 placeholder="Provide a detailed reason for rejection..."
                 value={rejectionReason}
@@ -314,38 +372,50 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
           )}
 
           {/* Existing Rejection Reason (if already rejected) */}
-          {selectedRequest.status === FORGOT_PASSWORD_STATUS.REJECTED && selectedRequest.rejectionReason && (
-            <div className="space-y-2">
-              <Label className="text-rose-700 font-medium">Rejection Reason</Label>
-              <div className="p-4 border border-rose-200 rounded-lg bg-rose-50">
-                <p className="text-sm text-rose-900">{selectedRequest.rejectionReason}</p>
+          {selectedRequest.status === FORGOT_PASSWORD_STATUS.REJECTED &&
+            selectedRequest.rejectionReason && (
+              <div className="space-y-2">
+                <Label className="text-rose-700 font-medium">
+                  Rejection Reason
+                </Label>
+                <div className="p-4 border border-rose-200 rounded-lg bg-rose-50">
+                  <p className="text-sm text-rose-900">
+                    {selectedRequest.rejectionReason}
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Reviewer Info (if reviewed) */}
-          {selectedRequest.reviewer && selectedRequest.reviewer.reviewedById && (
-            <div className="p-4 border border-slate-200 rounded-lg bg-slate-50/50">
-              <Label className="text-sm font-medium text-slate-700 mb-3 block">Reviewed By</Label>
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-slate-100">
-                  <User className="h-4 w-4 text-slate-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{selectedRequest.reviewer.reviewerName}</p>
-                  <p className="text-xs text-slate-600">{selectedRequest.reviewer.reviewerEmail}</p>
+          {selectedRequest.reviewer &&
+            selectedRequest.reviewer.reviewedById && (
+              <div className="p-4 border border-slate-200 rounded-lg bg-slate-50/50">
+                <Label className="text-sm font-medium text-slate-700 mb-3 block">
+                  Reviewed By
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-slate-100">
+                    <User className="h-4 w-4 text-slate-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">
+                      {selectedRequest.reviewer.reviewerName}
+                    </p>
+                    <p className="text-xs text-slate-600">
+                      {selectedRequest.reviewer.reviewerEmail}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
         </motion.div>
 
-        <DialogFooter className="gap-2 sm:gap-0 border-t border-slate-200 pt-4">
+        <DialogFooter className="flex-col gap-3 sm:flex-row sm:gap-2 border-t border-slate-200 pt-4">
           <Button
             variant="outline"
             onClick={handleClose}
             disabled={isUpdating}
-            className="border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+            className="w-full sm:w-auto border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
           >
             Cancel
           </Button>
@@ -356,7 +426,7 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
                 variant="destructive"
                 onClick={handleReject}
                 disabled={isUpdating || !rejectionReason.trim()}
-                className="bg-rose-600 hover:bg-rose-700 text-white"
+                className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white"
               >
                 {isUpdating ? (
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -368,7 +438,7 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
               <Button
                 onClick={handleApprove}
                 disabled={isUpdating || !generatedPassword}
-                className="bg-slate-700 hover:bg-slate-800 text-white"
+                className="w-full sm:w-auto bg-slate-700 hover:bg-slate-800 text-white"
               >
                 {isUpdating ? (
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -380,10 +450,11 @@ export function PasswordRequestDialog({ open, onOpenChange }: PasswordRequestDia
             </>
           )}
 
-          {(selectedRequest.status === FORGOT_PASSWORD_STATUS.EXPIRED || !isPending) && (
-            <Button 
+          {(selectedRequest.status === FORGOT_PASSWORD_STATUS.EXPIRED ||
+            !isPending) && (
+            <Button
               onClick={handleClose}
-              className="bg-slate-700 hover:bg-slate-800 text-white"
+              className="w-full sm:w-auto bg-slate-700 hover:bg-slate-800 text-white"
             >
               Close
             </Button>

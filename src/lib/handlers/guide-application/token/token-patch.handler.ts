@@ -15,6 +15,7 @@ import ConnectDB from '@/config/db';
 interface PatchRequestBody {
     email?: string;
     token?: string;
+    purpose: EmailVerificationPurpose;
 }
 
 interface ValidationResponse {
@@ -35,6 +36,7 @@ async function validateVerificationToken(
     const tokenDoc = await EmailVerificationToken.findByToken(
         email,
         token,
+        purpose,
         session
     );
 
@@ -53,13 +55,13 @@ async function validateVerificationToken(
 /**
  * Main handler function for token validation
  */
-export default async function GuideAppTokenPatchHandler(
+export default async function TokenPatchHandler(
     req: NextRequest
 ): Promise<HandlerResult<ValidationResponse>> {
     const body = (await req.json()) as PatchRequestBody;
     const email = body.email?.toLowerCase().trim();
     const token = body.token?.trim();
-    const purpose = EMAIL_VERIFICATION_PURPOSE.GUIDE_APPLICATION;
+    const purpose =  body.purpose?.trim() as EmailVerificationPurpose;
 
     /* =======================
        Validation
@@ -68,7 +70,7 @@ export default async function GuideAppTokenPatchHandler(
         throw new ApiError('Email and token are required', 400);
     }
 
-    if (!EMAIL_VERIFICATION_PURPOSE_VALUES.includes(purpose)) {
+    if (!EMAIL_VERIFICATION_PURPOSE_VALUES.includes(purpose as EMAIL_VERIFICATION_PURPOSE)) {
         throw new ApiError('Invalid verification purpose', 400);
     }
 

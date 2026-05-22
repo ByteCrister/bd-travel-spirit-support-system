@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import AdvertisingSetting, { advertisingToDTO } from "@/models/site-settings/advertising.model";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
 import ConnectDB from "@/config/db";
-import { AdvertisingPriceSchema } from "@/utils/validators/advertising-setting.validator";
+import { AdvertisingPriceSchema } from "@/utils/validators/site-settings/advertising-setting.validator";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 
 export const POST = withErrorHandler(async (req: NextRequest) => {

@@ -1,8 +1,8 @@
 // src/types/dashboard.types.ts
 // Production-ready types for dashboard domain
 
+import { BookingStatus } from "@/constants/tour-booking.const";
 
-export type UserRole = 'admin' | 'support';
 
 export interface DashboardStats {
   totalUsers: number;
@@ -59,7 +59,7 @@ export interface Booking {
   user: { id: string; name: string; email: string };
   tour: { id: string; title: string; destination: string };
   bookingDate: string;
-  status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
+  status: BookingStatus;
   amount: number;
 }
 
@@ -69,16 +69,6 @@ export interface RoleDistribution {
   support: number;
   banned: number;
   lastUpdated?: string;
-}
-
-export interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  type: 'info' | 'warning' | 'urgent';
-  createdAt: string;
-  createdBy: string;
-  isActive: boolean;
 }
 
 export interface AdminNotification {
@@ -108,45 +98,25 @@ export interface AnalyticsData {
   generatedAt?: string;
 }
 
-export type ServerHealthLevel = 'healthy' | 'warning' | 'critical';
-export type LogLevel = 'error' | 'warning' | 'info';
-
-export interface SystemHealth {
-  serverStatus: ServerHealthLevel;
-  databaseConnections: number;
-  activeCronJobs: number;
-  lastBackup: string;
-  errorLogs: Array<{ id: string; level: LogLevel; message: string; timestamp: string }>;
-  checkedAt?: string;
-}
 
 export type TrendingType = 'destination' | 'category' | 'tour_type';
 export type TrendDirection = 'up' | 'down' | 'stable';
 
-export interface TrendingInsight {
-  id: string;
-  type: TrendingType;
-  title: string;
-  description: string;
-  trend: TrendDirection;
-  percentage: number;
-  confidence: number; // 0..1
-  generatedAt?: string;
-}
-
 export interface DashboardFilters {
   dateRange: { start: string; end: string };
-  userRole?: string;
-  bookingStatus?: string;
-  reportStatus?: string;
-  searchQuery?: string;
   page?: number;
   limit?: number;
 }
 
-// Generic API envelope for consistent responses
-export interface ApiEnvelope<T> {
-  data: T | null;
-  error?: string | null;
-  meta?: Record<string, unknown>;
+export interface DateRangeFilter {
+  start: string; // ISO date (YYYY-MM-DD)
+  end: string;
 }
+
+export interface PaginationFilter {
+  page: number;
+  limit: number;
+}
+
+// Optional preset for quick date selection
+export type DatePreset = 'today' | 'week' | 'month' | 'custom';

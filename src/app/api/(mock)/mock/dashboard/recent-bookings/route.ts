@@ -21,5 +21,15 @@ export async function GET() {
         amount: faker.number.int({ min: 50, max: 5000 }),
     }));
 
-    return NextResponse.json({ data: items });
+    return NextResponse.json({
+        data: {
+            items,
+            pagination: {
+                page: 1,
+                limit: 10,
+                total: items.length,
+                pages: 1,
+            },
+        }
+    });
 }

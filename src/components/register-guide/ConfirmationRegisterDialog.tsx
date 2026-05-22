@@ -307,8 +307,8 @@ export function ConfirmationRegisterDialog({
                             onClick={handleConfirm}
                             disabled={isConfirmDisabled}
                             className={`w-full sm:w-auto order-1 sm:order-2 h-11 rounded-xl font-semibold shadow-lg transition-all ${isConfirmDisabled
-                                ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 hover:from-blue-700 hover:via-blue-700 hover:to-indigo-700 shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98]'
+                                ? 'bg-gray-300 cursor-not-allowed text-gray-600'
+                                : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:via-teal-400 hover:to-cyan-400 shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] text-white'
                                 }`}
                         >
                             {isLoading ? (

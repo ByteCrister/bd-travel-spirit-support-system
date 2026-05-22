@@ -2,10 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { faker } from "@faker-js/faker";
 import type { AnalyticsData } from "@/types/dashboard/dashboard.types";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function POST(req: NextRequest) {
-    // You can inspect filters: const body = await req.json();
-    const days = 30;
+export async function GET(request: NextRequest) {
+    const searchParams = request.nextUrl.searchParams;
+
+    // Extract filter parameters
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const start = searchParams.get("start") || faker.date.recent({ days: 30 }).toISOString().split("T")[0];
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const end = searchParams.get("end") || new Date().toISOString().split("T")[0];
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const page = parseInt(searchParams.get("page") || "1");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const limit = parseInt(searchParams.get("limit") || "10");
+
+    // (Optional) use filters to modify data generation, e.g., date range
+    // For simplicity, we generate fresh data each time, but you could adjust based on start/end
+
+    const days = 30; // you could compute days from start/end
     const bookingsOverTime = Array.from({ length: days }).map((_, i) => ({
         date: faker.date
             .soon({ days: days - i })
@@ -38,5 +51,6 @@ export async function POST(req: NextRequest) {
         revenueOverTime,
         reportsOverTime,
     };
+
     return NextResponse.json({ data: payload });
 }

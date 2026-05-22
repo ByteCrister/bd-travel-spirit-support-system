@@ -40,7 +40,7 @@ export default function CompanyOverviewPage({ companyId }: Props) {
     };
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background p-4 lg:p-6">
             <Breadcrumbs items={breadcrumbItems} className="p-4" />
             <div className="mx-auto max-w-[1400px] space-y-6">
                 {/* Header Section */}

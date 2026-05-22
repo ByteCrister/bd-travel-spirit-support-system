@@ -1,22 +1,66 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  FiFlag,
-  FiAlertTriangle,
-  FiEye,
-  FiCheck,
-  FiUser,
-  FiMapPin,
-  FiSettings,
-  FiAlertCircle
+  FiFlag, FiAlertTriangle, FiEye, FiCheck,
+  FiUser, FiMapPin, FiSettings, FiAlertCircle,
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 import { PendingAction } from "@/types/dashboard/dashboard.types";
+
+// ── Neumorphic design tokens ──────────────────────────────────────────────────
+const NEU_CARD = "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_CARD_SM = "rounded-xl bg-[#E7E5E4] shadow-[4px_4px_10px_#c8c6c5,-4px_-4px_10px_#ffffff] border border-white/60";
+const NEU_SURFACE_INSET_SM = "bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]";
+const NEU_BTN_PRIMARY =
+  "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+  "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+  "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+  "transition-all duration-200";
+const NEU_BTN_GHOST =
+  "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
+  "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+  "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+  "transition-all duration-200";
+const NEU_SKELETON = "rounded-lg bg-[#d0cecd] animate-pulse";
+const NEU_HEADING = "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_MUTED = "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_BADGE_DANGER = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold bg-[#FF2157]/10 text-[#FF2157] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+const NEU_DIVIDER = "border-[#1E2938]/10";
+
+// ── Priority configs ──────────────────────────────────────────────────────────
+const priorityConfig = {
+  urgent: { iconBg: "bg-[#FF2157]/10", iconColor: "text-[#FF2157]", leftBar: "#FF2157", badgeColor: "bg-[#FF2157]/10 text-[#FF2157]" },
+  high: { iconBg: "bg-[#FE9900]/10", iconColor: "text-[#FE9900]", leftBar: "#FE9900", badgeColor: "bg-[#FE9900]/10 text-[#FE9900]" },
+  medium: { iconBg: "bg-[#FE9900]/10", iconColor: "text-[#FE9900]", leftBar: "#FE9900", badgeColor: "bg-[#FE9900]/10 text-[#FE9900]" },
+  low: { iconBg: "bg-[#00A63D]/10", iconColor: "text-[#00A63D]", leftBar: "#00A63D", badgeColor: "bg-[#00A63D]/10 text-[#00A63D]" },
+};
+
+const statusConfig = {
+  pending: { label: "Pending", color: "bg-[#FE9900]/10 text-[#FE9900]" },
+  in_progress: { label: "In Progress", color: "bg-[#006666]/10 text-[#006666]" },
+  resolved: { label: "Resolved", color: "bg-[#00A63D]/10 text-[#00A63D]" },
+};
+
+const getActionIcon = (type: PendingAction["type"]) => {
+  switch (type) {
+    case "report": return <FiFlag className="h-4 w-4" />;
+    case "complaint": return <FiAlertTriangle className="h-4 w-4" />;
+    case "flagged_content": return <FiAlertCircle className="h-4 w-4" />;
+    case "organizer_approval": return <FiUser className="h-4 w-4" />;
+    case "tour_approval": return <FiMapPin className="h-4 w-4" />;
+    default: return <FiSettings className="h-4 w-4" />;
+  }
+};
+
+const formatTimeAgo = (timestamp: string) => {
+  const diff = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
+  if (diff < 60) return "Just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+};
 
 interface PendingActionsProps {
   actions: PendingAction[];
@@ -26,199 +70,155 @@ interface PendingActionsProps {
   className?: string;
 }
 
-const getActionIcon = (type: PendingAction['type']) => {
-  switch (type) {
-    case 'report':
-      return <FiFlag className="h-4 w-4" />;
-    case 'complaint':
-      return <FiAlertTriangle className="h-4 w-4" />;
-    case 'flagged_content':
-      return <FiAlertCircle className="h-4 w-4" />;
-    case 'organizer_approval':
-      return <FiUser className="h-4 w-4" />;
-    case 'tour_approval':
-      return <FiMapPin className="h-4 w-4" />;
-    default:
-      return <FiSettings className="h-4 w-4" />;
-  }
-};
-
-const getPriorityColor = (priority: PendingAction['priority']) => {
-  switch (priority) {
-    case 'urgent':
-      return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800';
-    case 'high':
-      return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800';
-    case 'medium':
-      return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800';
-    case 'low':
-      return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800';
-    default:
-      return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800';
-  }
-};
-
-const getStatusColor = (status: PendingAction['status']) => {
-  switch (status) {
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-    case 'in_progress':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-    case 'resolved':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-    default:
-      return 'bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400';
-  }
-};
-
-const formatTimeAgo = (timestamp: string) => {
-  const now = new Date();
-  const time = new Date(timestamp);
-  const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return 'Just now';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  return `${Math.floor(diffInSeconds / 86400)}d ago`;
-};
-
 export function PendingActions({
   actions,
   loading = false,
   onResolve,
   onView,
-  className
+  className,
 }: PendingActionsProps) {
+  const pendingCount = actions.filter((a) => a.status === "pending").length;
+
   if (loading) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FiAlertTriangle className="h-5 w-5" />
-            Pending Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="p-4 border rounded-lg">
-                <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-                    <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-3/4" />
-                    <div className="flex gap-2">
-                      <div className="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-                      <div className="h-6 w-20 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-                    </div>
+      <div className={cn(NEU_CARD, "p-5", className)}>
+        <div className="flex items-center gap-2 mb-5">
+          <div className={cn(NEU_SKELETON, "h-5 w-5 rounded-lg")} />
+          <div className={cn(NEU_SKELETON, "h-4 w-36")} />
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className={cn(NEU_CARD_SM, "p-4")}>
+              <div className="flex items-start gap-3">
+                <div className={cn(NEU_SKELETON, "h-9 w-9 rounded-xl")} />
+                <div className="flex-1 space-y-2">
+                  <div className={cn(NEU_SKELETON, "h-3.5 w-full")} />
+                  <div className={cn(NEU_SKELETON, "h-3 w-3/4")} />
+                  <div className="flex gap-2">
+                    <div className={cn(NEU_SKELETON, "h-6 w-16 rounded-lg")} />
+                    <div className={cn(NEU_SKELETON, "h-6 w-20 rounded-lg")} />
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className={cn(className)}>
-      <CardHeader className="pb-3 lg:pb-2">
-        <CardTitle className="flex items-center justify-between gap-2">
-          <FiAlertTriangle className="h-5 w-5" />
-          <span className="truncate">Pending Actions</span>
-          {actions.length > 0 && (
-            <Badge variant="destructive" className="shrink-0">
-              {actions.filter(action => action.status === 'pending').length}
-            </Badge>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 lg:pt-0">
-        <ScrollArea className="w-full pr-1 max-h-[60vh] lg:max-h-[52vh] xl:max-h-[54vh] overflow-auto">
-          <div className="space-y-2 lg:space-y-3">
-            {actions.length === 0 ? (
-              <div className="text-center py-8">
-                <FiCheck className="h-12 w-12 text-green-300 dark:text-green-600 mx-auto mb-4" />
-                <p className="text-slate-500 dark:text-slate-400">No pending actions</p>
-                <p className="text-sm text-slate-400 dark:text-slate-500">All caught up!</p>
-              </div>
-            ) : (
-              actions.map((action, index) => (
-                <motion.div
-                  key={action.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className={cn(
-                    "p-3 lg:p-4 border rounded-lg transition-all duration-200 hover:shadow-sm border-slate-200 dark:border-slate-800",
-                    getPriorityColor(action.priority)
-                  )}
-                >
-                  <div className="flex items-start gap-3 lg:gap-3 lg:grid lg:grid-cols-[1fr_auto]">
-                    <div className={cn(
-                      "flex items-center justify-center h-8 w-8 lg:h-9 lg:w-9 rounded-full",
-                      getPriorityColor(action.priority)
-                    )}>
-                      {getActionIcon(action.type)}
+    <div className={cn(NEU_CARD, "p-5", className)}>
+      {/* Header */}
+      <div className={cn("flex items-center justify-between pb-4 mb-4 border-b", NEU_DIVIDER)}>
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-[#FE9900]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]">
+            <FiAlertTriangle className="h-4 w-4 text-[#FE9900]" />
+          </div>
+          <h3 className={cn(NEU_HEADING, "text-base")}>Pending Actions</h3>
+        </div>
+        {pendingCount > 0 && (
+          <span className={NEU_BADGE_DANGER}>{pendingCount} pending</span>
+        )}
+      </div>
+
+      {/* List */}
+      <div className="space-y-2.5 max-h-[52vh] overflow-y-auto pr-1">
+        {actions.length === 0 ? (
+          <div className="text-center py-10">
+            <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff] flex items-center justify-center">
+              <FiCheck className="h-6 w-6 text-[#00A63D]/60" />
+            </div>
+            <p className={cn(NEU_HEADING, "text-sm")}>No pending actions</p>
+            <p className={cn(NEU_MUTED, "text-xs mt-1")}>All caught up!</p>
+          </div>
+        ) : (
+          actions.map((action, index) => {
+            const pCfg = priorityConfig[action.priority] ?? priorityConfig.low;
+            const sCfg = statusConfig[action.status] ?? { label: action.status, color: "bg-[#1E2938]/10 text-[#1E2938]" };
+
+            return (
+              <motion.div
+                key={action.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.06, duration: 0.3 }}
+                className={cn(
+                  NEU_CARD_SM,
+                  "p-3.5 relative overflow-hidden transition-shadow duration-200",
+                  "hover:shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff]"
+                )}
+              >
+                {/* Left accent bar */}
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full"
+                  style={{ backgroundColor: pCfg.leftBar }}
+                />
+
+                <div className="pl-3 flex items-start gap-3">
+                  {/* Icon */}
+                  <div className={cn(
+                    "flex-shrink-0 h-9 w-9 rounded-xl flex items-center justify-center",
+                    pCfg.iconBg,
+                    "shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]"
+                  )}>
+                    <span className={pCfg.iconColor}>{getActionIcon(action.type)}</span>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2 mb-1.5">
+                      <h4 className={cn(NEU_HEADING, "text-sm truncate flex-1")}>{action.title}</h4>
+                      <span className={cn(
+                        "flex-shrink-0 px-2 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold",
+                        NEU_SURFACE_INSET_SM, sCfg.color
+                      )}>
+                        {sCfg.label}
+                      </span>
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center flex-wrap gap-2 mb-1 lg:mb-1.5">
-                        <h4 className="text-sm lg:text-[13px] font-medium text-slate-900 dark:text-slate-100 truncate">
-                          {action.title}
-                        </h4>
-                        <Badge className={cn("text-xs", getStatusColor(action.status))}>
-                          {action.status.replace('_', ' ')}
-                        </Badge>
+                    <p className={cn(NEU_MUTED, "text-xs leading-relaxed mb-2.5")}>
+                      {action.description}
+                    </p>
+
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold",
+                          pCfg.badgeColor,
+                          "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]"
+                        )}>
+                          {action.priority}
+                        </span>
+                        <span className={cn(NEU_MUTED, "text-xs")}>{formatTimeAgo(action.createdAt)}</span>
                       </div>
 
-                      <p className="text-[13px] lg:text-xs text-slate-600 dark:text-slate-400 mb-2">
-                        {action.description}
-                      </p>
-
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-wrap text-xs">
-                          <Badge variant="outline" className="text-xs">
-                            {action.priority}
-                          </Badge>
-                          <span className="text-xs text-slate-500 dark:text-slate-500">
-                            {formatTimeAgo(action.createdAt)}
-                          </span>
-                        </div>
-
-                        <div className="flex gap-2 lg:self-start">
-                          {onView && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => onView(action.id)}
-                              className="h-7 px-2 text-[11px]"
-                            >
-                              <FiEye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                          )}
-                          {onResolve && action.status !== 'resolved' && (
-                            <Button
-                              size="sm"
-                              onClick={() => onResolve(action.id)}
-                              className="h-7 px-2 text-[11px]"
-                            >
-                              <FiCheck className="h-3 w-3 mr-1" />
-                              Resolve
-                            </Button>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-1.5">
+                        {onView && (
+                          <button
+                            onClick={() => onView(action.id)}
+                            className={cn(NEU_BTN_GHOST, "px-2.5 py-1 text-xs flex items-center gap-1")}
+                          >
+                            <FiEye className="h-3 w-3" /> View
+                          </button>
+                        )}
+                        {onResolve && action.status !== "resolved" && (
+                          <button
+                            onClick={() => onResolve(action.id)}
+                            className={cn(NEU_BTN_PRIMARY, "px-2.5 py-1 text-xs flex items-center gap-1")}
+                          >
+                            <FiCheck className="h-3 w-3" /> Resolve
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+                </div>
+              </motion.div>
+            );
+          })
+        )}
+      </div>
+    </div>
   );
 }

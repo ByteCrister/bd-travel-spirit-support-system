@@ -31,11 +31,11 @@ import AssetFileModel from '@/models/assets/asset-file.model';
 interface AggregationCompany {
     _id: Types.ObjectId;
     companyName: string;
+    logoUrl?: string | null;   // Resolved public URL from guide.logoUrl → Asset → AssetFile
     host: {
         id: Types.ObjectId;
         name: string;
         email: string;
-        avatar?: string;
         companyName: string;
         createdAt: Date;
     };
@@ -272,17 +272,11 @@ function buildAggregationPipeline(params: Required<CompanyQueryParams>) {
         $project: {
             _id: 1,
             companyName: '$root.companyName',
+            logoUrl: { $ifNull: ['$root.guideLogoFile.publicUrl', null] }, 
             host: {
                 id: '$root.ownerUser._id',
                 name: '$root.ownerUser.name',
                 email: '$root.ownerUser.email',
-                avatar: {
-                    $ifNull: [
-                        '$ownerAvatarFile.publicUrl',
-                        '$guideLogoFile.publicUrl', // fallback
-                        null,
-                    ],
-                },
                 companyName: '$root.companyName',
                 createdAt: '$root.ownerUser.createdAt',
             },
@@ -432,12 +426,12 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
         id: row._id.toString(),
         name: row.companyName,
         host: {
-            id: row.host.id?.toString() || '',
-            name: row.host.name || 'Unknown',
-            email: row.host.email || '',
-            avatar: row.host.avatar || null,
+            id: row.host.id?.toString() ?? '',
+            name: row.host.name ?? 'Unknown',
+            email: row.host.email ?? '',
+            logoUrl: row.logoUrl ?? null, // Company logo from guide.logoUrl (not user avatar)
             companyName: row.host.companyName,
-            createdAt: row.host.createdAt?.toISOString() || new Date().toISOString(),
+            createdAt: row.host.createdAt?.toISOString() ?? new Date().toISOString(),
         },
         metrics: {
             employeesCount: row.metrics.employeesCount,
@@ -446,9 +440,9 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
             averageRating: row.metrics.averageRating,
         },
         timestamps: {
-            lastLogin: row.timestamps.lastLogin?.toISOString() || null,
+            lastLogin: row.timestamps.lastLogin?.toISOString() ?? null,
             createdAt: row.timestamps.createdAt.toISOString(),
-            updatedAt: row.timestamps.updatedAt?.toISOString() || null,
+            updatedAt: row.timestamps.updatedAt?.toISOString() ?? null,
         },
         tags: row.tags || [],
     }));

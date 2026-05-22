@@ -15,8 +15,10 @@ import {
     DateRange,
     SectionResponse,
 } from "@/types/dashboard/statistics.types";
+import { ApiResponse } from "@/types/common/api.types";
 
-const URL_AFTER_API = "/mock/statistics";
+// const URL_AFTER_API = "/mock/statistics";
+const URL_AFTER_API = "/dashboard/v1/statistics/v1";
 
 /* Combined store type: state + actions */
 type StatisticsStore = StatisticsState & {
@@ -28,7 +30,6 @@ type StatisticsStore = StatisticsState & {
         opts?: { force?: boolean }
     ) => Promise<void>;
     clearError: (sectionKey: SectionKey) => void;
-    // helpers exposed for testing/debugging
     invalidateCache: (sectionKey?: SectionKey) => void;
 };
 
@@ -107,11 +108,23 @@ async function fetchSectionFromApi<T extends SectionResponse>(
     const params: Record<string, string | undefined> = {};
     if (range.from) params.from = range.from.toISOString();
     if (range.to) params.to = range.to.toISOString();
-    const resp = await api.get<T>(`${URL_AFTER_API}/${path}`, { params });
-    return resp.data;
+
+    // Tell axios we expect an ApiResponse<T>
+    const resp = await api.get<ApiResponse<T>>(`${URL_AFTER_API}/${path}`, { params });
+
+    // Handle business-level error inside a 2xx response
+    if (resp.data.error) {
+        throw new Error(resp.data.error);
+    }
+
+    // Ensure data exists (if API guarantees it on success)
+    if (!resp.data.data) {
+        throw new Error("Unexpected empty response from server");
+    }
+
+    return resp.data.data;
 }
 
-// canonicalize to start-of-day and end-of-day to increase cache reuse
 function canonicalRange(range: DateRange): DateRange {
     const from = range.from ? new Date(range.from) : null;
     const to = range.to ? new Date(range.to) : null;
@@ -135,28 +148,22 @@ async function getCachedOrFetch<T extends SectionResponse>(
     const ttlMs = SECTION_TTL[section] ?? DEFAULT_TTL_MS;
     const entry = cache.get(key) as CacheEntry<T> | undefined;
 
-    // if there is a pending request for this key, reuse it
     const pending = pendingRequests.get(key) as Promise<T> | undefined;
     if (pending) {
         return pending;
     }
 
-    // If not forcing and cached exists
     if (!opts?.force && entry) {
         const isFresh = now - entry.fetchedAt < entry.ttlMs;
         if (isFresh) {
-            // fresh cache -> return immediately
             return entry.value;
         }
-        // stale cache -> return value (stale) and trigger background refresh
-        // while returning the stale value to the caller quickly
-        // but we still dedupe background refresh
         const background = (async () => {
             try {
                 const fresh = await fetchSectionFromApi<T>(section, range);
                 cache.set(key, { value: fresh, fetchedAt: Date.now(), ttlMs });
             } catch {
-                // ignore background fetch errors (keep stale until next explicit refresh)
+                // ignore background fetch errors
             } finally {
                 pendingRequests.delete(key);
             }
@@ -165,7 +172,6 @@ async function getCachedOrFetch<T extends SectionResponse>(
         return entry.value;
     }
 
-    // No cache or force -> perform fetch (and dedupe)
     const promise = (async () => {
         try {
             const res = await fetchSectionFromApi<T>(section, range);
@@ -180,7 +186,6 @@ async function getCachedOrFetch<T extends SectionResponse>(
     return promise;
 }
 
-/* Public store implementation */
 export const useStatisticsStore = create<StatisticsStore>()(
     persist(
         (set, get) => ({
@@ -212,7 +217,6 @@ export const useStatisticsStore = create<StatisticsStore>()(
                         from = new Date(now.getFullYear(), 0, 1);
                         break;
                     case PresetEnum.CUSTOM:
-                        // custom is set via setDateRange
                         return;
                 }
 
@@ -220,8 +224,7 @@ export const useStatisticsStore = create<StatisticsStore>()(
                     filters: { ...state.filters, dateRange: { from, to }, preset },
                 }));
 
-                // fire-and-forget refresh all but use cached where possible
-                get().refreshAll();
+                // 🛑 Removed automatic refreshAll – sections will be loaded on demand by components
             },
 
             refreshAll: async (opts?: { force?: boolean }) => {
@@ -238,7 +241,6 @@ export const useStatisticsStore = create<StatisticsStore>()(
                     SectionKeyEnum.EMPLOYEES,
                 ];
 
-                // mark all loading (but keep other flags intact)
                 set((state) => ({
                     loading: sections.reduce(
                         (acc, key) => ({ ...acc, [key]: true }),
@@ -251,9 +253,7 @@ export const useStatisticsStore = create<StatisticsStore>()(
                         const data = await getCachedOrFetch<SectionResponse>(
                             sectionKey,
                             filters.dateRange,
-                            {
-                                force: opts?.force,
-                            }
+                            { force: opts?.force }
                         );
 
                         set((state) => ({
@@ -288,9 +288,7 @@ export const useStatisticsStore = create<StatisticsStore>()(
                     const data = await getCachedOrFetch<SectionResponse>(
                         sectionKey,
                         filters.dateRange,
-                        {
-                            force: opts?.force,
-                        }
+                        { force: opts?.force }
                     );
 
                     set((state) => ({
@@ -313,10 +311,8 @@ export const useStatisticsStore = create<StatisticsStore>()(
                 }));
             },
 
-            // debug / control helpers
             invalidateCache: (sectionKey?: SectionKey) => {
                 if (sectionKey) {
-                    // remove all keys that start with sectionKey
                     for (const key of Array.from(cache.keys())) {
                         if (key.startsWith(`${sectionKey}:`)) cache.delete(key);
                     }
@@ -336,7 +332,6 @@ export const useStatisticsStore = create<StatisticsStore>()(
                 },
             }),
             onRehydrateStorage: () => (state) => {
-                // Ensure dateRange always exists and rehydrate Date objects
                 if (!state?.filters?.dateRange) {
                     state!.filters.dateRange = { from: null, to: null };
                 }

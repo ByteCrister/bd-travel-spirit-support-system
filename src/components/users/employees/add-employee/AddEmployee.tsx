@@ -12,14 +12,14 @@ import {
     Plus, Trash2, RefreshCw, Upload, File, Image as ImageIcon, X, AlertCircle,
     Loader2, User, Mail, Phone, Calendar, Briefcase, Clock,
     FileText, Shield, Heart, Sparkles, CheckCircle2,
-    CreditCard,
-    Info
+    CreditCard, Info
 } from "lucide-react";
 import Image from "next/image";
 
 import { CreateEmployeeFormValues, createEmployeeValidationSchema } from "@/utils/validators/employee/employee.validator";
 import { CreateEmployeePayload, ShiftDTO, DayOfWeek, DocumentDTO } from "@/types/employee/employee.types";
 import { EMPLOYMENT_TYPE, SALARY_PAYMENT_MODE, SalaryPaymentMode } from "@/constants/employee.const";
+import { CARD_BRAND, CardBrand } from "@/constants/payment.const";
 import { CURRENCY } from "@/constants/tour.const";
 import {
     fileToDocumentDTO,
@@ -38,6 +38,10 @@ import { useEmployeeStore } from "@/store/employee/employee.store";
 import { cn } from "@/lib/utils";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
+import { EmailVerificationService } from "@/utils/api/email-verification.api";
+import { EMAIL_VERIFICATION_PURPOSE } from "@/constants/email-verification-purpose.const";
+import EmployeeVerificationDialog from "./EmployeeVerificationDialog";
+
 // Constants
 const DAYS_OF_WEEK: DayOfWeek[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MAX_DOCUMENTS = 5;
@@ -54,7 +58,6 @@ const breadcrumbItems = [
     { label: "Add Employee", href: "/users/employees/add-employee" },
 ];
 
-
 // Initial form values
 const getInitialValues = (): CreateEmployeeFormValues => ({
     name: "",
@@ -64,6 +67,7 @@ const getInitialValues = (): CreateEmployeeFormValues => ({
     salary: null,
     currency: CURRENCY.BDT,
     paymentMode: SALARY_PAYMENT_MODE.AUTO,
+    paymentCard: null,
     dateOfJoining: new Date(),
     contactInfo: { phone: "", email: "", emergencyContact: { name: "", phone: "", relation: "" } },
     shifts: [],
@@ -113,6 +117,13 @@ export default function AddEmployeePage() {
     const [uploadingDocuments, setUploadingDocuments] = useState(false);
     const [avatarError, setAvatarError] = useState<string | null>(null);
     const [documentErrors, setDocumentErrors] = useState<{ [key: number]: string }>({});
+
+    // NEW state for email verification
+    const [showVerificationDialog, setShowVerificationDialog] = useState(false);
+    const [pendingSubmission, setPendingSubmission] = useState<{ values: CreateEmployeeFormValues; resetForm: () => void } | null>(null);
+
+    const [verifying, setVerifying] = useState(false);
+    const [verificationError, setVerificationError] = useState<string | null>(null);
 
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const documentInputRef = useRef<HTMLInputElement>(null);
@@ -180,39 +191,84 @@ export default function AddEmployeePage() {
         if (avatarInputRef.current) avatarInputRef.current.value = "";
     };
 
+    // NEW: Handle form submission with email verification
     const handleSubmit = async (
         values: CreateEmployeeFormValues,
-        { resetForm }: FormikHelpers<CreateEmployeeFormValues>
+        { resetForm, setSubmitting }: FormikHelpers<CreateEmployeeFormValues>
     ) => {
         try {
+            setSubmitting(true);
+            // Step 1: Send verification email
+            const service = new EmailVerificationService(values.contactInfo.email);
+            // Use appropriate purpose – adjust according to your constants
+            const sendResult = await service.sendVerificationEmail(EMAIL_VERIFICATION_PURPOSE.EMPLOYEE_VERIFICATION);
+            if (!sendResult.success) {
+                showToast.error(sendResult.message);
+                setSubmitting(false);
+                return;
+            }
+
+            // Step 2: Store submission and open dialog
+            setPendingSubmission({ values, resetForm });
+            setShowVerificationDialog(true);
+            setSubmitting(false); // Allow user to interact with dialog
+        } catch {
+            showToast.error('Failed to send verification email');
+            setSubmitting(false);
+        }
+    };
+
+    const handleVerifyToken = async (token: string) => {
+        if (!pendingSubmission) return;
+        setVerifying(true);
+        setVerificationError(null);
+        try {
+            const service = new EmailVerificationService(pendingSubmission.values.contactInfo.email);
+            const verifyResult = await service.verifyToken(token, EMAIL_VERIFICATION_PURPOSE.EMPLOYEE_VERIFICATION);
+            if (!verifyResult.success) {
+                setVerificationError(verifyResult.message);
+                setVerifying(false);
+                return;
+            }
+
+            // Token verified – create employee
             const payload: CreateEmployeePayload = {
-                name: values.name,
-                password: values.password,
-                employmentType: values.employmentType,
-                avatar: values.avatar ?? "",
-                salary: values.salary,
-                currency: values.currency,
-                paymentMode: values.paymentMode,
-                dateOfJoining: values.dateOfJoining.toISOString(),
-                contactInfo: values.contactInfo,
-                shifts: values.shifts,
-                documents: values.documents,
-                notes: values.notes || undefined,
+                name: pendingSubmission.values.name,
+                password: pendingSubmission.values.password,
+                employmentType: pendingSubmission.values.employmentType,
+                avatar: pendingSubmission.values.avatar ?? "",
+                salary: pendingSubmission.values.salary,
+                currency: pendingSubmission.values.currency,
+                paymentMode: pendingSubmission.values.paymentMode,
+                paymentCard: pendingSubmission.values.paymentCard ?? undefined,
+                dateOfJoining: pendingSubmission.values.dateOfJoining.toISOString(),
+                contactInfo: pendingSubmission.values.contactInfo,
+                shifts: pendingSubmission.values.shifts,
+                documents: pendingSubmission.values.documents,
+                notes: pendingSubmission.values.notes || undefined,
             };
             await createEmployee(payload);
 
-            // Reset the form to initial values
-            resetForm({
-                values: getInitialValues(),
-                // Also reset the touched status and errors
-            });
-
-            showToast.success("Successfully added new employee.")
-
-        } catch (err) { console.error(err); }
+            // Reset form and close dialog
+            pendingSubmission.resetForm();
+            showToast.success("Successfully added new employee.");
+            setShowVerificationDialog(false);
+            setPendingSubmission(null);
+        } catch {
+            setVerificationError('Verification failed');
+        } finally {
+            setVerifying(false);
+        }
     };
 
-    // {/* Scrollable Content */ }
+    const handleCancelVerification = () => {
+        setShowVerificationDialog(false);
+        setPendingSubmission(null);
+        setVerificationError(null);
+        setVerifying(false);
+        showToast.info('Employee creation cancelled.');
+    };
+
     return (
         <div className="overflow-y-auto flex-1 px-8 py-6" >
             <Breadcrumbs items={breadcrumbItems} />
@@ -242,15 +298,15 @@ export default function AddEmployeePage() {
                                             Security Credentials
                                         </h3>
 
-                                        {/* Two-column grid for name and password */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {/* Left Column - Name */}
+                                            {/* Name */}
                                             <FormItem>
                                                 <FormLabel icon={<User className="h-4 w-4" />}>Name *</FormLabel>
                                                 <Field name="name">
                                                     {({ field }: FieldProps<string>) => (
                                                         <Input
                                                             {...field}
+                                                            disabled={showVerificationDialog} // Disable when dialog open
                                                             placeholder="Enter your name"
                                                             className="w-full bg-white/80 backdrop-blur-sm border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all"
                                                         />
@@ -259,7 +315,7 @@ export default function AddEmployeePage() {
                                                 <FormMessage>{touched.name && errors.name}</FormMessage>
                                             </FormItem>
 
-                                            {/* Right Column - Password */}
+                                            {/* Password */}
                                             <FormItem>
                                                 <FormLabel icon={<Shield className="h-4 w-4" />}>Password *</FormLabel>
                                                 <div className="flex gap-3">
@@ -268,6 +324,7 @@ export default function AddEmployeePage() {
                                                             <Input
                                                                 {...field}
                                                                 type="password"
+                                                                disabled={showVerificationDialog}
                                                                 placeholder="Enter secure password"
                                                                 className="flex-1 bg-white/80 backdrop-blur-sm border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all"
                                                             />
@@ -276,6 +333,7 @@ export default function AddEmployeePage() {
                                                     <Button
                                                         type="button"
                                                         variant="outline"
+                                                        disabled={showVerificationDialog}
                                                         className="border-amber-400 bg-white hover:bg-amber-100 hover:border-amber-500 hover:scale-105 transition-all shadow-md"
                                                         onClick={() => setFieldValue("password", generateStrongPassword())}
                                                     >
@@ -321,7 +379,8 @@ export default function AddEmployeePage() {
                                                                 whileHover={{ scale: 1.1 }}
                                                                 whileTap={{ scale: 0.9 }}
                                                                 type="button"
-                                                                className="absolute -top-2 -right-2 p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600"
+                                                                disabled={showVerificationDialog}
+                                                                className="absolute -top-2 -right-2 p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 disabled:opacity-50"
                                                                 onClick={() => handleClearAvatar(setFieldValue)}
                                                             >
                                                                 <X className="h-4 w-4" />
@@ -346,7 +405,7 @@ export default function AddEmployeePage() {
                                                             accept={IMAGE_EXTENSIONS.map(ext => `.${ext}`).join(',')}
                                                             onChange={e => e.target.files && handleAvatarUpload(e.target.files[0], setFieldValue)}
                                                             className="cursor-pointer bg-white/80 border-blue-300 focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-500 file:text-white hover:file:bg-blue-600"
-                                                            disabled={uploadingAvatar}
+                                                            disabled={uploadingAvatar || showVerificationDialog}
                                                         />
                                                         {uploadingAvatar && <Loader2 className="h-5 w-5 animate-spin text-blue-600" />}
                                                     </div>
@@ -370,7 +429,11 @@ export default function AddEmployeePage() {
                                             <FormLabel icon={<Briefcase className="h-4 w-4" />}>Employment Type</FormLabel>
                                             <Field name="employmentType">
                                                 {({ field }: FieldProps<string>) => (
-                                                    <Select value={field.value} onValueChange={v => setFieldValue("employmentType", v)}>
+                                                    <Select
+                                                        value={field.value}
+                                                        onValueChange={v => setFieldValue("employmentType", v)}
+                                                        disabled={showVerificationDialog}
+                                                    >
                                                         <SelectTrigger className="bg-white/80 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
                                                             <SelectValue placeholder="Select employment type" />
                                                         </SelectTrigger>
@@ -410,17 +473,13 @@ export default function AddEmployeePage() {
                                                                 inputMode="decimal"
                                                                 pattern="[0-9]*"
                                                                 value={field.value ?? ""}
+                                                                disabled={showVerificationDialog}
                                                                 onChange={(e) => {
                                                                     const value = e.target.value;
-
-                                                                    // Allow empty value
                                                                     if (value === "") {
                                                                         setFieldValue("salary", value);
                                                                         return;
                                                                     }
-
-                                                                    // Allow valid typing states:
-                                                                    // 0, 10, 10., 10.5, 0.5
                                                                     if (/^(?:0|[1-9]\d*)(?:\.\d*)?$/.test(value)) {
                                                                         setFieldValue("salary", value);
                                                                     }
@@ -432,7 +491,11 @@ export default function AddEmployeePage() {
                                                     </Field>
                                                     <Field name="currency">
                                                         {({ field }: FieldProps<string>) => (
-                                                            <Select value={field.value} onValueChange={(v) => setFieldValue("currency", v)}>
+                                                            <Select
+                                                                value={field.value}
+                                                                onValueChange={(v) => setFieldValue("currency", v)}
+                                                                disabled={showVerificationDialog}
+                                                            >
                                                                 <SelectTrigger className="w-[130px] bg-white/80 border-green-300 focus:border-green-500">
                                                                     <SelectValue placeholder="Currency" />
                                                                 </SelectTrigger>
@@ -454,6 +517,7 @@ export default function AddEmployeePage() {
                                                             type="date"
                                                             value={field.value ? formatDateForInput(field.value) : ""}
                                                             min={formatDateForInput(new Date())}
+                                                            disabled={showVerificationDialog}
                                                             onChange={(e) =>
                                                                 setFieldValue("dateOfJoining", new Date(e.target.value))
                                                             }
@@ -477,9 +541,10 @@ export default function AddEmployeePage() {
                                                                             "relative flex items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer",
                                                                             field.value === mode
                                                                                 ? "bg-green-100 border-green-500 shadow-sm"
-                                                                                : "bg-white/80 border-green-200 hover:border-green-300"
+                                                                                : "bg-white/80 border-green-200 hover:border-green-300",
+                                                                            showVerificationDialog && "pointer-events-none opacity-60"
                                                                         )}
-                                                                        onClick={() => setFieldValue("paymentMode", mode)}
+                                                                        onClick={() => !showVerificationDialog && setFieldValue("paymentMode", mode)}
                                                                     >
                                                                         <div className="flex items-center gap-3">
                                                                             <div className={cn(
@@ -519,6 +584,155 @@ export default function AddEmployeePage() {
                                                     <FormMessage>{touched.paymentMode && errors.paymentMode}</FormMessage>
                                                 </FormItem>
                                             </div>
+
+                                            {/* Payment Card Details — shown when paymentMode is AUTO */}
+                                            {values.paymentMode === SALARY_PAYMENT_MODE.AUTO && (
+                                                <div className="md:col-span-2">
+                                                    <motion.div
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: "auto" }}
+                                                        exit={{ opacity: 0, height: 0 }}
+                                                        transition={{ duration: 0.3 }}
+                                                        className="bg-white/80 backdrop-blur-sm border-2 border-green-300 rounded-xl p-5 space-y-4 shadow-inner"
+                                                    >
+                                                        <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                                                            <div className="p-1.5 bg-green-100 rounded-lg">
+                                                                <CreditCard className="h-4 w-4 text-green-600" />
+                                                            </div>
+                                                            Payment Card Details *
+                                                        </h4>
+
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            {/* Card Brand */}
+                                                            <FormItem>
+                                                                <FormLabel>Card Brand *</FormLabel>
+                                                                <Select
+                                                                    value={values.paymentCard?.brand ?? CARD_BRAND.UNKNOWN}
+                                                                    onValueChange={(v) => {
+                                                                        if (showVerificationDialog) return;
+                                                                        setFieldValue("paymentCard", {
+                                                                            ...(values.paymentCard ?? { last4: "", expMonth: 1, expYear: new Date().getFullYear(), brand: CARD_BRAND.UNKNOWN }),
+                                                                            brand: v as CardBrand,
+                                                                        });
+                                                                    }}
+                                                                    disabled={showVerificationDialog}
+                                                                >
+                                                                    <SelectTrigger className="bg-white/80 border-green-300 focus:border-green-500">
+                                                                        <SelectValue placeholder="Select card brand" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {Object.values(CARD_BRAND).map((brand) => (
+                                                                            <SelectItem key={brand} value={brand}>
+                                                                                {brand.charAt(0).toUpperCase() + brand.slice(1)}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </FormItem>
+
+                                                            {/* Last 4 Digits */}
+                                                            <FormItem>
+                                                                <FormLabel>Last 4 Digits *</FormLabel>
+                                                                <Input
+                                                                    type="text"
+                                                                    inputMode="numeric"
+                                                                    maxLength={4}
+                                                                    placeholder="1234"
+                                                                    disabled={showVerificationDialog}
+                                                                    value={values.paymentCard?.last4 ?? ""}
+                                                                    onChange={(e) => {
+                                                                        const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                                                                        setFieldValue("paymentCard", {
+                                                                            ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, expMonth: 1, expYear: new Date().getFullYear() }),
+                                                                            last4: val,
+                                                                        });
+                                                                    }}
+                                                                    className="bg-white/80 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 font-mono tracking-widest"
+                                                                />
+                                                            </FormItem>
+
+                                                            {/* Expiration Month */}
+                                                            <FormItem>
+                                                                <FormLabel>Exp. Month *</FormLabel>
+                                                                <Select
+                                                                    value={String(values.paymentCard?.expMonth ?? 1)}
+                                                                    onValueChange={(v) => {
+                                                                        if (showVerificationDialog) return;
+                                                                        setFieldValue("paymentCard", {
+                                                                            ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expYear: new Date().getFullYear() }),
+                                                                            expMonth: parseInt(v, 10),
+                                                                        });
+                                                                    }}
+                                                                    disabled={showVerificationDialog}
+                                                                >
+                                                                    <SelectTrigger className="bg-white/80 border-green-300 focus:border-green-500">
+                                                                        <SelectValue placeholder="Month" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                                                                            <SelectItem key={m} value={String(m)}>
+                                                                                {String(m).padStart(2, "0")}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </FormItem>
+
+                                                            {/* Expiration Year */}
+                                                            <FormItem>
+                                                                <FormLabel>Exp. Year *</FormLabel>
+                                                                <Select
+                                                                    value={String(values.paymentCard?.expYear ?? new Date().getFullYear())}
+                                                                    onValueChange={(v) => {
+                                                                        if (showVerificationDialog) return;
+                                                                        setFieldValue("paymentCard", {
+                                                                            ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expMonth: 1 }),
+                                                                            expYear: parseInt(v, 10),
+                                                                        });
+                                                                    }}
+                                                                    disabled={showVerificationDialog}
+                                                                >
+                                                                    <SelectTrigger className="bg-white/80 border-green-300 focus:border-green-500">
+                                                                        <SelectValue placeholder="Year" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map((y) => (
+                                                                            <SelectItem key={y} value={String(y)}>
+                                                                                {y}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </FormItem>
+
+                                                            {/* Cardholder Name */}
+                                                            <div className="md:col-span-2">
+                                                                <FormItem>
+                                                                    <FormLabel>Cardholder Name</FormLabel>
+                                                                    <Input
+                                                                        type="text"
+                                                                        placeholder="Name as shown on card"
+                                                                        disabled={showVerificationDialog}
+                                                                        value={values.paymentCard?.cardholderName ?? ""}
+                                                                        onChange={(e) => {
+                                                                            setFieldValue("paymentCard", {
+                                                                                ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expMonth: 1, expYear: new Date().getFullYear() }),
+                                                                                cardholderName: e.target.value,
+                                                                            });
+                                                                        }}
+                                                                        className="bg-white/80 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200"
+                                                                    />
+                                                                </FormItem>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-start gap-2 text-sm text-gray-600 mt-2">
+                                                            <Info className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                                            <span>Card details are stored securely and used only for automatic salary disbursement.</span>
+                                                        </div>
+                                                    </motion.div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -545,6 +759,7 @@ export default function AddEmployeePage() {
                                                             {...field}
                                                             value={field.value ?? ""}
                                                             type="tel"
+                                                            disabled={showVerificationDialog}
                                                             placeholder="01XXXXXXXXX"
                                                             className="bg-white/80 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
                                                         />
@@ -560,6 +775,7 @@ export default function AddEmployeePage() {
                                                         <Input
                                                             {...field}
                                                             type="email"
+                                                            disabled={showVerificationDialog}
                                                             placeholder="email@example.com"
                                                             className="bg-white/80 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
                                                         />
@@ -582,7 +798,7 @@ export default function AddEmployeePage() {
                                                     <FormLabel>Name *</FormLabel>
                                                     <Field name="contactInfo.emergencyContact.name">
                                                         {({ field }: FieldProps<string>) => (
-                                                            <Input {...field} placeholder="Full name" className="border-purple-200" />
+                                                            <Input {...field} disabled={showVerificationDialog} placeholder="Full name" className="border-purple-200" />
                                                         )}
                                                     </Field>
                                                     <FormMessage>{touched.contactInfo?.emergencyContact?.name && errors.contactInfo?.emergencyContact?.name}</FormMessage>
@@ -591,7 +807,7 @@ export default function AddEmployeePage() {
                                                     <FormLabel>Phone *</FormLabel>
                                                     <Field name="contactInfo.emergencyContact.phone">
                                                         {({ field }: FieldProps<string>) => (
-                                                            <Input {...field} type="tel" placeholder="01XXXXXXXXX" className="border-purple-200" />
+                                                            <Input {...field} type="tel" disabled={showVerificationDialog} placeholder="01XXXXXXXXX" className="border-purple-200" />
                                                         )}
                                                     </Field>
                                                     <FormMessage>{touched.contactInfo?.emergencyContact?.phone && errors.contactInfo?.emergencyContact?.phone}</FormMessage>
@@ -600,7 +816,7 @@ export default function AddEmployeePage() {
                                                     <FormLabel>Relation *</FormLabel>
                                                     <Field name="contactInfo.emergencyContact.relation">
                                                         {({ field }: FieldProps<string>) => (
-                                                            <Input {...field} placeholder="e.g., Father" className="border-purple-200" />
+                                                            <Input {...field} disabled={showVerificationDialog} placeholder="e.g., Father" className="border-purple-200" />
                                                         )}
                                                     </Field>
                                                     <FormMessage>{touched.contactInfo?.emergencyContact?.relation && errors.contactInfo?.emergencyContact?.relation}</FormMessage>
@@ -627,6 +843,7 @@ export default function AddEmployeePage() {
                                                 <Button
                                                     type="button"
                                                     size="sm"
+                                                    disabled={showVerificationDialog}
                                                     className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg"
                                                     onClick={() => setFieldValue("shifts", [...values.shifts, { startTime: "09:00", endTime: "17:00", days: [] }])}
                                                 >
@@ -677,6 +894,7 @@ export default function AddEmployeePage() {
                                                                                     type="button"
                                                                                     variant="ghost"
                                                                                     size="sm"
+                                                                                    disabled={showVerificationDialog}
                                                                                     className="hover:bg-red-100 text-red-500"
                                                                                     onClick={() => remove(index)}
                                                                                 >
@@ -690,7 +908,7 @@ export default function AddEmployeePage() {
                                                                                 {({ field }: FieldProps<string>) => (
                                                                                     <FormItem>
                                                                                         <FormLabel>Start Time *</FormLabel>
-                                                                                        <Input {...field} type="time" value={field.value ?? ""} className="border-cyan-200 focus:border-cyan-400" />
+                                                                                        <Input {...field} type="time" value={field.value ?? ""} disabled={showVerificationDialog} className="border-cyan-200 focus:border-cyan-400" />
                                                                                         <FormMessage>{touchedShift?.startTime && startTimeError}</FormMessage>
                                                                                     </FormItem>
                                                                                 )}
@@ -699,7 +917,7 @@ export default function AddEmployeePage() {
                                                                                 {({ field }: FieldProps<string>) => (
                                                                                     <FormItem>
                                                                                         <FormLabel>End Time *</FormLabel>
-                                                                                        <Input {...field} type="time" value={field.value ?? ""} className="border-cyan-200 focus:border-cyan-400" />
+                                                                                        <Input {...field} type="time" value={field.value ?? ""} disabled={showVerificationDialog} className="border-cyan-200 focus:border-cyan-400" />
                                                                                         <FormMessage>{touchedShift?.endTime && endTimeError}</FormMessage>
                                                                                     </FormItem>
                                                                                 )}
@@ -708,43 +926,41 @@ export default function AddEmployeePage() {
 
                                                                         <Field name={`shifts.${index}.days`}>
                                                                             {({ field }: FieldProps<DayOfWeek[]>) => {
-                                                                                const selectedDays: DayOfWeek[] = Array.isArray(field.value)
-                                                                                    ? field.value
-                                                                                    : [];
+                                                                                const selectedDays: DayOfWeek[] = Array.isArray(field.value) ? field.value : [];
                                                                                 return (
                                                                                     <FormItem>
                                                                                         <FormLabel>Working Days</FormLabel>
                                                                                         <div className="flex gap-2 flex-wrap">
                                                                                             {DAYS_OF_WEEK.map(day => {
                                                                                                 const isSelected = selectedDays.includes(day);
-
-                                                                                                return (<motion.div
-                                                                                                    key={day}
-                                                                                                    whileHover={{ scale: 1.1 }}
-                                                                                                    whileTap={{ scale: 0.95 }}
-                                                                                                >
-                                                                                                    <Badge
-                                                                                                        className={`cursor-pointer px-4 py-2 transition-all font-medium ${isSelected
-                                                                                                            ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg scale-105"
-                                                                                                            : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                                                                                                            }`}
-                                                                                                        onClick={() => {
-                                                                                                            const newDays = selectedDays.includes(day)
-                                                                                                                ? selectedDays.filter(d => d !== day)
-                                                                                                                : [...selectedDays, day];
-
-                                                                                                            setFieldValue(`shifts.${index}.days`, newDays);
-                                                                                                        }}
+                                                                                                return (
+                                                                                                    <motion.div
+                                                                                                        key={day}
+                                                                                                        whileHover={{ scale: 1.1 }}
+                                                                                                        whileTap={{ scale: 0.95 }}
                                                                                                     >
-                                                                                                        {day}
-                                                                                                    </Badge>
-                                                                                                </motion.div>)
+                                                                                                        <Badge
+                                                                                                            className={`cursor-pointer px-4 py-2 transition-all font-medium ${isSelected
+                                                                                                                ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg scale-105"
+                                                                                                                : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                                                                                                                } ${showVerificationDialog ? "pointer-events-none opacity-60" : ""}`}
+                                                                                                            onClick={() => {
+                                                                                                                if (showVerificationDialog) return;
+                                                                                                                const newDays = selectedDays.includes(day)
+                                                                                                                    ? selectedDays.filter(d => d !== day)
+                                                                                                                    : [...selectedDays, day];
+                                                                                                                setFieldValue(`shifts.${index}.days`, newDays);
+                                                                                                            }}
+                                                                                                        >
+                                                                                                            {day}
+                                                                                                        </Badge>
+                                                                                                    </motion.div>
+                                                                                                );
                                                                                             })}
                                                                                         </div>
                                                                                     </FormItem>
-                                                                                )
-                                                                            }
-                                                                            }
+                                                                                );
+                                                                            }}
                                                                         </Field>
                                                                     </motion.div>
                                                                 );
@@ -780,7 +996,7 @@ export default function AddEmployeePage() {
                                                         accept={ALLOWED_EXTENSIONS.map(ext => `.${ext}`).join(',')}
                                                         onChange={e => e.target.files && handleDocumentUpload(e.target.files, values.documents, setFieldValue)}
                                                         className="cursor-pointer bg-white/80 border-slate-300 focus:border-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-slate-600 file:text-white hover:file:bg-slate-700"
-                                                        disabled={uploadingDocuments}
+                                                        disabled={uploadingDocuments || showVerificationDialog}
                                                     />
                                                     {uploadingDocuments && <Loader2 className="h-5 w-5 animate-spin text-slate-600" />}
                                                 </div>
@@ -802,8 +1018,7 @@ export default function AddEmployeePage() {
                                                                     className="flex justify-between items-center bg-white border-2 border-slate-200 rounded-xl p-4 hover:shadow-md transition-all group"
                                                                 >
                                                                     <div className="flex items-center gap-3">
-                                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${doc.type.startsWith("image/") ? "bg-blue-100" : "bg-gray-100"
-                                                                            }`}>
+                                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${doc.type.startsWith("image/") ? "bg-blue-100" : "bg-gray-100"}`}>
                                                                             {doc.type.startsWith("image/") ? (
                                                                                 <ImageIcon className="h-6 w-6 text-blue-600" />
                                                                             ) : (
@@ -820,6 +1035,7 @@ export default function AddEmployeePage() {
                                                                             type="button"
                                                                             size="sm"
                                                                             variant="ghost"
+                                                                            disabled={showVerificationDialog}
                                                                             className="hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                                                             onClick={() => handleRemoveDocument(i, values.documents, setFieldValue)}
                                                                         >
@@ -863,6 +1079,7 @@ export default function AddEmployeePage() {
                                                     <Textarea
                                                         {...field}
                                                         value={field.value ?? ""}
+                                                        disabled={showVerificationDialog}
                                                         placeholder="Add any additional notes, comments, or special requirements..."
                                                         className="min-h-[120px] bg-white/80 border-yellow-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 resize-none"
                                                     />
@@ -872,7 +1089,6 @@ export default function AddEmployeePage() {
                                     </div>
                                 </div>
                             </motion.div>
-
                         </motion.div>
 
                         {/* Sticky Footer */}
@@ -887,7 +1103,8 @@ export default function AddEmployeePage() {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        onClick={() => router.push(`/users/employees`)} // ? router path
+                                        disabled={showVerificationDialog}
+                                        onClick={() => router.push(`/users/employees`)}
                                         className="w-full border-2 border-gray-300 hover:bg-gray-100 hover:border-gray-400 font-semibold"
                                     >
                                         Return
@@ -896,7 +1113,7 @@ export default function AddEmployeePage() {
                                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
                                     <Button
                                         type="submit"
-                                        disabled={isSubmitting || uploadingAvatar || uploadingDocuments}
+                                        disabled={isSubmitting || uploadingAvatar || uploadingDocuments || showVerificationDialog}
                                         className="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-gray-950 text-white shadow-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isSubmitting ? (
@@ -917,6 +1134,16 @@ export default function AddEmployeePage() {
                     </Form>
                 )}
             </Formik>
+
+            <EmployeeVerificationDialog
+                open={showVerificationDialog}
+                onOpenChange={setShowVerificationDialog}
+                email={pendingSubmission?.values.contactInfo.email || ""}
+                onVerify={handleVerifyToken}
+                onCancel={handleCancelVerification}
+                verifying={verifying}
+                error={verificationError}
+            />
         </div>
     );
 }

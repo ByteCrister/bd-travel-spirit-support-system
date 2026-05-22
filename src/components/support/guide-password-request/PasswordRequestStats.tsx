@@ -3,13 +3,13 @@
 
 import { motion, Variants } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  AlertCircle, 
-  BarChart3, 
-  RefreshCw 
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertCircle,
+  BarChart3,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -123,24 +123,28 @@ export function PasswordRequestStats() {
     >
       {STAT_CARDS.map((stat, index) => {
         const value = stats[stat.key as keyof typeof stats];
-        const showPendingPercentage = stat.key === "pending" && stats.pendingPercentage > 0;
-        const showApprovalRate = stat.key === "approved" && stats.approvalRate > 0;
+        const showPendingPercentage = stat.key === "pending";
+        const showApprovalRate = stat.key === "approved";
+        // We keep the logic but always render a placeholder to keep height consistent
+        const hasExtraInfo = showPendingPercentage || showApprovalRate;
 
         return (
-          <motion.div key={stat.key} variants={cardVariants}>
-            <Card className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 bg-white/80 backdrop-blur-sm group">
+          <motion.div key={stat.key} variants={cardVariants} className="h-full">
+            <Card className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 bg-white/80 backdrop-blur-sm group h-full flex flex-col">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-medium text-slate-700">
                   {stat.label}
                 </CardTitle>
-                <div className={cn(
-                  "p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110",
-                  stat.bgColor
-                )}>
+                <div
+                  className={cn(
+                    "p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110",
+                    stat.bgColor
+                  )}
+                >
                   <stat.icon className={cn("h-4 w-4", stat.color)} />
                 </div>
               </CardHeader>
-              <CardContent className="space-y-1">
+              <CardContent className="flex flex-col justify-between flex-1 space-y-2">
                 <motion.div
                   className="text-3xl font-semibold text-slate-900 tabular-nums"
                   initial={{ opacity: 0, y: 10 }}
@@ -149,62 +153,63 @@ export function PasswordRequestStats() {
                 >
                   {value}
                 </motion.div>
-                
-                {showPendingPercentage && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="flex items-center gap-1.5"
-                  >
-                    <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                    <p className="text-xs text-slate-600 font-medium">
-                      {stats.pendingPercentage}% of total
-                    </p>
-                  </motion.div>
-                )}
-                
-                {showApprovalRate && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="flex items-center gap-1.5"
-                  >
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    <p className="text-xs text-slate-600 font-medium">
-                      {stats.approvalRate}% approval rate
-                    </p>
-                  </motion.div>
-                )}
 
-                {/* Progress indicator for pending items */}
-                {stat.key === "pending" && stats.total > 0 && (
-                  <div className="pt-2">
-                    <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full bg-gradient-to-r from-amber-400 to-amber-500"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${stats.pendingPercentage}%` }}
-                        transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-                      />
-                    </div>
-                  </div>
-                )}
+                {/* Fixed-height container for percentage info – always rendered */}
+                <div className="min-h-[1.25rem] flex items-center gap-1.5">
+                  {hasExtraInfo ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="flex items-center gap-1.5"
+                    >
+                      {showPendingPercentage && (
+                        <>
+                          <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                          <p className="text-xs text-slate-600 font-medium">
+                            {stats.pendingPercentage}% of total
+                          </p>
+                        </>
+                      )}
+                      {showApprovalRate && (
+                        <>
+                          <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          <p className="text-xs text-slate-600 font-medium">
+                            {stats.approvalRate}% approval rate
+                          </p>
+                        </>
+                      )}
+                    </motion.div>
+                  ) : (
+                    // invisible placeholder to preserve height
+                    <span aria-hidden className="text-xs opacity-0">
+                      &mdash;
+                    </span>
+                  )}
+                </div>
 
-                {/* Progress indicator for approval rate */}
-                {stat.key === "approved" && stats.total > 0 && (
-                  <div className="pt-2">
-                    <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${stats.approvalRate}%` }}
-                        transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-                      />
-                    </div>
-                  </div>
-                )}
+                {/* Progress bar area – always rendered, width depends on data */}
+                <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <motion.div
+                    className={cn(
+                      "h-full bg-gradient-to-r",
+                      hasExtraInfo
+                        ? stat.gradient
+                        : "from-transparent to-transparent" // invisible bar for other cards
+                    )}
+                    initial={{ width: 0 }}
+                    animate={{
+                      width: hasExtraInfo
+                        ? stat.key === "pending"
+                          ? `${stats.pendingPercentage}%`
+                          : stat.key === "approved"
+                            ? `${stats.approvalRate}%`
+                            : "0%"
+                        : "0%",
+                    }}
+                    transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+                  />
+                </div>
               </CardContent>
             </Card>
           </motion.div>

@@ -14,7 +14,8 @@ import UserModel from "@/models/user.model";
 import AssetModel from "@/models/assets/asset.model";
 import AssetFileModel from "@/models/assets/asset-file.model";
 import TourModel from "@/models/tours/tour.model";
-import { TravelerModel } from "@/models/travellers/traveler.model";
+import { TravelerModel } from "@/models/travelers/traveler.model";
+import ConnectDB from "@/config/db";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -276,6 +277,9 @@ async function getReportsHandler(
         includeDeleted: sp.get("includeDeleted") === "true",
         onlyDeleted: sp.get("onlyDeleted") === "true",
     };
+
+    // Connect to Database
+    await ConnectDB();
 
     const data = await ReportResponseService.getTourReports(tourId.toString(), queryParams);
 

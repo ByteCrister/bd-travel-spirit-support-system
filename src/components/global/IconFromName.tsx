@@ -3,7 +3,7 @@
 import React from "react";
 import { IconType } from "react-icons";
 
-// Map prefixes → react-icons library paths
+// ── Icon library map ───────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const iconLibraries: Record<string, () => Promise<any>> = {
     Fa: () => import("react-icons/fa"),
@@ -22,6 +22,11 @@ const iconLibraries: Record<string, () => Promise<any>> = {
     Lu: () => import("react-icons/lu"),
 };
 
+// ── Style tokens (neu design system) ──────────────────────────
+const STYLES = {
+    placeholder: "inline-block align-middle",
+} as const;
+
 type Props = {
     name: string; // e.g. "FiFacebook"
     size?: number;
@@ -29,38 +34,43 @@ type Props = {
     className?: string;
 } & React.SVGProps<SVGSVGElement>;
 
-const IconFromName = ({
-    name,
-    size = 20,
-    color,
-    className,
-    ...rest
-}: Props) => {
+const IconFromName = ({ name, size = 20, color, className, ...rest }: Props) => {
     const [Icon, setIcon] = React.useState<IconType | null>(null);
 
     React.useEffect(() => {
         if (!name) return;
 
-        const libraryKey = Object.keys(iconLibraries).find(prefix =>
-            name.startsWith(prefix)
-        );
+        // Prefer longer prefix keys first (e.g. "Io5" before "Io")
+        const libraryKey = Object.keys(iconLibraries)
+            .sort((a, b) => b.length - a.length)
+            .find((prefix) => name.startsWith(prefix));
 
         if (!libraryKey) {
-            console.warn("Unknown icon prefix:", name);
+            console.warn(`[IconFromName] Unknown icon prefix for: "${name}"`);
             return;
         }
 
-        iconLibraries[libraryKey]().then(module => {
-            // module[name] is guaranteed to be an IconType
+        iconLibraries[libraryKey]().then((module) => {
             const Comp = module[name] as IconType | undefined;
-            if (Comp) setIcon(() => Comp);
-            else console.warn(`Icon "${name}" not found in ${libraryKey}`);
+            if (Comp) {
+                setIcon(() => Comp);
+            } else {
+                console.warn(`[IconFromName] Icon "${name}" not found in "${libraryKey}"`);
+            }
         });
     }, [name]);
 
-    if (!Icon) return <span className={className} />;
+    if (!Icon) {
+        return (
+            <span
+                className={`${STYLES.placeholder} ${className ?? ""}`.trim()}
+                style={{ width: size, height: size }}
+                aria-hidden="true"
+            />
+        );
+    }
 
     return <Icon size={size} color={color} className={className} {...rest} />;
-}
+};
 
 export default React.memo(IconFromName);

@@ -1,8 +1,8 @@
-import Users from "@/components/users/travelers/Users"
+import TravelersPage from "@/components/users/travelers/TravelersPage"
 
 const page = () => {
     return (
-        <Users />
+        <TravelersPage />
     )
 }
 

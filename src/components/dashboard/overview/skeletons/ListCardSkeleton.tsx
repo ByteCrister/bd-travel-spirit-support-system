@@ -1,8 +1,14 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+
+// ── Neumorphic design tokens ──────────────────────────────────────────────────
+const NEU_CARD =
+  "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_CARD_SM =
+  "rounded-xl bg-[#E7E5E4] shadow-[4px_4px_10px_#c8c6c5,-4px_-4px_10px_#ffffff] border border-white/60";
+const NEU_SKELETON = "rounded-lg bg-[#d0cecd] animate-pulse";
+const NEU_DIVIDER = "border-[#1E2938]/10";
 
 interface ListCardSkeletonProps {
   title?: string;
@@ -16,43 +22,37 @@ export function ListCardSkeleton({
   className,
 }: ListCardSkeletonProps) {
   return (
-    <Card
-      className={cn(
-        "bg-white border-2 border-gray-200 shadow-sm",
-        "dark:bg-slate-900 dark:border-slate-700",
-        className
-      )}
-    >
-      <CardHeader className="border-b-2 border-gray-100 dark:border-slate-800">
-        <CardTitle className="flex items-center gap-3 px-4 py-3">
-          <Skeleton className="h-6 w-6 rounded-full bg-gray-300 dark:bg-slate-700" />
-          <span className="sr-only">{title}</span>
-          <Skeleton className="h-5 w-36 bg-gray-300 dark:bg-slate-700" />
-        </CardTitle>
-      </CardHeader>
+    <div className={cn(NEU_CARD, "p-5", className)}>
+      {/* Header */}
+      <div className={cn("flex items-center gap-3 pb-4 mb-4 border-b", NEU_DIVIDER)}>
+        <div className={cn(NEU_SKELETON, "h-8 w-8 rounded-xl flex-shrink-0")} />
+        <span className="sr-only">{title}</span>
+        <div className={cn(NEU_SKELETON, "h-4 w-36")} />
+      </div>
 
-      <CardContent className="px-4 py-3">
-        <div className="space-y-4">
-          {Array.from({ length: rows }).map((_, i) => (
-            <div
-              key={i}
-              className="p-4 rounded-lg border border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800"
-            >
-              <div className="flex items-start gap-3">
-                <Skeleton className="h-10 w-10 rounded-full bg-gray-300 dark:bg-slate-700" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-56 bg-gray-300 dark:bg-slate-700" />
-                  <Skeleton className="h-3 w-72 bg-gray-200 dark:bg-slate-700/90" />
-                  <div className="flex gap-2">
-                    <Skeleton className="h-6 w-20 rounded-md bg-gray-300 dark:bg-slate-700" />
-                    <Skeleton className="h-6 w-28 rounded-md bg-gray-300 dark:bg-slate-700" />
-                  </div>
+      {/* Row skeletons */}
+      <div className="space-y-3">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className={cn(NEU_CARD_SM, "p-3.5")}>
+            <div className="flex items-start gap-3">
+              {/* Avatar / icon well */}
+              <div className={cn(NEU_SKELETON, "h-9 w-9 rounded-xl flex-shrink-0")} />
+
+              {/* Text lines */}
+              <div className="flex-1 space-y-2">
+                <div className={cn(NEU_SKELETON, "h-3.5 w-3/4")} />
+                <div className={cn(NEU_SKELETON, "h-3 w-full")} />
+
+                {/* Badge row */}
+                <div className="flex gap-2 pt-0.5">
+                  <div className={cn(NEU_SKELETON, "h-5 w-16 rounded-lg")} />
+                  <div className={cn(NEU_SKELETON, "h-5 w-24 rounded-lg")} />
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

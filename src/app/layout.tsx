@@ -1,41 +1,38 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
-import { Inter, Poppins } from "next/font/google";
 import GlobalProvider from "@/components/wrappers/GlobalProvider";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"], variable: "--font-display" });
+import { jetbrainsMono, spaceMono } from "@/styles/fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.DOMAIN || "http://localhost:3000"),
 
-  // Basic Information  
+  // Basic Information
   title: {
-    default: "BD Travel Spirit Support System | Professional Tour Management Platform",
+    default:
+      "BD Travel Spirit Support System | Professional Tour Management Platform",
     template: "BD Travel Spirit Support System | %s",
   },
 
-  description: "Comprehensive travel platform support system for Bangladesh tourism. Manage tours, guides, bookings, and customer support. Discover Bangladesh's beauty through professional tour operators across all divisions including Dhaka, Chittagong, Sylhet, Cox's Bazar, and more.",
+  description:
+    "Comprehensive travel platform support system for Bangladesh tourism. Manage tours, guides, bookings, and customer support. Discover Bangladesh's beauty through professional tour operators across all divisions including Dhaka, Chittagong, Sylhet, Cox's Bazar, and more.",
 
   applicationName: "BD Travel Spirit Support System",
 
-  authors: [
-    { name: "ByteCrister", url: "https://github.com/ByteCrister" }
-  ],
+  authors: [{ name: "ByteCrister", url: "https://github.com/ByteCrister" }],
 
   creator: "ByteCrister",
   publisher: "BD Travel Spirit",
 
   keywords: [
-    // Core Platform Keywords  
+    // Core Platform Keywords
     "BD Travel Spirit",
     "Bangladesh travel",
     "Bangladesh tourism",
     "tour management system",
     "travel support platform",
 
-    // Location-based Keywords  
+    // Location-based Keywords
     "Bangladesh tour guide",
     "Cox's Bazar tours",
     "Sylhet tourism",
@@ -45,7 +42,7 @@ export const metadata: Metadata = {
     "Rangamati tours",
     "Sundarbans expedition",
 
-    // Service Keywords  
+    // Service Keywords
     "professional tour operators Bangladesh",
     "travel guide registration",
     "tour booking platform",
@@ -55,7 +52,7 @@ export const metadata: Metadata = {
     "tour itinerary planner",
     "Bangladesh tourism support",
 
-    // Feature Keywords  
+    // Feature Keywords
     "tour review system",
     "travel FAQ platform",
     "real-time tour booking",
@@ -64,25 +61,27 @@ export const metadata: Metadata = {
     "travel content management",
   ],
 
-  // Open Graph (Facebook, LinkedIn, etc.)  
+  // Open Graph (Facebook, LinkedIn, etc.)
   openGraph: {
     type: "website",
     locale: "en_BD",
     alternateLocale: ["en_US", "bn_BD"],
     url: process.env.DOMAIN,
     siteName: "BD Travel Spirit Support System",
-    title: "BD Travel Spirit Support | Professional Tour Management Platform for Bangladesh",
-    description: "Comprehensive support system for Bangladesh tourism. Professional tour guides, travel companies, and support staff platform. Discover, manage, and book authentic Bangladesh travel experiences.",
+    title:
+      "BD Travel Spirit Support | Professional Tour Management Platform for Bangladesh",
+    description:
+      "Comprehensive support system for Bangladesh tourism. Professional tour guides, travel companies, and support staff platform. Discover, manage, and book authentic Bangladesh travel experiences.",
     images: [
       {
-        url: "/og-image.png", // Create this image (1200x630px recommended)  
+        url: "/og-image.png", // Create this image (1200x630px recommended)
         width: 1200,
         height: 630,
         alt: "BD Travel Spirit Support System - Professional Tour Management Platform",
         type: "image/png",
       },
       {
-        url: "/og-image-square.png", // Square variant (1200x1200px)  
+        url: "/og-image-square.png", // Square variant (1200x1200px)
         width: 1200,
         height: 1200,
         alt: "BD Travel Spirit - Bangladesh Tourism Platform",
@@ -91,17 +90,18 @@ export const metadata: Metadata = {
     ],
   },
 
-  // Twitter Card  
+  // Twitter Card
   twitter: {
     card: "summary_large_image",
     site: "@bdtravelspirit",
     creator: "@ByteCrister",
     title: "BD Travel Spirit Support | Bangladesh Tour Management Platform",
-    description: "Professional tour management and support system for Bangladesh tourism. Connect with expert guides, manage tours, and explore Bangladesh's natural beauty.",
-    images: ["/twitter-image.png"], // Create this image (1200x600px recommended)  
+    description:
+      "Professional tour management and support system for Bangladesh tourism. Connect with expert guides, manage tours, and explore Bangladesh's natural beauty.",
+    images: ["/twitter-image.png"], // Create this image (1200x600px recommended)
   },
 
-  // Robots & Indexing  
+  // Robots & Indexing
   robots: {
     index: true,
     follow: true,
@@ -114,52 +114,50 @@ export const metadata: Metadata = {
     },
   },
 
-  // Icons  
+  // Icons
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
       { url: "/icon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/icon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
-    apple: [
-      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
-    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
     other: [
       {
         rel: "mask-icon",
         url: "/safari-pinned-tab.svg",
-        color: "#10b981", // Your brand color  
+        color: "#10b981", // Your brand color
       },
     ],
   },
 
-  // Manifest  
+  // Manifest
   manifest: "/site.webmanifest",
 
-  // Verification (Add these to your environment variables)  
+  // Verification (Add these to your environment variables)
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
-    // yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,  
-    // bing: process.env.NEXT_PUBLIC_BING_VERIFICATION,  
+    // yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
+    // bing: process.env.NEXT_PUBLIC_BING_VERIFICATION,
   },
 
-  // Category  
+  // Category
   category: "Travel & Tourism",
 
-  // Additional Metadata  
+  // Additional Metadata
   other: {
     "application-name": "BD Travel Spirit Support System",
-    "contact:email": "support@bd-travel-spirit.com", // Update with actual email  
-    "contact:phone": "+880-XXX-XXXXXX", // Update with actual phone  
+    "contact:email": "support@bd-travel-spirit.com", // Update with actual email
+    "contact:phone": "+880-XXX-XXXXXX", // Update with actual phone
     "geo.region": "BD",
     "geo.placename": "Bangladesh",
-    "coverage": "Bangladesh",
-    "distribution": "global",
-    "rating": "general",
+    coverage: "Bangladesh",
+    distribution: "global",
+    rating: "general",
     "revisit-after": "7 days",
   },
 
-  // Alternate Languages (if you add multilingual support)  
+  // Alternate Languages (if you add multilingual support)
   alternates: {
     canonical: process.env.DOMAIN,
     languages: {
@@ -169,7 +167,7 @@ export const metadata: Metadata = {
   },
 };
 
-// Theme & Colors  
+// Theme & Colors
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -181,26 +179,23 @@ export const viewport: Viewport = {
   ],
 };
 
-
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
+    <html
+      lang="en"
+      className={`${spaceMono.variable} ${jetbrainsMono.variable}`}
+    >
       <body>
         <GlobalProvider>
           {/* App content */}
           {children}
 
           {/* Global toast notifications */}
-          <Toaster
-            position="bottom-right"
-            richColors
-            duration={5000}
-          />
+          <Toaster position="bottom-right" richColors duration={5000} />
         </GlobalProvider>
       </body>
     </html>

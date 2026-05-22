@@ -46,8 +46,8 @@ export interface HostSummaryDTO {
     name: string;
     /** Host email. */
     email: string;
-    /** Optional avatar URL. */
-    avatar?: string | null;
+    /** Optional company logo URL (resolved from the guide model's logoUrl asset). */
+    logoUrl?: string | null;
     /** Organizer company name from profile. */
     companyName: string;
     /** Created at timestamp for the host. */

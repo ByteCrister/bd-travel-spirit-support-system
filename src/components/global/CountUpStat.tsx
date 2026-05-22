@@ -2,6 +2,11 @@
 
 import CountUp from "react-countup";
 
+// ── Style tokens (neu design system) ──────────────────────────
+const STYLES = {
+    default: "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tabular-nums",
+} as const;
+
 type Props = {
     end: number;
     duration?: number;
@@ -34,7 +39,12 @@ export default function CountUpStat({
             enableScrollSpy={startOnVisible}
             scrollSpyOnce={scrollSpyOnce}
         >
-            {({ countUpRef }) => <span ref={countUpRef} className={className} />}
+            {({ countUpRef }) => (
+                <span
+                    ref={countUpRef}
+                    className={`${STYLES.default} ${className}`.trim()}
+                />
+            )}
         </CountUp>
     );
 }

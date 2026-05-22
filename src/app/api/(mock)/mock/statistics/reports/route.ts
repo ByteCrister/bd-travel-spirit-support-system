@@ -21,5 +21,5 @@ export async function GET() {
         avgResolutionTime: faker.number.float({ min: 1, max: 7, fractionDigits: 1 }),
     };
 
-    return NextResponse.json(data);
+    return NextResponse.json({ data });
 }

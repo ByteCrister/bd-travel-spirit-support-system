@@ -23,6 +23,7 @@ import type {
 import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 
+// const URL_AFTER_API = "/support/users/v1/chats";
 const URL_AFTER_API = "/mock/chats";
 
 /**
@@ -231,8 +232,8 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
                 };
 
                 const res = await api.get<ChatMessageListResponse>(ENDPOINTS.list, { params });
-                if (!res.data.success || !res.data.data) {
-                    throw new Error(res.data.message || "Failed to fetch messages");
+                if (!res.data || !res.data.data) {
+                    throw new Error(res.data.error || "Failed to fetch messages");
                 }
 
                 const { items, total, page, limit, totalPages } = res.data.data;
@@ -302,8 +303,8 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
                     },
                 });
 
-                if (!res.data.success || !res.data.data) {
-                    throw new Error(res.data.message || "Failed to fetch conversation");
+                if (!res.data || !res.data.data) {
+                    throw new Error(res.data.error || "Failed to fetch conversation");
                 }
 
                 const { items, total, page, limit, totalPages } = res.data.data;
@@ -455,8 +456,8 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
                 };
 
                 const res = await api.get<UserListResponse>(ENDPOINTS.userList, { params });
-                if (!res.data.success || !res.data.data) {
-                    throw new Error(res.data.message || "Failed to fetch user list");
+                if (!res.data || !res.data.data) {
+                    throw new Error(res.data.error || "Failed to fetch user list");
                 }
 
                 const { items, total, page, limit, totalPages } = res.data.data;
@@ -541,8 +542,8 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
 
             try {
                 const res = await api.get<ChatMessageResponse>(ENDPOINTS.byId(id));
-                if (!res.data.success || !res.data.data) {
-                    throw new Error(res.data.message || "Failed to fetch message");
+                if (!res.data || !res.data.data) {
+                    throw new Error(res.data.error || "Failed to fetch message");
                 }
                 const message = res.data.data;
 
@@ -575,7 +576,7 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
             const tempId = `temp_${Date.now()}`;
             const optimistic: ChatMessage = {
                 _id: tempId,
-                sender: "adminId", // Replace with authenticated user's id or IUserRef in your app shell
+                sender: payload.receiver, // placeholder — will be replaced by server response
                 receiver: payload.receiver,
                 message: payload.message,
                 timestamp: new Date().toISOString(),
@@ -590,32 +591,27 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
                 updatedAt: new Date().toISOString(),
             };
 
-            // Insert optimistic into cache
+            // Insert optimistic into cache — append to any active conversation list involving this receiver
             set(
                 produce((draft: ChatMessageStoreState) => {
                     draft.messagesById[optimistic._id] = optimistic;
-                    const key = buildQueryKey({ sender: "adminId", receiver: payload.receiver, page: 1, limit: 20, sortBy: "createdAt", sortOrder: "desc" });
-                    const existing = draft.listsByQueryKey[key];
-                    if (existing) {
-                        existing.ids = [optimistic._id, ...existing.ids];
-                        existing.total += 1;
-                    } else {
-                        draft.listsByQueryKey[key] = {
-                            ids: [optimistic._id],
-                            total: 1,
-                            page: 1,
-                            limit: 20,
-                            totalPages: 1,
-                            lastFetchedAt: Date.now(),
-                        };
+
+                    // Find conversation lists that match this receiver and append
+                    for (const [key, list] of Object.entries(draft.listsByQueryKey)) {
+                        if (key.includes(`conversation:`) && key.includes(payload.receiver)) {
+                            if (!list.ids.includes(optimistic._id)) {
+                                list.ids.push(optimistic._id); // append at end (asc order)
+                                list.total += 1;
+                            }
+                        }
                     }
                 })
             );
 
             try {
                 const res = await api.post<ChatMessageMutationResponse>(ENDPOINTS.create, payload);
-                if (!res.data.success || !res.data.data) {
-                    throw new Error(res.data.message || "Failed to send message");
+                if (!res.data || !res.data.data) {
+                    throw new Error(res.data.error || "Failed to send message");
                 }
                 const created = res.data.data;
 
@@ -671,8 +667,8 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
 
             try {
                 const res = await api.patch<ChatMessageMutationResponse>(ENDPOINTS.update(id), payload);
-                if (!res.data.success || !res.data.data) {
-                    throw new Error(res.data.message || "Failed to update message");
+                if (!res.data || !res.data.data) {
+                    throw new Error(res.data.error || "Failed to update message");
                 }
                 const updated = res.data.data;
                 set(
@@ -713,8 +709,8 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
 
             try {
                 const res = await api.delete<ChatMessageMutationResponse>(ENDPOINTS.delete(id));
-                if (!res.data.success) {
-                    throw new Error(res.data.message || "Failed to delete message");
+                if (!res.data || !res.data.data) {
+                    throw new Error(res.data.error || "Failed to delete message");
                 }
                 // Remove from entity cache
                 set(
@@ -830,8 +826,8 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
 
             try {
                 const res = await api.get<ChatMessageStatsResponse>(ENDPOINTS.stats);
-                if (!res.data.success || !res.data.data) {
-                    throw new Error(res.data.message || "Failed to fetch stats");
+                if (!res.data || !res.data.data) {
+                    throw new Error(res.data.error || "Failed to fetch stats");
                 }
                 set(
                     produce((draft: ChatMessageStoreState) => {
@@ -886,21 +882,43 @@ export const useChatMessageStore = create<ChatMessageStoreState>()(
                     const msg = evt.payload;
                     switch (evt.type) {
                         case "created": {
+                            // Skip if we already have this message (e.g., from optimistic insert)
+                            if (draft.messagesById[msg._id]) break;
+
                             draft.messagesById[msg._id] = msg;
-                            // Prepend to default list
-                            const key = buildQueryKey({ page: 1, limit: 20, sortBy: "createdAt", sortOrder: "desc" });
-                            const list = draft.listsByQueryKey[key] ?? {
-                                ids: [],
-                                total: 0,
-                                page: 1,
-                                limit: 20,
-                                totalPages: 1,
-                            };
-                            if (!list.ids.includes(msg._id)) {
-                                list.ids.unshift(msg._id);
-                                list.total += 1;
+
+                            // Insert into any matching conversation lists
+                            const senderId = typeof msg.sender === "string" ? msg.sender : msg.sender?._id;
+                            const receiverId = typeof msg.receiver === "string" ? msg.receiver : msg.receiver?._id;
+
+                            for (const [key, list] of Object.entries(draft.listsByQueryKey)) {
+                                // Match conversation lists involving either participant
+                                if (
+                                    key.startsWith("conversation:") &&
+                                    senderId && receiverId &&
+                                    ((key.includes(senderId) && key.includes(receiverId)))
+                                ) {
+                                    if (!list.ids.includes(msg._id)) {
+                                        list.ids.push(msg._id); // append (asc order)
+                                        list.total += 1;
+                                    }
+                                }
                             }
-                            draft.listsByQueryKey[key] = { ...list, lastFetchedAt: Date.now() };
+
+                            // Also update user list sidebar: bump unread count for sender
+                            if (senderId) {
+                                for (const userList of Object.values(draft.userListsByKey)) {
+                                    const idx = userList.users.findIndex((r) => r.user._id === senderId);
+                                    if (idx !== -1) {
+                                        userList.users[idx] = {
+                                            ...userList.users[idx],
+                                            unreadCount: userList.users[idx].unreadCount + 1,
+                                            lastMessage: msg,
+                                            lastMessageAt: msg.createdAt,
+                                        };
+                                    }
+                                }
+                            }
                             break;
                         }
                         case "updated": {

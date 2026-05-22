@@ -3,13 +3,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { FaInfoCircle, FaStar, FaFlag, FaQuestionCircle } from "react-icons/fa";
+import { FaInfoCircle, FaStar, FaFlag, FaQuestionCircle, FaCalendar } from "react-icons/fa";
 
 import AllDetails from "./AllDetails";
 import ReviewsPanel from "./ReviewsPanel";
 import ReportsPanel from "./ReportsPanel";
-import TourFaqs from "./TourFaqs";
+import TourFaqsPanel from "./TourFaqsPanel";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
+import TourBookingsPanel from "./TourBookingsPanel";
 
 type Props = { companyId: string; tourId: string };
 
@@ -33,13 +34,14 @@ export default function TourDetailPage({ companyId, tourId }: Props) {
 
     const tabs = [
         { value: "details", label: "All details", icon: <FaInfoCircle className="w-4 h-4" /> },
+        { value: "bookings", label: "Bookings", icon: <FaCalendar className="w-4 h-4" /> },
         { value: "reviews", label: "Reviews", icon: <FaStar className="w-4 h-4" /> },
         { value: "reports", label: "Reports", icon: <FaFlag className="w-4 h-4" /> },
         { value: "faqs", label: "FAQs", icon: <FaQuestionCircle className="w-4 h-4" /> },
     ];
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto p-4 lg:p-6">
             <Breadcrumbs items={breadcrumbItems} className="pb-4" />
             {/* Hero Header */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-blue-500 to-cyan-500 p-[1px] shadow-lg">
@@ -96,6 +98,12 @@ export default function TourDetailPage({ companyId, tourId }: Props) {
                         <TabsContent value="details">
                             <AllDetails companyId={companyId} tourId={tourId} handleBreadcrumbItems={handleBreadcrumbItems} />
                         </TabsContent>
+                        <TabsContent value="bookings">
+                            <TourBookingsPanel companyId={companyId} tourId={tourId} />
+                        </TabsContent>
+                        <TabsContent value="reviews">
+                            <ReviewsPanel companyId={companyId} tourId={tourId} />
+                        </TabsContent>
                         <TabsContent value="reviews">
                             <ReviewsPanel companyId={companyId} tourId={tourId} />
                         </TabsContent>
@@ -103,7 +111,7 @@ export default function TourDetailPage({ companyId, tourId }: Props) {
                             <ReportsPanel companyId={companyId} tourId={tourId} />
                         </TabsContent>
                         <TabsContent value="faqs">
-                            <TourFaqs companyId={companyId} tourId={tourId} active />
+                            <TourFaqsPanel companyId={companyId} tourId={tourId} active />
                         </TabsContent>
                     </div>
                 </Tabs>

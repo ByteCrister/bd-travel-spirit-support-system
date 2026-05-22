@@ -22,6 +22,7 @@ import Image from 'next/image'
 import { features, useCompanyDetailsHandler } from '@/hooks/useCompanyDetailsHandler'
 import { GUIDE_SOCIAL_PLATFORM } from '@/constants/guide.const'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
+import { jakarta } from '@/styles/fonts'
 
 interface StepCompanyDetailsProps {
   onNext: () => void
@@ -47,8 +48,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.5 }}
-      className="w-full max-w-6xl mx-auto"
-      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+      className={`w-full max-w-6xl mx-auto ${jakarta.className}`}
     >
       {/* Header Section */}
       <motion.div
@@ -57,18 +57,13 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
         transition={{ delay: 0.1 }}
         className="text-center mb-8"
       >
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-4 shadow-lg" style={{ boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' }}>
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl mb-4 shadow-lg shadow-emerald-500/40">
           <Building2 className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-3xl font-bold mb-2" style={{
-          background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontFamily: "'Poppins', system-ui, sans-serif"
-        }}>
+        <h2 className="text-3xl font-semibold mb-2 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
           Company Details
         </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-gray-600 max-w-2xl mx-auto">
           Tell us about your business and what makes you unique. This information helps travelers choose the perfect guide for their adventure.
         </p>
       </motion.div>
@@ -77,18 +72,14 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
         {/* Main Form */}
         <div className="lg:col-span-2 space-y-6">
           {/* Company Information Card */}
-          <Card className="border-0 shadow-lg" style={{
-            background: 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
+          <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
             <CardHeader className="pb-6">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-blue-500/10 rounded-xl flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 rounded-xl flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
+                  <CardTitle className="text-xl text-gray-900">
                     Company Information
                   </CardTitle>
                   <p className="text-sm text-gray-600">Basic business details</p>
@@ -117,10 +108,9 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                     onChange={(e) => handleInputChange('companyName', e.target.value)}
                     onBlur={() => handleBlur('companyName')}
                     className={cn(
-                      "h-12 pl-4 pr-12 transition-all duration-300",
+                      "h-12 pl-4 pr-12 transition-all duration-300 bg-white text-gray-900 placeholder:text-gray-400 border-gray-300 focus-visible:ring-emerald-500",
                       getFieldError('companyName') && "border-red-500 bg-red-50",
-                      isFieldValid('companyName') && "border-green-500 bg-green-50",
-                      "focus:border-blue-500"
+                      isFieldValid('companyName') && "border-emerald-500 bg-emerald-50"
                     )}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -140,7 +130,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                           animate={{ scale: 1, rotate: 0 }}
                           exit={{ scale: 0, rotate: 180 }}
                         >
-                          <CheckCircle className="w-5 h-5 text-green-500" />
+                          <CheckCircle className="w-5 h-5 text-emerald-500" />
                         </motion.div>
                       ) : null}
                     </AnimatePresence>
@@ -152,7 +142,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="text-sm text-red-500 flex items-center space-x-1"
+                      className="text-sm text-red-600 flex items-center space-x-1"
                     >
                       <AlertCircle className="w-4 h-4" />
                       <span>{getFieldError('companyName')}</span>
@@ -184,10 +174,9 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                     onChange={(e) => handleInputChange('bio', e.target.value)}
                     onBlur={() => handleBlur('bio')}
                     className={cn(
-                      "min-h-[140px] pl-4 pr-12 transition-all duration-300 resize-none",
+                      "min-h-[140px] pl-4 pr-12 transition-all duration-300 resize-none bg-white text-gray-900 placeholder:text-gray-400 border-gray-300 focus-visible:ring-emerald-500",
                       getFieldError('bio') && "border-red-500 bg-red-50",
-                      isFieldValid('bio') && "border-green-500 bg-green-50",
-                      "focus:border-blue-500"
+                      isFieldValid('bio') && "border-emerald-500 bg-emerald-50"
                     )}
                     maxLength={500}
                   />
@@ -196,7 +185,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                       {getFieldError('bio') ? (
                         <AlertCircle className="w-5 h-5 text-red-500" />
                       ) : isFieldValid('bio') ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        <CheckCircle className="w-5 h-5 text-emerald-500" />
                       ) : null}
                     </AnimatePresence>
                   </div>
@@ -207,14 +196,14 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="text-sm text-red-500 flex items-center space-x-1"
+                      className="text-sm text-red-600 flex items-center space-x-1"
                     >
                       <AlertCircle className="w-4 h-4" />
                       <span>{getFieldError('bio')}</span>
                     </motion.p>
                   )}
                 </AnimatePresence>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500">
                   Minimum 50 characters required. Tell us about your experience, specialties, and what travelers can expect.
                 </p>
               </motion.div>
@@ -222,18 +211,14 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
           </Card>
 
           {/* Online Presence Card */}
-          <Card className="border-0 shadow-lg" style={{
-            background: 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
+          <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
             <CardHeader className="pb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-blue-500/10 rounded-xl flex items-center justify-center">
-                  <Globe className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 rounded-xl flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
+                  <CardTitle className="text-lg text-gray-900">
                     Online Presence
                   </CardTitle>
                   <p className="text-sm text-gray-600">Connect with travelers online</p>
@@ -249,12 +234,12 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                 transition={{ delay: 0.2 }}
                 className="space-y-2"
               >
-                <Label className="text-sm font-medium flex items-center gap-2 text-foreground">
-                  <Share2 className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium flex items-center gap-2 text-gray-900">
+                  <Share2 className="w-4 h-4 text-gray-500" />
                   <span>Social Media Links</span>
                   <span className="text-xs text-muted-foreground">(Optional)</span>
                 </Label>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500">
                   Add links to your company’s social profiles. Up to 5 platforms.
                 </p>
               </motion.div>
@@ -266,7 +251,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                     key={index}
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3"
+                    className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3"
                   >
                     {/* Platform Select */}
                     <Select
@@ -278,7 +263,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                         updateCompanyDetails(updated);
                       }}
                     >
-                      <SelectTrigger className="w-40">
+                      <SelectTrigger className="w-40 border-gray-300 bg-white text-gray-900">
                         <SelectValue placeholder="Platform" />
                       </SelectTrigger>
                       <SelectContent>
@@ -298,17 +283,17 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                         value={social.url}
                         onChange={(e) => handleSocialUrlChange(index, e.target.value)}
                         className={cn(
-                          "h-10 pr-10",
-                          getFieldError(`socialMedia_${index}`) && "border-destructive/70 bg-destructive/5",
-                          isFieldValid(`socialMedia_${index}`) && "border-green-500/70 bg-green-50"
+                          "h-10 pr-10 bg-white text-gray-900 placeholder:text-gray-400 border-gray-300",
+                          getFieldError(`socialMedia_${index}`) && "border-red-500 bg-red-50",
+                          isFieldValid(`socialMedia_${index}`) && "border-emerald-500 bg-emerald-50"
                         )}
                       />
                       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                         <AnimatePresence mode="wait">
                           {getFieldError(`socialMedia_${index}`) ? (
-                            <AlertCircle className="w-4 h-4 text-destructive" />
+                            <AlertCircle className="w-4 h-4 text-red-500" />
                           ) : isFieldValid(`socialMedia_${index}`) ? (
-                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            <CheckCircle className="w-4 h-4 text-emerald-500" />
                           ) : null}
                         </AnimatePresence>
                       </div>
@@ -325,7 +310,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                           updated.social = updated.social.filter((_, i) => i !== index);
                           updateCompanyDetails(updated);
                         }}
-                        className="text-destructive hover:text-destructive/80"
+                        className="text-red-500 hover:text-red-600"
                       >
                         ✕
                       </Button>
@@ -353,7 +338,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                   + Add another platform
                 </Button>
                 {(formData.companyDetails.social ?? []).length >= 5 && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-gray-500">
                     Maximum of 5 social links allowed.
                   </p>
                 )}
@@ -366,13 +351,9 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
 
         {/* Features Sidebar */}
         <div className="space-y-6">
-          <Card className="border-0 shadow-lg" style={{
-            background: 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
+          <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
             <CardHeader>
-              <CardTitle className="text-lg" style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}>
+              <CardTitle className="text-lg text-gray-900">
                 Why Travelers Choose Us
               </CardTitle>
               <p className="text-sm text-gray-600">
@@ -388,14 +369,14 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.5 + index * 0.1 }}
-                    className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-blue-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-4 h-4 text-blue-600" />
+                    <div className="w-8 h-8 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-4 h-4 text-emerald-600" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold">{feature.title}</h4>
-                      <p className="text-xs text-gray-500">{feature.description}</p>
+                      <h4 className="text-sm font-semibold text-gray-900">{feature.title}</h4>
+                      <p className="text-xs text-gray-600">{feature.description}</p>
                     </div>
                   </motion.div>
                 )
@@ -404,11 +385,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
           </Card>
 
           {/* Tips Card */}
-          <Card className="border-0 shadow-lg" style={{
-            background: 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
+          <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
             <CardHeader className="flex flex-row items-center gap-3">
               {/* Image instead of icon/emoji */}
               <Image
@@ -419,14 +396,13 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                 className="rounded-md"
               />
               <CardTitle
-                className="text-lg"
-                style={{ fontFamily: "'Poppins', system-ui, sans-serif" }}
+                className="text-lg text-gray-900"
               >
                 Pro Tips
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="text-sm text-gray-500 space-y-2">
+              <div className="text-sm text-gray-600 space-y-2">
                 <p>• Be specific about your specialties and unique offerings</p>
                 <p>• Mention any certifications or awards you&apos;ve received</p>
                 <p>• Include languages you speak fluently</p>
@@ -447,7 +423,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
         <Button
           variant="outline"
           onClick={onPrevious}
-          className="flex items-center space-x-2 px-6 py-3 h-12"
+          className="flex items-center space-x-2 px-6 py-3 h-12 border-gray-300 text-gray-700 hover:bg-gray-100"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Previous</span>
@@ -460,8 +436,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
           <Button
             onClick={handleNext}
             disabled={isValidating}
-            className="flex items-center space-x-2 px-8 py-3 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
-            style={{ boxShadow: '0 0 20px -5px rgba(59, 130, 246, 0.3)' }}
+            className="flex items-center space-x-2 px-8 py-3 h-12 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white shadow-lg shadow-emerald-500/40"
           >
             <span>Continue</span>
             <ArrowRight className="w-4 h-4" />

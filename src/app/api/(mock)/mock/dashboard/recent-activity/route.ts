@@ -14,5 +14,15 @@ export async function GET() {
         user: faker.person.fullName(),
         severity: faker.helpers.arrayElement(severities),
     }));
-    return NextResponse.json({ data: items });
+    return NextResponse.json({
+        data: {
+            items,
+            pagination: {
+                page: 1,
+                limit: 10,
+                total: items.length,
+                pages: 1,
+            },
+        }
+    });
 }

@@ -1,4 +1,4 @@
-import FooterSettingsPage from "@/components/settings/footer/FooterSettingsPage"
+import FooterSettingsPage from "@/components/setting/footer/FooterSettingsPage"
 
 const page = () => {
     return (

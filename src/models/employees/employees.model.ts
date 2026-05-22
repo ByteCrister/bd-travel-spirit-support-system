@@ -10,6 +10,7 @@ import {
     SALARY_PAYMENT_MODE,
     SalaryPaymentMode,
 } from "@/constants/employee.const";
+import { CARD_BRAND, CardBrand } from "@/constants/payment.const";
 
 import { Currency } from "@/constants/tour.const";
 import { DayOfWeek } from "@/types/employee/employee.types";
@@ -164,6 +165,38 @@ const EmployeeDocumentSchema = new Schema<IEmployeeDocument>(
 );
 
 /* =========================================================
+   PAYMENT CARD (embedded on employee)
+========================================================= */
+
+export interface IPaymentCard {
+    brand: CardBrand;
+    last4: string;
+    expMonth: number;
+    expYear: number;
+    cardholderName?: string;
+}
+
+const PaymentCardSchema = new Schema<IPaymentCard>(
+    {
+        brand: {
+            type: String,
+            enum: Object.values(CARD_BRAND),
+            default: CARD_BRAND.UNKNOWN,
+        },
+        last4: {
+            type: String,
+            minlength: 4,
+            maxlength: 4,
+            match: [/^\d{4}$/, "last4 must be exactly 4 digits"],
+        },
+        expMonth: { type: Number, min: 1, max: 12 },
+        expYear: { type: Number },
+        cardholderName: { type: String, trim: true },
+    },
+    { _id: false }
+);
+
+/* =========================================================
    SALARY HISTORY
 ========================================================= */
 
@@ -241,6 +274,7 @@ export interface IEmployee extends Document {
     currency: Currency;
     salaryHistory: ISalaryHistory[];
     paymentMode: SalaryPaymentMode; // auto | manual
+    paymentCard?: IPaymentCard;     // embedded card details for salary payments
 
     payroll: IPayrollRecord[];
 
@@ -314,6 +348,11 @@ const EmployeeSchema = new Schema<IEmployee, IEmployeeModel, IEmployeeMethods>(
         salaryHistory: {
             type: [SalaryHistorySchema],
             default: [],
+        },
+
+        paymentCard: {
+            type: PaymentCardSchema,
+            default: undefined,
         },
 
         payroll: {

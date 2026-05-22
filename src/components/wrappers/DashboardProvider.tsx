@@ -1,13 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import DashboardLayout from "../dashboard-layout/DashboardLayout";
 
 // Define the admin routes that should use the dashboard layout
 const ADMIN_ROUTES = [
   "/dashboard/overview",
   "/dashboard/statistics",
   "/dashboard/profile",
+  "/dashboard/ai-chat",
 
   "/users/travelers",
   "/users/guides",
@@ -25,7 +26,7 @@ const ADMIN_ROUTES = [
   "/social/promotions",
   
   "/setting/advertising",
-  "/setting/payments",
+  "/setting/payment-accounts",
   "/setting/guide-subscriptions",
   "/setting/guide-banners",
   "/setting/enums",

@@ -1,22 +1,46 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  FiUser,
-  FiCalendar,
-  FiFlag,
-  FiMapPin,
-  FiSettings,
-  FiClock,
-  FiAlertCircle,
-  FiCheckCircle,
-  FiInfo
+  FiUser, FiCalendar, FiFlag, FiMapPin, FiSettings,
+  FiClock, FiAlertCircle, FiCheckCircle, FiInfo,
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
-import { RecentActivity as RecentActivityType } from "@/types/dashboard/dashboard.types"
+import { RecentActivity as RecentActivityType } from "@/types/dashboard/dashboard.types";
+
+// ── Neumorphic design tokens ──────────────────────────────────────────────────
+const NEU_CARD = "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_SKELETON = "rounded-lg bg-[#d0cecd] animate-pulse";
+const NEU_HEADING = "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_MUTED = "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_DIVIDER = "border-[#1E2938]/10";
+
+// ── Severity configs ──────────────────────────────────────────────────────────
+const severityConfig = {
+  high: { iconBg: "bg-[#FF2157]/10", iconColor: "text-[#FF2157]", leftBar: "#FF2157", badgeColor: "bg-[#FF2157]/10 text-[#FF2157]", icon: <FiAlertCircle className="h-3 w-3" /> },
+  medium: { iconBg: "bg-[#FE9900]/10", iconColor: "text-[#FE9900]", leftBar: "#FE9900", badgeColor: "bg-[#FE9900]/10 text-[#FE9900]", icon: <FiAlertCircle className="h-3 w-3" /> },
+  low: { iconBg: "bg-[#00A63D]/10", iconColor: "text-[#00A63D]", leftBar: "#00A63D", badgeColor: "bg-[#00A63D]/10 text-[#00A63D]", icon: <FiCheckCircle className="h-3 w-3" /> },
+  default: { iconBg: "bg-[#006666]/10", iconColor: "text-[#006666]", leftBar: "#006666", badgeColor: "bg-[#006666]/10 text-[#006666]", icon: <FiInfo className="h-3 w-3" /> },
+};
+
+const getActivityIcon = (type: RecentActivityType["type"]) => {
+  switch (type) {
+    case "signup": return <FiUser className="h-4 w-4" />;
+    case "booking": return <FiCalendar className="h-4 w-4" />;
+    case "report": return <FiFlag className="h-4 w-4" />;
+    case "tour": return <FiMapPin className="h-4 w-4" />;
+    case "user_action": return <FiSettings className="h-4 w-4" />;
+    default: return <FiInfo className="h-4 w-4" />;
+  }
+};
+
+const formatTimeAgo = (timestamp: string) => {
+  const diff = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
+  if (diff < 60) return "Just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+};
 
 interface RecentActivityProps {
   activities: RecentActivityType[];
@@ -24,156 +48,109 @@ interface RecentActivityProps {
   className?: string;
 }
 
-const getActivityIcon = (type: RecentActivityType['type']) => {
-  switch (type) {
-    case 'signup':
-      return <FiUser className="h-4 w-4" />;
-    case 'booking':
-      return <FiCalendar className="h-4 w-4" />;
-    case 'report':
-      return <FiFlag className="h-4 w-4" />;
-    case 'tour':
-      return <FiMapPin className="h-4 w-4" />;
-    case 'user_action':
-      return <FiSettings className="h-4 w-4" />;
-    default:
-      return <FiInfo className="h-4 w-4" />;
-  }
-};
-
-const getSeverityColor = (severity?: RecentActivityType['severity']) => {
-  switch (severity) {
-    case 'high':
-      return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20';
-    case 'medium':
-      return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20';
-    case 'low':
-      return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/20';
-    default:
-      return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20';
-  }
-};
-
-const getSeverityIcon = (severity?: RecentActivityType['severity']) => {
-  switch (severity) {
-    case 'high':
-      return <FiAlertCircle className="h-3 w-3" />;
-    case 'medium':
-      return <FiAlertCircle className="h-3 w-3" />;
-    case 'low':
-      return <FiCheckCircle className="h-3 w-3" />;
-    default:
-      return <FiInfo className="h-3 w-3" />;
-  }
-};
-
-const formatTimeAgo = (timestamp: string) => {
-  const now = new Date();
-  const time = new Date(timestamp);
-  const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return 'Just now';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  return `${Math.floor(diffInSeconds / 86400)}d ago`;
-};
-
 export function RecentActivity({ activities, loading = false, className }: RecentActivityProps) {
   if (loading) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FiClock className="h-5 w-5" />
-            Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="h-8 w-8 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-3/4" />
-                </div>
+      <div className={cn(NEU_CARD, "p-5", className)}>
+        <div className="flex items-center gap-2 mb-5">
+          <div className={cn(NEU_SKELETON, "h-5 w-5 rounded-lg")} />
+          <div className={cn(NEU_SKELETON, "h-4 w-32")} />
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-start gap-3 p-3">
+              <div className={cn(NEU_SKELETON, "h-9 w-9 rounded-xl flex-shrink-0")} />
+              <div className="flex-1 space-y-2">
+                <div className={cn(NEU_SKELETON, "h-3.5 w-full")} />
+                <div className={cn(NEU_SKELETON, "h-3 w-3/4")} />
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FiClock className="h-5 w-5" />
-          Recent Activity
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[400px]">
-          <div className="space-y-4">
-            {activities.length === 0 ? (
-              <div className="text-center py-8">
-                <FiClock className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-500 dark:text-slate-400">No recent activity</p>
-              </div>
-            ) : (
-              activities.map((activity, index) => (
-                <motion.div
-                  key={activity.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                >
-                  <div className={cn(
-                    "flex items-center justify-center h-8 w-8 rounded-full",
-                    getSeverityColor(activity.severity)
-                  )}>
-                    {getActivityIcon(activity.type)}
-                  </div>
+    <div className={cn(NEU_CARD, "p-5", className)}>
+      {/* Header */}
+      <div className={cn("flex items-center gap-2.5 pb-4 mb-2 border-b", NEU_DIVIDER)}>
+        <div className="p-2 rounded-xl bg-[#006666]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]">
+          <FiClock className="h-4 w-4 text-[#006666]" />
+        </div>
+        <h3 className={cn(NEU_HEADING, "text-base")}>Recent Activity</h3>
+      </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                        {activity.title}
-                      </h4>
-                      {activity.severity && (
-                        <div className={cn(
-                          "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs",
-                          getSeverityColor(activity.severity)
-                        )}>
-                          {getSeverityIcon(activity.severity)}
-                          {activity.severity}
-                        </div>
-                      )}
-                    </div>
-
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                      {activity.description}
-                    </p>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-slate-500 dark:text-slate-500">
-                        {formatTimeAgo(activity.timestamp)}
-                      </span>
-                      {activity.user && (
-                        <Badge variant="outline" className="text-xs">
-                          {activity.user}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            )}
+      {/* List */}
+      <div className="max-h-[400px] overflow-y-auto pr-1 space-y-1.5">
+        {activities.length === 0 ? (
+          <div className="text-center py-10">
+            <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff] flex items-center justify-center">
+              <FiClock className="h-6 w-6 text-[#1E2938]/30" />
+            </div>
+            <p className={cn(NEU_HEADING, "text-sm")}>No recent activity</p>
           </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+        ) : (
+          activities.map((activity, index) => {
+            const sev = activity.severity ?? "default";
+            const cfg = severityConfig[sev as keyof typeof severityConfig] ?? severityConfig.default;
+
+            return (
+              <motion.div
+                key={activity.id}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
+                className={cn(
+                  "flex items-start gap-3 p-3 rounded-xl relative overflow-hidden",
+                  "hover:bg-[#E7E5E4] hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]",
+                  "transition-all duration-200 cursor-default"
+                )}
+              >
+                {/* Icon */}
+                <div className={cn(
+                  "flex-shrink-0 h-9 w-9 rounded-xl flex items-center justify-center",
+                  cfg.iconBg,
+                  "shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]"
+                )}>
+                  <span className={cfg.iconColor}>{getActivityIcon(activity.type)}</span>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <h4 className={cn(NEU_HEADING, "text-sm truncate")}>{activity.title}</h4>
+                    {activity.severity && (
+                      <span className={cn(
+                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold",
+                        "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+                        cfg.badgeColor
+                      )}>
+                        {cfg.icon}
+                        {activity.severity}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className={cn(NEU_MUTED, "text-xs leading-relaxed mb-1.5")}>{activity.description}</p>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={cn(NEU_MUTED, "text-xs")}>{formatTimeAgo(activity.timestamp)}</span>
+                    {activity.user && (
+                      <span className={cn(
+                        "px-2 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938]/60",
+                        "bg-[#E7E5E4] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]"
+                      )}>
+                        {activity.user}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })
+        )}
+      </div>
+    </div>
   );
 }

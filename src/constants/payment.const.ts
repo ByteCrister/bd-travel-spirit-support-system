@@ -18,6 +18,7 @@ export type PaymentProvider = `${PAYMENT_PROVIDER}`;
 
 // Business-purpose driven (excellent design)
 export enum PAYMENT_PURPOSE {
+    ALL = "all", // for accounts that can be used for any purpose
     TOUR_BOOKING = "tour_booking",
     EMPLOYEE_WAGES = "employee_wages",
     SUBSCRIPTION = "subscription",

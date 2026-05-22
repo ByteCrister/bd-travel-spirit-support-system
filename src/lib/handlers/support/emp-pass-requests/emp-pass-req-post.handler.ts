@@ -12,6 +12,12 @@ import { authRateLimit } from "@/lib/upstash-redis/auth-rate-limit";
 import { withTransaction } from "@/lib/helpers/withTransaction";
 import { USER_ROLE } from "@/constants/user.const";
 import { Types } from "mongoose";
+import { getOwnerId } from "@/lib/helpers/get-owner-id";
+import { SupportSystemNotificationModel } from "@/models/notifications/support-system-notification.model";
+import { ADMIN_NOTIFICATION_PRIORITY, ADMIN_NOTIFICATION_TYPE } from "@/constants/support-system-notification.const";
+import { getCollectionName } from "@/lib/helpers/get-collection-name";
+import { triggerSocketEvent } from "@/socket/triggerSocketEvent";
+import { SOCKET_TRIGGERS } from "@/constants/socket.const";
 
 interface ForgotPasswordRequestBody {
     email: string;
@@ -136,6 +142,43 @@ export default async function EmpPassReqPostHandler(req: NextRequest) {
         const doc = Array.isArray(resetRequest)
             ? resetRequest[0]
             : resetRequest;
+
+
+        /*
+        * (1) Create a  support system notification for the admin
+        */
+        // Retrieve the owner (admin) so we can target the notification & socket event
+        const ownerId = await getOwnerId();
+
+        if (ownerId) {
+            try {
+                const notification = await SupportSystemNotificationModel.create({
+                    type: ADMIN_NOTIFICATION_TYPE.SUPPORT_EMP_FORGOT_PASSWORD,
+                    title: "Support employee password reset request",
+                    message: `Employee with email ${email} has requested a password reset.${description ? ` Reason: ${description}` : ""}`,
+                    priority: ADMIN_NOTIFICATION_PRIORITY.HIGH,
+                    relatedModel: getCollectionName(ResetPasswordRequestModel),
+                    relatedId: result.requestId,
+                    meta: {
+                        email,
+                        description,
+                    },
+                });
+
+                /*
+                 * (2) Push a real‑time socket event to the room - main admin dashboard
+                 */
+                await triggerSocketEvent({
+                    ownerId: ownerId.toString(),
+                    userId: undefined,
+                    type: SOCKET_TRIGGERS.SUPPORT_EMP_FORGOT_PASSWORD,
+                    data: notification.toObject(),
+                });
+            } catch (error) {
+                // Log but do not fail the request – notification is not critical for the user
+                console.error("Failed to create notification or trigger socket event:", error);
+            }
+        }
 
         return {
             message: "Your password reset request has been submitted.",
