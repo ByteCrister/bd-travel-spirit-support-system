@@ -2,8 +2,30 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { FiAlertTriangle, FiX, FiCheck, FiInfo } from "react-icons/fi";
-import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+
+// ── Neumorphism tokens ────────────────────────────────────────
+const NEU_CARD =
+    "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_BTN_PRIMARY =
+    "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
+const NEU_BTN_GHOST =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+    "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+    "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
+const NEU_SURFACE_INSET_SM =
+    "bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]";
+const NEU_HEADING =
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_MUTED =
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_DIVIDER = "border-[#1E2938]/10";
 
 interface AlertConfirmDialogProps {
     isOpen: boolean;
@@ -20,36 +42,43 @@ interface AlertConfirmDialogProps {
 
 const variantConfig = {
     destructive: {
-        bg: "bg-gradient-to-r from-red-50 to-white border-l-4 border-red-500",
-        iconBg: "bg-red-100",
-        iconColor: "text-red-600",
-        button: "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700",
-        border: "border-red-200",
-        textColor: "text-gray-800",
+        iconWell: "bg-[#FF2157]/10 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+        iconColor: "text-[#FF2157]",
+        confirmBtn:
+            "rounded-xl bg-[#FF2157] text-white font-[family-name:var(--font-space-mono)] font-bold " +
+            "shadow-[4px_4px_8px_rgba(255,33,87,0.4),-2px_-2px_6px_rgba(255,100,130,0.3)] " +
+            "hover:bg-[#e01e50] hover:shadow-[6px_6px_12px_rgba(255,33,87,0.5)] " +
+            "active:shadow-[inset_3px_3px_6px_rgba(180,0,40,0.5)] " +
+            "transition-all duration-200 disabled:opacity-50",
+        accentBorder: "border-l-4 border-[#FF2157]",
     },
     warning: {
-        bg: "bg-gradient-to-r from-amber-50 to-white border-l-4 border-amber-500",
-        iconBg: "bg-amber-100",
-        iconColor: "text-amber-600",
-        button: "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700",
-        border: "border-amber-200",
-        textColor: "text-gray-800",
+        iconWell: "bg-[#FE9900]/10 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+        iconColor: "text-[#FE9900]",
+        confirmBtn:
+            "rounded-xl bg-[#FE9900] text-white font-[family-name:var(--font-space-mono)] font-bold " +
+            "shadow-[4px_4px_8px_rgba(254,153,0,0.4),-2px_-2px_6px_rgba(255,190,80,0.3)] " +
+            "hover:bg-[#e08800] hover:shadow-[6px_6px_12px_rgba(254,153,0,0.5)] " +
+            "active:shadow-[inset_3px_3px_6px_rgba(180,110,0,0.5)] " +
+            "transition-all duration-200 disabled:opacity-50",
+        accentBorder: "border-l-4 border-[#FE9900]",
     },
     info: {
-        bg: "bg-gradient-to-r from-blue-50 to-white border-l-4 border-blue-500",
-        iconBg: "bg-blue-100",
-        iconColor: "text-blue-600",
-        button: "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700",
-        border: "border-blue-200",
-        textColor: "text-gray-800",
+        iconWell: "bg-[#006666]/10 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+        iconColor: "text-[#006666]",
+        confirmBtn: NEU_BTN_PRIMARY + " disabled:opacity-50",
+        accentBorder: "border-l-4 border-[#006666]",
     },
     success: {
-        bg: "bg-gradient-to-r from-emerald-50 to-white border-l-4 border-emerald-500",
-        iconBg: "bg-emerald-100",
-        iconColor: "text-emerald-600",
-        button: "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700",
-        border: "border-emerald-200",
-        textColor: "text-gray-800",
+        iconWell: "bg-[#00A63D]/10 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+        iconColor: "text-[#00A63D]",
+        confirmBtn:
+            "rounded-xl bg-[#00A63D] text-white font-[family-name:var(--font-space-mono)] font-bold " +
+            "shadow-[4px_4px_8px_rgba(0,166,61,0.4),-2px_-2px_6px_rgba(0,210,80,0.3)] " +
+            "hover:bg-[#009935] hover:shadow-[6px_6px_12px_rgba(0,166,61,0.5)] " +
+            "active:shadow-[inset_3px_3px_6px_rgba(0,100,30,0.5)] " +
+            "transition-all duration-200 disabled:opacity-50",
+        accentBorder: "border-l-4 border-[#00A63D]",
     },
 };
 
@@ -79,89 +108,93 @@ export function AlertConfirmDialog({
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-                    {/* Light Background with subtle blur */}
+                    {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-black/30"
+                        className="absolute inset-0 bg-[#1E2938]/40 backdrop-blur-sm"
                         onClick={onClose}
                     />
 
-                    {/* Confirmation Modal */}
+                    {/* Dialog */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        initial={{ opacity: 0, scale: 0.94, y: 12 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        exit={{ opacity: 0, scale: 0.94, y: 12 }}
                         transition={{
-                            duration: 0.2,
+                            duration: 0.22,
                             ease: "easeOut",
-                            scale: { type: "spring", stiffness: 300, damping: 25 }
+                            scale: { type: "spring", stiffness: 320, damping: 26 },
                         }}
-                        className="relative w-full max-w-md bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+                        className={`relative w-full max-w-md ${NEU_CARD} overflow-hidden`}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Header with light gradient */}
-                        <div className={`relative ${config.bg} p-5 ${config.textColor} border-b ${config.border}`}>
+                        {/* Accent bar */}
+                        <div className={`${config.accentBorder} absolute left-0 top-0 bottom-0 pointer-events-none`} />
+
+                        {/* Header */}
+                        <div className="relative p-6 pr-14">
+                            {/* Close button */}
                             <button
                                 onClick={onClose}
-                                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-gray-500 hover:text-gray-700"
                                 disabled={isLoading}
+                                aria-label="Close"
+                                className={`absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-xl ${NEU_SURFACE_INSET_SM} text-[#1E2938]/50 hover:text-[#1E2938] disabled:opacity-40 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40`}
                             >
                                 <FiX className="h-4 w-4" />
                             </button>
 
-                            <div className="flex items-center gap-4 pr-8">
-                                <div className={`p-3 rounded-lg ${config.iconBg} ${config.iconColor}`}>
+                            <div className="flex items-start gap-4">
+                                {/* Icon well */}
+                                <div className={`p-3 rounded-xl ${config.iconWell} ${config.iconColor} shrink-0`}>
                                     {IconComponent}
                                 </div>
-                                <div>
-                                    <h3 className="text-lg font-semibold">{title}</h3>
+                                <div className="pt-0.5">
+                                    <h3 className={`text-lg ${NEU_HEADING}`}>{title}</h3>
                                     {description && (
-                                        <p className="text-gray-600 text-sm mt-1">{description}</p>
+                                        <p className={`mt-1.5 ${NEU_MUTED}`}>{description}</p>
                                     )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Content */}
-                        <div className="p-6 bg-gradient-to-b from-white to-gray-50">
-                            {/* Action Buttons */}
+                        {/* Divider */}
+                        <div className={`mx-6 border-t ${NEU_DIVIDER}`} />
+
+                        {/* Footer */}
+                        <div className="p-6 space-y-4">
                             <div className="flex gap-3">
-                                <Button
-                                    variant="outline"
+                                <button
                                     onClick={onClose}
                                     disabled={isLoading}
-                                    className="flex-1 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 disabled:opacity-50 transition-all duration-200"
+                                    className={`flex-1 h-11 px-4 text-sm ${NEU_BTN_GHOST} disabled:opacity-50`}
                                 >
                                     {cancelText}
-                                </Button>
-                                <Button
+                                </button>
+                                <button
                                     onClick={onConfirm}
                                     disabled={isLoading}
-                                    className={`flex-1 ${config.button} text-white shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50`}
+                                    className={`flex-1 h-11 px-4 text-sm ${config.confirmBtn}`}
                                 >
                                     {isLoading ? (
-                                        <motion.div
+                                        <motion.span
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             className="flex items-center justify-center gap-2"
                                         >
-                                            <Spinner className="size-6 text-white" />
+                                            <Spinner className="size-4 text-white" />
                                             Processing...
-                                        </motion.div>
+                                        </motion.span>
                                     ) : (
                                         confirmText
                                     )}
-                                </Button>
+                                </button>
                             </div>
 
-                            {/* Additional Info */}
-                            <div className="mt-4 pt-4 border-t border-gray-200">
-                                <p className="text-xs text-gray-500 text-center">
-                                    This action cannot be undone.
-                                </p>
-                            </div>
+                            <p className={`text-center text-xs ${NEU_MUTED}`}>
+                                This action cannot be undone.
+                            </p>
                         </div>
                     </motion.div>
                 </div>

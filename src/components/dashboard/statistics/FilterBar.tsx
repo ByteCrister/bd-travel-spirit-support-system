@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { motion, Variants } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarIcon, RefreshCw, X, Check } from 'lucide-react';
@@ -11,6 +10,58 @@ import { Preset, PresetEnum } from '@/types/dashboard/statistics.types';
 import { formatDateRange } from '@/utils/helpers/format';
 import { useStatisticsStore } from '@/store/dashboard/statistics.store';
 
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_SURFACE_RAISED =
+    'bg-[#E7E5E4] shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff]';
+const NEU_BTN_GHOST =
+    'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#E7E5E4] text-sm text-[#1E2938] ' +
+    'font-[family-name:var(--font-space-mono)] ' +
+    'shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] ' +
+    'hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] ' +
+    'active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+    'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none ' +
+    'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40';
+const NEU_BTN_ACTIVE =
+    'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#006666] text-white text-sm ' +
+    'font-[family-name:var(--font-space-mono)] font-bold ' +
+    'shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] ' +
+    'hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] ' +
+    'active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] ' +
+    'disabled:opacity-40 disabled:cursor-not-allowed ' +
+    'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50';
+const NEU_BTN_PRIMARY =
+    'inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#006666] text-white text-sm ' +
+    'font-[family-name:var(--font-space-mono)] font-bold tracking-wide ' +
+    'shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] ' +
+    'hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] ' +
+    'active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] ' +
+    'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none ' +
+    'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50';
+const NEU_BTN_DANGER_GHOST =
+    'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#E7E5E4] text-[#FF2157] text-sm ' +
+    'font-[family-name:var(--font-space-mono)] ' +
+    'shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] ' +
+    'hover:bg-[#FF2157]/10 hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] ' +
+    'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none ' +
+    'transition-all duration-200';
+const NEU_DIVIDER = 'w-px h-7 bg-[#c8c6c5]/70 hidden sm:block';
+const NEU_DATE_BADGE =
+    'hidden md:inline-flex items-center px-3 py-1.5 rounded-lg ' +
+    'bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+    'font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#006666] font-bold';
+
+const containerVariants: Variants = {
+    hidden: { opacity: 0, y: -16 },
+    visible: {
+        opacity: 1, y: 0,
+        transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1], staggerChildren: 0.05 },
+    },
+};
+const itemVariants: Variants = {
+    hidden: { opacity: 0, y: -8 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } },
+};
+
 const presetOptions: { value: Preset; label: string }[] = [
     { value: PresetEnum.LAST_7, label: 'Last 7 days' },
     { value: PresetEnum.LAST_30, label: 'Last 30 days' },
@@ -18,59 +69,30 @@ const presetOptions: { value: Preset; label: string }[] = [
     { value: PresetEnum.CUSTOM, label: 'Custom range' },
 ];
 
-const containerVariants: Variants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-            duration: 0.5,
-            ease: [0.22, 1, 0.36, 1],
-            staggerChildren: 0.05,
-        },
-    },
-};
-
-const itemVariants: Variants = {
-    hidden: { opacity: 0, y: -10 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
-    },
-};
-
 interface FilterBarProps {
-    onApplyFilters: () => void;   // applies filter changes and refreshes current tab
-    onRefresh: () => void;         // refreshes current tab with current filters
+    onApplyFilters: () => void;
+    onRefresh: () => void;
 }
 
 export function FilterBar({ onApplyFilters, onRefresh }: FilterBarProps) {
     const { filters, loading, setDateRange, setPreset } = useStatisticsStore();
-    const isLoading = Object.values(loading).some((loading) => loading);
+    const isLoading = Object.values(loading).some(Boolean);
 
     const from = filters.dateRange?.from ?? null;
     const to = filters.dateRange?.to ?? null;
 
     const handleDateRangeChange = (range: DateRange | undefined) => {
-        if (range?.from && range?.to) {
-            setDateRange(range.from, range.to);
-        } else if (range?.from) {
-            setDateRange(range.from, range.from);
-        }
+        if (range?.from && range?.to) setDateRange(range.from, range.to);
+        else if (range?.from) setDateRange(range.from, range.from);
     };
 
-    const clearFilters = () => {
-        setPreset(PresetEnum.LAST_30);
-    };
-
+    const clearFilters = () => setPreset(PresetEnum.LAST_30);
     const isCustomRange = filters.preset === PresetEnum.CUSTOM;
-
     const isDateDisabled = (date: Date) => {
         const today = new Date();
-        const maxPastDate = new Date();
-        maxPastDate.setFullYear(today.getFullYear() - 2);
-        return date > today || date < maxPastDate;
+        const maxPast = new Date();
+        maxPast.setFullYear(today.getFullYear() - 2);
+        return date > today || date < maxPast;
     };
 
     return (
@@ -78,90 +100,63 @@ export function FilterBar({ onApplyFilters, onRefresh }: FilterBarProps) {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="sticky top-0 z-10 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm"
+            className={`sticky top-0 z-10 ${NEU_SURFACE_RAISED}`}
             role="toolbar"
             aria-label="Statistics filters"
         >
-            <div className="px-6 py-5">
-                <div className="flex flex-col lg:flex-row gap-5 items-start lg:items-center justify-between">
-                    {/* Left section - Filters */}
-                    <motion.div variants={itemVariants} className="flex flex-wrap gap-3 items-center w-full lg:w-auto">
-                        {/* Preset Pills */}
-                        <div className="flex gap-2 flex-wrap">
-                            {presetOptions.slice(0, 3).map((preset) => (
-                                <motion.div
-                                    key={preset.value}
-                                    variants={itemVariants}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    <Button
-                                        variant={filters.preset === preset.value ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => setPreset(preset.value)}
-                                        disabled={isLoading}
-                                        className={`
-                      relative overflow-hidden font-medium transition-all duration-300
-                      ${filters.preset === preset.value
-                                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 border-0'
-                                                : 'hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30'
-                                            }
-                    `}
-                                    >
-                                        {filters.preset === preset.value && (
-                                            <motion.div
-                                                layoutId="activePreset"
-                                                className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600"
-                                                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                                            />
-                                        )}
-                                        <span className="relative z-10">{preset.label}</span>
-                                    </Button>
-                                </motion.div>
-                            ))}
-                        </div>
+            <div className="px-4 sm:px-6 py-4">
+                <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
 
-                        {/* Divider */}
-                        <div className="hidden sm:block w-px h-8 bg-gray-200 dark:bg-gray-700" />
+                    {/* ── Left: Presets + Date Picker ── */}
+                    <motion.div variants={itemVariants} className="flex flex-wrap gap-2 items-center w-full lg:w-auto">
 
-                        {/* Custom Date Range Picker */}
+                        {/* Preset pills */}
+                        {presetOptions.slice(0, 3).map((preset) => (
+                            <motion.button
+                                key={preset.value}
+                                variants={itemVariants}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.97 }}
+                                onClick={() => setPreset(preset.value)}
+                                disabled={isLoading}
+                                className={filters.preset === preset.value ? NEU_BTN_ACTIVE : NEU_BTN_GHOST}
+                            >
+                                {preset.label}
+                            </motion.button>
+                        ))}
+
+                        <div className={NEU_DIVIDER} />
+
+                        {/* Custom date range picker */}
                         <motion.div variants={itemVariants}>
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                                        <Button
-                                            variant={isCustomRange ? 'default' : 'outline'}
-                                            size="sm"
-                                            disabled={isLoading}
-                                            className={`
-                        justify-start text-left font-medium min-w-[260px] transition-all duration-300
-                        ${isCustomRange
-                                                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 border-0'
-                                                    : 'hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30'
-                                                }
-                      `}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            <span className="truncate">
-                                                {isCustomRange ? formatDateRange(from, to) : 'Custom range'}
-                                            </span>
-                                        </Button>
-                                    </motion.div>
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.97 }}
+                                        disabled={isLoading}
+                                        className={`${isCustomRange ? NEU_BTN_ACTIVE : NEU_BTN_GHOST} min-w-[200px] justify-start`}
+                                    >
+                                        <CalendarIcon className="h-4 w-4 shrink-0" />
+                                        <span className="truncate">
+                                            {isCustomRange ? formatDateRange(from, to) : 'Custom range'}
+                                        </span>
+                                    </motion.button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 shadow-2xl" align="start">
+                                <PopoverContent
+                                    className="w-auto p-0 bg-[#E7E5E4] border-none rounded-2xl shadow-[8px_8px_20px_#c8c6c5,-8px_-8px_20px_#ffffff]"
+                                    align="start"
+                                >
                                     <motion.div
-                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        initial={{ opacity: 0, scale: 0.96 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ duration: 0.2 }}
+                                        transition={{ duration: 0.18 }}
                                     >
                                         <Calendar
                                             initialFocus
                                             mode="range"
                                             defaultMonth={from || undefined}
-                                            selected={{
-                                                from: from || undefined,
-                                                to: to || undefined,
-                                            }}
+                                            selected={{ from: from || undefined, to: to || undefined }}
                                             disabled={isDateDisabled}
                                             onSelect={handleDateRangeChange}
                                             numberOfMonths={2}
@@ -171,87 +166,74 @@ export function FilterBar({ onApplyFilters, onRefresh }: FilterBarProps) {
                             </Popover>
                         </motion.div>
 
-                        {/* Date Range Display */}
+                        {/* Active date range badge */}
                         {!isCustomRange && (
-                            <motion.div
+                            <motion.span
                                 variants={itemVariants}
-                                initial={{ opacity: 0, x: -10 }}
+                                initial={{ opacity: 0, x: -8 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -10 }}
-                                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200/50 dark:border-blue-800/50"
+                                className={NEU_DATE_BADGE}
                             >
-                                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                                    {formatDateRange(from, to)}
-                                </span>
-                            </motion.div>
+                                {formatDateRange(from, to)}
+                            </motion.span>
                         )}
                     </motion.div>
 
-                    {/* Right section - Actions */}
+                    {/* ── Right: Actions ── */}
                     <motion.div variants={itemVariants} className="flex gap-2 w-full lg:w-auto justify-end">
-                        {/* Clear Filters */}
+                        {/* Clear */}
                         {(isCustomRange || filters.preset !== 'LAST_30') && (
-                            <motion.div
+                            <motion.button
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.04 }}
+                                whileTap={{ scale: 0.96 }}
+                                onClick={clearFilters}
+                                disabled={isLoading}
+                                className={NEU_BTN_DANGER_GHOST}
                             >
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={clearFilters}
-                                    disabled={isLoading}
-                                    className="font-medium hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200"
-                                >
-                                    <X className="h-4 w-4 mr-1.5" />
-                                    Clear
-                                </Button>
-                            </motion.div>
+                                <X className="h-4 w-4" />
+                                Clear
+                            </motion.button>
                         )}
 
-                        {/* Apply Filters Button */}
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={onApplyFilters}
-                                disabled={isLoading}
-                                className="font-medium bg-emerald-600 hover:bg-emerald-700 text-white 
-                                shadow-sm hover:shadow-md transition-all duration-200 
-                                focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 
-                                disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <Check className="h-4 w-4 mr-2" />
-                                Apply Filters
-                            </Button>
-                        </motion.div>
+                        {/* Apply */}
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={onApplyFilters}
+                            disabled={isLoading}
+                            className={NEU_BTN_PRIMARY}
+                        >
+                            <Check className="h-4 w-4" />
+                            Apply
+                        </motion.button>
 
-                        {/* Refresh Button (current tab) */}
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={onRefresh}
-                                disabled={isLoading}
-                                className="font-medium hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
-                            >
-                                <RefreshCw className={`h-4 w-4 mr-2 transition-transform duration-500 ${isLoading ? 'animate-spin' : ''}`} />
-                                Refresh
-                            </Button>
-                        </motion.div>
+                        {/* Refresh */}
+                        <motion.button
+                            whileHover={{ scale: 1.04 }}
+                            whileTap={{ scale: 0.96 }}
+                            onClick={onRefresh}
+                            disabled={isLoading}
+                            className={NEU_BTN_GHOST}
+                            aria-label="Refresh current section"
+                        >
+                            <RefreshCw
+                                className={`h-4 w-4 transition-transform duration-500 ${isLoading ? 'animate-spin' : ''}`}
+                            />
+                            Refresh
+                        </motion.button>
                     </motion.div>
                 </div>
             </div>
 
-            {/* Loading Progress Bar */}
+            {/* Loading progress bar */}
             {isLoading && (
                 <motion.div
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 origin-left"
-                    transition={{ duration: 0.8, ease: 'easeInOut' }}
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#006666] origin-left"
+                    transition={{ duration: 0.9, ease: 'easeInOut' }}
                 />
             )}
         </motion.div>
