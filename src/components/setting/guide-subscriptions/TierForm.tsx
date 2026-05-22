@@ -7,22 +7,106 @@ import type {
   SubscriptionTierFormValues,
   ValidationError,
 } from "@/types/site-settings/guide-subscription-settings.types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Currency } from "@/types/site-settings/guide-subscription-settings.types";
 import { format } from "date-fns";
 import { mapValidationErrors } from "@/utils/helpers/guide-subscriptions.transform";
 import { motion } from "framer-motion";
 import { Calendar, Sparkles, Code, AlertCircle, Check, X, RefreshCw } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
+// ── Neumorphism style tokens ──────────────────────────────────
+const FORM_WRAP = "p-6 space-y-6";
+
+const FIELD_LABEL =
+  "flex items-center gap-2 text-xs font-bold uppercase tracking-widest " +
+  "font-[family-name:var(--font-space-mono)] text-[#1E2938]/55";
+
+const NEU_INPUT =
+  "w-full px-3 py-2.5 rounded-xl bg-[#E7E5E4] text-[#1E2938] placeholder:text-[#1E2938]/35 " +
+  "font-[family-name:var(--font-jetbrains-mono)] text-sm " +
+  "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+  "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200";
+
+const NEU_INPUT_ERROR =
+  "w-full px-3 py-2.5 rounded-xl bg-[#E7E5E4] text-[#1E2938] placeholder:text-[#1E2938]/35 " +
+  "font-[family-name:var(--font-jetbrains-mono)] text-sm " +
+  "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+  "ring-2 ring-[#FF2157]/50 focus:outline-none transition-all duration-200";
+
+const ERROR_MSG =
+  "flex items-center gap-1.5 text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#FF2157] mt-1";
+
+const BILLING_BTN_BASE =
+  "relative p-3 rounded-xl border-2 text-left transition-all duration-200 w-full " +
+  "bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] " +
+  "border-[#1E2938]/10 hover:border-[#006666]/40";
+
+const BILLING_BTN_ACTIVE =
+  "relative p-3 rounded-xl border-2 text-left transition-all duration-200 w-full " +
+  "bg-[#E7E5E4] border-[#006666] " +
+  "shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]";
+
+const BILLING_LABEL =
+  "text-sm font-bold font-[family-name:var(--font-space-mono)] text-[#1E2938]";
+
+const BILLING_DAYS =
+  "text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/45 mt-0.5";
+
+const CHECK_DOT =
+  "absolute top-2 right-2 w-5 h-5 bg-[#006666] rounded-full flex items-center justify-center " +
+  "shadow-[2px_2px_4px_#004d4d]";
+
+const PERK_TAG =
+  "inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs " +
+  "font-[family-name:var(--font-jetbrains-mono)] " +
+  "bg-[#E7E5E4] text-[#006666] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+
+const ACTIVE_TOGGLE_ROW =
+  "flex items-center justify-between p-4 rounded-xl " +
+  "bg-[#E7E5E4] shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff]";
+
+const TIMESTAMP_TEXT =
+  "text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/40";
+
+const DIVIDER = "border-t border-[#1E2938]/08";
+
+const BTN_CANCEL =
+  "gap-2 rounded-xl bg-[#E7E5E4] text-[#1E2938] " +
+  "font-[family-name:var(--font-space-mono)] font-bold text-sm " +
+  "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] border-none " +
+  "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+  "transition-all duration-200 px-4 py-2";
+
+const BTN_SAVE =
+  "gap-2 rounded-xl bg-[#006666] text-white " +
+  "font-[family-name:var(--font-space-mono)] font-bold text-sm " +
+  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] border-none " +
+  "hover:bg-[#007777] hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] " +
+  "active:shadow-[inset_3px_3px_6px_#004d4d] " +
+  "transition-all duration-200 px-4 py-2";
+
+const SELECT_TRIGGER_STYLE =
+  "h-10 rounded-xl bg-[#E7E5E4] text-[#1E2938] border-none " +
+  "font-[family-name:var(--font-jetbrains-mono)] text-sm " +
+  "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] " +
+  "focus:ring-2 focus:ring-[#006666]/50";
+// ─────────────────────────────────────────────────────────────
+
+const billingOptions = [
+  { days: 7, label: "Weekly" },
+  { days: 30, label: "Monthly" },
+  { days: 90, label: "Quarterly" },
+  { days: 365, label: "Yearly" },
+];
+
 export interface TierFormProps {
-  initialValues?: Partial<SubscriptionTierFormValues> & { _id?: string; createdAt?: string; updatedAt?: string };
+  initialValues?: Partial<SubscriptionTierFormValues> & {
+    _id?: string;
+    createdAt?: string;
+    updatedAt?: string;
+  };
   onCancel: () => void;
   onSubmit: (values: SubscriptionTierFormValues & { note?: string }) => Promise<void>;
   loading?: boolean;
@@ -60,8 +144,7 @@ export const TierForm: React.FC<TierFormProps> = ({
     if (!validations || validations.length === 0) return;
     const map = mapValidationErrors(validations);
     Object.entries(map).forEach(([field, message]) => {
-      const name = field as FieldPath<SubscriptionTierFormValues>;
-      setError(name, { type: "server", message });
+      setError(field as FieldPath<SubscriptionTierFormValues>, { type: "server", message });
     });
   }, [validations, setError]);
 
@@ -70,125 +153,91 @@ export const TierForm: React.FC<TierFormProps> = ({
   const active = watch("active");
 
   async function onInternalSubmit(raw: SubscriptionTierFormValues & { note?: string }) {
-    const nameKey: FieldPath<SubscriptionTierFormValues> = "key";
-    const nameTitle: FieldPath<SubscriptionTierFormValues> = "title";
-    const namePrice: FieldPath<SubscriptionTierFormValues> = "price";
-    const nameBilling: FieldPath<SubscriptionTierFormValues> = "billingCycleDays";
-
     if (!raw.key || raw.key.trim().length === 0) {
-      setError(nameKey, { type: "client", message: "Key is required" });
+      setError("key", { type: "client", message: "Key is required" });
       return;
     }
     if (!/^[a-z0-9-_]+$/i.test(raw.key)) {
-      setError(nameKey, { type: "client", message: "Key must be alphanumeric, dash or underscore" });
+      setError("key", { type: "client", message: "Key must be alphanumeric, dash or underscore" });
       return;
     }
     if (!raw.title || raw.title.trim().length === 0) {
-      setError(nameTitle, { type: "client", message: "Title is required" });
+      setError("title", { type: "client", message: "Title is required" });
       return;
     }
-
     const priceNum = Number(raw.price);
-    // Not a number
     if (Number.isNaN(priceNum)) {
-      setError(namePrice, {
-        type: "client",
-        message: "Price is required and must be a number",
-      });
+      setError("price", { type: "client", message: "Price must be a number" });
       return;
     }
-
-    // Negative OR below zero by floating
     if (priceNum < 0) {
-      setError(namePrice, {
-        type: "client",
-        message: "Price cannot be negative",
-      });
+      setError("price", { type: "client", message: "Price cannot be negative" });
       return;
     }
-
-    // Prevent insane numbers like Infinity or 1e1000
     if (!Number.isFinite(priceNum)) {
-      setError(namePrice, {
-        type: "client",
-        message: "Price must be a valid number",
-      });
+      setError("price", { type: "client", message: "Price must be a valid number" });
       return;
     }
-
-    // Optional limit: prevent huge numbers like 999,999,999
     if (priceNum > 1000000) {
-      setError(namePrice, {
-        type: "client",
-        message: "Price is unusually high — please lower it",
-      });
+      setError("price", { type: "client", message: "Price is unusually high — please lower it" });
       return;
     }
-
     if (!Array.isArray(raw.billingCycleDays) || raw.billingCycleDays.length === 0) {
-      setError(nameBilling, { type: "client", message: "At least one billing cycle is required" });
+      setError("billingCycleDays", { type: "client", message: "At least one billing cycle is required" });
       return;
     }
     if (raw.billingCycleDays.some((v) => !Number.isInteger(Number(v)) || Number(v) <= 0)) {
-      setError(nameBilling, { type: "client", message: "Billing cycles must be positive integers (days)" });
+      setError("billingCycleDays", { type: "client", message: "Billing cycles must be positive integers (days)" });
       return;
     }
-
     await onSubmit(raw);
   }
 
-  const billingOptions = [
-    { days: 7, label: 'Weekly' },
-    { days: 30, label: 'Monthly' },
-    { days: 90, label: 'Quarterly' },
-    { days: 365, label: 'Yearly' },
-  ];
-
   return (
-    <form onSubmit={handleSubmit(onInternalSubmit)} className="p-6 space-y-6">
-      {/* Key Field */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-2">
-          <Code size={14} className="text-gray-500" />
+    <form onSubmit={handleSubmit(onInternalSubmit)} className={FORM_WRAP}>
+      {/* Key */}
+      <div className="space-y-1.5">
+        <label className={FIELD_LABEL}>
+          <Code size={13} />
           Key (Unique Identifier)
-        </Label>
-        <Input
+        </label>
+        <input
           {...register("key")}
           placeholder="e.g., basic-monthly"
-          className={`font-mono ${errors.key ? 'border-red-500 focus:ring-red-500' : ''}`}
+          className={errors.key ? NEU_INPUT_ERROR : NEU_INPUT}
         />
         {errors.key && (
-          <Alert variant="destructive" className="py-2">
-            <AlertCircle size={14} />
-            <AlertDescription className="text-xs">{errors.key.message}</AlertDescription>
-          </Alert>
+          <p className={ERROR_MSG}>
+            <AlertCircle size={12} />
+            {errors.key.message}
+          </p>
         )}
       </div>
 
-      {/* Title Field */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Display Title</Label>
-        <Input
+      {/* Title */}
+      <div className="space-y-1.5">
+        <label className={FIELD_LABEL}>Display Title</label>
+        <input
           {...register("title")}
           placeholder="e.g., Basic Plan"
-          className={errors.title ? 'border-red-500 focus:ring-red-500' : ''}
+          className={errors.title ? NEU_INPUT_ERROR : NEU_INPUT}
         />
         {errors.title && (
-          <Alert variant="destructive" className="py-2">
-            <AlertCircle size={14} />
-            <AlertDescription className="text-xs">{errors.title.message}</AlertDescription>
-          </Alert>
+          <p className={ERROR_MSG}>
+            <AlertCircle size={12} />
+            {errors.title.message}
+          </p>
         )}
       </div>
 
       {/* Price & Currency */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium flex items-center gap-2">
-            <FaBangladeshiTakaSign size={14} className="text-green-600" />
+        <div className="space-y-1.5">
+          <label className={FIELD_LABEL}>
+            <FaBangladeshiTakaSign size={13} className="text-[#00A63D]" />
             Price
-          </Label>
-          <Input
+          </label>
+          <input
             type="number"
             min="0"
             step="0.01"
@@ -197,165 +246,164 @@ export const TierForm: React.FC<TierFormProps> = ({
             onKeyDown={(e) => {
               if (e.key === "-" || e.key === "e") e.preventDefault();
             }}
-            className={errors.price ? 'border-red-500 focus:ring-red-500' : ''}
+            className={errors.price ? NEU_INPUT_ERROR : NEU_INPUT}
           />
           {errors.price && (
-            <p className="text-xs text-red-600">{errors.price.message}</p>
+            <p className={ERROR_MSG}>
+              <AlertCircle size={12} />
+              {errors.price.message}
+            </p>
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Currency</Label>
-          <Select value={watch("currency")} onValueChange={(v) => setValue("currency", v as Currency | string)}>
-            <SelectTrigger className="w-full">
+        <div className="space-y-1.5">
+          <label className={FIELD_LABEL}>Currency</label>
+          <Select
+            value={watch("currency")}
+            onValueChange={(v) => setValue("currency", v as Currency | string)}
+          >
+            <SelectTrigger className={SELECT_TRIGGER_STYLE}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={Currency.BDT}>🇧🇩 BDT</SelectItem>
+            <SelectContent className="bg-[#E7E5E4] border-white/60 rounded-xl shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff]">
+              <SelectItem
+                value={Currency.BDT}
+                className="font-[family-name:var(--font-space-mono)] text-sm"
+              >
+                🇧🇩 BDT
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
       {/* Billing Cycles */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium flex items-center gap-2">
-          <Calendar size={14} className="text-blue-600" />
+      <div className="space-y-2.5">
+        <label className={FIELD_LABEL}>
+          <Calendar size={13} className="text-[#006666]" />
           Billing Cycles
-        </Label>
-        <div className="grid grid-cols-2 gap-3">
+        </label>
+        <div className="grid grid-cols-2 gap-2.5">
           {billingOptions.map(({ days, label }) => {
             const isSelected = billing?.includes(days);
             return (
               <motion.button
                 key={days}
                 type="button"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`relative p-4 rounded-lg border-2 transition-all ${isSelected
-                  ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
+                whileTap={{ scale: 0.97 }}
+                className={isSelected ? BILLING_BTN_ACTIVE : BILLING_BTN_BASE}
                 onClick={() => {
                   const current = new Set<number>(billing);
-                  if (current.has(days)) {
-                    current.delete(days);
-                  } else {
-                    current.add(days);
-                  }
+                  if (current.has(days)) current.delete(days);
+                  else current.add(days);
                   setValue("billingCycleDays", Array.from(current));
                 }}
               >
                 {isSelected && (
-                  <div className="absolute top-2 right-2 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                    <Check size={12} className="text-white" />
-                  </div>
+                  <span className={CHECK_DOT}>
+                    <Check size={11} className="text-white" />
+                  </span>
                 )}
-                <div className="text-left">
-                  <div className="text-sm font-semibold text-gray-900 dark:text-white">{label}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{days} days</div>
-                </div>
+                <div className={BILLING_LABEL}>{label}</div>
+                <div className={BILLING_DAYS}>{days} days</div>
               </motion.button>
             );
           })}
         </div>
         {errors.billingCycleDays && (
-          <Alert variant="destructive" className="py-2">
-            <AlertCircle size={14} />
-            <AlertDescription className="text-xs">{errors.billingCycleDays.message}</AlertDescription>
-          </Alert>
+          <p className={ERROR_MSG}>
+            <AlertCircle size={12} />
+            {errors.billingCycleDays.message}
+          </p>
         )}
       </div>
 
       {/* Perks */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-2">
-          <Sparkles size={14} className="text-purple-600" />
+      <div className="space-y-1.5">
+        <label className={FIELD_LABEL}>
+          <Sparkles size={13} className="text-[#006666]" />
           Perks (comma separated)
-        </Label>
-        <Input
+        </label>
+        <input
           type="text"
-          placeholder="e.g., Unlimited guides, Priority support, Custom branding"
+          placeholder="e.g., Unlimited guides, Priority support"
           value={Array.isArray(perks) ? perks.join(", ") : ""}
           onChange={(e) =>
             setValue(
               "perks",
-              e.target.value
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean)
+              e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
             )
           }
+          className={NEU_INPUT}
         />
         {perks && perks.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="flex flex-wrap gap-1.5 mt-2">
             {perks.map((perk, idx) => (
-              <Badge key={idx} variant="secondary" className="text-xs">
+              <span key={idx} className={PERK_TAG}>
                 {perk}
-              </Badge>
+              </span>
             ))}
           </div>
         )}
       </div>
 
       {/* Active Toggle */}
-      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="space-y-1">
-          <Label className="text-sm font-medium">Active Status</Label>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {active ? 'Tier is visible to customers' : 'Tier is hidden from customers'}
+      <div className={ACTIVE_TOGGLE_ROW}>
+        <div>
+          <p className="text-sm font-bold font-[family-name:var(--font-space-mono)] text-[#1E2938]">
+            Active Status
+          </p>
+          <p className="text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/45 mt-0.5">
+            {active ? "Visible to customers" : "Hidden from customers"}
           </p>
         </div>
         <Switch
           checked={active}
           onCheckedChange={(v) => setValue("active", v)}
-          className="data-[state=checked]:bg-green-600"
+          className="data-[state=checked]:bg-[#006666]"
         />
       </div>
 
-      {/* Timestamps */}
+      {/* Timestamp */}
       {initialValues?._id && initialValues.updatedAt && (
-        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+        <div className={`pt-4 ${DIVIDER}`}>
+          <p className={TIMESTAMP_TEXT}>
             Last saved: {format(new Date(initialValues.updatedAt), "PPpp")}
-          </div>
+          </p>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button
+      <div className={`flex items-center gap-3 justify-end pt-4 ${DIVIDER}`}>
+        <button
           type="button"
-          variant="outline"
           onClick={onCancel}
           disabled={loading}
-          className="gap-2"
+          className={BTN_CANCEL}
         >
-          <X size={16} />
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          disabled={loading}
-          className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-        >
+          <span className="flex items-center gap-2">
+            <X size={15} />
+            Cancel
+          </span>
+        </button>
+        <button type="submit" disabled={loading} className={BTN_SAVE}>
           {loading ? (
-            <>
+            <span className="flex items-center gap-2">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               >
-                <RefreshCw size={16} />
+                <RefreshCw size={15} />
               </motion.div>
               Saving...
-            </>
+            </span>
           ) : (
-            <>
-              <Check size={16} />
+            <span className="flex items-center gap-2">
+              <Check size={15} />
               Save Tier
-            </>
+            </span>
           )}
-        </Button>
+        </button>
       </div>
     </form>
   );

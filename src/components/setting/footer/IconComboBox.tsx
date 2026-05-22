@@ -3,7 +3,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import { Check, ChevronDown } from "lucide-react";
 import IconFromName from "@/components/global/IconFromName";
 import {
@@ -14,6 +13,27 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import ICON_OPTIONS from "@/data/react-social-icons";
+
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_TRIGGER =
+  "flex w-full items-center justify-between gap-2 truncate rounded-xl px-3 py-2.5 " +
+  "bg-[#E7E5E4] text-[#1E2938] text-sm " +
+  "font-[family-name:var(--font-jetbrains-mono)] " +
+  "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+  "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 " +
+  "hover:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+  "transition-all duration-200";
+
+const NEU_POPOVER =
+  "w-[320px] rounded-2xl border border-white/60 p-2 z-[9999] " +
+  "bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff]";
+
+const NEU_COMMAND_ITEM_ACTIVE = "bg-[#006666]/10 text-[#006666]";
+const NEU_COMMAND_ITEM =
+  "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm " +
+  "font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938] " +
+  "hover:bg-[#006666]/10 hover:text-[#006666] cursor-pointer transition-colors duration-150";
+// ─────────────────────────────────────────────────────────────
 
 interface IconComboBoxProps {
   value?: string | null;
@@ -33,7 +53,9 @@ export function IconComboBox({
 
   const filtered = React.useMemo(() => {
     if (!query) return ICON_OPTIONS;
-    return ICON_OPTIONS.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()));
+    return ICON_OPTIONS.filter((o) =>
+      o.label.toLowerCase().includes(query.toLowerCase())
+    );
   }, [query]);
 
   const selected = ICON_OPTIONS.find((o) => o.id === value) ?? null;
@@ -46,47 +68,56 @@ export function IconComboBox({
   };
 
   return (
-    <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setQuery(""); }} modal>
+    <Popover
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) setQuery("");
+      }}
+      modal
+    >
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn("justify-between gap-2 w-full truncate", className)}
+        <button
           type="button"
+          className={cn(NEU_TRIGGER, className)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
         >
-          <span className="flex items-center gap-2 truncate">
+          <span className="flex min-w-0 items-center gap-2 truncate">
             {selected ? (
               <>
-                <span className="h-5 w-5 inline-flex items-center justify-center text-slate-700">
+                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center text-[#006666]">
                   <IconFromName name={selected.id} size={18} className="text-current" />
                 </span>
                 <span className="truncate">{selected.label}</span>
               </>
             ) : (
-              <span className="truncate text-sm text-slate-500">{placeholder}</span>
+              <span className="truncate text-[#1E2938]/40">{placeholder}</span>
             )}
           </span>
-          <ChevronDown className="h-4 w-4 opacity-80" />
-        </Button>
+          <ChevronDown className="h-4 w-4 shrink-0 text-[#1E2938]/40" />
+        </button>
       </PopoverTrigger>
 
-      {/* Use portal to render outside the dialog */}
       <PopoverContent
-        className="w-[320px] p-2 z-[9999] pointer-events-auto"
+        className={NEU_POPOVER}
         side="bottom"
         align="start"
         forceMount
       >
-        <Command>
+        <Command className="bg-transparent">
           <CommandInput
             placeholder="Search icons..."
             value={query}
             onValueChange={(v) => setQuery(v)}
-            className="mb-2"
+            className="mb-1 rounded-xl bg-[#E7E5E4] font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] border-none focus:outline-none focus:ring-1 focus:ring-[#006666]/40"
             aria-label="Search icons"
           />
           <CommandList>
             <CommandEmpty>
-              <div className="px-2 py-2 text-xs text-slate-500">No icons found</div>
+              <div className="px-3 py-2 font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/50">
+                No icons found
+              </div>
             </CommandEmpty>
 
             {filtered.map((opt) => (
@@ -94,14 +125,16 @@ export function IconComboBox({
                 key={opt.id}
                 onSelect={() => handleSelectId(opt.id)}
                 className={cn(
-                  "flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800",
-                  opt.id === value ? "bg-slate-100 dark:bg-slate-800" : ""
+                  NEU_COMMAND_ITEM,
+                  opt.id === value ? NEU_COMMAND_ITEM_ACTIVE : ""
                 )}
               >
                 <div className="flex items-center gap-2">
                   <span className="truncate">{opt.label}</span>
                 </div>
-                {opt.id === value && <Check className="h-4 w-4 text-green-600" />}
+                {opt.id === value && (
+                  <Check className="h-3.5 w-3.5 text-[#006666] shrink-0" />
+                )}
               </CommandItem>
             ))}
           </CommandList>

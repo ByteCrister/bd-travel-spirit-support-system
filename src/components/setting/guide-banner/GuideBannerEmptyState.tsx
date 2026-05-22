@@ -1,203 +1,142 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ImagePlus, Sparkles, ArrowRight, Layers } from "lucide-react";
+import { ImagePlus, ArrowRight, Layers, Sparkles } from "lucide-react";
 import GuideBannerForm from "./GuideBannerForm";
+
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_CARD =
+  "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_BTN_PRIMARY =
+  "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+  "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+  "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+  "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
+const NEU_SURFACE_INSET =
+  "bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff]";
+const NEU_HEADING = "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_MUTED = "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_LABEL = "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+const NEU_ICON_WELL_PRIMARY = "p-3.5 rounded-xl bg-[#006666]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
+
+const FEATURES = ["Easy to create", "Fully customizable", "Drag to reorder"] as const;
 
 export default function GuideBannerEmptyState() {
   const [open, setOpen] = useState(false);
-  
+
   return (
     <>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
       >
-        <Card className="relative overflow-hidden border-2 border-dashed border-gray-200 bg-gradient-to-br from-white via-gray-50/50 to-emerald-50/30 backdrop-blur-sm shadow-xl">
-          {/* Animated background decorations */}
-          <div className="absolute inset-0 overflow-hidden">
-            <motion.div
-              animate={{ 
-                rotate: [0, 360],
-                scale: [1, 1.2, 1]
-              }}
-              transition={{ 
-                duration: 20, 
-                repeat: Infinity,
-                ease: "linear" 
-              }}
-              className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-200/20 rounded-full blur-3xl"
-            />
-            <motion.div
-              animate={{ 
-                rotate: [360, 0],
-                scale: [1, 1.3, 1]
-              }}
-              transition={{ 
-                duration: 25, 
-                repeat: Infinity,
-                ease: "linear" 
-              }}
-              className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-200/20 rounded-full blur-3xl"
-            />
-          </div>
+        <div className={`${NEU_CARD} overflow-hidden`}>
+          <div className="relative p-10 md:p-14 flex flex-col items-center text-center gap-8">
 
-          <div className="relative p-12 text-center space-y-6">
-            {/* Animated icon stack */}
-            <motion.div 
-              className="flex justify-center items-center"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ 
-                type: "spring",
-                stiffness: 200,
-                damping: 15,
-                delay: 0.2
-              }}
+            {/* Subtle background texture */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+              style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #1E2938 1px, transparent 0)", backgroundSize: "28px 28px" }}
+            />
+
+            {/* Icon cluster */}
+            <motion.div
+              className="relative"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 18, delay: 0.15 }}
             >
-              <div className="relative">
+              <div className={`${NEU_ICON_WELL_PRIMARY} relative z-10`}>
                 <motion.div
-                  animate={{ 
-                    y: [0, -10, 0],
-                  }}
-                  transition={{ 
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                  className="relative z-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 shadow-2xl"
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <ImagePlus className="w-12 h-12 text-white" />
+                  <ImagePlus className="w-12 h-12 text-[#006666]" />
                 </motion.div>
-                
-                {/* Floating sparkles */}
-                <motion.div
-                  animate={{ 
-                    rotate: [0, 360],
-                    scale: [1, 1.2, 1]
-                  }}
-                  transition={{ 
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                  className="absolute -top-2 -right-2"
-                >
-                  <Sparkles className="w-6 h-6 text-amber-400 fill-amber-400" />
-                </motion.div>
-                
-                <motion.div
-                  animate={{ 
-                    scale: [1, 1.5, 1],
-                    opacity: [0.5, 1, 0.5]
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                  className="absolute -bottom-2 -left-2"
-                >
-                  <Layers className="w-5 h-5 text-blue-400" />
-                </motion.div>
-
-                {/* Glow effect */}
-                <motion.div
-                  animate={{ 
-                    scale: [1, 1.2, 1],
-                    opacity: [0.3, 0.6, 0.3]
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                  className="absolute inset-0 bg-emerald-400 rounded-2xl blur-2xl -z-10"
-                />
               </div>
+
+              {/* Orbiting sparkle */}
+              <motion.div
+                className="absolute -top-1.5 -right-1.5"
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+              >
+                <Sparkles className="w-5 h-5 text-[#FE9900]" />
+              </motion.div>
+
+              {/* Floating layers icon */}
+              <motion.div
+                className="absolute -bottom-1.5 -left-1.5"
+                animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Layers className="w-4 h-4 text-[#006666]/60" />
+              </motion.div>
             </motion.div>
 
-            {/* Text content with staggered animation */}
-            <motion.div 
-              className="space-y-3"
+            {/* Text */}
+            <motion.div
+              className="space-y-2 max-w-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.25 }}
             >
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-700 to-emerald-700 bg-clip-text text-transparent">
-                No guide banners yet
-              </h3>
-              <p className="text-base text-gray-600 max-w-md mx-auto leading-relaxed">
-                Create your first banner to guide users through your application with beautiful, engaging visuals
+              <h3 className={`text-2xl ${NEU_HEADING}`}>No guide banners yet</h3>
+              <p className={NEU_MUTED}>
+                Create your first banner to guide users through your application with beautiful, engaging visuals.
               </p>
             </motion.div>
 
-            {/* Feature highlights */}
-            <motion.div 
-              className="flex flex-wrap justify-center gap-4 pt-2"
-              initial={{ opacity: 0, y: 10 }}
+            {/* Feature pills */}
+            <motion.div
+              className="flex flex-wrap justify-center gap-3"
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.35 }}
             >
-              {[
-                "Easy to create",
-                "Fully customizable",
-                "Drag to reorder"
-              ].map((feature, idx) => (
+              {FEATURES.map((feature, idx) => (
                 <motion.div
                   key={feature}
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + idx * 0.1 }}
-                  className="flex items-center gap-1.5 text-sm text-gray-600 bg-white/80 px-3 py-1.5 rounded-full border border-gray-200 shadow-sm"
+                  transition={{ delay: 0.4 + idx * 0.08 }}
+                  className={`${NEU_SURFACE_INSET} flex items-center gap-2 px-3.5 py-1.5 rounded-xl`}
                 >
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {feature}
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#006666]" />
+                  <span className={NEU_LABEL}>{feature}</span>
                 </motion.div>
               ))}
             </motion.div>
 
-            {/* CTA button */}
+            {/* CTA */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
+              transition={{ delay: 0.5 }}
               whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileTap={{ scale: 0.97 }}
             >
-              <Button 
-                size="lg"
-                className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 group"
+              <button
                 onClick={() => setOpen(true)}
+                className={`${NEU_BTN_PRIMARY} inline-flex items-center gap-2.5 px-6 py-3 text-sm`}
               >
-                <ImagePlus className="w-5 h-5 mr-2" />
+                <ImagePlus className="w-4 h-4" />
                 Create your first banner
-                <motion.div
+                <motion.span
                   animate={{ x: [0, 4, 0] }}
-                  transition={{ 
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </motion.div>
-              </Button>
+                  <ArrowRight className="w-4 h-4" />
+                </motion.span>
+              </button>
             </motion.div>
           </div>
-        </Card>
+        </div>
       </motion.div>
-      
-      {open && (
-        <GuideBannerForm
-          mode="create"
-          onClose={() => setOpen(false)}
-        />
-      )}
+
+      {open && <GuideBannerForm mode="create" onClose={() => setOpen(false)} />}
     </>
   );
 }

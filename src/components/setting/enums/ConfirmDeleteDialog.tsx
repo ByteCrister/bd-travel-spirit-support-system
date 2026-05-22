@@ -1,3 +1,4 @@
+// src/components/enums/ConfirmDeleteDialog.tsx
 "use client";
 
 import React, { JSX, useState } from "react";
@@ -11,12 +12,62 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, Trash2, X } from "lucide-react";
+import { AlertTriangle, Trash2, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
+// ── Neu style tokens ──────────────────────────────────────────
+const S = {
+    content:
+        "sm:max-w-md p-0 overflow-hidden bg-[#E7E5E4] border border-white/60 " +
+        "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] rounded-2xl",
+    inner: "bg-[#E7E5E4]",
+    header: "px-6 pt-6 pb-5",
+    headerRow: "flex items-start gap-4",
+    iconWell:
+        "flex-none p-3 rounded-xl bg-[#FF2157]/10 text-[#FF2157] " +
+        "shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]",
+    titleText:
+        "text-sm font-bold font-[family-name:var(--font-space-mono)] text-[#1E2938]",
+    desc:
+        "mt-1.5 text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/60 leading-relaxed",
+    closeBtn:
+        "ml-auto -mr-1 p-1.5 rounded-xl text-[#1E2938]/40 bg-[#E7E5E4] " +
+        "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] " +
+        "hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] " +
+        "hover:text-[#1E2938] transition-all duration-200",
+    footer: "px-6 py-4 border-t border-[#1E2938]/10",
+    footerRow: "flex w-full gap-3",
+    cancelBtn:
+        "flex-1 px-4 py-2.5 rounded-xl text-sm font-bold " +
+        "font-[family-name:var(--font-space-mono)] text-[#1E2938] bg-[#E7E5E4] " +
+        "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] " +
+        "hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+        "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40",
+    confirmBtn:
+        "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold " +
+        "font-[family-name:var(--font-space-mono)] text-white bg-[#FF2157] " +
+        "shadow-[3px_3px_6px_rgba(255,33,87,0.4),-2px_-2px_5px_rgba(255,100,130,0.2)] " +
+        "hover:bg-[#e01d4f] hover:shadow-[5px_5px_10px_rgba(255,33,87,0.4),-3px_-3px_7px_rgba(255,100,130,0.2)] " +
+        "active:shadow-[inset_2px_2px_5px_rgba(180,0,40,0.5)] " +
+        "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF2157]/50 " +
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+    defaultConfirmBtn:
+        "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold " +
+        "font-[family-name:var(--font-space-mono)] text-white bg-[#006666] " +
+        "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+        "hover:bg-[#007777] hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] " +
+        "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+        "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+    defaultTriggerBtn:
+        "rounded-xl w-8 h-8 flex items-center justify-center bg-[#E7E5E4] text-[#1E2938]/60 " +
+        "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] " +
+        "hover:text-[#FF2157] hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+        "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF2157]/40",
+};
+
 type ConfirmDeleteDialogProps = {
-    children?: React.ReactNode; // optional trigger element (asChild)
+    children?: React.ReactNode;
     title?: string;
     description?: string;
     confirmLabel?: string;
@@ -55,73 +106,62 @@ export default function ConfirmDeleteDialog({
                 <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
             ) : (
                 <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <button type="button" aria-label="Delete" className={S.defaultTriggerBtn}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                 </AlertDialogTrigger>
             )}
 
-            <AlertDialogContent className="sm:max-w-md p-0 overflow-hidden">
+            <AlertDialogContent className={S.content}>
                 <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.16 }}
-                    className="bg-white dark:bg-slate-900"
+                    className={S.inner}
                 >
-                    <AlertDialogHeader className="px-6 pt-6 pb-4">
-                        <div className="flex items-start gap-4">
-                            <div className="flex-none rounded-lg p-3 bg-rose-50/70 text-rose-700">
+                    <AlertDialogHeader className={S.header}>
+                        <div className={S.headerRow}>
+                            <div className={S.iconWell}>
                                 <AlertTriangle className="w-5 h-5" />
                             </div>
 
                             <div className="min-w-0">
-                                <AlertDialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                                <AlertDialogTitle className={S.titleText}>
                                     {title}
                                 </AlertDialogTitle>
-
-                                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                                    {description}
-                                </p>
+                                <p className={S.desc}>{description}</p>
                             </div>
 
-                            <div className="ml-auto -mr-2">
-                                <button
-                                    type="button"
-                                    aria-label="Close"
-                                    onClick={() => onOpenChange?.(false)}
-                                    className="inline-flex items-center justify-center rounded-md p-1 hover:bg-slate-100 dark:hover:bg-slate-800"
-                                >
-                                    <X className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-                                </button>
-                            </div>
+                            <button
+                                type="button"
+                                aria-label="Close"
+                                onClick={() => onOpenChange?.(false)}
+                                className={S.closeBtn}
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
                         </div>
                     </AlertDialogHeader>
 
-                    <AlertDialogFooter className="px-6 py-4">
-                        <div className="flex w-full gap-3">
+                    <AlertDialogFooter className={S.footer}>
+                        <div className={S.footerRow}>
                             <AlertDialogCancel asChild>
-                                <Button variant="outline" className="flex-1">
-                                    {cancelLabel}
-                                </Button>
+                                <button className={S.cancelBtn}>{cancelLabel}</button>
                             </AlertDialogCancel>
 
                             <AlertDialogAction asChild>
-                                <Button
-                                    variant={confirmVariant === "destructive" ? "destructive" : "default"}
-                                    className="flex-1 inline-flex items-center justify-center gap-2"
+                                <button
+                                    className={confirmVariant === "destructive" ? S.confirmBtn : S.defaultConfirmBtn}
                                     onClick={handleConfirm}
                                     disabled={loading}
                                 >
                                     {loading ? (
-                                        <svg className="w-4 h-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                        </svg>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
                                         <Trash2 className="w-4 h-4" />
                                     )}
                                     {confirmLabel}
-                                </Button>
+                                </button>
                             </AlertDialogAction>
                         </div>
                     </AlertDialogFooter>

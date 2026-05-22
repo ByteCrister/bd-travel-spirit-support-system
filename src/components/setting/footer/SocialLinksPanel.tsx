@@ -5,11 +5,45 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Share2, Sparkles } from "lucide-react";
 import type { FooterEntities } from "@/types/site-settings/footer-settings.types";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFooterStore } from "@/store/site-settings/footerSettings.store";
 import { SocialLinkRow } from "./SocialLinkRow";
 import { SocialLinkFormDialog } from "./SocialLinkFormDialog";
+
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_CARD =
+    "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60 overflow-hidden";
+
+const NEU_CARD_HEADER =
+    "border-b border-white/40 bg-[#E7E5E4] px-5 py-5 sm:px-6";
+
+const NEU_ICON_WELL =
+    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#006666] " +
+    "shadow-[3px_3px_6px_#004d4d,-2px_-2px_5px_#008080]";
+
+const NEU_TITLE =
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] text-lg sm:text-xl tracking-tight";
+
+const NEU_SUBTITLE =
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+
+const NEU_BTN_PRIMARY =
+    "flex items-center gap-2 rounded-xl bg-[#006666] px-4 py-2 text-sm text-white " +
+    "font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
+
+const NEU_EMPTY_WELL =
+    "flex h-20 w-20 items-center justify-center rounded-2xl bg-[#E7E5E4] " +
+    "shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff]";
+
+const NEU_EMPTY_TITLE =
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] text-lg";
+
+const NEU_EMPTY_SUBTITLE =
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+// ─────────────────────────────────────────────────────────────
 
 type Props = { entities: FooterEntities | null };
 
@@ -22,72 +56,59 @@ export function SocialLinksPanel({ entities }: Props) {
 
     return (
         <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.25, duration: 0.4 }}
         >
-            <Card className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 shadow-xl backdrop-blur-sm transition-all hover:shadow-2xl dark:border-slate-800/60 dark:bg-slate-900/80">
-                <CardHeader className="border-b border-slate-200/60 bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-purple-50/50 pb-6 dark:border-slate-800/60 dark:from-slate-800/50 dark:via-indigo-950/30 dark:to-purple-950/50">
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-2">
-                            <CardTitle className="flex items-center gap-3 text-2xl font-bold">
-                                <div className="rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 p-2 shadow-md">
-                                    <Share2 className="h-5 w-5 text-white" />
-                                </div>
-                                Social Links
-                            </CardTitle>
-                            <CardDescription className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                                Connect your social media profiles
-                            </CardDescription>
+            <div className={NEU_CARD}>
+                {/* Header */}
+                <div className={NEU_CARD_HEADER}>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className={NEU_ICON_WELL}>
+                                <Share2 className="h-4 w-4 text-white" />
+                            </div>
+                            <div>
+                                <h2 className={NEU_TITLE}>Social Links</h2>
+                                <p className={NEU_SUBTITLE}>Connect your social media profiles</p>
+                            </div>
                         </div>
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                        <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            type="button"
+                            onClick={() => {
+                                setEditingSocialLinkId(null);
+                                setOpen(true);
+                            }}
+                            className={NEU_BTN_PRIMARY}
                         >
-                            <Button
-                                onClick={() => {
-                                    setEditingSocialLinkId(null);
-                                    setOpen(true);
-                                }}
-                                size="sm"
-                                className="gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2 font-semibold text-white shadow-lg shadow-blue-500/30 transition-all hover:from-blue-600 hover:to-indigo-700 hover:shadow-xl hover:shadow-blue-500/40"
-                            >
-                                <Plus className="h-4 w-4" />
-                                Add Link
-                            </Button>
-                        </motion.div>
+                            <Plus className="h-4 w-4" />
+                            Add Link
+                        </motion.button>
                     </div>
-                </CardHeader>
-                <CardContent className="p-6">
+                </div>
+
+                {/* Content */}
+                <div className="p-5 sm:p-6">
                     <AnimatePresence mode="wait">
                         {order.length === 0 ? (
                             <motion.div
                                 key="empty"
-                                initial={{ opacity: 0, scale: 0.9 }}
+                                initial={{ opacity: 0, scale: 0.92 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className="flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-slate-50 to-blue-50/30 py-16 text-center dark:from-slate-900/50 dark:to-indigo-950/20"
+                                exit={{ opacity: 0, scale: 0.92 }}
+                                className="flex flex-col items-center justify-center py-16 text-center"
                             >
                                 <motion.div
-                                    animate={{ 
-                                        rotate: [0, 10, -10, 0],
-                                        scale: [1, 1.1, 1]
-                                    }}
-                                    transition={{ 
-                                        duration: 2,
-                                        repeat: Infinity,
-                                        ease: "easeInOut"
-                                    }}
-                                    className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 shadow-lg dark:from-blue-950/50 dark:to-indigo-950/50"
+                                    animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.08, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                    className={NEU_EMPTY_WELL}
                                 >
-                                    <Sparkles className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                                    <Sparkles className="h-9 w-9 text-[#006666]" />
                                 </motion.div>
-                                <p className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
-                                    No social links yet
-                                </p>
-                                <p className="text-sm text-slate-600 dark:text-slate-400">
-                                    Add your first social media link to get started
-                                </p>
+                                <p className={`mt-5 mb-1.5 ${NEU_EMPTY_TITLE}`}>No social links yet</p>
+                                <p className={NEU_EMPTY_SUBTITLE}>Add your first social media link to get started</p>
                             </motion.div>
                         ) : (
                             <motion.div
@@ -100,21 +121,19 @@ export function SocialLinksPanel({ entities }: Props) {
                                 {order.map((id, index) => (
                                     <motion.div
                                         key={id}
-                                        initial={{ opacity: 0, y: 20 }}
+                                        initial={{ opacity: 0, y: 16 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.05 }}
                                     >
-                                        <SocialLinkRow 
-                                            link={byId[id]} 
-                                            onEdit={() => setOpen(true)} 
-                                        />
+                                        <SocialLinkRow link={byId[id]} onEdit={() => setOpen(true)} />
                                     </motion.div>
                                 ))}
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
+
             <SocialLinkFormDialog open={open} onOpenChange={setOpen} />
         </motion.div>
     );

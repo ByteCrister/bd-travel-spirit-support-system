@@ -1,10 +1,33 @@
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useState } from "react";
+
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_SURFACE = "bg-[#E7E5E4]";
+const NEU_BTN_PRIMARY =
+    "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
+const NEU_BTN_GHOST =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+    "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+    "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
+const NEU_BTN_DANGER =
+    "rounded-xl bg-[#FF2157] text-white font-[family-name:var(--font-space-mono)] font-bold " +
+    "shadow-[4px_4px_8px_#c8190f,-2px_-2px_6px_#ff6b87] " +
+    "hover:bg-[#e01a4a] hover:shadow-[6px_6px_12px_#c8190f,-3px_-3px_8px_#ff6b87] " +
+    "active:shadow-[inset_3px_3px_6px_#c8190f,inset_-2px_-2px_4px_#ff6b87] " +
+    "transition-all duration-200";
+const NEU_HEADING = "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_MUTED = "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_ICON_WELL = "p-3 rounded-xl bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]";
 
 interface ConfirmDialogProps {
     title: string;
@@ -15,13 +38,20 @@ interface ConfirmDialogProps {
     variant?: "danger" | "warning" | "success" | "info";
 }
 
-export default function ConfirmDialog({ 
-    title, 
-    description, 
-    onConfirm, 
-    onCancel, 
+const VARIANT_CONFIG = {
+    danger: { icon: XCircle, iconColor: "text-[#FF2157]", confirmBtn: NEU_BTN_DANGER },
+    warning: { icon: AlertTriangle, iconColor: "text-[#FE9900]", confirmBtn: NEU_BTN_PRIMARY },
+    success: { icon: CheckCircle, iconColor: "text-[#00A63D]", confirmBtn: NEU_BTN_PRIMARY },
+    info: { icon: AlertCircle, iconColor: "text-[#006666]", confirmBtn: NEU_BTN_PRIMARY },
+} as const;
+
+export default function ConfirmDialog({
+    title,
+    description,
+    onConfirm,
+    onCancel,
     open,
-    variant = "warning" 
+    variant = "warning",
 }: ConfirmDialogProps) {
     const [isConfirming, setIsConfirming] = useState(false);
 
@@ -34,122 +64,72 @@ export default function ConfirmDialog({
         }
     };
 
-    const variantStyles = {
-        danger: {
-            icon: XCircle,
-            iconColor: "text-red-500",
-            bgGradient: "from-red-50 to-red-100/50",
-            buttonColor: "bg-red-600 hover:bg-red-700",
-            accentColor: "border-red-200"
-        },
-        warning: {
-            icon: AlertTriangle,
-            iconColor: "text-amber-500",
-            bgGradient: "from-amber-50 to-amber-100/50",
-            buttonColor: "bg-amber-600 hover:bg-amber-700",
-            accentColor: "border-amber-200"
-        },
-        success: {
-            icon: CheckCircle,
-            iconColor: "text-emerald-500",
-            bgGradient: "from-emerald-50 to-emerald-100/50",
-            buttonColor: "bg-emerald-600 hover:bg-emerald-700",
-            accentColor: "border-emerald-200"
-        },
-        info: {
-            icon: AlertCircle,
-            iconColor: "text-blue-500",
-            bgGradient: "from-blue-50 to-blue-100/50",
-            buttonColor: "bg-blue-600 hover:bg-blue-700",
-            accentColor: "border-blue-200"
-        }
-    };
-
-    const currentVariant = variantStyles[variant];
-    const Icon = currentVariant.icon;
+    const { icon: Icon, iconColor, confirmBtn } = VARIANT_CONFIG[variant];
 
     return (
         <Dialog open={open} onOpenChange={(o) => (!o ? onCancel() : undefined)}>
             <AnimatePresence>
                 {open && (
-                    <DialogContent 
+                    <DialogContent
                         aria-describedby="confirm-desc"
-                        className="sm:max-w-md overflow-hidden border-0 shadow-2xl"
+                        className={`sm:max-w-md overflow-hidden border-0 p-0 ${NEU_SURFACE} shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff]`}
                     >
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.2 }}
+                            initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                            className="p-8"
                         >
-                            {/* Decorative gradient background */}
-                            <div className={`absolute inset-0 bg-gradient-to-br ${currentVariant.bgGradient} opacity-30`} />
-                            
-                            {/* Animated icon */}
-                            <div className="relative flex justify-center mb-4 pt-6">
+                            {/* Icon */}
+                            <div className="flex justify-center mb-6">
                                 <motion.div
-                                    initial={{ scale: 0, rotate: -180 }}
+                                    initial={{ scale: 0, rotate: -90 }}
                                     animate={{ scale: 1, rotate: 0 }}
-                                    transition={{ 
-                                        type: "spring", 
-                                        stiffness: 200, 
-                                        damping: 15,
-                                        delay: 0.1 
-                                    }}
-                                    className={`rounded-full p-3 bg-white shadow-lg border-2 ${currentVariant.accentColor}`}
+                                    transition={{ type: "spring", stiffness: 220, damping: 18, delay: 0.05 }}
+                                    className={NEU_ICON_WELL}
                                 >
-                                    <Icon className={`w-8 h-8 ${currentVariant.iconColor}`} />
+                                    <Icon className={`w-9 h-9 ${iconColor}`} />
                                 </motion.div>
                             </div>
 
-                            <DialogHeader className="relative space-y-3 text-center pb-2">
-                                <DialogTitle className="text-2xl font-bold bg-gradient-to-br from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                                    {title}
-                                </DialogTitle>
+                            <DialogHeader className="space-y-2 text-center mb-6">
+                                <DialogTitle className={`text-xl ${NEU_HEADING}`}>{title}</DialogTitle>
                                 {description && (
-                                    <DialogDescription 
-                                        id="confirm-desc" 
-                                        className="text-base text-gray-600 leading-relaxed px-2"
-                                    >
+                                    <DialogDescription id="confirm-desc" className={NEU_MUTED}>
                                         {description}
                                     </DialogDescription>
                                 )}
                             </DialogHeader>
 
-                            <DialogFooter className="relative gap-3 pt-6 pb-2 flex-row sm:flex-row justify-center">
-                                <motion.div
+                            <DialogFooter className="flex-row justify-center gap-3 sm:justify-center">
+                                <motion.button
                                     whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={onCancel}
+                                    disabled={isConfirming}
+                                    className={`${NEU_BTN_GHOST} px-6 py-2.5 text-sm min-w-[100px] disabled:opacity-50`}
                                 >
-                                    <Button 
-                                        variant="outline" 
-                                        onClick={onCancel}
-                                        disabled={isConfirming}
-                                        className="min-w-[100px] border-2 hover:bg-gray-50 transition-all duration-200"
-                                    >
-                                        Cancel
-                                    </Button>
-                                </motion.div>
-                                <motion.div
+                                    Cancel
+                                </motion.button>
+
+                                <motion.button
                                     whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={() => void handleConfirm()}
+                                    disabled={isConfirming}
+                                    className={`${confirmBtn} px-6 py-2.5 text-sm min-w-[100px] disabled:opacity-70 flex items-center justify-center gap-2`}
                                 >
-                                    <Button 
-                                        className={`min-w-[100px] ${currentVariant.buttonColor} shadow-lg transition-all duration-200`}
-                                        onClick={handleConfirm}
-                                        disabled={isConfirming}
-                                    >
-                                        {isConfirming ? (
-                                            <motion.div
-                                                animate={{ rotate: 360 }}
-                                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                                className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
-                                            />
-                                        ) : (
-                                            "Confirm"
-                                        )}
-                                    </Button>
-                                </motion.div>
+                                    {isConfirming ? (
+                                        <motion.div
+                                            animate={{ rotate: 360 }}
+                                            transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                                            className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                                        />
+                                    ) : (
+                                        "Confirm"
+                                    )}
+                                </motion.button>
                             </DialogFooter>
                         </motion.div>
                     </DialogContent>

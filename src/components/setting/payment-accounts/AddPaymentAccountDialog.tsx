@@ -41,7 +41,51 @@ import {
     Plus,
     AlertCircle
 } from "lucide-react";
-import { jakarta } from "@/styles/fonts";
+
+// ── Neumorphism Style Tokens ──────────────────────────────────────────────────
+const NEU_SURFACE = "bg-[#E7E5E4]";
+const NEU_SURFACE_RAISED = "bg-[#E7E5E4] shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff]";
+const NEU_SURFACE_INSET = "bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff]";
+
+const NEU_CARD = "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+
+const NEU_BTN_PRIMARY =
+    "rounded-xl bg-[#006666] text-white font-bold tracking-wide " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
+
+const NEU_BTN_GHOST =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+    "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+    "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
+
+const NEU_INPUT =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] placeholder:text-[#1E2938]/40 " +
+    "text-sm shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+    "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200";
+
+const NEU_HEADING = "font-bold text-[#1E2938] tracking-tight";
+const NEU_LABEL = "text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+const NEU_MUTED = "text-sm text-[#1E2938]/50";
+
+const NEU_ICON_WELL_PRIMARY = "p-2.5 rounded-xl bg-[#006666]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
+
+const NEU_DIVIDER = "border-[#1E2938]/10";
+
+const NEU_SELECT_TRIGGER =
+    "h-11 rounded-xl bg-[#E7E5E4] text-[#1E2938] text-sm border-none " +
+    "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] " +
+    "focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200";
+
+const NEU_SECTION_DIVIDER = "flex items-center gap-3 py-1";
+const NEU_SECTION_DIVIDER_LINE = "h-px flex-1 bg-[#1E2938]/10";
+const NEU_SECTION_DIVIDER_LABEL = "text-[10px] font-bold text-[#1E2938]/40 uppercase tracking-[0.15em] flex items-center gap-1.5";
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 type FormValues = CreateStripePaymentMethodDTO;
 
@@ -90,11 +134,12 @@ const FormField = <Name extends keyof FormValues | string>({
         >
             <Label
                 htmlFor={name as string}
-                className="text-sm font-medium text-slate-700 flex items-center gap-2"
+                className={`${NEU_LABEL} flex items-center gap-1.5`}
+                style={{ fontFamily: "var(--font-space-mono)" }}
             >
-                {icon}
+                {icon && <span className="text-[#006666]/70">{icon}</span>}
                 {label}
-                {required && <span className="text-red-500">*</span>}
+                {required && <span className="text-[#FF2157] ml-0.5">*</span>}
             </Label>
             {children(field)}
             <AnimatePresence>
@@ -103,9 +148,10 @@ const FormField = <Name extends keyof FormValues | string>({
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="flex items-center gap-1.5 text-sm text-red-600"
+                        className="flex items-center gap-1.5 text-xs text-[#FF2157] font-medium"
+                        style={{ fontFamily: "var(--font-jetbrains-mono)" }}
                     >
-                        <AlertCircle className="h-3.5 w-3.5" />
+                        <AlertCircle className="h-3 w-3 flex-shrink-0" />
                         {meta.error}
                     </motion.div>
                 )}
@@ -137,27 +183,38 @@ export function AddPaymentAccountDialog({ children }: Props) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className={`sm:max-w-[600px] max-h-[90vh] gap-0 p-0 border-slate-200/60 shadow-xl overflow-hidden ${jakarta.className}`}>
+            <DialogContent
+                className={`sm:max-w-[600px] max-h-[90vh] gap-0 p-0 border-0 shadow-none bg-transparent overflow-hidden`}
+                style={{ fontFamily: "var(--font-space-mono)" }}
+            >
                 <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: -16, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
+                    className={`${NEU_CARD} overflow-hidden flex flex-col max-h-[90vh]`}
                 >
-                    <DialogHeader className="px-6 pt-6 pb-5 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-transparent">
-                        <div className="flex items-start gap-3.5">
+                    {/* Header */}
+                    <DialogHeader className={`px-6 pt-6 pb-5 border-b ${NEU_DIVIDER} ${NEU_SURFACE} flex-shrink-0`}>
+                        <div className="flex items-start gap-4">
                             <motion.div
-                                initial={{ scale: 0.8, opacity: 0 }}
+                                initial={{ scale: 0.7, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: 0.1, duration: 0.3 }}
-                                className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200/50 shadow-sm"
+                                transition={{ delay: 0.12, duration: 0.3, type: "spring", stiffness: 200 }}
+                                className={`${NEU_ICON_WELL_PRIMARY} flex-shrink-0`}
                             >
-                                <Plus className="h-5 w-5 text-slate-700" strokeWidth={2} />
+                                <Plus className="h-5 w-5 text-[#006666]" strokeWidth={2.5} />
                             </motion.div>
-                            <div className="flex-1">
-                                <DialogTitle className="text-xl font-semibold text-slate-900 tracking-tight">
+                            <div className="flex-1 min-w-0">
+                                <DialogTitle
+                                    className={`text-lg ${NEU_HEADING}`}
+                                    style={{ fontFamily: "var(--font-space-mono)" }}
+                                >
                                     Add Stripe Payment Method
                                 </DialogTitle>
-                                <DialogDescription className="text-sm text-slate-500 mt-1.5 leading-relaxed">
+                                <DialogDescription
+                                    className={`${NEU_MUTED} mt-1 leading-relaxed`}
+                                    style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+                                >
                                     Fill in the details to add a new payment account
                                 </DialogDescription>
                             </div>
@@ -171,38 +228,38 @@ export function AddPaymentAccountDialog({ children }: Props) {
                         validateOnBlur
                     >
                         {({ isSubmitting, setFieldValue, values }) => (
-                            <Form className="px-6 py-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-                                <div className="space-y-6">
-                                    {/* Account Configuration Section */}
+                            <Form className={`${NEU_SURFACE} flex flex-col flex-1 min-h-0`}>
+                                {/* Scrollable body */}
+                                <div className="px-6 py-5 overflow-y-auto flex-1 space-y-6">
+
+                                    {/* ── Account Configuration ── */}
                                     <div className="space-y-4">
-                                        <div className="flex items-center gap-2 pb-2">
-                                            <div className="h-px flex-1 bg-slate-200" />
-                                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                        <div className={NEU_SECTION_DIVIDER}>
+                                            <div className={NEU_SECTION_DIVIDER_LINE} />
+                                            <span className={NEU_SECTION_DIVIDER_LABEL}>
                                                 Account Configuration
                                             </span>
-                                            <div className="h-px flex-1 bg-slate-200" />
+                                            <div className={NEU_SECTION_DIVIDER_LINE} />
                                         </div>
 
                                         {/* Owner Type */}
                                         <FormField
                                             label="Owner Type"
                                             name="ownerType"
-                                            icon={<Building2 className="h-3.5 w-3.5 text-slate-500" />}
+                                            icon={<Building2 className="h-3 w-3" />}
                                             required
                                         >
                                             {({ value }) => (
                                                 <Select
                                                     value={value ?? ""}
                                                     onValueChange={(val) => {
-                                                        if (val !== value) {
-                                                            setFieldValue("ownerType", val);
-                                                        }
+                                                        if (val !== value) setFieldValue("ownerType", val);
                                                     }}
                                                 >
-                                                    <SelectTrigger className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20">
+                                                    <SelectTrigger className={NEU_SELECT_TRIGGER}>
                                                         <SelectValue placeholder="Select owner type" />
                                                     </SelectTrigger>
-                                                    <SelectContent>
+                                                    <SelectContent className={`${NEU_SURFACE_RAISED} border-0 rounded-xl`}>
                                                         <SelectItem value={PAYMENT_OWNER_TYPE.ADMIN}>Admin</SelectItem>
                                                     </SelectContent>
                                                 </Select>
@@ -213,7 +270,7 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                         <FormField
                                             label="Purpose"
                                             name="purpose"
-                                            icon={<Target className="h-3.5 w-3.5 text-slate-500" />}
+                                            icon={<Target className="h-3 w-3" />}
                                             required
                                         >
                                             {({ value }) => (
@@ -221,10 +278,10 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                     value={value}
                                                     onValueChange={(val) => setFieldValue("purpose", val)}
                                                 >
-                                                    <SelectTrigger className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20">
+                                                    <SelectTrigger className={NEU_SELECT_TRIGGER}>
                                                         <SelectValue placeholder="Select purpose" />
                                                     </SelectTrigger>
-                                                    <SelectContent>
+                                                    <SelectContent className={`${NEU_SURFACE_RAISED} border-0 rounded-xl`}>
                                                         <SelectItem value={PAYMENT_PURPOSE.ALL}>All Purposes</SelectItem>
                                                         <SelectItem value={PAYMENT_PURPOSE.EMPLOYEE_WAGES}>Employee Wages</SelectItem>
                                                         <SelectItem value={PAYMENT_PURPOSE.REFUND}>Refund</SelectItem>
@@ -237,7 +294,7 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                         <FormField
                                             label="Label"
                                             name="label"
-                                            icon={<Tag className="h-3.5 w-3.5 text-slate-500" />}
+                                            icon={<Tag className="h-3 w-3" />}
                                         >
                                             {({ value, onChange, onBlur }) => (
                                                 <Input
@@ -246,53 +303,61 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                     onChange={onChange}
                                                     onBlur={onBlur}
                                                     placeholder="e.g. Business card"
-                                                    className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20"
+                                                    className={`h-11 ${NEU_INPUT}`}
+                                                    style={{ fontFamily: "var(--font-jetbrains-mono)" }}
                                                 />
                                             )}
                                         </FormField>
 
                                         {/* isBackup Checkbox */}
                                         <motion.div
-                                            whileHover={{ scale: 1.01 }}
+                                            whileHover={{ scale: 1.005 }}
                                             transition={{ duration: 0.2 }}
-                                            className="flex items-start space-x-3.5 rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 cursor-pointer"
+                                            className={`flex items-start gap-4 rounded-xl p-4 cursor-pointer transition-all duration-200 ${NEU_SURFACE_INSET}`}
+                                            onClick={() => setFieldValue("isBackup", !values.isBackup)}
                                         >
                                             <Checkbox
                                                 id="isBackup"
                                                 checked={values.isBackup}
                                                 onCheckedChange={(checked) => setFieldValue("isBackup", checked)}
-                                                className="mt-0.5 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
+                                                className="mt-0.5 flex-shrink-0 data-[state=checked]:bg-[#006666] data-[state=checked]:border-[#006666]"
+                                                onClick={(e) => e.stopPropagation()}
                                             />
-                                            <div className="flex-1 space-y-1">
+                                            <div className="flex-1 space-y-0.5">
                                                 <Label
                                                     htmlFor="isBackup"
-                                                    className="text-sm font-medium text-slate-900 cursor-pointer"
+                                                    className="text-sm font-bold text-[#1E2938] cursor-pointer"
+                                                    style={{ fontFamily: "var(--font-space-mono)" }}
+                                                    onClick={(e) => e.stopPropagation()}
                                                 >
                                                     Use as backup account
                                                 </Label>
-                                                <p className="text-xs text-slate-500 leading-relaxed">
+                                                <p
+                                                    className={`text-xs ${NEU_MUTED} leading-relaxed`}
+                                                    style={{ fontFamily: "var(--font-jetbrains-mono)" }}
+                                                >
                                                     This account will be used if the primary payment method fails
                                                 </p>
                                             </div>
-                                            <Shield className="h-4 w-4 text-slate-400 mt-0.5" strokeWidth={2} />
+                                            <Shield className="h-4 w-4 text-[#006666]/50 mt-0.5 flex-shrink-0" strokeWidth={2} />
                                         </motion.div>
                                     </div>
 
-                                    {/* Customer Information Section */}
+                                    {/* ── Customer Information ── */}
                                     <div className="space-y-4">
-                                        <div className="flex items-center gap-2 pb-2">
-                                            <div className="h-px flex-1 bg-slate-200" />
-                                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                        <div className={NEU_SECTION_DIVIDER}>
+                                            <div className={NEU_SECTION_DIVIDER_LINE} />
+                                            <span className={NEU_SECTION_DIVIDER_LABEL}>
                                                 Customer Information
                                             </span>
-                                            <div className="h-px flex-1 bg-slate-200" />
+                                            <div className={NEU_SECTION_DIVIDER_LINE} />
                                         </div>
 
                                         {/* Email */}
                                         <FormField
                                             label="Email"
                                             name="email"
-                                            icon={<Mail className="h-3.5 w-3.5 text-slate-500" />}
+                                            icon={<Mail className="h-3 w-3" />}
                                             required
                                         >
                                             {({ value, onChange, onBlur }) => (
@@ -303,7 +368,8 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                     onChange={onChange}
                                                     onBlur={onBlur}
                                                     placeholder="customer@example.com"
-                                                    className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20"
+                                                    className={`h-11 ${NEU_INPUT}`}
+                                                    style={{ fontFamily: "var(--font-jetbrains-mono)" }}
                                                 />
                                             )}
                                         </FormField>
@@ -312,7 +378,7 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                         <FormField
                                             label="Name on Card"
                                             name="name"
-                                            icon={<User className="h-3.5 w-3.5 text-slate-500" />}
+                                            icon={<User className="h-3 w-3" />}
                                             required
                                         >
                                             {({ value, onChange, onBlur }) => (
@@ -322,27 +388,28 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                     onChange={onChange}
                                                     onBlur={onBlur}
                                                     placeholder="John Doe"
-                                                    className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20"
+                                                    className={`h-11 ${NEU_INPUT}`}
+                                                    style={{ fontFamily: "var(--font-jetbrains-mono)" }}
                                                 />
                                             )}
                                         </FormField>
                                     </div>
 
-                                    {/* Stripe Integration Section */}
+                                    {/* ── Stripe Integration ── */}
                                     <div className="space-y-4">
-                                        <div className="flex items-center gap-2 pb-2">
-                                            <div className="h-px flex-1 bg-slate-200" />
-                                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                        <div className={NEU_SECTION_DIVIDER}>
+                                            <div className={NEU_SECTION_DIVIDER_LINE} />
+                                            <span className={NEU_SECTION_DIVIDER_LABEL}>
                                                 Stripe Integration
                                             </span>
-                                            <div className="h-px flex-1 bg-slate-200" />
+                                            <div className={NEU_SECTION_DIVIDER_LINE} />
                                         </div>
 
                                         {/* Stripe Customer ID */}
                                         <FormField
                                             label="Stripe Customer ID"
                                             name="stripeCustomerId"
-                                            icon={<Hash className="h-3.5 w-3.5 text-slate-500" />}
+                                            icon={<Hash className="h-3 w-3" />}
                                             required
                                         >
                                             {({ value, onChange, onBlur }) => (
@@ -352,7 +419,8 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                     onChange={onChange}
                                                     onBlur={onBlur}
                                                     placeholder="cus_xxx"
-                                                    className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20 font-mono text-sm"
+                                                    className={`h-11 ${NEU_INPUT}`}
+                                                    style={{ fontFamily: "var(--font-jetbrains-mono)" }}
                                                 />
                                             )}
                                         </FormField>
@@ -361,7 +429,7 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                         <FormField
                                             label="Stripe Payment Method ID"
                                             name="stripePaymentMethodId"
-                                            icon={<Hash className="h-3.5 w-3.5 text-slate-500" />}
+                                            icon={<Hash className="h-3 w-3" />}
                                             required
                                         >
                                             {({ value, onChange, onBlur }) => (
@@ -371,7 +439,8 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                     onChange={onChange}
                                                     onBlur={onBlur}
                                                     placeholder="pm_xxx"
-                                                    className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20 font-mono text-sm"
+                                                    className={`h-11 ${NEU_INPUT}`}
+                                                    style={{ fontFamily: "var(--font-jetbrains-mono)" }}
                                                 />
                                             )}
                                         </FormField>
@@ -380,7 +449,7 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                         <FormField
                                             label="Connected Account ID"
                                             name="stripeConnectedAccountId"
-                                            icon={<Hash className="h-3.5 w-3.5 text-slate-500" />}
+                                            icon={<Hash className="h-3 w-3" />}
                                         >
                                             {({ value, onChange, onBlur }) => (
                                                 <Input
@@ -389,21 +458,22 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                     onChange={onChange}
                                                     onBlur={onBlur}
                                                     placeholder="acct_xxx (optional)"
-                                                    className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20 font-mono text-sm"
+                                                    className={`h-11 ${NEU_INPUT}`}
+                                                    style={{ fontFamily: "var(--font-jetbrains-mono)" }}
                                                 />
                                             )}
                                         </FormField>
                                     </div>
 
-                                    {/* Card Details Section */}
+                                    {/* ── Card Details ── */}
                                     <div className="space-y-4">
-                                        <div className="flex items-center gap-2 pb-2">
-                                            <div className="h-px flex-1 bg-slate-200" />
-                                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                                                <CreditCard className="h-3.5 w-3.5" />
+                                        <div className={NEU_SECTION_DIVIDER}>
+                                            <div className={NEU_SECTION_DIVIDER_LINE} />
+                                            <span className={NEU_SECTION_DIVIDER_LABEL}>
+                                                <CreditCard className="h-3 w-3" />
                                                 Card Details
                                             </span>
-                                            <div className="h-px flex-1 bg-slate-200" />
+                                            <div className={NEU_SECTION_DIVIDER_LINE} />
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
@@ -418,10 +488,10 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                         value={value ?? ""}
                                                         onValueChange={(val) => setFieldValue("card.brand", val)}
                                                     >
-                                                        <SelectTrigger className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20">
+                                                        <SelectTrigger className={NEU_SELECT_TRIGGER}>
                                                             <SelectValue placeholder="Select brand" />
                                                         </SelectTrigger>
-                                                        <SelectContent>
+                                                        <SelectContent className={`${NEU_SURFACE_RAISED} border-0 rounded-xl`}>
                                                             <SelectItem value={CARD_BRAND.VISA}>Visa</SelectItem>
                                                             <SelectItem value={CARD_BRAND.MASTERCARD}>Mastercard</SelectItem>
                                                             <SelectItem value={CARD_BRAND.AMEX}>Amex</SelectItem>
@@ -432,7 +502,7 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                 )}
                                             </FormField>
 
-                                            {/* Last4 */}
+                                            {/* Last 4 */}
                                             <FormField
                                                 label="Last 4 Digits"
                                                 name="card.last4"
@@ -446,7 +516,8 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                         onBlur={onBlur}
                                                         placeholder="4242"
                                                         maxLength={4}
-                                                        className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20 font-mono"
+                                                        className={`h-11 ${NEU_INPUT}`}
+                                                        style={{ fontFamily: "var(--font-jetbrains-mono)" }}
                                                     />
                                                 )}
                                             </FormField>
@@ -455,7 +526,7 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                             <FormField
                                                 label="Expiry Month"
                                                 name="card.expMonth"
-                                                icon={<Calendar className="h-3.5 w-3.5 text-slate-500" />}
+                                                icon={<Calendar className="h-3 w-3" />}
                                                 required
                                             >
                                                 {({ value, onChange, onBlur }) => (
@@ -468,7 +539,8 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                         placeholder="12"
                                                         min="1"
                                                         max="12"
-                                                        className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20"
+                                                        className={`h-11 ${NEU_INPUT}`}
+                                                        style={{ fontFamily: "var(--font-jetbrains-mono)" }}
                                                     />
                                                 )}
                                             </FormField>
@@ -477,7 +549,7 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                             <FormField
                                                 label="Expiry Year"
                                                 name="card.expYear"
-                                                icon={<Calendar className="h-3.5 w-3.5 text-slate-500" />}
+                                                icon={<Calendar className="h-3 w-3" />}
                                                 required
                                             >
                                                 {({ value, onChange, onBlur }) => (
@@ -489,7 +561,8 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                         onBlur={onBlur}
                                                         placeholder="2028"
                                                         min={new Date().getFullYear()}
-                                                        className="h-11 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20"
+                                                        className={`h-11 ${NEU_INPUT}`}
+                                                        style={{ fontFamily: "var(--font-jetbrains-mono)" }}
                                                     />
                                                 )}
                                             </FormField>
@@ -497,20 +570,24 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                     </div>
                                 </div>
 
-                                <div className="flex gap-3 mt-6 pt-6 border-t border-slate-100 sticky bottom-0 bg-white">
+                                {/* Footer Actions */}
+                                <div
+                                    className={`flex gap-3 px-6 py-4 border-t ${NEU_DIVIDER} ${NEU_SURFACE} flex-shrink-0`}
+                                >
                                     <Button
                                         type="button"
-                                        variant="outline"
-                                        className="flex-1 h-11 border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 font-medium"
+                                        className={`flex-1 h-11 text-sm ${NEU_BTN_GHOST}`}
+                                        style={{ fontFamily: "var(--font-space-mono)" }}
                                         onClick={() => setOpen(false)}
                                         disabled={isLoading}
                                     >
                                         Cancel
                                     </Button>
-                                    <motion.div className="flex-1" whileTap={{ scale: 0.98 }}>
+                                    <motion.div className="flex-1" whileTap={{ scale: 0.97 }}>
                                         <Button
                                             type="submit"
-                                            className="w-full h-11 bg-slate-900 hover:bg-slate-800 text-white shadow-sm hover:shadow transition-all duration-200 font-medium"
+                                            className={`w-full h-11 text-sm ${NEU_BTN_PRIMARY}`}
+                                            style={{ fontFamily: "var(--font-space-mono)" }}
                                             disabled={isSubmitting || isLoading}
                                         >
                                             {isLoading ? (

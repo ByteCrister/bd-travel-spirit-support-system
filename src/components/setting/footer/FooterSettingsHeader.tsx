@@ -2,88 +2,87 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Settings, Info, Sparkles } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Settings, Info } from "lucide-react";
+
+// ── Neumorphism style tokens ──────────────────────────────────
+const HEADER_CARD =
+    "relative overflow-hidden rounded-2xl bg-[#E7E5E4] " +
+    "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60 p-6 sm:p-8";
+
+const ICON_CONTAINER =
+    "flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-2xl " +
+    "bg-[#006666] shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080]";
+
+const TITLE_TEXT =
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] " +
+    "tracking-tight text-2xl sm:text-3xl lg:text-4xl";
+
+const SUBTITLE_TEXT =
+    "mt-1.5 flex items-center gap-2 font-[family-name:var(--font-jetbrains-mono)] " +
+    "text-sm text-[#1E2938]/50";
+
+const VERSION_BADGE =
+    "inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-[family-name:var(--font-space-mono)] font-bold " +
+    "text-[#006666] bg-[#006666]/10 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+
+// ─────────────────────────────────────────────────────────────
 
 type Props = { version?: number };
 
 export function FooterSettingsHeader({ version }: Props) {
     return (
         <motion.div
-            initial={{ opacity: 0, y: -30 }}
+            initial={{ opacity: 0, y: -24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white via-blue-50/30 to-indigo-100/40 p-8 shadow-xl dark:border-slate-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/30"
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className={HEADER_CARD}
         >
-            {/* Decorative Elements */}
-            <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-gradient-to-br from-blue-400/20 to-indigo-500/20 blur-3xl" />
-            <div className="absolute -bottom-8 -left-8 h-40 w-40 rounded-full bg-gradient-to-tr from-purple-400/15 to-pink-400/15 blur-2xl" />
-            
-            {/* Floating Sparkles */}
-            <motion.div
-                animate={{ 
-                    y: [0, -10, 0],
-                    opacity: [0.3, 0.6, 0.3]
-                }}
-                transition={{ 
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                }}
-                className="absolute right-24 top-8"
-            >
-                <Sparkles className="h-5 w-5 text-indigo-400/60" />
-            </motion.div>
+            {/* Decorative blur blobs */}
+            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#006666]/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-[#006666]/8 blur-2xl" />
 
-            <div className="relative z-10 flex items-start justify-between">
-                <div className="space-y-3">
-                    <div className="flex items-center gap-4">
-                        <motion.div
-                            initial={{ rotate: -180, scale: 0 }}
-                            animate={{ rotate: 0, scale: 1 }}
-                            transition={{ 
-                                delay: 0.3, 
-                                type: "spring", 
-                                stiffness: 200,
-                                damping: 15
-                            }}
-                            className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30"
+            <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                {/* Left — icon + text */}
+                <div className="flex items-center gap-4">
+                    <motion.div
+                        initial={{ rotate: -180, scale: 0 }}
+                        animate={{ rotate: 0, scale: 1 }}
+                        transition={{ delay: 0.2, type: "spring", stiffness: 220, damping: 16 }}
+                        className={ICON_CONTAINER}
+                    >
+                        <Settings className="h-7 w-7 text-white" />
+                    </motion.div>
+
+                    <div>
+                        <motion.h1
+                            initial={{ opacity: 0, x: -16 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.3, duration: 0.4 }}
+                            className={TITLE_TEXT}
                         >
-                            <Settings className="h-8 w-8 text-white" />
-                        </motion.div>
-                        <div>
-                            <motion.h1 
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.4, duration: 0.5 }}
-                                className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-4xl font-bold tracking-tight text-transparent dark:from-slate-100 dark:to-slate-300"
-                            >
-                                Footer Settings
-                            </motion.h1>
-                            <motion.p 
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.5, duration: 0.5 }}
-                                className="mt-2 flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400"
-                            >
-                                <Info className="h-4 w-4" />
-                                Manage social links and location entries
-                            </motion.p>
-                        </div>
+                            Footer Settings
+                        </motion.h1>
+                        <motion.p
+                            initial={{ opacity: 0, x: -16 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.4, duration: 0.4 }}
+                            className={SUBTITLE_TEXT}
+                        >
+                            <Info className="h-3.5 w-3.5 shrink-0" />
+                            Manage social links and location entries
+                        </motion.p>
                     </div>
                 </div>
+
+                {/* Right — version badge */}
                 {typeof version === "number" && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.5 }}
+                        initial={{ opacity: 0, scale: 0.6 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
+                        transition={{ delay: 0.5, type: "spring", stiffness: 220 }}
+                        className="self-start sm:self-auto"
                     >
-                        <Badge 
-                            variant="secondary" 
-                            className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm dark:text-blue-300"
-                        >
-                            v{version}
-                        </Badge>
+                        <span className={VERSION_BADGE}>v{version}</span>
                     </motion.div>
                 )}
             </div>

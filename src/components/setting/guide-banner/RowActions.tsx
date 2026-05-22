@@ -2,19 +2,29 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import {
-    Tooltip,
-    TooltipProvider,
-    TooltipTrigger,
-    TooltipContent,
-} from "@/components/ui/tooltip";
-import {
-    Loader2,
-    Edit2,
-    Info,
-    Trash2,
-} from "lucide-react";
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Loader2, Edit2, Info, Trash2 } from "lucide-react";
+
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_BTN_PRIMARY =
+    "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold text-xs " +
+    "shadow-[3px_3px_6px_#004d4d,-2px_-2px_5px_#008080] " +
+    "hover:bg-[#007777] hover:shadow-[5px_5px_10px_#004d4d,-3px_-3px_7px_#008080] " +
+    "active:shadow-[inset_2px_2px_5px_#004d4d,inset_-1px_-1px_3px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
+    "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none";
+const NEU_BTN_GHOST =
+    "rounded-xl bg-[#E7E5E4] text-[#006666] font-[family-name:var(--font-space-mono)] text-xs " +
+    "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] " +
+    "hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+    "active:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-1px_-1px_4px_#ffffff] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
+const NEU_BTN_DANGER =
+    "rounded-xl bg-[#E7E5E4] text-[#FF2157] font-[family-name:var(--font-space-mono)] text-xs " +
+    "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] " +
+    "hover:bg-[#FF2157]/10 hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] " +
+    "transition-all duration-200 " +
+    "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none";
 
 type RowActionsProps = {
     updatePending?: boolean;
@@ -32,76 +42,75 @@ export const RowActions: React.FC<RowActionsProps> = ({
     setConfirmOpen,
 }) => {
     return (
-        <div className="align-middle">
+        <TooltipProvider>
             <div className="flex items-center gap-2">
-                <TooltipProvider>
-                    {/* Primary edit button — visually prominent */}
-                    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="shrink-0">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    onClick={() => setEditOpen(true)}
-                                    disabled={updatePending}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-md shadow-sm bg-gradient-to-b from-emerald-500/95 to-emerald-600 text-white hover:from-emerald-500 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                                    aria-label="Edit item"
-                                >
-                                    {updatePending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit2 className="h-4 w-4" />}
-                                    <span className="hidden sm:inline font-medium">Edit</span>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-sm">
-                                {updatePending ? "Saving..." : "Edit"}
-                            </TooltipContent>
-                        </Tooltip>
-                    </motion.div>
+                {/* Edit */}
+                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="shrink-0">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={() => setEditOpen(true)}
+                                disabled={updatePending}
+                                className={`${NEU_BTN_PRIMARY} flex items-center gap-1.5 px-3 py-2`}
+                                aria-label="Edit banner"
+                            >
+                                {updatePending ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <Edit2 className="h-3.5 w-3.5" />
+                                )}
+                                <span className="hidden sm:inline">Edit</span>
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                            {updatePending ? "Saving…" : "Edit banner"}
+                        </TooltipContent>
+                    </Tooltip>
+                </motion.div>
 
-                    {/* Details button — secondary */}
-                    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                {/* Details */}
+                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={() => setDetailsOpen(true)}
+                                className={`${NEU_BTN_GHOST} flex items-center gap-1.5 px-3 py-2`}
+                                aria-label="View details"
+                            >
+                                <Info className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Details</span>
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">View details</TooltipContent>
+                    </Tooltip>
+                </motion.div>
+
+                {/* Delete — visible md+ */}
+                <div className="hidden md:block">
+                    <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setDetailsOpen(true)}
-                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-md shadow-sm border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                                    aria-label="View details"
+                                <button
+                                    onClick={() => setConfirmOpen(true)}
+                                    disabled={deletePending}
+                                    className={`${NEU_BTN_DANGER} flex items-center gap-1.5 px-3 py-2`}
+                                    aria-label="Delete banner"
                                 >
-                                    <Info className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Details</span>
-                                </Button>
+                                    {deletePending ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    )}
+                                    <span className="hidden lg:inline">Delete</span>
+                                </button>
                             </TooltipTrigger>
-                            <TooltipContent side="top" className="text-sm">
-                                View details
+                            <TooltipContent side="top" className="text-xs">
+                                {deletePending ? "Deleting…" : "Delete banner"}
                             </TooltipContent>
                         </Tooltip>
                     </motion.div>
-                    {/* Inline delete for large screens (keeps affordance visible) */}
-                    <div className="hidden md:block">
-                        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => setConfirmOpen(true)}
-                                        disabled={deletePending}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-md shadow-sm text-white"
-                                        aria-label="Delete item"
-                                    >
-                                        {deletePending ? <Loader2 className="h-4 w-4 animate-spin text-white" /> : <Trash2 className="h-4 w-4 text-white" />}
-                                        <span className="hidden lg:inline">Delete</span>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="text-sm">
-                                    {deletePending ? "Deleting..." : "Delete"}
-                                </TooltipContent>
-                            </Tooltip>
-                        </motion.div>
-                    </div>
-                </TooltipProvider>
+                </div>
             </div>
-        </div>
+        </TooltipProvider>
     );
 };

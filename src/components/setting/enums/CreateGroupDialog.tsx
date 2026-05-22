@@ -5,14 +5,59 @@ import { JSX } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { HiOutlinePlusCircle, HiOutlineX } from "react-icons/hi";
+import { Plus, X, ClipboardList, Info } from "lucide-react";
 
 import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EnumGroupFormSchema, enumGroupSchema } from "@/utils/validators/site-settings/enums-settings.validators";
-import { ClipboardList, Info } from "lucide-react";
+
+// ── Neu style tokens ──────────────────────────────────────────
+const S = {
+    overlay: "bg-[#E7E5E4] rounded-2xl overflow-hidden shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60 p-0",
+    header:
+        "flex items-start gap-3 px-6 pt-6 pb-5 border-b border-[#1E2938]/10",
+    iconWell:
+        "flex-none flex items-center justify-center w-10 h-10 rounded-xl bg-[#006666] " +
+        "shadow-[3px_3px_7px_#004d4d,-2px_-2px_5px_#008080]",
+    titleText:
+        "text-base font-bold font-[family-name:var(--font-space-mono)] text-[#1E2938]",
+    subtitle:
+        "text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50 mt-0.5",
+    closeBtn:
+        "ml-auto p-1.5 rounded-xl text-[#1E2938]/50 bg-[#E7E5E4] " +
+        "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] " +
+        "hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] " +
+        "hover:text-[#1E2938] transition-all duration-200",
+    body: "px-6 pt-5 pb-6 space-y-5",
+    fieldLabel:
+        "flex items-center gap-2 text-xs font-bold uppercase tracking-widest " +
+        "font-[family-name:var(--font-space-mono)] text-[#1E2938]/60 mb-2",
+    required: "text-[#FF2157] ml-1",
+    input:
+        "w-full px-4 py-2.5 rounded-xl bg-[#E7E5E4] text-[#1E2938] text-sm " +
+        "placeholder:text-[#1E2938]/40 font-[family-name:var(--font-jetbrains-mono)] " +
+        "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+        "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200",
+    inputError:
+        "focus:ring-[#FF2157]/50 ring-2 ring-[#FF2157]/40",
+    errorMsg:
+        "mt-1.5 flex items-center gap-1.5 text-xs text-[#FF2157] font-[family-name:var(--font-jetbrains-mono)]",
+    footer: "flex flex-col sm:flex-row gap-3 pt-2",
+    cancelBtn:
+        "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold " +
+        "font-[family-name:var(--font-space-mono)] text-[#1E2938] bg-[#E7E5E4] " +
+        "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] " +
+        "hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+        "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40",
+    submitBtn:
+        "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold " +
+        "font-[family-name:var(--font-space-mono)] text-white bg-[#006666] " +
+        "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+        "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+        "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+        "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+};
 
 export default function CreateGroupDialog({
     open,
@@ -37,121 +82,118 @@ export default function CreateGroupDialog({
         const payload = {
             name: values.name.trim(),
             description: values.description?.trim() ?? null,
-            values: (values.values ?? []).map(v => ({
+            values: (values.values ?? []).map((v) => ({
                 key: v.key.trim(),
                 value: v.value ?? v.key,
                 label: v.label?.trim() ?? `label: ${v.key}`,
                 description: v.description?.trim() ?? null,
-                active: v.active ?? true
+                active: v.active ?? true,
             })),
         };
-
         try {
             const g = await createGroup(payload);
             onOpenChange(false);
             if (onCreated) onCreated(g.name);
             form.reset({ name: "", description: "", values: [] });
         } catch {
-            // createGroup will show toast; keep form state for user correction
+            // createGroup shows toast
         }
     }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden">
+            <DialogContent className="sm:max-w-[520px] p-0 bg-transparent border-none shadow-none">
                 <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.996 }}
+                    initial={{ opacity: 0, y: 10, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.16 }}
-                    className="bg-white dark:bg-slate-900 rounded-lg shadow-md"
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.18 }}
+                    className={S.overlay}
                 >
-                    <DialogHeader className="p-5 border-b dark:border-slate-800">
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-11 h-11 rounded-md bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600">
-                                <HiOutlinePlusCircle className="w-5 h-5" />
-                            </div>
-
-                            <div>
-                                <DialogTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                                    Create new group
-                                </DialogTitle>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                                    Groups help you organize enum values for feature flags and settings.
-                                </p>
-                            </div>
-
-                            <div className="ml-auto">
-                                <button
-                                    type="button"
-                                    aria-label="Close dialog"
-                                    onClick={() => onOpenChange(false)}
-                                    className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-                                >
-                                    <HiOutlineX className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-                                </button>
-                            </div>
+                    {/* Header */}
+                    <div className={S.header}>
+                        <div className={S.iconWell}>
+                            <Plus className="w-5 h-5 text-white" />
                         </div>
-                    </DialogHeader>
-
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-5">
                         <div>
-                            <label htmlFor="name" className="flex items-center text-sm font-medium text-slate-700 dark:text-slate-300 gap-2">
-                                <ClipboardList className="w-4 h-4 text-slate-400" />
-                                Name <span className="text-rose-500">* {`not changeable`}</span>
+                            <h2 className={S.titleText}>Create new group</h2>
+                            <p className={S.subtitle}>
+                                Groups help you organize enum values for feature flags and settings.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            aria-label="Close dialog"
+                            onClick={() => onOpenChange(false)}
+                            className={S.closeBtn}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+
+                    {/* Body */}
+                    <form onSubmit={form.handleSubmit(onSubmit)} className={S.body}>
+                        {/* Name */}
+                        <div>
+                            <label htmlFor="create-name" className={S.fieldLabel}>
+                                <ClipboardList size={12} />
+                                Name
+                                <span className={S.required}>* not changeable</span>
                             </label>
-                            <Input
-                                id="name"
+                            <input
+                                id="create-name"
                                 placeholder="group_key_name"
                                 {...form.register("name")}
                                 aria-invalid={!!form.formState.errors.name}
-                                className="mt-2"
                                 autoFocus
+                                className={`${S.input} ${form.formState.errors.name ? S.inputError : ""}`}
                             />
                             {form.formState.errors.name && (
-                                <p role="alert" className="mt-2 text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                                    <Info className="w-4 h-4" /> {form.formState.errors.name.message}
+                                <p role="alert" className={S.errorMsg}>
+                                    <Info size={12} />
+                                    {form.formState.errors.name.message}
                                 </p>
                             )}
                         </div>
 
+                        {/* Description */}
                         <div>
-                            <label htmlFor="description" className="flex items-center text-sm font-medium text-slate-700 dark:text-slate-300 gap-2">
-                                <Info className="w-4 h-4 text-slate-400" />
+                            <label htmlFor="create-description" className={S.fieldLabel}>
+                                <Info size={12} />
                                 Description
                             </label>
-                            <Input
-                                id="description"
+                            <input
+                                id="create-description"
                                 placeholder="Optional description for admins"
                                 {...form.register("description")}
-                                className="mt-2"
+                                className={S.input}
                             />
                             {form.formState.errors.description && (
-                                <p role="alert" className="mt-2 text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                                    <Info className="w-4 h-4" /> {form.formState.errors.description.message}
+                                <p role="alert" className={S.errorMsg}>
+                                    <Info size={12} />
+                                    {form.formState.errors.description.message}
                                 </p>
                             )}
                         </div>
 
-                        <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-2">
-                            <Button
+                        {/* Footer */}
+                        <div className={S.footer}>
+                            <button
                                 type="button"
-                                variant="outline"
                                 onClick={() => onOpenChange(false)}
-                                className="flex-1"
+                                className={S.cancelBtn}
                             >
                                 Cancel
-                            </Button>
-
-                            <Button
+                            </button>
+                            <button
                                 type="submit"
-                                className="flex-1 flex items-center justify-center gap-2"
                                 disabled={isSubmitting}
+                                className={S.submitBtn}
                             >
-                                <HiOutlinePlusCircle className="w-4 h-4" />
+                                <Plus size={15} />
                                 Create group
-                            </Button>
-                        </DialogFooter>
+                            </button>
+                        </div>
                     </form>
                 </motion.div>
             </DialogContent>

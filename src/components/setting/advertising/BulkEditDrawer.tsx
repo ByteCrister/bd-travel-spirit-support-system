@@ -2,13 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  HiX,
-  HiCheck,
-  HiAdjustments,
-  HiLightningBolt,
-  HiUsers,
-} from "react-icons/hi";
+import { HiX, HiCheck, HiAdjustments, HiLightningBolt, HiUsers } from "react-icons/hi";
 import {
   Drawer,
   DrawerContent,
@@ -16,9 +10,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -26,8 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import {
   AdvertisingPriceRow,
   BulkUpdateAdvertisingPricesPayload,
@@ -35,6 +24,85 @@ import {
 } from "@/types/advertising/advertising-settings.types";
 import { Currency, CURRENCY } from "@/constants/tour.const";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
+
+// ── Neumorphism style constants ───────────────────────────────
+const S = {
+  content: "max-h-[85vh] bg-[#E7E5E4]",
+  inner: "mx-auto w-full max-w-2xl",
+  header: "border-b border-[#1E2938]/10 pb-4 px-6 pt-4",
+  headerIconWell:
+    "h-12 w-12 rounded-xl bg-[#006666] flex items-center justify-center " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080]",
+  drawerTitle:
+    "text-xl font-bold font-[family-name:var(--font-space-mono)] text-[#1E2938]",
+  drawerDesc:
+    "flex items-center gap-1.5 mt-0.5 text-sm font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50",
+
+  body: "p-6 space-y-6 overflow-y-auto max-h-[calc(85vh-12rem)]",
+
+  previewCard:
+    "rounded-xl bg-[#E7E5E4] p-4 " +
+    "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff]",
+  previewTitle:
+    "flex items-center gap-2 mb-3 text-xs font-bold uppercase tracking-widest " +
+    "font-[family-name:var(--font-space-mono)] text-[#1E2938]/50",
+  chip:
+    "inline-flex px-2.5 py-0.5 rounded-lg text-xs " +
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] " +
+    "bg-[#E7E5E4] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+  chipMore:
+    "inline-flex px-2.5 py-0.5 rounded-lg text-xs " +
+    "font-[family-name:var(--font-space-mono)] font-bold " +
+    "bg-[#006666]/10 text-[#006666] " +
+    "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+
+  fieldLabel:
+    "flex items-center gap-2 text-xs font-bold uppercase tracking-widest " +
+    "font-[family-name:var(--font-space-mono)] text-[#1E2938]/60 mb-2",
+
+  input:
+    "w-full rounded-xl px-4 py-3 text-sm font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938] " +
+    "bg-[#E7E5E4] placeholder:text-[#1E2938]/30 " +
+    "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+    "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200",
+
+  hint:
+    "text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/40 mt-1.5",
+
+  infoBox:
+    "rounded-xl p-3 bg-[#FE9900]/5 border border-[#FE9900]/20 " +
+    "text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/60 mt-2",
+
+  changesCard:
+    "rounded-xl bg-[#E7E5E4] p-4 " +
+    "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff]",
+  changesTitle:
+    "text-xs font-bold uppercase tracking-widest font-[family-name:var(--font-space-mono)] text-[#1E2938]/50 mb-3",
+  changeItem:
+    "flex items-center gap-2 text-sm font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/70",
+
+  footer: "border-t border-[#1E2938]/10 px-6 py-4 bg-[#E7E5E4]",
+  footerInner: "flex items-center gap-3",
+
+  btnCancel:
+    "flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm " +
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] bg-[#E7E5E4] " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+    "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+    "disabled:opacity-40 disabled:cursor-not-allowed " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40 " +
+    "transition-all duration-200",
+
+  btnApply:
+    "flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm " +
+    "font-[family-name:var(--font-space-mono)] font-bold text-white bg-[#006666] " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "hover:bg-[#007777] hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
+    "transition-all duration-200",
+};
 
 interface Props {
   open: boolean;
@@ -51,40 +119,27 @@ const BulkEditDrawer: React.FC<Props> = ({ open, onClose, selectedRows, onSubmit
   const [multiplier, setMultiplier] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
+  const hasChanges = currency !== CURRENCY.BDT || setActive !== null || multiplier !== "";
+
   const handleSubmit = async (): Promise<void> => {
     setSubmitting(true);
     try {
       const updates: UpdateAdvertisingPricePayload[] = selectedRows.map(
         (r): UpdateAdvertisingPricePayload => {
           const upd: UpdateAdvertisingPricePayload = { id: r.id, title: r.title };
-
-          if (currency) {
-            upd.currency = currency;
-          }
-
-          if (setActive !== null) {
-            upd.active = setActive;
-          }
-
+          if (currency) upd.currency = currency;
+          if (setActive !== null) upd.active = setActive;
           if (multiplier && multiplier.trim() !== "") {
             const m = Number(multiplier);
             if (!Number.isNaN(m)) {
-              const newPrice = Math.round((r.price * m + Number.EPSILON) * 100) / 100;
-              upd.price = newPrice;
+              upd.price = Math.round((r.price * m + Number.EPSILON) * 100) / 100;
             }
           }
-
           return upd;
         }
       );
 
-      const payload: BulkUpdateAdvertisingPricesPayload = {
-        updates,
-      };
-
-      await onSubmit(payload);
-
-      // Reset form
+      await onSubmit({ updates });
       setCurrency(CURRENCY.BDT);
       setSetActive(null);
       setMultiplier("");
@@ -94,79 +149,67 @@ const BulkEditDrawer: React.FC<Props> = ({ open, onClose, selectedRows, onSubmit
     }
   };
 
-  const hasChanges = currency !== CURRENCY.BDT || setActive !== null || multiplier !== "";
-
   return (
     <Drawer open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DrawerContent className="max-h-[85vh]">
-        <div className="mx-auto w-full max-w-2xl">
-          <DrawerHeader className="border-b">
+      <DrawerContent className={S.content}>
+        <div className={S.inner}>
+          {/* Header */}
+          <DrawerHeader className={S.header}>
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+              <div className={S.headerIconWell}>
                 <HiAdjustments className="h-6 w-6 text-white" />
               </div>
               <div>
-                <DrawerTitle className="text-2xl font-bold">Bulk Edit</DrawerTitle>
-                <DrawerDescription className="flex items-center gap-2 mt-1">
+                <DrawerTitle className={S.drawerTitle}>Bulk Edit</DrawerTitle>
+                <DrawerDescription className={S.drawerDesc}>
                   <HiUsers className="h-4 w-4" />
-                  Editing {selectedRows.length} selected {selectedRows.length === 1 ? "item" : "items"}
+                  Editing {selectedRows.length} selected{" "}
+                  {selectedRows.length === 1 ? "item" : "items"}
                 </DrawerDescription>
               </div>
             </div>
           </DrawerHeader>
 
-          <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(85vh-12rem)]">
-            {/* Selected Items Preview */}
-            <Card className="p-4 bg-gradient-to-br from-blue-50 to-slate-50 border-blue-200">
-              <div className="flex items-center gap-2 mb-3">
-                <HiLightningBolt className="h-4 w-4 text-blue-600" />
-                <h3 className="text-sm font-semibold text-slate-700">Selected Items</h3>
+          {/* Body */}
+          <div className={S.body}>
+            {/* Selected items preview */}
+            <div className={S.previewCard}>
+              <div className={S.previewTitle}>
+                <HiLightningBolt className="h-4 w-4 text-[#006666]" />
+                Selected Items
               </div>
               <div className="flex flex-wrap gap-2">
                 {selectedRows.slice(0, 5).map((row) => (
-                  <Badge
-                    key={row.id}
-                    variant="secondary"
-                    className="bg-white border-blue-200 text-slate-700"
-                  >
-                    {row.placementLabel}
-                  </Badge>
+                  <span key={row.id} className={S.chip}>{row.placementLabel}</span>
                 ))}
                 {selectedRows.length > 5 && (
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                    +{selectedRows.length - 5} more
-                  </Badge>
+                  <span className={S.chipMore}>+{selectedRows.length - 5} more</span>
                 )}
               </div>
-            </Card>
+            </div>
 
-            {/* Currency Selection */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <FaBangladeshiTakaSign className="h-5 w-5 text-emerald-600" />
-                <Label className="text-sm font-semibold">Update Currency</Label>
-              </div>
+            {/* Currency */}
+            <div>
+              <label className={S.fieldLabel}>
+                <FaBangladeshiTakaSign className="h-4 w-4 text-[#006666]" />
+                Update Currency
+              </label>
               <Select value={currency} onValueChange={(c: Currency) => setCurrency(c)}>
-                <SelectTrigger className="h-12 border-slate-200 hover:border-emerald-300">
+                <SelectTrigger className="h-11 rounded-xl bg-[#E7E5E4] border-none font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938] shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] focus:ring-2 focus:ring-[#006666]/50">
                   <SelectValue placeholder="Keep current currency" />
                 </SelectTrigger>
                 <SelectContent>
                   {currencies.map((curr) => (
-                    <SelectItem key={curr} value={curr}>
-                      {curr}
-                    </SelectItem>
+                    <SelectItem key={curr} value={curr}>{curr}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-
-              <p className="text-xs text-slate-500">
-                Apply the same currency to all selected items
-              </p>
+              <p className={S.hint}>Apply the same currency to all selected items</p>
             </div>
 
-            {/* Active Status */}
-            <div className="space-y-3">
-              <Label className="text-sm font-semibold">Set Active Status</Label>
+            {/* Status */}
+            <div>
+              <label className={S.fieldLabel}>Set Active Status</label>
               <Select
                 value={setActive === null ? undefined : setActive ? "true" : "false"}
                 onValueChange={(val) => {
@@ -174,124 +217,101 @@ const BulkEditDrawer: React.FC<Props> = ({ open, onClose, selectedRows, onSubmit
                   else setSetActive(val === "true");
                 }}
               >
-                <SelectTrigger className="h-12 border-slate-200 hover:border-emerald-300">
+                <SelectTrigger className="h-11 rounded-xl bg-[#E7E5E4] border-none font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938] shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] focus:ring-2 focus:ring-[#006666]/50">
                   <SelectValue placeholder="Keep current status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="true">
                     <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <div className="h-2 w-2 rounded-full bg-[#00A63D]" />
                       Active
                     </div>
                   </SelectItem>
                   <SelectItem value="false">
                     <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-slate-400" />
+                      <div className="h-2 w-2 rounded-full bg-[#1E2938]/30" />
                       Inactive
                     </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
-
-              <p className="text-xs text-slate-500">
-                Enable or disable all selected items at once
-              </p>
+              <p className={S.hint}>Enable or disable all selected items at once</p>
             </div>
 
-            {/* Price Multiplier */}
-            <div className="space-y-3">
-              <Label className="text-sm font-semibold">Price Multiplier</Label>
-              <Input
+            {/* Multiplier */}
+            <div>
+              <label className={S.fieldLabel}>Price Multiplier</label>
+              <input
                 type="number"
                 step="0.01"
                 value={multiplier}
                 onChange={(e) => setMultiplier(e.target.value)}
-                placeholder="1.10"
-                className="h-12 border-slate-200 focus:border-emerald-500"
+                placeholder="e.g. 1.10"
+                className={S.input}
                 aria-label="Price multiplier"
               />
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <p className="text-xs text-amber-800">
-                  <strong>Example:</strong> 1.1 increases prices by 10%, 0.9 reduces by 10%
-                </p>
+              <div className={S.infoBox}>
+                <strong className="text-[#FE9900]">Example:</strong> 1.1 increases prices by 10% · 0.9 reduces by 10%
               </div>
             </div>
 
-            {/* Preview Changes */}
+            {/* Changes preview */}
             {hasChanges && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <Card className="p-4 bg-gradient-to-br from-emerald-50 to-slate-50 border-emerald-200">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-2">
-                    Changes to Apply:
-                  </h3>
-                  <ul className="space-y-1 text-sm text-slate-600">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+                <div className={S.changesCard}>
+                  <p className={S.changesTitle}>Changes to Apply</p>
+                  <ul className="space-y-2">
                     {currency && (
-                      <li className="flex items-center gap-2">
-                        <HiCheck className="h-4 w-4 text-emerald-600" />
+                      <li className={S.changeItem}>
+                        <HiCheck className="h-4 w-4 text-[#00A63D] flex-shrink-0" />
                         Currency → {currency}
                       </li>
                     )}
                     {setActive !== null && (
-                      <li className="flex items-center gap-2">
-                        <HiCheck className="h-4 w-4 text-emerald-600" />
+                      <li className={S.changeItem}>
+                        <HiCheck className="h-4 w-4 text-[#00A63D] flex-shrink-0" />
                         Status → {setActive ? "Active" : "Inactive"}
                       </li>
                     )}
                     {multiplier && (
-                      <li className="flex items-center gap-2">
-                        <HiCheck className="h-4 w-4 text-emerald-600" />
-                        Price multiplier: {`x`}{multiplier}
+                      <li className={S.changeItem}>
+                        <HiCheck className="h-4 w-4 text-[#00A63D] flex-shrink-0" />
+                        Price multiplier: ×{multiplier}
                       </li>
                     )}
                   </ul>
-                </Card>
+                </div>
               </motion.div>
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="border-t pb-8 bg-white">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                disabled={submitting}
-                className="flex-1 h-12 hover:bg-slate-50"
-              >
-                <HiX className="mr-2 h-4 w-4" />
+          {/* Footer */}
+          <div className={S.footer}>
+            <div className={S.footerInner}>
+              <button onClick={onClose} disabled={submitting} className={S.btnCancel}>
+                <HiX className="h-4 w-4" />
                 Cancel
-              </Button>
+              </button>
 
-              <motion.div
+              <motion.button
                 whileHover={{ scale: submitting || !hasChanges ? 1 : 1.02 }}
-                whileTap={{ scale: submitting || !hasChanges ? 1 : 0.98 }}
-                className="flex-1"
+                whileTap={{ scale: submitting || !hasChanges ? 1 : 0.97 }}
+                onClick={handleSubmit}
+                disabled={submitting || !hasChanges}
+                className={S.btnApply}
               >
-                <Button
-                  onClick={handleSubmit}
-                  disabled={submitting || !hasChanges}
-                  className="w-full h-12 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600"
-                >
-                  {submitting ? (
-                    <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"
-                      />
-                      Applying...
-                    </>
-                  ) : (
-                    <>
-                      <HiCheck className="mr-2 h-4 w-4" />
-                      Apply Changes
-                    </>
-                  )}
-                </Button>
-              </motion.div>
+                {submitting ? (
+                  <>
+                    <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    Applying...
+                  </>
+                ) : (
+                  <>
+                    <HiCheck className="h-4 w-4" />
+                    Apply Changes
+                  </>
+                )}
+              </motion.button>
             </div>
           </div>
         </div>

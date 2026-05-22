@@ -1,24 +1,35 @@
-// src/components/enums/GroupsListSkeleton.tsx
+// src/components/enums/skeletons/GroupsListSkeleton.tsx
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
-import React, { JSX } from "react";
+import { JSX } from "react";
+
+// ── Neu style tokens ──────────────────────────────────────────
+const S = {
+  wrap: "space-y-2",
+  searchSkel:
+    "h-10 w-full rounded-xl bg-[#d0cecd] animate-pulse mb-4",
+  cardSkel:
+    "flex items-center gap-3 p-3.5 rounded-xl bg-[#E7E5E4] " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] border border-white/60",
+  iconSkel: "flex-none w-9 h-9 rounded-xl bg-[#d0cecd] animate-pulse",
+  line1: "h-3.5 rounded-lg bg-[#d0cecd] animate-pulse",
+  line2: "h-3 rounded-lg bg-[#d0cecd] animate-pulse mt-1.5",
+};
 
 export default function GroupsListSkeleton(): JSX.Element {
   return (
-    <div className="space-y-2 animate-pulse">
-      <div className="h-9"><Skeleton className="h-9 w-full rounded" /></div>
-      <div className="space-y-2">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 p-2 rounded hover:bg-muted">
-            <Skeleton className="h-8 w-10 rounded" />
-            <div className="flex-1">
-              <Skeleton className="h-4 w-3/4 rounded mb-1" />
-              <Skeleton className="h-3 w-1/2 rounded" />
-            </div>
+    <div className={S.wrap}>
+      <div className={S.searchSkel} />
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className={S.cardSkel}>
+          <div className={S.iconSkel} />
+          <div className="flex-1 min-w-0">
+            <div className={`${S.line1} w-3/4`} />
+            <div className={`${S.line2} w-1/2`} />
           </div>
-        ))}
-      </div>
+          <div className="w-6 h-4 rounded-lg bg-[#d0cecd] animate-pulse" />
+        </div>
+      ))}
     </div>
   );
 }

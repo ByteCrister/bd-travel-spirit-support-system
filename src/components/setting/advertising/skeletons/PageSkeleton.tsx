@@ -1,128 +1,112 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card } from "@/components/ui/card";
 
-const PageSkeleton: React.FC = () => {
-  return (
-    <div className="space-y-6">
-      {/* Header skeleton */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex items-center justify-between"
-      >
-        <Skeleton className="h-8 w-64" />
-      </motion.div>
+// ── Neumorphism style constants ───────────────────────────────
+const S = {
+  page: "min-h-screen bg-[#E7E5E4] p-4 lg:p-6 xl:p-8 space-y-6",
+  skeleton: "rounded-lg bg-[#d0cecd] animate-pulse",
 
-      {/* Toolbar skeleton */}
-      <Card className="bg-gradient-to-r from-emerald-50 to-emerald-10 p-4">
+  card:
+    "rounded-2xl bg-[#E7E5E4] p-5 " +
+    "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60",
+
+  tableWrap:
+    "rounded-2xl bg-[#E7E5E4] overflow-hidden " +
+    "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60",
+
+  theadRow:
+    "flex items-center gap-4 px-4 py-3 border-b border-[#1E2938]/10",
+  tRow: "flex items-center gap-4 px-4 py-4 border-b border-[#1E2938]/8 last:border-0",
+};
+
+const Skel = ({ className }: { className: string }) => (
+  <div className={`${S.skeleton} ${className}`} />
+);
+
+const PageSkeleton: React.FC = () => (
+  <div className={S.page}>
+    {/* Header skeleton */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex items-center justify-between"
+    >
+      <div className="flex items-center gap-3">
+        <Skel className="h-12 w-12 rounded-xl" />
+        <div className="space-y-2">
+          <Skel className="h-6 w-48" />
+          <Skel className="h-3.5 w-72" />
+        </div>
+      </div>
+      <Skel className="hidden md:block h-14 w-44 rounded-2xl" />
+    </motion.div>
+
+    {/* Toolbar skeleton */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.1 }}
+      className={S.card}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Skel className="h-10 w-28 rounded-xl" />
+          <Skel className="h-10 w-28 rounded-xl" />
+          <Skel className="h-10 w-24 rounded-xl" />
+        </div>
+        <Skel className="h-9 w-9 rounded-xl" />
+      </div>
+    </motion.div>
+
+    {/* Table skeleton */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.2 }}
+      className={S.tableWrap}
+    >
+      {/* thead */}
+      <div className={S.theadRow}>
+        <Skel className="h-4 w-4 rounded" />
+        <Skel className="h-3 w-20" />
+        <Skel className="h-3 w-14" />
+        <Skel className="h-3 w-16" />
+        <Skel className="h-3 w-14" />
+        <Skel className="h-3 w-18 ml-auto" />
+        <Skel className="h-3 w-16" />
+      </div>
+
+      {/* tbody rows */}
+      {Array.from({ length: 5 }).map((_, i) => (
         <motion.div
+          key={i}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+          transition={{ delay: 0.25 + i * 0.07 }}
+          className={S.tRow}
         >
+          <Skel className="h-4 w-4 rounded flex-shrink-0" />
           <div className="flex items-center gap-2">
-            <Skeleton className="h-10 w-32" />
-            <Skeleton className="h-10 w-32" />
-            <Skeleton className="h-10 w-28" />
+            <Skel className="h-8 w-8 rounded-xl flex-shrink-0" />
+            <div className="space-y-1.5">
+              <Skel className="h-3.5 w-28" />
+              <Skel className="h-2.5 w-20" />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <Skeleton className="h-10 w-24" />
+          <div className="ml-auto flex items-center gap-6">
+            <Skel className="h-3.5 w-16" />
+            <Skel className="h-3.5 w-12" />
+            <Skel className="h-5 w-16 rounded-lg" />
+            <Skel className="h-3.5 w-20" />
+            <div className="flex gap-1">
+              <Skel className="h-8 w-8 rounded-xl" />
+              <Skel className="h-8 w-8 rounded-xl" />
+            </div>
           </div>
         </motion.div>
-      </Card>
-
-      {/* Notes skeleton */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Card className="p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3 flex-1">
-              <Skeleton className="h-10 w-10 rounded-lg" />
-              <div className="space-y-2 flex-1">
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-4 w-64" />
-              </div>
-            </div>
-            <Skeleton className="h-9 w-20" />
-          </div>
-        </Card>
-      </motion.div>
-
-      {/* Table skeleton */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Card className="overflow-hidden">
-          <div className="p-4 bg-gradient-to-r from-slate-50 to-slate-100">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-5 w-5 rounded" />
-              <Skeleton className="h-5 w-24" />
-              <Skeleton className="h-5 w-20 ml-auto" />
-              <Skeleton className="h-5 w-24" />
-              <Skeleton className="h-5 w-20" />
-              <Skeleton className="h-5 w-24" />
-              <Skeleton className="h-5 w-20" />
-            </div>
-          </div>
-          
-          <div className="divide-y divide-slate-100">
-            {[...Array(5)].map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 + i * 0.1 }}
-                className="p-4"
-              >
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-5 w-5 rounded" />
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-8 w-8 rounded-lg" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  </div>
-                  <div className="ml-auto flex items-center gap-8">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                    <Skeleton className="h-4 w-24" />
-                    <div className="flex gap-1">
-                      <Skeleton className="h-8 w-8 rounded" />
-                      <Skeleton className="h-8 w-8 rounded" />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </Card>
-      </motion.div>
-
-      {/* Pulsing animation overlay */}
-      <motion.div
-        animate={{
-          opacity: [0.5, 0.8, 0.5],
-        }}
-        transition={{
-          duration: 1.5,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="fixed inset-0 pointer-events-none bg-gradient-to-b from-transparent to-emerald-50/10"
-      />
-    </div>
-  );
-};
+      ))}
+    </motion.div>
+  </div>
+);
 
 export default PageSkeleton;

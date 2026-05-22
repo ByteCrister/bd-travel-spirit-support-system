@@ -5,11 +5,63 @@ import { JSX, useCallback } from "react";
 import { Edit, Trash2, Hash, Tag, Database } from "lucide-react";
 import { EnumValue } from "@/types/site-settings/enum-settings.types";
 import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
+
+// ── Neu style tokens ──────────────────────────────────────────
+const S = {
+  tableWrap:
+    "rounded-2xl bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff] " +
+    "border border-white/60 overflow-hidden",
+  table: "w-full text-sm",
+  thead: "border-b border-[#1E2938]/10",
+  th:
+    "px-4 py-3 text-left text-xs font-bold uppercase tracking-widest " +
+    "font-[family-name:var(--font-space-mono)] text-[#1E2938]/50",
+  thLast: "px-4 py-3 text-right text-xs font-bold uppercase tracking-widest " +
+    "font-[family-name:var(--font-space-mono)] text-[#1E2938]/50",
+  thInner: "flex items-center gap-2",
+  thIcon:
+    "p-1 rounded-lg bg-[#E7E5E4] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+  tr: "group border-b border-[#1E2938]/6 last:border-none transition-colors duration-150 hover:bg-[#1E2938]/[0.02]",
+  td: "px-4 py-3 align-middle",
+  tdLast: "px-4 py-3 align-middle",
+  keyCell: "flex items-center gap-2",
+  keyAccent:
+    "w-0.5 h-6 rounded-full bg-[#006666] opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+  keyText:
+    "text-xs font-bold font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]",
+  labelText:
+    "text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/70",
+  noLabel:
+    "text-xs italic font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/30",
+  valuePill:
+    "inline-block px-2.5 py-0.5 rounded-lg text-xs font-bold " +
+    "font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/70 " +
+    "bg-[#E7E5E4] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+  actions:
+    "flex gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+  editBtn:
+    "w-7 h-7 flex items-center justify-center rounded-xl bg-[#E7E5E4] text-[#1E2938]/50 " +
+    "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] " +
+    "hover:text-[#006666] hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40",
+  deleteBtn:
+    "w-7 h-7 flex items-center justify-center rounded-xl bg-[#E7E5E4] text-[#1E2938]/50 " +
+    "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] " +
+    "hover:text-[#FF2157] hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF2157]/40",
+  // Empty state
+  emptyWrap:
+    "flex flex-col items-center justify-center py-14 px-4",
+  emptyIcon:
+    "mb-4 p-4 rounded-2xl bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff]",
+  emptyTitle:
+    "text-sm font-bold font-[family-name:var(--font-space-mono)] text-[#1E2938] mb-1",
+  emptyMsg:
+    "text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50",
+};
 
 interface Props {
   _id: string;
@@ -18,11 +70,7 @@ interface Props {
 }
 
 export default function ValuesTable({ _id, values, onEdit }: Props): JSX.Element {
-  const {
-    removeValue,
-    setValueActive,
-    groups
-  } = useEnumSettingsStore();
+  const { removeValue, setValueActive, groups } = useEnumSettingsStore();
   const groupState = groups[_id];
   const optimistic = groupState?.optimistic ?? {};
 
@@ -31,153 +79,127 @@ export default function ValuesTable({ _id, values, onEdit }: Props): JSX.Element
       try {
         await removeValue(_id, key);
       } catch {
-        // removeValue will show toast or handle errors
+        // removeValue handles errors
       }
     },
     [removeValue, _id]
   );
 
   return (
-    <div className="rounded-2xl border border-slate-200/60 overflow-hidden bg-white shadow-lg">
-      {/* Table container with gradient border effect */}
-      <div className="relative">
-        {/* Subtle gradient overlay */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
-
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gradient-to-r from-slate-50 to-slate-100/50 hover:bg-slate-50 border-b border-slate-200/60">
-              <TableHead className="font-semibold text-slate-700">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 bg-blue-100 rounded-md">
-                    <Hash size={12} className="text-blue-600" />
+    <div className={S.tableWrap}>
+      {values.length === 0 ? (
+        <div className={S.emptyWrap}>
+          <div className={S.emptyIcon}>
+            <Database className="w-8 h-8 text-[#1E2938]/30" strokeWidth={1.5} />
+          </div>
+          <p className={S.emptyTitle}>No values yet</p>
+          <p className={S.emptyMsg}>Add your first enum value to get started</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className={S.table}>
+            <thead className={S.thead}>
+              <tr>
+                <th className={S.th}>
+                  <div className={S.thInner}>
+                    <span className={S.thIcon}>
+                      <Hash size={10} className="text-[#006666]" />
+                    </span>
+                    Key
                   </div>
-                  Key
-                </div>
-              </TableHead>
-              <TableHead className="font-semibold text-slate-700">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 bg-purple-100 rounded-md">
-                    <Tag size={12} className="text-purple-600" />
+                </th>
+                <th className={S.th}>
+                  <div className={S.thInner}>
+                    <span className={S.thIcon}>
+                      <Tag size={10} className="text-[#006666]" />
+                    </span>
+                    Label
                   </div>
-                  Label
-                </div>
-              </TableHead>
-              <TableHead className="font-semibold text-slate-700">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 bg-green-100 rounded-md">
-                    <Database size={12} className="text-green-600" />
+                </th>
+                <th className={S.th}>
+                  <div className={S.thInner}>
+                    <span className={S.thIcon}>
+                      <Database size={10} className="text-[#006666]" />
+                    </span>
+                    Value
                   </div>
-                  Value
-                </div>
-              </TableHead>
-              <TableHead className="font-semibold text-slate-700">Active</TableHead>
-              <TableHead className="font-semibold text-slate-700 text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <AnimatePresence mode="popLayout">
-              {values.map((v, idx) => {
-                const pending = Object.keys(optimistic).length > 0;
-                return (
-                  <motion.tr
-                    key={v.key}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{
-                      delay: idx * 0.03,
-                      duration: 0.3,
-                      ease: [0.23, 1, 0.32, 1]
-                    }}
-                    className="group border-b border-slate-100 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-transparent transition-all duration-200"
-                  >
-                    <TableCell className="font-mono text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <span className="text-slate-700 font-medium">{v.key}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-slate-600">
-                        {v.label ?? <span className="text-slate-400 italic">No label</span>}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
-                        {String(v.value)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
+                </th>
+                <th className={S.th}>Active</th>
+                <th className={S.thLast}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence mode="popLayout">
+                {values.map((v, idx) => {
+                  const pending = Object.keys(optimistic).length > 0;
+                  return (
+                    <motion.tr
+                      key={v.key}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -16 }}
+                      transition={{ delay: idx * 0.025, duration: 0.25 }}
+                      className={S.tr}
+                    >
+                      <td className={S.td}>
+                        <div className={S.keyCell}>
+                          <span className={S.keyAccent} />
+                          <span className={S.keyText}>{v.key}</span>
+                        </div>
+                      </td>
+                      <td className={S.td}>
+                        {v.label ? (
+                          <span className={S.labelText}>{v.label}</span>
+                        ) : (
+                          <span className={S.noLabel}>No label</span>
+                        )}
+                      </td>
+                      <td className={S.td}>
+                        <span className={S.valuePill}>{String(v.value)}</span>
+                      </td>
+                      <td className={S.td}>
                         <Switch
                           checked={!!v.active}
-                          onCheckedChange={async(val) => await setValueActive(_id, v.key, !!val)}
+                          onCheckedChange={async (val) =>
+                            await setValueActive(_id, v.key, !!val)
+                          }
                           disabled={pending}
                           aria-label={`Set ${v.key} active`}
-                          className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-green-500 data-[state=checked]:to-green-600"
                         />
-                      </motion.div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                      </td>
+                      <td className={S.tdLast}>
+                        <div className={S.actions}>
+                          <button
                             onClick={() => onEdit(v)}
                             aria-label={`Edit ${v.key}`}
-                            className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600 rounded-lg transition-colors"
+                            className={S.editBtn}
                           >
-                            <Edit size={14} />
-                          </Button>
-                        </motion.div>
-                        <ConfirmDeleteDialog
-                          title={`Delete value "${v.key}"`}
-                          description={`Permanently remove "${v.key}" from ${groupState.data?.name}. This cannot be undone.`}
-                          confirmLabel="Delete value"
-                          cancelLabel="Cancel"
-                          onConfirm={() => handleRemove(v.key)}
-                        >
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            aria-label={`Delete ${v.key}`}
-                            className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 rounded-lg transition-colors"
+                            <Edit size={13} />
+                          </button>
+                          <ConfirmDeleteDialog
+                            title={`Delete value "${v.key}"`}
+                            description={`Permanently remove "${v.key}" from ${groupState?.data?.name}. This cannot be undone.`}
+                            confirmLabel="Delete value"
+                            cancelLabel="Cancel"
+                            onConfirm={() => handleRemove(v.key)}
                           >
-                            <Trash2 size={14} />
-                          </Button>
-                        </ConfirmDeleteDialog>
-                      </div>
-                    </TableCell>
-                  </motion.tr>
-                );
-              })}
-            </AnimatePresence>
-          </TableBody>
-        </Table>
-
-        {/* Empty state */}
-        {values.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-16 px-4"
-          >
-            <div className="relative mb-4">
-              <div className="absolute inset-0 bg-slate-200/50 blur-xl rounded-full" />
-              <div className="relative p-4 bg-slate-100 rounded-2xl">
-                <Database className="w-10 h-10 text-slate-400" strokeWidth={1.5} />
-              </div>
-            </div>
-            <p className="text-sm font-medium text-slate-600 mb-1">No values yet</p>
-            <p className="text-xs text-slate-500">Add your first enum value to get started</p>
-          </motion.div>
-        )}
-      </div>
+                            <button
+                              aria-label={`Delete ${v.key}`}
+                              className={S.deleteBtn}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </ConfirmDeleteDialog>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

@@ -15,8 +15,33 @@ import useAdvertisingSettingsStore from "@/store/site-settings/advertisingSettin
 import { CreateAdvertisingPricePayload } from "@/types/advertising/advertising-settings.types";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 
+// ── Neumorphism style constants ───────────────────────────────
+const S = {
+    page: "min-h-screen bg-[#E7E5E4] p-4 lg:p-6 xl:p-8",
+    inner: "max-w-7xl mx-auto space-y-6",
+    header: "flex items-center justify-between",
+    iconWell:
+        "h-12 w-12 rounded-xl bg-[#006666] flex items-center justify-center " +
+        "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080]",
+    heading:
+        "text-2xl lg:text-3xl font-bold font-[family-name:var(--font-space-mono)] text-[#1E2938] tracking-tight",
+    subtext:
+        "text-sm font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50 mt-1",
+    statsCard:
+        "hidden md:flex items-center gap-4 rounded-2xl bg-[#E7E5E4] px-5 py-3 " +
+        "shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff] border border-white/60",
+    statValue:
+        "text-2xl font-bold font-[family-name:var(--font-space-mono)]",
+    statLabel:
+        "text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50 mt-0.5",
+    divider: "h-8 w-px bg-[#1E2938]/10",
+    toolbarWrap:
+        "rounded-2xl bg-[#E7E5E4] p-5 " +
+        "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60",
+};
+
 const breadcrumbItems = [
-    { label: "Home", href: '/' },
+    { label: "Home", href: "/" },
     { label: "Advertising", href: "/setting/advertising" },
 ];
 
@@ -29,7 +54,7 @@ const AdvertisingSettingsPage: React.FC = () => {
         deletePrice,
         toggleSelect,
         clearSelection,
-        lastError
+        lastError,
     } = useAdvertisingSettingsStore();
 
     const [createEditOpen, setCreateEditOpen] = useState(false);
@@ -38,7 +63,6 @@ const AdvertisingSettingsPage: React.FC = () => {
     const [confirmOpen, setConfirmOpen] = useState(false);
 
     const selectedCount = selectedIds.size;
-
     const selectedRows = useMemo(
         () => rows.filter((r) => selectedIds.has(r.id)),
         [rows, selectedIds]
@@ -49,33 +73,27 @@ const AdvertisingSettingsPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    if (loading && !rows.length) {
-        return <PageSkeleton />;
-    }
-
-    if (lastError && !rows.length) {
+    if (loading && !rows.length) return <PageSkeleton />;
+    if (lastError && !rows.length)
         return <ErrorState onRetry={() => fetchConfig().catch(() => { })} />;
-    }
 
     return (
-        <div className="min-h-screen p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50">
+        <div className={S.page}>
             <Breadcrumbs items={breadcrumbItems} />
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className={S.inner}>
                 {/* Header */}
                 <motion.header
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-between"
+                    className={S.header}
                 >
                     <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                        <div className={S.iconWell}>
                             <HiSparkles className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                                Advertising Settings
-                            </h1>
-                            <p className="text-sm text-slate-600 mt-1">
+                            <h1 className={S.heading}>Advertising Settings</h1>
+                            <p className={S.subtext}>
                                 Manage pricing and placements for your advertising platform
                             </p>
                         </div>
@@ -85,18 +103,25 @@ const AdvertisingSettingsPage: React.FC = () => {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="hidden md:flex items-center gap-4 bg-white rounded-lg px-4 py-2 shadow-sm border border-slate-200"
+                            className={S.statsCard}
                         >
                             <div className="text-center">
-                                <div className="text-2xl font-bold text-emerald-600">{rows.length}</div>
-                                <div className="text-xs text-slate-500">Total</div>
+                                <div className={`${S.statValue} text-[#006666]`}>{rows.length}</div>
+                                <div className={S.statLabel}>Total</div>
                             </div>
-                            <div className="h-8 w-px bg-slate-200" />
+                            <div className={S.divider} />
                             <div className="text-center">
-                                <div className="text-2xl font-bold text-blue-600">
-                                    {rows.filter(r => r.active).length}
+                                <div className={`${S.statValue} text-[#00A63D]`}>
+                                    {rows.filter((r) => r.active).length}
                                 </div>
-                                <div className="text-xs text-slate-500">Active</div>
+                                <div className={S.statLabel}>Active</div>
+                            </div>
+                            <div className={S.divider} />
+                            <div className="text-center">
+                                <div className={`${S.statValue} text-[#1E2938]/40`}>
+                                    {rows.filter((r) => !r.active).length}
+                                </div>
+                                <div className={S.statLabel}>Inactive</div>
                             </div>
                         </motion.div>
                     )}
@@ -107,14 +132,11 @@ const AdvertisingSettingsPage: React.FC = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="bg-white rounded-xl p-5 shadow-sm border border-slate-200"
+                    className={S.toolbarWrap}
                 >
                     <AdsToolbar
                         selectedCount={selectedCount}
-                        onNew={() => {
-                            setEditing(undefined);
-                            setCreateEditOpen(true);
-                        }}
+                        onNew={() => { setEditing(undefined); setCreateEditOpen(true); }}
                         onBulkEdit={() => setBulkOpen(true)}
                         onDelete={() => setConfirmOpen(true)}
                         onRefresh={() => fetchConfig().catch(() => { })}
@@ -125,7 +147,7 @@ const AdvertisingSettingsPage: React.FC = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
+                    transition={{ delay: 0.2 }}
                 >
                     {rows.length === 0 ? (
                         <EmptyState onCreate={() => setCreateEditOpen(true)} />
@@ -135,19 +157,10 @@ const AdvertisingSettingsPage: React.FC = () => {
                             loading={loading}
                             selectedIds={selectedIds}
                             onToggleSelect={(id) => toggleSelect(id)}
-                            onEdit={(row) => {
-                                setEditing({ id: row.id });
-                                setCreateEditOpen(true);
-                            }}
-                            onDelete={(id) => {
-                                setConfirmOpen(true);
-                                setEditing({ id });
-                            }}
+                            onEdit={(row) => { setEditing({ id: row.id }); setCreateEditOpen(true); }}
+                            onDelete={(id) => { setConfirmOpen(true); setEditing({ id }); }}
                             onToggleActive={(id) =>
-                                useAdvertisingSettingsStore
-                                    .getState()
-                                    .toggleActive(id)
-                                    .catch(() => { })
+                                useAdvertisingSettingsStore.getState().toggleActive(id).catch(() => { })
                             }
                         />
                     )}
@@ -156,13 +169,8 @@ const AdvertisingSettingsPage: React.FC = () => {
                 {/* Modals */}
                 <PriceFormModal
                     open={createEditOpen}
-                    onClose={() => {
-                        setCreateEditOpen(false);
-                        setEditing(undefined);
-                    }}
-                    initial={
-                        editing ? rows.find((r) => r.id === editing.id) : undefined
-                    }
+                    onClose={() => { setCreateEditOpen(false); setEditing(undefined); }}
+                    initial={editing ? rows.find((r) => r.id === editing.id) : undefined}
                     mode={editing ? "edit" : "create"}
                     onSubmit={async (payload) => {
                         if ("id" in payload && payload.id) {
@@ -180,13 +188,7 @@ const AdvertisingSettingsPage: React.FC = () => {
                     onClose={() => setBulkOpen(false)}
                     selectedRows={selectedRows}
                     onSubmit={(payload) =>
-                        useAdvertisingSettingsStore
-                            .getState()
-                            .bulkUpdate(payload)
-                            .then(() => { })
-                            .catch((err) => {
-                                throw err;
-                            })
+                        useAdvertisingSettingsStore.getState().bulkUpdate(payload).then(() => { }).catch((err) => { throw err; })
                     }
                 />
 
@@ -207,10 +209,7 @@ const AdvertisingSettingsPage: React.FC = () => {
                         try {
                             if (selectedCount > 0) {
                                 const ids = Array.from(selectedIds);
-                                await useAdvertisingSettingsStore.getState().bulkUpdate({
-                                    updates: [],
-                                    removeIds: ids,
-                                });
+                                await useAdvertisingSettingsStore.getState().bulkUpdate({ updates: [], removeIds: ids });
                                 clearSelection();
                             } else if (editing) {
                                 await deletePrice(editing.id);

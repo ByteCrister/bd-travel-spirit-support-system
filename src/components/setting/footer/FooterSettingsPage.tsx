@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, MapPin, Users } from "lucide-react";
 import { useFooterStore } from "@/store/site-settings/footerSettings.store";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FooterSettingsHeader } from "./FooterSettingsHeader";
 import { SocialLinksPanel } from "./SocialLinksPanel";
@@ -14,18 +13,37 @@ import { SocialLinksSkeleton } from "./skeletons/SocialLinksSkeleton";
 import { LocationsSkeleton } from "./skeletons/LocationsSkeleton";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 
+// ── Neumorphism style tokens ──────────────────────────────────
+const PAGE_BG = "min-h-screen bg-[#E7E5E4] p-4 lg:p-6 xl:p-8";
+
+const ERROR_ALERT =
+    "flex items-start gap-3 rounded-xl border border-[#FF2157]/30 bg-[#FF2157]/10 px-4 py-3 " +
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#FF2157] " +
+    "shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]";
+
+const TAB_LIST =
+    "inline-flex h-auto w-full justify-start rounded-xl p-1 bg-[#E7E5E4] " +
+    "shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff]";
+
+const TAB_TRIGGER_BASE =
+    "flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm transition-all duration-200 " +
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938]/60 " +
+    "data-[state=inactive]:hover:text-[#006666]";
+
+const TAB_TRIGGER_ACTIVE =
+    "data-[state=active]:bg-[#006666] data-[state=active]:text-white " +
+    "data-[state=active]:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080]";
+
+// ─────────────────────────────────────────────────────────────
+
 const breadcrumbItems = [
-    { label: "Home", href: '/' },
+    { label: "Home", href: "/" },
     { label: "Footer", href: "/setting/footer" },
 ];
 
 export default function FooterSettingsPage() {
-    const {
-        fetchStatus,
-        entities,
-        lastError,
-        fetchFooterSettings
-    } = useFooterStore();
+    const { fetchStatus, entities, lastError, fetchFooterSettings } =
+        useFooterStore();
 
     useEffect(() => {
         fetchFooterSettings();
@@ -36,12 +54,13 @@ export default function FooterSettingsPage() {
     const error = fetchStatus === "error";
 
     return (
-        <div className="min-h-screen p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/20">
+        <div className={PAGE_BG}>
             <Breadcrumbs items={breadcrumbItems} />
+
             <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
                 className="mx-auto max-w-7xl space-y-6"
             >
                 {/* Header */}
@@ -50,42 +69,35 @@ export default function FooterSettingsPage() {
                 {/* Error Alert */}
                 {error && (
                     <motion.div
-                        initial={{ opacity: 0, y: -10 }}
+                        initial={{ opacity: 0, y: -8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
                     >
-                        <Alert variant="destructive" className="border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-950/20">
-                            <AlertCircle className="h-5 w-5" />
-                            <AlertDescription className="ml-2 font-medium">
-                                {lastError ?? "Failed to load footer settings."}
-                            </AlertDescription>
-                        </Alert>
+                        <div className={ERROR_ALERT} role="alert">
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <span>{lastError ?? "Failed to load footer settings."}</span>
+                        </div>
                     </motion.div>
                 )}
 
-                {/* Main Content */}
+                {/* Main Content — Tabs */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2, duration: 0.5 }}
+                    transition={{ delay: 0.15, duration: 0.45 }}
                 >
                     <Tabs defaultValue="social" className="w-full">
-                        <TabsList className="inline-flex h-12 w-full justify-start rounded-xl border border-slate-200 bg-white/80 p-1 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80">
+                        <TabsList className={TAB_LIST}>
                             <TabsTrigger
                                 value="social"
-                                className="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold transition-all
-               data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600
-               data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                                className={`${TAB_TRIGGER_BASE} ${TAB_TRIGGER_ACTIVE}`}
                             >
                                 <Users className="h-4 w-4" />
                                 Social Links
                             </TabsTrigger>
-
                             <TabsTrigger
                                 value="locations"
-                                className="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold transition-all
-               data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600
-               data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                                className={`${TAB_TRIGGER_BASE} ${TAB_TRIGGER_ACTIVE}`}
                             >
                                 <MapPin className="h-4 w-4" />
                                 Locations
@@ -100,7 +112,6 @@ export default function FooterSettingsPage() {
                             {loading ? <LocationsSkeleton /> : <LocationsPanel entities={entities} />}
                         </TabsContent>
                     </Tabs>
-
                 </motion.div>
             </motion.div>
         </div>

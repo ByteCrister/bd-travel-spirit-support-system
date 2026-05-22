@@ -1,3 +1,4 @@
+// components/PaymentAccounts/PaymentAccountTable.tsx
 "use client";
 
 import { PaymentAccount } from "@/types/site-settings/stripe-payment-account.type";
@@ -9,16 +10,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { 
-  Edit, 
-  Trash2, 
-  CreditCard, 
-  Shield, 
+import {
+  Edit,
+  Trash2,
+  CreditCard,
+  Shield,
   Calendar,
-  AlertTriangle
+  AlertTriangle,
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
@@ -33,52 +31,115 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 import { usePaymentAccountStore } from "@/store/site-settings/strip-payment-account.store";
-import { jakarta } from "@/styles/fonts";
+
+// ── Neumorphism style tokens ──────────────────────────────────
+const TABLE_CARD =
+  "rounded-2xl bg-[#E7E5E4] border border-white/60 overflow-hidden " +
+  "shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff]";
+
+const TABLE_HEAD_ROW = "border-b border-[#1E2938]/08 hover:bg-transparent";
+
+const TH =
+  "font-[family-name:var(--font-space-mono)] text-xs font-bold uppercase tracking-widest text-[#1E2938]/55 py-3.5";
+
+const TABLE_BODY_ROW =
+  "border-b border-[#1E2938]/06 hover:bg-white/30 transition-colors duration-150";
+
+const CARD_KEY =
+  "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] text-sm";
+
+const CARD_EXPIRY =
+  "flex items-center gap-1.5 text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/45 mt-0.5";
+
+const LABEL_TEXT =
+  "font-[family-name:var(--font-jetbrains-mono)] font-medium text-[#1E2938] text-sm";
+
+const LABEL_EMPTY =
+  "font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/30 text-sm";
+
+const PURPOSE_TEXT =
+  "font-[family-name:var(--font-jetbrains-mono)] font-medium text-[#1E2938]/70 text-sm capitalize";
+
+const BTN_ICON =
+  "rounded-xl w-9 h-9 flex items-center justify-center bg-[#E7E5E4] text-[#1E2938]/50 " +
+  "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] border-none " +
+  "hover:text-[#006666] hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+  "transition-all duration-200";
+
+const BTN_ICON_DELETE =
+  "rounded-xl w-9 h-9 flex items-center justify-center bg-[#E7E5E4] text-[#1E2938]/50 " +
+  "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] border-none " +
+  "hover:text-[#FF2157] hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+  "transition-all duration-200";
+
+// Brand badge colors
+const BRAND_COLORS: Record<string, string> = {
+  visa: "bg-blue-500/10 text-blue-700 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+  mastercard: "bg-orange-500/10 text-orange-700 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+  amex: "bg-cyan-500/10 text-cyan-700 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+  discover: "bg-amber-500/10 text-amber-700 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+  default: "bg-[#1E2938]/08 text-[#1E2938]/60 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+};
+
+const OWNER_COLORS: Record<string, string> = {
+  personal: "bg-[#00A63D]/10 text-[#00A63D] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+  business: "bg-[#006666]/10 text-[#006666] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+  default: "bg-[#1E2938]/08 text-[#1E2938]/50 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+};
+
+const NEU_BADGE_BASE =
+  "inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold uppercase";
+
+// Alert Dialog styles
+const ALERT_CONTENT =
+  "bg-[#E7E5E4] border border-white/60 rounded-2xl " +
+  "shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff]";
+
+const ALERT_TITLE =
+  "font-[family-name:var(--font-space-mono)] font-bold text-xl text-[#1E2938] text-center";
+
+const ALERT_DESC =
+  "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/55 text-center leading-relaxed";
+
+const ALERT_ICON_WELL =
+  "mx-auto w-16 h-16 mb-4 rounded-2xl flex items-center justify-center " +
+  "bg-[#FF2157]/10 shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff]";
+
+const BTN_ALERT_CANCEL =
+  "w-full sm:w-auto h-11 rounded-xl bg-[#E7E5E4] text-[#1E2938] " +
+  "font-[family-name:var(--font-space-mono)] font-bold text-sm " +
+  "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] border-none " +
+  "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+  "transition-all duration-200";
+
+const BTN_ALERT_DELETE =
+  "w-full sm:w-auto h-11 rounded-xl bg-[#FF2157] text-white " +
+  "font-[family-name:var(--font-space-mono)] font-bold text-sm " +
+  "shadow-[4px_4px_8px_#c8c6c5,-2px_-2px_6px_#ffffff] border-none " +
+  "hover:bg-[#e01f4f] transition-all duration-200";
+// ─────────────────────────────────────────────────────────────
+
+const rowVariants: Variants = {
+  hidden: { opacity: 0, x: -16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    x: 0,
+    transition: { delay: i * 0.05, type: "spring", stiffness: 120, damping: 18 },
+  }),
+  exit: { opacity: 0, x: 16, transition: { duration: 0.2 } },
+};
+
+const getBrandStyle = (brand?: string) =>
+  BRAND_COLORS[brand?.toLowerCase() ?? "default"] ?? BRAND_COLORS.default;
+
+const getOwnerStyle = (ownerType: string) =>
+  OWNER_COLORS[ownerType?.toLowerCase()] ?? OWNER_COLORS.default;
 
 interface Props {
   accounts: PaymentAccount[];
 }
-
-// Animation variants
-const rowVariants: Variants = {
-  hidden: { opacity: 0, x: -20 },
-  visible: (i: number) => ({
-    opacity: 1,
-    x: 0,
-    transition: {
-      delay: i * 0.05,
-      type: "spring",
-      stiffness: 100,
-      damping: 15
-    }
-  }),
-  exit: {
-    opacity: 0,
-    x: 20,
-    transition: { duration: 0.2 }
-  }
-};
-
-const getBrandColor = (brand?: string) => {
-  const colors: Record<string, string> = {
-    visa: "bg-blue-100 text-blue-700 border-blue-200",
-    mastercard: "bg-orange-100 text-orange-700 border-orange-200",
-    amex: "bg-cyan-100 text-cyan-700 border-cyan-200",
-    discover: "bg-amber-100 text-amber-700 border-amber-200",
-    default: "bg-slate-100 text-slate-700 border-slate-200"
-  };
-  return colors[brand?.toLowerCase() || "default"] || colors.default;
-};
-
-const getOwnerTypeColor = (ownerType: string) => {
-  const colors: Record<string, string> = {
-    personal: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    business: "bg-indigo-100 text-indigo-700 border-indigo-200",
-    default: "bg-slate-100 text-slate-700 border-slate-200"
-  };
-  return colors[ownerType?.toLowerCase()] || colors.default;
-};
 
 export function PaymentAccountTable({ accounts }: Props) {
   const { setActive, setBackup, deleteAccount } = usePaymentAccountStore();
@@ -98,37 +159,27 @@ export function PaymentAccountTable({ accounts }: Props) {
 
   return (
     <>
-      <div className={`overflow-hidden ${jakarta.className}`}>
+      <div className={TABLE_CARD}>
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-slate-200 hover:bg-transparent">
-              <TableHead className="font-bold text-slate-900 text-xs uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-slate-500" />
+            <TableRow className={TABLE_HEAD_ROW}>
+              <TableHead className={TH}>
+                <span className="flex items-center gap-2">
+                  <CreditCard size={14} />
                   Card Details
-                </div>
+                </span>
               </TableHead>
-              <TableHead className="font-bold text-slate-900 text-xs uppercase tracking-wider">
-                Label
-              </TableHead>
-              <TableHead className="font-bold text-slate-900 text-xs uppercase tracking-wider">
-                Owner Type
-              </TableHead>
-              <TableHead className="font-bold text-slate-900 text-xs uppercase tracking-wider">
-                Purpose
-              </TableHead>
-              <TableHead className="font-bold text-slate-900 text-xs uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-slate-500" />
+              <TableHead className={TH}>Label</TableHead>
+              <TableHead className={TH}>Owner Type</TableHead>
+              <TableHead className={TH}>Purpose</TableHead>
+              <TableHead className={TH}>
+                <span className="flex items-center gap-2">
+                  <Shield size={14} />
                   Active
-                </div>
+                </span>
               </TableHead>
-              <TableHead className="font-bold text-slate-900 text-xs uppercase tracking-wider">
-                Backup
-              </TableHead>
-              <TableHead className="text-right font-bold text-slate-900 text-xs uppercase tracking-wider">
-                Actions
-              </TableHead>
+              <TableHead className={TH}>Backup</TableHead>
+              <TableHead className={`${TH} text-right`}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -141,113 +192,87 @@ export function PaymentAccountTable({ accounts }: Props) {
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors duration-200"
                   layout
+                  className={TABLE_BODY_ROW}
                 >
+                  {/* Card Details */}
                   <TableCell className="py-4">
                     <div className="flex items-center gap-3">
                       {account.card?.brand && (
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <Badge 
-                            variant="outline" 
-                            className={`${getBrandColor(account.card.brand)} border font-semibold uppercase text-xs px-2.5 py-0.5`}
-                          >
-                            {account.card.brand}
-                          </Badge>
-                        </motion.div>
-                      )}
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-slate-900">
-                          •••• {account.card?.last4}
+                        <span className={`${NEU_BADGE_BASE} ${getBrandStyle(account.card.brand)}`}>
+                          {account.card.brand}
                         </span>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
-                          <Calendar className="h-3 w-3" />
-                          <span>Expires {formatExpiry(
-                            account.card?.expMonth,
-                            account.card?.expYear,
-                          )}</span>
+                      )}
+                      <div>
+                        <p className={CARD_KEY}>•••• {account.card?.last4}</p>
+                        <div className={CARD_EXPIRY}>
+                          <Calendar size={12} />
+                          Expires {formatExpiry(account.card?.expMonth, account.card?.expYear)}
                         </div>
                       </div>
                     </div>
                   </TableCell>
+
+                  {/* Label */}
                   <TableCell className="py-4">
-                    <span className="font-medium text-slate-900">
-                      {account.label || <span className="text-slate-400">—</span>}
-                    </span>
+                    {account.label
+                      ? <span className={LABEL_TEXT}>{account.label}</span>
+                      : <span className={LABEL_EMPTY}>—</span>
+                    }
                   </TableCell>
+
+                  {/* Owner Type */}
                   <TableCell className="py-4">
-                    <Badge 
-                      variant="secondary" 
-                      className={`${getOwnerTypeColor(account.ownerType)} border font-semibold capitalize`}
-                    >
+                    <span className={`${NEU_BADGE_BASE} ${getOwnerStyle(account.ownerType)}`}>
                       {account.ownerType}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <span className="text-slate-700 font-medium capitalize">
-                      {account.purpose}
                     </span>
                   </TableCell>
+
+                  {/* Purpose */}
                   <TableCell className="py-4">
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Switch
-                        checked={account.isActive}
-                        onCheckedChange={(checked) =>
-                          setActive(account.id, checked)
-                        }
-                        className="data-[state=checked]:bg-slate-900"
-                      />
-                    </motion.div>
+                    <span className={PURPOSE_TEXT}>{account.purpose}</span>
                   </TableCell>
+
+                  {/* Active */}
                   <TableCell className="py-4">
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Switch
-                        checked={account.isBackup}
-                        onCheckedChange={(checked) =>
-                          setBackup(account.id, checked)
-                        }
-                        className="data-[state=checked]:bg-slate-900"
-                      />
-                    </motion.div>
+                    <Switch
+                      checked={account.isActive}
+                      onCheckedChange={(checked) => setActive(account.id, checked)}
+                      className="data-[state=checked]:bg-[#006666]"
+                    />
                   </TableCell>
-                  <TableCell className="text-right py-4">
+
+                  {/* Backup */}
+                  <TableCell className="py-4">
+                    <Switch
+                      checked={account.isBackup}
+                      onCheckedChange={(checked) => setBackup(account.id, checked)}
+                      className="data-[state=checked]:bg-[#006666]"
+                    />
+                  </TableCell>
+
+                  {/* Actions */}
+                  <TableCell className="py-4 text-right">
                     <div className="flex justify-end gap-1.5">
                       <EditPaymentAccountDialog account={account}>
-                        <motion.div
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.93 }}
+                          className={BTN_ICON}
+                          aria-label="Edit account"
                         >
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="hover:bg-slate-100 hover:text-slate-900 transition-colors group"
-                          >
-                            <Edit className="h-4 w-4 text-slate-600 group-hover:text-slate-900" />
-                          </Button>
-                        </motion.div>
+                          <Edit size={15} />
+                        </motion.button>
                       </EditPaymentAccountDialog>
-                      <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => setDeleteId(account.id)}
+                        className={BTN_ICON_DELETE}
+                        aria-label="Delete account"
                       >
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteId(account.id)}
-                          className="hover:bg-red-50 hover:text-red-600 transition-colors group"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500 group-hover:text-red-600" />
-                        </Button>
-                      </motion.div>
+                        <Trash2 size={15} />
+                      </motion.button>
                     </div>
                   </TableCell>
                 </motion.tr>
@@ -257,38 +282,35 @@ export function PaymentAccountTable({ accounts }: Props) {
         </Table>
       </div>
 
+      {/* Delete Confirm */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent className={`${jakarta.className} border-slate-200 shadow-xl`}>
+        <AlertDialogContent className={ALERT_CONTENT}>
           <AlertDialogHeader>
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              className="mx-auto w-16 h-16 mb-4 rounded-full bg-red-100 flex items-center justify-center"
+              transition={{ type: "spring", stiffness: 200, damping: 18 }}
+              className={ALERT_ICON_WELL}
             >
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+              <AlertTriangle size={28} className="text-[#FF2157]" />
             </motion.div>
-            <AlertDialogTitle className="text-xl font-bold text-slate-900 text-center">
+            <AlertDialogTitle className={ALERT_TITLE}>
               Delete Payment Account?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-600 text-center leading-relaxed">
-              This action cannot be undone. This will permanently delete the
-              payment account from your records.
+            <AlertDialogDescription className={ALERT_DESC}>
+              This action cannot be undone. The payment account will be permanently deleted from your records.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel className="w-full sm:w-auto border-slate-300 hover:bg-slate-50 font-semibold">
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-2">
+            <AlertDialogCancel className={BTN_ALERT_CANCEL}>
               Cancel
             </AlertDialogCancel>
             <motion.div
               whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileTap={{ scale: 0.97 }}
               className="w-full sm:w-auto"
             >
-              <AlertDialogAction 
-                onClick={handleDelete}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg shadow-red-600/20"
-              >
+              <AlertDialogAction onClick={handleDelete} className={BTN_ALERT_DELETE}>
                 Delete Account
               </AlertDialogAction>
             </motion.div>

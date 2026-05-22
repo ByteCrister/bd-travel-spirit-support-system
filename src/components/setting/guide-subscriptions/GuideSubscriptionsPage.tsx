@@ -1,8 +1,7 @@
 // pages/GuideSubscriptionsPage.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+import  { useEffect, useMemo, useState } from "react";
 import type { SubscriptionTierDTO, SubscriptionTierFormValues } from "@/types/site-settings/guide-subscription-settings.types";
 import useGuideSubscriptionsStore from "@/store/guide/guide-subscription-setting.store";
 import { toSubscriptionTierDTO } from "@/utils/helpers/guide-subscriptions.transform";
@@ -13,28 +12,109 @@ import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { UndoSnackbar } from "./UndoSnackbar";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, RefreshCw, Settings, TrendingUp, Package, AlertCircle, X } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 
+// ── Neumorphism style tokens ──────────────────────────────────
+const PAGE_BG = "min-h-screen bg-[#E7E5E4] p-4 lg:p-6 xl:p-8";
+
+const PAGE_INNER = "max-w-7xl mx-auto space-y-8";
+
+const PAGE_HEADING =
+  "font-[family-name:var(--font-space-mono)] font-bold text-3xl lg:text-4xl text-[#1E2938] tracking-tight";
+
+const PAGE_SUBHEAD =
+  "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50 mt-1";
+
+const ICON_WELL_PRIMARY =
+  "p-3 rounded-xl bg-[#006666]/10 shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]";
+
+const BTN_REFRESH =
+  "gap-2 rounded-xl bg-[#E7E5E4] text-[#1E2938] " +
+  "font-[family-name:var(--font-space-mono)] font-bold text-sm " +
+  "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] border-none px-4 py-2 " +
+  "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+  "disabled:opacity-40 disabled:cursor-not-allowed " +
+  "transition-all duration-200 flex items-center";
+
+const BTN_ADD =
+  "gap-2 rounded-xl bg-[#006666] text-white " +
+  "font-[family-name:var(--font-space-mono)] font-bold text-sm " +
+  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] border-none px-4 py-2 " +
+  "hover:bg-[#007777] hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] " +
+  "active:shadow-[inset_3px_3px_6px_#004d4d] " +
+  "transition-all duration-200 flex items-center";
+
+const STAT_CARD =
+  "rounded-2xl p-5 bg-[#E7E5E4] border border-white/60 " +
+  "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff]";
+
+const STAT_LABEL =
+  "font-[family-name:var(--font-space-mono)] text-xs font-bold uppercase tracking-widest text-[#1E2938]/50";
+
+const STAT_VALUE =
+  "font-[family-name:var(--font-space-mono)] font-bold text-3xl text-[#1E2938] mt-1.5";
+
+const STAT_ICON_PRIMARY =
+  "p-2.5 rounded-xl bg-[#006666]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
+
+const STAT_ICON_SUCCESS =
+  "p-2.5 rounded-xl bg-[#00A63D]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
+
+const STAT_ICON_WARNING =
+  "p-2.5 rounded-xl bg-[#FE9900]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
+
+const ERROR_BANNER =
+  "flex items-center gap-3 px-5 py-4 rounded-2xl " +
+  "bg-[#E7E5E4] border border-[#FF2157]/20 " +
+  "shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff]";
+
+const ERROR_MSG =
+  "flex-1 text-sm font-[family-name:var(--font-jetbrains-mono)] text-[#FF2157]";
+
+const EDITOR_CARD =
+  "rounded-2xl bg-[#E7E5E4] border border-white/60 p-6 " +
+  "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff]";
+
+const EDITOR_TITLE =
+  "font-[family-name:var(--font-space-mono)] font-bold text-lg text-[#1E2938]";
+
+const EDITOR_BODY =
+  "text-sm font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50 mb-4";
+
+const FORM_CARD =
+  "rounded-2xl bg-[#E7E5E4] border border-white/60 overflow-hidden " +
+  "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff]";
+
+const FORM_CARD_HEADER =
+  "px-5 py-3.5 bg-[#006666]";
+
+const FORM_CARD_TITLE =
+  "font-[family-name:var(--font-space-mono)] font-bold text-sm text-white";
+
+const BTN_CREATE =
+  "w-full gap-2 rounded-xl bg-[#006666] text-white " +
+  "font-[family-name:var(--font-space-mono)] font-bold text-sm " +
+  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] border-none px-4 py-2.5 " +
+  "hover:bg-[#007777] transition-all duration-200 flex items-center justify-center";
+
+const BTN_DISMISS =
+  "rounded-lg w-7 h-7 flex items-center justify-center bg-[#E7E5E4] " +
+  "text-[#FF2157] border-none " +
+  "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] " +
+  "hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] " +
+  "transition-all duration-200";
+// ─────────────────────────────────────────────────────────────
+
 const breadcrumbItems = [
-  { label: "Home", href: '/' },
+  { label: "Home", href: "/" },
   { label: "Guide Subscriptions", href: "/setting/guide-subscriptions" },
 ];
 
 export default function GuideSubscriptionsPage() {
   const {
-    list,
-    loading,
-    saving,
-    lastFetchedAt,
-    validations,
-    error,
-    fetchAll,
-    upsertTier,
-    removeTier,
-    setDraft,
-    clearError,
+    list, loading, saving, lastFetchedAt, validations, error,
+    fetchAll, upsertTier, removeTier, setDraft, clearError,
   } = useGuideSubscriptionsStore();
 
   const [editing, setEditing] = useState<SubscriptionTierDTO | null>(null);
@@ -42,13 +122,11 @@ export default function GuideSubscriptionsPage() {
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; tier?: SubscriptionTierDTO }>({ open: false });
   const [undoVisible, setUndoVisible] = useState(false);
 
-  useEffect(() => {
-    fetchAll().catch(() => { });
-  }, [fetchAll]);
+  useEffect(() => { fetchAll().catch(() => { }); }, [fetchAll]);
 
   const stats = useMemo(() => ({
     total: list.length,
-    active: list.filter(t => t.active).length,
+    active: list.filter((t) => t.active).length,
     totalRevenue: list.reduce((sum, t) => sum + (t.active ? t.price : 0), 0),
   }), [list]);
 
@@ -82,99 +160,94 @@ export default function GuideSubscriptionsPage() {
   async function handleToggleActive(id: string, active: boolean) {
     const existing = list.find((t) => t.key === id);
     if (!existing) return;
-    const payload = { ...existing, active };
-    await upsertTier(payload);
+    await upsertTier({ ...existing, active });
   }
 
   return (
-    <div className="min-h-screen p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className={PAGE_BG}>
       <Breadcrumbs items={breadcrumbItems} />
-      <div className="max-w-7xl mx-auto p-6 lg:p-8 space-y-8">
-        {/* Header */}
+      <div className={PAGE_INNER}>
+
+        {/* ── Header ── */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
-                  <Package className="text-white" size={28} />
-                </div>
-                <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
-                    Guide Subscriptions
-                  </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Manage subscription tiers and pricing for your guide products
-                  </p>
-                </div>
+            {/* Title */}
+            <div className="flex items-center gap-4">
+              <span className={ICON_WELL_PRIMARY}>
+                <Package size={26} className="text-[#006666]" />
+              </span>
+              <div>
+                <h1 className={PAGE_HEADING}>Guide Subscriptions</h1>
+                <p className={PAGE_SUBHEAD}>
+                  Manage subscription tiers and pricing for your guide products
+                </p>
               </div>
             </div>
 
+            {/* Actions */}
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
+              <button
                 onClick={() => fetchAll(true)}
-                className="gap-2 hover:bg-gray-100 dark:hover:bg-gray-800"
                 disabled={loading}
+                className={BTN_REFRESH}
               >
-                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                <RefreshCw size={15} className={`mr-2 ${loading ? "animate-spin" : ""}`} />
                 Refresh
-              </Button>
-              <Button
-                onClick={handleAdd}
-                className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
-              >
-                <Plus size={18} />
+              </button>
+              <button onClick={handleAdd} className={BTN_ADD}>
+                <Plus size={16} className="mr-2" />
                 Add Tier
-              </Button>
+              </button>
             </div>
           </div>
 
-          {/* Stats Cards */}
+          {/* Stat cards */}
           <motion.div
             className="grid grid-cols-1 md:grid-cols-3 gap-4"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.08 }}
           >
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
+            {/* Total */}
+            <div className={STAT_CARD}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Tiers</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
+                  <p className={STAT_LABEL}>Total Tiers</p>
+                  <p className={STAT_VALUE}>{stats.total}</p>
                 </div>
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                  <Package size={24} className="text-blue-600 dark:text-blue-400" />
-                </div>
+                <span className={STAT_ICON_PRIMARY}>
+                  <Package size={22} className="text-[#006666]" />
+                </span>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
+            {/* Active */}
+            <div className={STAT_CARD}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Active Tiers</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.active}</p>
+                  <p className={STAT_LABEL}>Active Tiers</p>
+                  <p className={STAT_VALUE}>{stats.active}</p>
                 </div>
-                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <TrendingUp size={24} className="text-green-600 dark:text-green-400" />
-                </div>
+                <span className={STAT_ICON_SUCCESS}>
+                  <TrendingUp size={22} className="text-[#00A63D]" />
+                </span>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
+            {/* MRR */}
+            <div className={STAT_CARD}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Potential MRR</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                    {stats.totalRevenue.toFixed(2)}
-                  </p>
+                  <p className={STAT_LABEL}>Potential MRR</p>
+                  <p className={STAT_VALUE}>{stats.totalRevenue.toFixed(2)}</p>
                 </div>
-                <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                  <FaBangladeshiTakaSign size={24} className="text-purple-600 dark:text-purple-400" />
-                </div>
+                <span className={STAT_ICON_WARNING}>
+                  <FaBangladeshiTakaSign size={22} className="text-[#FE9900]" />
+                </span>
               </div>
             </div>
           </motion.div>
@@ -182,40 +255,32 @@ export default function GuideSubscriptionsPage() {
           <VersionBanner updatedAt={lastFetchedAt} />
         </motion.div>
 
-        {/* Error Alert */}
+        {/* ── Error Banner ── */}
         <AnimatePresence>
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              exit={{ opacity: 0, y: -8 }}
+              className={ERROR_BANNER}
             >
-              <Alert variant="destructive" className="border-red-200 dark:border-red-900">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="flex items-center justify-between">
-                  <span>{error}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => clearError()}
-                    className="h-auto p-1 hover:bg-red-100 dark:hover:bg-red-900"
-                  >
-                    <X size={16} />
-                  </Button>
-                </AlertDescription>
-              </Alert>
+              <AlertCircle size={16} className="text-[#FF2157] shrink-0" />
+              <span className={ERROR_MSG}>{error}</span>
+              <button onClick={() => clearError()} className={BTN_DISMISS}>
+                <X size={13} />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Main Content Grid */}
+        {/* ── Main Grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Tier List */}
           <motion.div
             className="lg:col-span-2"
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.15 }}
           >
             <TierList
               tiers={list}
@@ -232,34 +297,32 @@ export default function GuideSubscriptionsPage() {
           {/* Editor Sidebar */}
           <motion.div
             className="lg:col-span-1"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.2 }}
           >
             <div className="sticky top-6 space-y-4">
-              {/* Editor Info Card */}
-              <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <Settings size={20} className="text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Editor Panel</h3>
+              {/* Info card */}
+              <div className={EDITOR_CARD}>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className={ICON_WELL_PRIMARY}>
+                    <Settings size={18} className="text-[#006666]" />
+                  </span>
+                  <h3 className={EDITOR_TITLE}>Editor Panel</h3>
                 </div>
-
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <p className={EDITOR_BODY}>
                   {showForm
                     ? "Editing subscription tier. Make changes below."
                     : "Select a tier to edit or create a new one to get started."}
                 </p>
-
                 {!showForm && (
-                  <Button
+                  <button
                     onClick={() => { setShowForm(true); setEditing(null); }}
-                    className="w-full gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    className={BTN_CREATE}
                   >
-                    <Plus size={18} />
+                    <Plus size={16} className="mr-2" />
                     Create New Tier
-                  </Button>
+                  </button>
                 )}
               </div>
 
@@ -267,16 +330,17 @@ export default function GuideSubscriptionsPage() {
               <AnimatePresence mode="wait">
                 {showForm && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    key="form"
+                    initial={{ opacity: 0, scale: 0.97, y: 16 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    exit={{ opacity: 0, scale: 0.97, y: 16 }}
                     transition={{ duration: 0.2 }}
-                    className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
+                    className={FORM_CARD}
                   >
-                    <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4">
-                      <h4 className="text-white font-semibold">
+                    <div className={FORM_CARD_HEADER}>
+                      <p className={FORM_CARD_TITLE}>
                         {editing ? "Edit Tier" : "Create New Tier"}
-                      </h4>
+                      </p>
                     </div>
                     <TierForm
                       initialValues={{
@@ -304,7 +368,7 @@ export default function GuideSubscriptionsPage() {
         </div>
       </div>
 
-      {/* Dialogs */}
+      {/* ── Dialogs ── */}
       <ConfirmDeleteDialog
         open={confirmDelete.open}
         title={confirmDelete.tier?.title ?? "-"}

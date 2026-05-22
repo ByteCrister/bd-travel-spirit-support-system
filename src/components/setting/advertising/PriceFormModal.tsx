@@ -26,8 +26,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -35,7 +33,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
   AdvertisingPriceForm,
@@ -49,6 +46,91 @@ import { showToast } from "@/components/global/showToast";
 import { CURRENCY } from "@/constants/tour.const";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
 
+// ── Neumorphism style constants ───────────────────────────────
+const S = {
+  dialogContent:
+    "sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-[#E7E5E4] border-none " +
+    "shadow-[12px_12px_28px_#c8c6c5,-12px_-12px_28px_#ffffff]",
+
+  iconWell:
+    "h-14 w-14 rounded-2xl bg-[#006666] flex items-center justify-center flex-shrink-0 " +
+    "shadow-[4px_4px_10px_#004d4d,-2px_-2px_6px_#008080]",
+
+  modalTitle:
+    "text-xl font-bold font-[family-name:var(--font-space-mono)] text-[#1E2938]",
+  modalDesc:
+    "mt-1 text-sm font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50",
+
+  form: "space-y-6 mt-6",
+
+  fieldLabel:
+    "flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-2 " +
+    "font-[family-name:var(--font-space-mono)] text-[#1E2938]/60",
+
+  input:
+    "w-full h-12 rounded-xl px-4 text-sm font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938] " +
+    "bg-[#E7E5E4] placeholder:text-[#1E2938]/30 " +
+    "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+    "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200",
+
+  inputWithIcon:
+    "w-full h-12 rounded-xl pl-10 pr-4 text-sm font-[family-name:var(--font-jetbrains-mono)] font-bold text-[#1E2938] " +
+    "bg-[#E7E5E4] placeholder:text-[#1E2938]/30 " +
+    "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+    "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200",
+
+  errorMsg:
+    "flex items-center gap-1.5 text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#FF2157] mt-1.5",
+
+  hint:
+    "flex items-center gap-1.5 text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/40 mt-1.5",
+
+  // Placement card
+  placementCard:
+    "relative h-14 rounded-xl flex items-center gap-3 px-3 cursor-pointer " +
+    "bg-[#E7E5E4] transition-all duration-200 " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+    "hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]",
+  placementCardActive:
+    "relative h-14 rounded-xl flex items-center gap-3 px-3 cursor-pointer " +
+    "bg-[#006666] transition-all duration-200 " +
+    "shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080]",
+
+  // Duration chip
+  durationChip:
+    "relative h-16 rounded-xl flex flex-col items-center justify-center cursor-pointer " +
+    "bg-[#E7E5E4] transition-all duration-200 " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+    "hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]",
+  durationChipActive:
+    "relative h-16 rounded-xl flex flex-col items-center justify-center cursor-pointer " +
+    "bg-[#E7E5E4] transition-all duration-200 " +
+    "shadow-[inset_3px_3px_6px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]",
+
+  // Active toggle row
+  toggleRow:
+    "flex items-center justify-between p-4 rounded-xl " +
+    "bg-[#E7E5E4] shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff]",
+
+  // Footer buttons
+  btnCancel:
+    "flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm " +
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] bg-[#E7E5E4] " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+    "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40 " +
+    "transition-all duration-200",
+  btnSubmit:
+    "flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm " +
+    "font-[family-name:var(--font-space-mono)] font-bold text-white bg-[#006666] " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "hover:bg-[#007777] hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
+    "transition-all duration-200",
+};
+
 type Mode = "create" | "edit";
 
 interface Props {
@@ -61,48 +143,31 @@ interface Props {
   ) => Promise<void>;
 }
 
-const placements: Array<{ label: string; value: string; icon: React.ReactNode; color: string }> = [
-  {
-    label: "Landing banner",
-    value: PLACEMENT.LANDING_BANNER,
-    icon: <Layout className="h-4 w-4" />,
-    color: "from-violet-500 to-purple-600"
-  },
-  {
-    label: "Popup modal",
-    value: PLACEMENT.POPUP_MODAL,
-    icon: <MessageSquare className="h-4 w-4" />,
-    color: "from-blue-500 to-cyan-600"
-  },
-  {
-    label: "Email",
-    value: PLACEMENT.EMAIL,
-    icon: <Mail className="h-4 w-4" />,
-    color: "from-pink-500 to-rose-600"
-  },
-  {
-    label: "Sidebar",
-    value: PLACEMENT.SIDEBAR,
-    icon: <SidebarIcon className="h-4 w-4" />,
-    color: "from-orange-500 to-amber-600"
-  },
-  {
-    label: "Sponsored list",
-    value: PLACEMENT.SPONSORED_LIST,
-    icon: <List className="h-4 w-4" />,
-    color: "from-emerald-500 to-teal-600"
-  },
+const placements = [
+  { label: "Landing banner", value: PLACEMENT.LANDING_BANNER, icon: <Layout className="h-4 w-4" /> },
+  { label: "Popup modal", value: PLACEMENT.POPUP_MODAL, icon: <MessageSquare className="h-4 w-4" /> },
+  { label: "Email", value: PLACEMENT.EMAIL, icon: <Mail className="h-4 w-4" /> },
+  { label: "Sidebar", value: PLACEMENT.SIDEBAR, icon: <SidebarIcon className="h-4 w-4" /> },
+  { label: "Sponsored list", value: PLACEMENT.SPONSORED_LIST, icon: <List className="h-4 w-4" /> },
 ];
 
 const durationOptions = [7, 14, 30, 60, 90, 180];
 
-const PriceFormModal: React.FC<Props> = ({
-  open,
-  onClose,
-  initial,
-  mode,
-  onSubmit,
-}) => {
+const FieldError = ({ message }: { message?: string }) =>
+  message ? (
+    <motion.p
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className={S.errorMsg}
+      role="alert"
+    >
+      <HiX className="h-3.5 w-3.5 flex-shrink-0" />
+      {message}
+    </motion.p>
+  ) : null;
+
+const PriceFormModal: React.FC<Props> = ({ open, onClose, initial, mode, onSubmit }) => {
   const { saving, pricingRows } = useAdvertisingSettingsStore();
 
   const {
@@ -129,8 +194,8 @@ const PriceFormModal: React.FC<Props> = ({
 
   const watchedDurations = watch("allowedDurationsDays");
   const watchedPlacement = watch("placement");
-
-  const selectedPlacement = placements.find(p => p.value === watchedPlacement);
+  const isActive = watch("active");
+  const selectedPlacement = placements.find((p) => p.value === watchedPlacement);
 
   useEffect(() => {
     if (open && initial) {
@@ -143,9 +208,7 @@ const PriceFormModal: React.FC<Props> = ({
       setValue("allowedDurationsDays", initial.allowedDurationsDays ?? []);
       setValue("active", initial.active);
     }
-    if (!open) {
-      reset();
-    }
+    if (!open) reset();
   }, [open, initial, setValue, reset]);
 
   const submit = handleSubmit(async (data) => {
@@ -166,59 +229,45 @@ const PriceFormModal: React.FC<Props> = ({
       };
 
       if (mode === "edit" && data.id) {
-        const payload: UpdateAdvertisingPricePayload = {
-          id: data.id,
-          ...common,
-        };
-        await onSubmit(payload);
+        await onSubmit({ id: data.id, ...common } as UpdateAdvertisingPricePayload);
       } else {
-        const payload: CreateAdvertisingPricePayload = common;
-        await onSubmit(payload);
+        await onSubmit(common as CreateAdvertisingPricePayload);
       }
-
       onClose();
     } catch (rawErr: unknown) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const err: any = rawErr;
-        if (err && err.response && err.response.data && typeof err.response.data === "object") {
-          const data = err.response.data;
-          if (data.errors && typeof data.errors === "object") {
-            const fieldErrors = data.errors as Record<string, string>;
-            Object.keys(fieldErrors).forEach((k) => {
-              setError(k as keyof AdvertisingPriceForm, { message: fieldErrors[k] });
-            });
-            return;
-          }
+        if (err?.response?.data?.errors && typeof err.response.data.errors === "object") {
+          const fieldErrors = err.response.data.errors as Record<string, string>;
+          Object.keys(fieldErrors).forEach((k) =>
+            setError(k as keyof AdvertisingPriceForm, { message: fieldErrors[k] })
+          );
+          return;
         }
-      } catch {
-        // ignore
-      }
-
-      const message = extractErrorMessage(rawErr);
-      showToast.error("Failed to save price", message);
+      } catch { /* ignore */ }
+      showToast.error("Failed to save price", extractErrorMessage(rawErr));
     }
   });
 
   const toggleDuration = (duration: number) => {
     const current = watchedDurations || [];
-    const newDurations = current.includes(duration)
+    const next = current.includes(duration)
       ? current.filter((d) => d !== duration)
       : [...current, duration].sort((a, b) => a - b);
-    setValue("allowedDurationsDays", newDurations);
+    setValue("allowedDurationsDays", next);
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={S.dialogContent}>
         <DialogHeader>
           <div className="flex items-center gap-4">
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 200 }}
-              className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${selectedPlacement?.color || "from-emerald-500 to-emerald-600"
-                } flex items-center justify-center shadow-lg`}
+              className={S.iconWell}
             >
               {selectedPlacement ? (
                 <div className="text-white">{selectedPlacement.icon}</div>
@@ -227,10 +276,10 @@ const PriceFormModal: React.FC<Props> = ({
               )}
             </motion.div>
             <div>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              <DialogTitle className={S.modalTitle}>
                 {mode === "create" ? "Create New Price" : "Edit Price"}
               </DialogTitle>
-              <DialogDescription className="text-slate-600 mt-1">
+              <DialogDescription className={S.modalDesc}>
                 {mode === "create"
                   ? "Add a new advertising placement price configuration"
                   : "Update advertising placement details and pricing"}
@@ -239,38 +288,29 @@ const PriceFormModal: React.FC<Props> = ({
           </div>
         </DialogHeader>
 
-        <form onSubmit={submit} className="space-y-6 mt-6" noValidate>
-          {/* Title Field */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0 }}
-            className="space-y-3"
-          >
-            <Label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <HiCheckCircle className="h-4 w-4 text-emerald-600" />
+        <form onSubmit={submit} className={S.form} noValidate>
+          {/* Title */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+            <label className={S.fieldLabel}>
+              <HiCheckCircle className="h-4 w-4 text-[#006666]" />
               Title
-            </Label>
-            <Input
+            </label>
+            <input
               type="text"
               placeholder="Enter title"
-              className="h-14 border-2 border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
+              className={S.input}
               {...register("title", {
                 required: "Title is required",
                 validate: (value: string) => {
-
                   const trimmed = value.trim();
                   if (!trimmed) return "Title is required";
-
-                  // Check uniqueness for the same placement
                   const placementValue = watch("placement")?.trim();
-                  if (!placementValue) return true; // skip if placement not selected yet
-
+                  if (!placementValue) return true;
                   const exists = pricingRows.some(
                     (r) =>
                       r.title?.trim().toLowerCase() === trimmed.toLowerCase() &&
                       r.placement === placementValue &&
-                      r.id !== initial?.id // ignore current row
+                      r.id !== initial?.id
                   );
                   return exists ? "Title already exists for this placement" : true;
                 },
@@ -278,32 +318,15 @@ const PriceFormModal: React.FC<Props> = ({
               })}
               aria-invalid={!!errors.title}
             />
-            <AnimatePresence>
-              {errors.title && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="text-sm text-red-600 flex items-center gap-1 font-medium"
-                  role="alert"
-                >
-                  <HiX className="h-4 w-4" />
-                  {errors.title.message}
-                </motion.p>
-              )}
-            </AnimatePresence>
+            <AnimatePresence><FieldError message={errors.title?.message} /></AnimatePresence>
           </motion.div>
 
-          {/* Placement Selection - Card Style */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-3"
-          >
-            <Label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <Tag className="h-4 w-4 text-emerald-600" />
+          {/* Placement — card grid */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+            <label className={S.fieldLabel}>
+              <Tag className="h-4 w-4 text-[#006666]" />
               Placement Type
-            </Label>
+            </label>
             <Controller
               name="placement"
               control={control}
@@ -311,83 +334,72 @@ const PriceFormModal: React.FC<Props> = ({
                 required: "Placement is required",
                 validate: (value: string) => {
                   if (!value) return "Placement is required";
-
-                  // Check uniqueness against existing pricingRows
-                  const trimmedValue = value.trim();
                   const conflict = pricingRows.find(
-                    (row) =>
-                      row.placement === trimmedValue &&
-                      row.id !== watch("id") // exclude current editing row
+                    (row) => row.placement === value.trim() && row.id !== watch("id")
                   );
-                  if (conflict) return "This placement is already used";
-
-                  return true;
+                  return conflict ? "This placement is already used" : true;
                 },
               }}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="h-14 border-2 border-slate-200 hover:border-emerald-300 transition-all">
-                    <SelectValue placeholder="Select a placement type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {placements.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>
-                        <div className="flex items-center gap-3 py-1">
-                          <div
-                            className={`h-8 w-8 rounded-lg bg-gradient-to-br ${p.color} flex items-center justify-center`}
-                          >
-                            <div className="text-white">{p.icon}</div>
-                          </div>
-                          <span className="font-medium">{p.label}</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {placements.map((p) => {
+                    const active = field.value === p.value;
+                    return (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => field.onChange(p.value)}
+                        className={active ? S.placementCardActive : S.placementCard}
+                        aria-pressed={active}
+                      >
+                        <div className={`${active ? "text-white" : "text-[#006666]"}`}>
+                          {p.icon}
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                        <span
+                          className={`text-xs font-bold font-[family-name:var(--font-space-mono)] truncate
+                            ${active ? "text-white" : "text-[#1E2938]"}`}
+                        >
+                          {p.label}
+                        </span>
+                        {active && (
+                          <HiCheck className="ml-auto h-4 w-4 text-white flex-shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             />
-            <AnimatePresence>
-              {errors.placement && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="text-sm text-red-600 flex items-center gap-1 font-medium"
-                  role="alert"
-                >
-                  <HiX className="h-4 w-4" />
-                  {errors.placement.message}
-                </motion.p>
-              )}
-            </AnimatePresence>
+            <AnimatePresence><FieldError message={errors.placement?.message} /></AnimatePresence>
           </motion.div>
 
-          {/* Price and Currency - Enhanced Grid */}
+          {/* Price + Currency */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="grid grid-cols-3 gap-4"
           >
-            <div className="col-span-2 space-y-3">
-              <Label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <FaBangladeshiTakaSign className="h-4 w-4 text-emerald-600" />
+            <div className="col-span-2">
+              <label className={S.fieldLabel}>
+                <FaBangladeshiTakaSign className="h-4 w-4 text-[#006666]" />
                 Price Amount
-              </Label>
+              </label>
               <div className="relative">
-                <Input
+                <input
                   type="text"
                   inputMode="decimal"
                   pattern="^(0|[1-9]\d*)(\.\d{1,2})?$"
                   placeholder="99.99"
-                  className="h-14 pl-10 text-lg font-semibold border-2 border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
+                  className={S.inputWithIcon}
                   {...register("price", {
                     required: "Price is required",
                     validate: (v: string | number) => {
                       const s = String(v).trim();
                       if (s === "") return "Price is required";
-                      const ok = /^(0|[1-9]\d*)(\.\d{1,2})?$/.test(s);
-                      return ok ? true : "Enter a valid price (no leading zeros, up to 2 decimals)";
+                      return /^(0|[1-9]\d*)(\.\d{1,2})?$/.test(s)
+                        ? true
+                        : "Enter a valid price (up to 2 decimals)";
                     },
                     setValueAs: (v: string) => {
                       const s = String(v).trim();
@@ -397,43 +409,25 @@ const PriceFormModal: React.FC<Props> = ({
                   aria-invalid={!!errors.price}
                   onBlur={(e) => {
                     const raw = e.currentTarget.value.trim();
-                    if (!raw) return;
-                    if (/^0+[1-9]/.test(raw)) {
-                      const normalized = raw.replace(/^0+/, "");
-                      e.currentTarget.value = normalized;
+                    if (raw && /^0+[1-9]/.test(raw)) {
+                      e.currentTarget.value = raw.replace(/^0+/, "");
                     }
                   }}
                 />
-                <FaBangladeshiTakaSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <FaBangladeshiTakaSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#1E2938]/30" />
               </div>
-              <AnimatePresence>
-                {errors.price && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="text-sm text-red-600 flex items-center gap-1 font-medium"
-                    role="alert"
-                  >
-                    <HiX className="h-4 w-4" />
-                    {errors.price.message}
-                  </motion.p>
-                )}
-              </AnimatePresence>
+              <AnimatePresence><FieldError message={errors.price?.message} /></AnimatePresence>
             </div>
 
-            <div className="space-y-3">
-              <Label className="text-sm font-semibold text-slate-700">Currency</Label>
+            <div>
+              <label className={S.fieldLabel}>Currency</label>
               <Controller
                 name="currency"
                 control={control}
                 rules={{ required: "Currency is required" }}
                 render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger className="h-14 border-2 border-slate-200 hover:border-emerald-300 font-semibold">
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="h-12 rounded-xl bg-[#E7E5E4] border-none font-[family-name:var(--font-space-mono)] text-sm font-bold text-[#1E2938] shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] focus:ring-2 focus:ring-[#006666]/50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -442,60 +436,38 @@ const PriceFormModal: React.FC<Props> = ({
                   </Select>
                 )}
               />
-              <AnimatePresence>
-                {errors.currency && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="text-sm text-red-600 flex items-center gap-1 font-medium"
-                    role="alert"
-                  >
-                    <HiX className="h-4 w-4" />
-                    {errors.currency.message}
-                  </motion.p>
-                )}
-              </AnimatePresence>
+              <AnimatePresence><FieldError message={errors.currency?.message} /></AnimatePresence>
             </div>
           </motion.div>
 
           {/* Default Duration */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-3"
-          >
-            <Label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <HiCalendar className="h-4 w-4 text-emerald-600" />
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <label className={S.fieldLabel}>
+              <HiCalendar className="h-4 w-4 text-[#006666]" />
               Default Duration (Days)
-            </Label>
-            <Input
+            </label>
+            <input
               type="number"
               inputMode="numeric"
               min={1}
               max={30}
               placeholder="30"
-              className="h-14 border-2 border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
+              className={S.input}
               onKeyDown={(e) => {
                 if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
               }}
               {...register("defaultDurationDays", {
                 setValueAs: (v: string | number | undefined) => {
                   if (v === "" || v === undefined || v === null) return undefined;
-                  const s = String(v).trim();
-                  const cleaned = s.replace(/^\+/, "");
-                  const n = Number(cleaned);
-                  if (Number.isNaN(n)) return undefined;
-                  return Math.trunc(n);
+                  const s = String(v).trim().replace(/^\+/, "");
+                  const n = Number(s);
+                  return Number.isNaN(n) ? undefined : Math.trunc(n);
                 },
                 validate: (v: unknown) => {
                   if (v === undefined || v === null || v === "") return true;
                   const s = String(v).trim();
-
                   if (!/^[0-9]+$/.test(s)) return "Must be a whole number";
-                  if (/^0[0-9]+$/.test(s)) return "No leading zeros allowed (e.g., use 9, not 09)";
-
+                  if (/^0[0-9]+$/.test(s)) return "No leading zeros allowed";
                   const n = Number(s);
                   if (!Number.isInteger(n)) return "Must be a whole number";
                   if (n < 1 || n > 30) return "Must be between 1 and 30 days";
@@ -509,41 +481,21 @@ const PriceFormModal: React.FC<Props> = ({
                 const normalized = raw.replace(/^0+([1-9]\d*)$/, "$1");
                 const n = Number(normalized);
                 if (!Number.isNaN(n)) {
-                  const clamped = Math.min(30, Math.max(1, Math.trunc(n)));
-                  e.currentTarget.value = String(clamped);
+                  e.currentTarget.value = String(Math.min(30, Math.max(1, Math.trunc(n))));
                 }
               }}
             />
-
-            <p className="text-xs text-slate-500 flex items-center gap-1">
+            <p className={S.hint}>
               <HiCalendar className="h-3 w-3" />
               Leave empty for no default duration
             </p>
-            <AnimatePresence>
-              {errors.defaultDurationDays && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="text-sm text-red-600 flex items-center gap-1 font-medium"
-                  role="alert"
-                >
-                  <HiX className="h-4 w-4" />
-                  {errors.defaultDurationDays.message}
-                </motion.p>
-              )}
-            </AnimatePresence>
+            <AnimatePresence><FieldError message={errors.defaultDurationDays?.message} /></AnimatePresence>
           </motion.div>
 
-          {/* Allowed Durations - Enhanced Chips */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="space-y-3"
-          >
-            <Label className="text-sm font-semibold text-slate-700">Allowed Durations</Label>
-            <div className="grid grid-cols-3 gap-3">
+          {/* Allowed Durations */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <label className={S.fieldLabel}>Allowed Durations</label>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {durationOptions.map((duration) => {
                 const isSelected = (watchedDurations || []).includes(duration);
                 return (
@@ -551,124 +503,102 @@ const PriceFormModal: React.FC<Props> = ({
                     key={duration}
                     type="button"
                     onClick={() => toggleDuration(duration)}
-                    whileHover={{ scale: 1.03, y: -2 }}
-                    whileTap={{ scale: 0.97 }}
-                    className={`
-                      relative h-16 rounded-xl border-2 transition-all shadow-sm
-                      ${isSelected
-                        ? "border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100 shadow-emerald-200"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"
-                      }
-                    `}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.96 }}
+                    className={isSelected ? S.durationChipActive : S.durationChip}
+                    aria-pressed={isSelected}
                   >
                     <AnimatePresence>
                       {isSelected && (
                         <motion.div
-                          initial={{ scale: 0, rotate: -180 }}
+                          initial={{ scale: 0, rotate: -90 }}
                           animate={{ scale: 1, rotate: 0 }}
-                          exit={{ scale: 0, rotate: 180 }}
-                          className="absolute -top-2 -right-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full p-1 shadow-lg"
+                          exit={{ scale: 0 }}
+                          className="absolute -top-1.5 -right-1.5 bg-[#006666] rounded-full p-0.5 shadow"
                         >
-                          <HiCheckCircle className="h-4 w-4 text-white" />
+                          <HiCheckCircle className="h-3.5 w-3.5 text-white" />
                         </motion.div>
                       )}
                     </AnimatePresence>
-                    <div className="flex flex-col items-center justify-center h-full">
-                      <span className={`text-2xl font-bold ${isSelected ? "text-emerald-700" : "text-slate-700"}`}>
-                        {duration}
-                      </span>
-                      <span className={`text-xs font-medium ${isSelected ? "text-emerald-600" : "text-slate-500"}`}>
-                        days
-                      </span>
-                    </div>
+                    <span
+                      className={`text-lg font-bold font-[family-name:var(--font-space-mono)] leading-none
+                        ${isSelected ? "text-[#006666]" : "text-[#1E2938]"}`}
+                    >
+                      {duration}
+                    </span>
+                    <span
+                      className={`text-xs font-[family-name:var(--font-jetbrains-mono)] mt-0.5
+                        ${isSelected ? "text-[#006666]/70" : "text-[#1E2938]/40"}`}
+                    >
+                      days
+                    </span>
                   </motion.button>
                 );
               })}
             </div>
-            <p className="text-xs text-slate-500">
-              Select one or more allowed duration options for this placement
-            </p>
+            <p className={S.hint}>Select one or more allowed duration options</p>
           </motion.div>
 
-          {/* Active Status - Enhanced Toggle */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="flex items-center justify-between p-5 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200"
-          >
-            <div className="space-y-1">
-              <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                {watch("active") ? (
-                  <HiEye className="h-4 w-4 text-emerald-600" />
-                ) : (
-                  <HiEyeOff className="h-4 w-4 text-slate-400" />
+          {/* Active Status */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <div className={S.toggleRow}>
+              <div>
+                <label className={S.fieldLabel}>
+                  {isActive
+                    ? <><HiEye className="inline h-4 w-4 text-[#006666] mr-1" />Active Status</>
+                    : <><HiEyeOff className="inline h-4 w-4 text-[#1E2938]/30 mr-1" />Active Status</>}
+                </label>
+                <p className="text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50 mt-0.5">
+                  {isActive
+                    ? "This price is visible and available for use"
+                    : "This price is hidden and not available"}
+                </p>
+              </div>
+              <Controller
+                name="active"
+                control={control}
+                render={({ field }) => (
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    className="data-[state=checked]:bg-[#006666]"
+                  />
                 )}
-                Active Status
-              </Label>
-              <p className="text-xs text-slate-600">
-                {watch("active")
-                  ? "This price is visible and available for use"
-                  : "This price is hidden and not available"}
-              </p>
+              />
             </div>
-            <Controller
-              name="active"
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  className="data-[state=checked]:bg-emerald-600 scale-110"
-                />
-              )}
-            />
           </motion.div>
 
-          {/* Action Buttons */}
+          {/* Footer actions */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="flex items-center gap-3 pt-6 border-t-2"
+            transition={{ delay: 0.3 }}
+            className="flex items-center gap-3 pt-4 border-t border-[#1E2938]/10"
           >
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1 h-12 hover:bg-slate-50 border-2"
-            >
-              <HiX className="mr-2 h-5 w-5" />
+            <button type="button" onClick={onClose} className={S.btnCancel}>
+              <HiX className="h-4 w-4" />
               Cancel
-            </Button>
+            </button>
 
-            <motion.div
+            <motion.button
+              type="submit"
+              disabled={saving}
               whileHover={{ scale: saving ? 1 : 1.02 }}
-              whileTap={{ scale: saving ? 1 : 0.98 }}
-              className="flex-1"
+              whileTap={{ scale: saving ? 1 : 0.97 }}
+              className={S.btnSubmit}
             >
-              <Button
-                type="submit"
-                disabled={saving}
-                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-lg hover:shadow-xl transition-all"
-              >
-                {saving ? (
-                  <>
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full"
-                    />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <HiCheck className="mr-2 h-5 w-5" />
-                    {mode === "create" ? "Create Price" : "Save Changes"}
-                  </>
-                )}
-              </Button>
-            </motion.div>
+              {saving ? (
+                <>
+                  <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <HiCheck className="h-4 w-4" />
+                  {mode === "create" ? "Create Price" : "Save Changes"}
+                </>
+              )}
+            </motion.button>
           </motion.div>
         </form>
       </DialogContent>

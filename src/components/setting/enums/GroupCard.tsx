@@ -1,11 +1,50 @@
+// src/components/enums/GroupCard.tsx
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
 import { EnumGroup } from "@/types/site-settings/enum-settings.types";
+import useEnumSettingsStore from "@/store/site-settings/enumSettings.store";
 import React, { JSX } from "react";
 import { motion } from "framer-motion";
 import { Layers, Loader2 } from "lucide-react";
+
+// ── Neu style tokens ──────────────────────────────────────────
+const S = {
+    btnBase:
+        "relative w-full text-left rounded-xl transition-all duration-200 overflow-hidden " +
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50",
+    btnDefault:
+        "bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] border border-white/60 " +
+        "hover:shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff] hover:-translate-y-0.5",
+    btnSelected:
+        "bg-[#E7E5E4] shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border border-white/40",
+    indicator:
+        "absolute left-0 top-0 bottom-0 w-1 bg-[#006666] rounded-r",
+    inner: "relative flex items-start gap-3 p-3.5",
+    iconBase:
+        "flex-none w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200",
+    iconDefault:
+        "bg-[#E7E5E4] text-[#1E2938]/50 shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]",
+    iconSelected:
+        "bg-[#006666] text-white shadow-[inset_2px_2px_4px_#004d4d,inset_-1px_-1px_3px_#008080]",
+    content: "flex-1 min-w-0",
+    nameRow: "flex items-start justify-between gap-2 mb-1",
+    nameDefault:
+        "font-semibold text-sm leading-tight truncate text-[#1E2938] font-[family-name:var(--font-space-mono)]",
+    nameSelected:
+        "font-semibold text-sm leading-tight truncate text-[#006666] font-[family-name:var(--font-space-mono)]",
+    countDefault:
+        "flex-none text-xs font-bold px-2 py-0.5 rounded-lg font-[family-name:var(--font-space-mono)] " +
+        "bg-[#E7E5E4] text-[#1E2938]/60 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+    countSelected:
+        "flex-none text-xs font-bold px-2 py-0.5 rounded-lg font-[family-name:var(--font-space-mono)] " +
+        "bg-[#006666]/15 text-[#006666]",
+    desc:
+        "text-xs leading-relaxed line-clamp-2 font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50",
+    updatingBadge:
+        "inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-lg text-xs font-bold " +
+        "font-[family-name:var(--font-space-mono)] bg-[#FE9900]/10 text-[#FE9900] " +
+        "shadow-[1px_1px_3px_#c8c6c5,-1px_-1px_3px_#ffffff]",
+};
 
 interface Props {
     group: EnumGroup;
@@ -14,7 +53,11 @@ interface Props {
     onOpen?: () => void;
 }
 
-export default function GroupCard({ group, selected = false, onSelect }: Props): JSX.Element {
+export default function GroupCard({
+    group,
+    selected = false,
+    onSelect,
+}: Props): JSX.Element {
     const { groups } = useEnumSettingsStore();
     const state = groups[group.name];
     const optimisticCount = state?.optimistic ? Object.keys(state.optimistic).length : 0;
@@ -25,95 +68,49 @@ export default function GroupCard({ group, selected = false, onSelect }: Props):
             type="button"
             onClick={onSelect}
             aria-current={selected ? "true" : undefined}
-            whileHover={{ scale: 1.02, x: 4 }}
             whileTap={{ scale: 0.98 }}
-            className={`
-                relative w-full text-left p-4 rounded-xl transition-all duration-300 overflow-hidden
-                ${selected
-                    ? "bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-500/40 shadow-md"
-                    : "bg-white/60 backdrop-blur-sm border border-slate-200/60 hover:border-slate-300 hover:shadow-md hover:bg-white/80"
-                }
-            `}
+            className={`${S.btnBase} ${selected ? S.btnSelected : S.btnDefault}`}
         >
-            {/* Selected indicator */}
             {selected && (
                 <motion.div
                     layoutId="selected-indicator"
-                    className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-blue-600 rounded-r"
+                    className={S.indicator}
                     initial={false}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />
             )}
 
-            {/* Gradient overlay for selected state */}
-            {selected && (
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 pointer-events-none" />
-            )}
-
-            <div className="relative flex items-start gap-3">
+            <div className={S.inner}>
                 {/* Icon */}
-                <motion.div
-                    className={`
-                        flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors
-                        ${selected
-                            ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
-                            : "bg-slate-100 text-slate-600"
-                        }
-                    `}
-                    animate={isUpdating ? { rotate: 360 } : {}}
-                    transition={{ duration: 1, repeat: isUpdating ? Infinity : 0, ease: "linear" }}
-                >
+                <div className={`${S.iconBase} ${selected ? S.iconSelected : S.iconDefault}`}>
                     {isUpdating ? (
-                        <Loader2 size={18} className="animate-spin" />
+                        <Loader2 size={16} className="animate-spin" />
                     ) : (
-                        <Layers size={18} strokeWidth={2.5} />
+                        <Layers size={16} strokeWidth={2.5} />
                     )}
-                </motion.div>
+                </div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <h3 className={`
-                            font-semibold text-sm leading-tight truncate
-                            ${selected ? "text-blue-900" : "text-slate-900"}
-                        `}>
+                <div className={S.content}>
+                    <div className={S.nameRow}>
+                        <span className={selected ? S.nameSelected : S.nameDefault}>
                             {group.name}
-                        </h3>
-                        <span className={`
-                            flex-shrink-0 text-xs font-medium px-2 py-0.5 rounded-full
-                            ${selected
-                                ? "bg-blue-500/20 text-blue-700"
-                                : "bg-slate-100 text-slate-600"
-                            }
-                        `}>
+                        </span>
+                        <span className={selected ? S.countSelected : S.countDefault}>
                             {group.values.length}
                         </span>
                     </div>
 
-                    <p className={`
-                        text-xs leading-relaxed line-clamp-2 mb-2
-                        ${selected ? "text-blue-700/80" : "text-slate-600"}
-                    `}>
+                    <p className={S.desc}>
                         {group.description || "No description"}
                     </p>
 
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        {isUpdating && (
-                            <Badge
-                                variant="outline"
-                                className={`
-                                    text-xs px-2 py-0.5 font-medium animate-pulse
-                                    ${selected
-                                        ? "border-blue-400 text-blue-700 bg-blue-50/50"
-                                        : "border-amber-300 text-amber-700 bg-amber-50/50"
-                                    }
-                                `}
-                            >
-                                <Loader2 size={10} className="mr-1 animate-spin" />
-                                Updating
-                            </Badge>
-                        )}
-                    </div>
+                    {isUpdating && (
+                        <span className={S.updatingBadge}>
+                            <Loader2 size={10} className="animate-spin" />
+                            Updating
+                        </span>
+                    )}
                 </div>
             </div>
         </motion.button>
