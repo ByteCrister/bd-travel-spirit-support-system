@@ -278,7 +278,7 @@ export default function GroupsList({
                         <Trash2 size={13} />
                       </button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-[#E7E5E4] border border-white/60 shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] rounded-2xl p-6">
+                    <AlertDialogContent className="bg-[#E7E5E4] border border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.06)] rounded-2xl p-6">
                       <AlertDialogHeader>
                         <AlertDialogTitle className="font-[family-name:var(--font-space-mono)] text-[#1E2938] text-base">
                           Delete enum group

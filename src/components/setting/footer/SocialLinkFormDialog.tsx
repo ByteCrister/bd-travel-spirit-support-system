@@ -20,7 +20,7 @@ import { IconComboBox } from "./IconComboBox";
 // ── Neumorphism style tokens ──────────────────────────────────
 const NEU_DIALOG_CONTENT =
     "max-h-[88vh] overflow-y-auto rounded-2xl p-0 border border-white/60 " +
-    "bg-[#E7E5E4] shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff]";
+    "bg-[#E7E5E4] shadow-[0_4px_12px_rgba(0,0,0,0.06)]";
 
 const NEU_DIALOG_HEADER =
     "relative overflow-hidden border-b border-white/40 bg-[#E7E5E4] px-6 py-5 sm:px-8";

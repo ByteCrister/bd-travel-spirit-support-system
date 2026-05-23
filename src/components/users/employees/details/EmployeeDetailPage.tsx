@@ -58,8 +58,8 @@ const NEU_CARD =
 const NEU_BTN_PRIMARY =
   "inline-flex items-center gap-2 rounded-xl bg-[#006666] text-white text-sm " +
   "font-[family-name:var(--font-space-mono)] font-bold px-5 py-2.5 " +
-  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
-  "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] hover:bg-[#007777] " +
   "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
   "disabled:opacity-40 disabled:cursor-not-allowed " +
   "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
@@ -67,22 +67,22 @@ const NEU_BTN_PRIMARY =
 const NEU_BTN_GHOST =
   "inline-flex items-center gap-2 rounded-xl bg-[#E7E5E4] text-[#1E2938] text-sm " +
   "font-[family-name:var(--font-space-mono)] px-4 py-2.5 " +
-  "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
-  "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] hover:bg-[#1E2938]/10 " +
   "disabled:opacity-40 disabled:cursor-not-allowed " +
   "transition-all duration-200";
 
 const NEU_BTN_DANGER =
   "inline-flex items-center gap-2 rounded-xl bg-[#E7E5E4] text-[#FF2157] text-sm " +
   "font-[family-name:var(--font-space-mono)] font-bold px-4 py-2.5 " +
-  "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
-  "hover:bg-[#FF2157]/10 hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:bg-[#FF2157]/10 hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
   "transition-all duration-200";
 
 const NEU_BTN_SUCCESS =
   "inline-flex items-center gap-2 rounded-xl bg-[#00A63D] text-white text-sm " +
   "font-[family-name:var(--font-space-mono)] font-bold px-4 py-2.5 " +
-  "shadow-[4px_4px_8px_#007a2d,-2px_-2px_6px_#00cc4a] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "hover:bg-[#009935] transition-all duration-200";
 
 const NEU_INPUT =

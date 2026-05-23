@@ -27,8 +27,8 @@ const NEU_BTN_PRIMARY =
   "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm " +
   "font-[family-name:var(--font-space-mono)] font-bold tracking-wide text-white " +
   "bg-[#006666] " +
-  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
-  "hover:bg-[#007777] hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:bg-[#007777] hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
   "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
   "transition-all duration-200";

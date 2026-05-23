@@ -24,7 +24,7 @@ import {
   TourFaqFilterParams,
   useCompanyDetailStore,
 } from "@/store/company/company-detail.store";
-import type { TourFAQDTO } from "@/types/tour/tour-detail-faqs.types";
+// import type { TourFAQDTO } from "@/types/tour/tour-detail-faqs.types";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
 // ─── Neumorphism Design Tokens ────────────────────────────────────────────────
@@ -312,16 +312,7 @@ export default function TourFaqsPanel({
     });
   };
 
-  const visibleItems = useMemo(() => {
-    const items: TourFAQDTO[] = cachedList?.items ?? [];
-    if (!localSearch.trim()) return items;
-    const q = localSearch.trim().toLowerCase();
-    return items.filter(
-      (f) =>
-        f.question.toLowerCase().includes(q) ||
-        (f.answer ?? "").toLowerCase().includes(q),
-    );
-  }, [cachedList, localSearch]);
+  const visibleItems = cachedList?.items ?? [];
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-5">

@@ -25,7 +25,7 @@ const NEU_HEADING =
 
 const NEU_AVATAR =
   "flex h-16 w-16 items-center justify-center rounded-2xl bg-[#006666] " +
-  "shadow-[6px_6px_14px_#004d4d,-4px_-4px_10px_#008080]";
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)]";
 
 const NEU_REFRESH_BTN =
   "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold font-[family-name:var(--font-space-mono)] " +

@@ -24,7 +24,7 @@ const NEU_BTN_GHOST =
 const NEU_BTN_ACTIVE =
     'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#006666] text-white text-sm ' +
     'font-[family-name:var(--font-space-mono)] font-bold ' +
-    'shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] ' +
+    'shadow-[0_4px_12px_rgba(0,0,0,0.06)] ' +
     'hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] ' +
     'active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] ' +
     'disabled:opacity-40 disabled:cursor-not-allowed ' +
@@ -32,16 +32,16 @@ const NEU_BTN_ACTIVE =
 const NEU_BTN_PRIMARY =
     'inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#006666] text-white text-sm ' +
     'font-[family-name:var(--font-space-mono)] font-bold tracking-wide ' +
-    'shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] ' +
-    'hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] ' +
+    'shadow-[0_4px_12px_rgba(0,0,0,0.06)] ' +
+    'hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:bg-[#007777] ' +
     'active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] ' +
     'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none ' +
     'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50';
 const NEU_BTN_DANGER_GHOST =
     'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#E7E5E4] text-[#FF2157] text-sm ' +
     'font-[family-name:var(--font-space-mono)] ' +
-    'shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] ' +
-    'hover:bg-[#FF2157]/10 hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] ' +
+    'shadow-[0_4px_12px_rgba(0,0,0,0.06)] ' +
+    'hover:bg-[#FF2157]/10 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] ' +
     'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none ' +
     'transition-all duration-200';
 const NEU_DIVIDER = 'w-px h-7 bg-[#c8c6c5]/70 hidden sm:block';

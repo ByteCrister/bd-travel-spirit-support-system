@@ -9,20 +9,20 @@ import { useState } from "react";
 const NEU_SURFACE = "bg-[#E7E5E4]";
 const NEU_BTN_PRIMARY =
     "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
-    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
-    "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:bg-[#007777] " +
     "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
     "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
 const NEU_BTN_GHOST =
     "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
-    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
-    "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
     "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
     "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
 const NEU_BTN_DANGER =
     "rounded-xl bg-[#FF2157] text-white font-[family-name:var(--font-space-mono)] font-bold " +
-    "shadow-[4px_4px_8px_#c8190f,-2px_-2px_6px_#ff6b87] " +
-    "hover:bg-[#e01a4a] hover:shadow-[6px_6px_12px_#c8190f,-3px_-3px_8px_#ff6b87] " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:bg-[#e01a4a] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
     "active:shadow-[inset_3px_3px_6px_#c8190f,inset_-2px_-2px_4px_#ff6b87] " +
     "transition-all duration-200";
 const NEU_HEADING = "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
@@ -72,7 +72,7 @@ export default function ConfirmDialog({
                 {open && (
                     <DialogContent
                         aria-describedby="confirm-desc"
-                        className={`sm:max-w-md overflow-hidden border-0 p-0 ${NEU_SURFACE} shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff]`}
+                        className={`sm:max-w-md overflow-hidden border-0 p-0 ${NEU_SURFACE} shadow-[0_4px_12px_rgba(0,0,0,0.06)]`}
                     >
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 8 }}

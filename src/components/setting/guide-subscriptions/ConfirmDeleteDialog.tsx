@@ -15,7 +15,7 @@ import { Trash2, AlertTriangle, X } from "lucide-react";
 
 // ── Neumorphism style tokens ──────────────────────────────────
 const DIALOG_CONTENT =
-  "max-w-md bg-[#E7E5E4] border-white/60 shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff] rounded-2xl p-0 gap-0 overflow-hidden";
+  "max-w-md bg-[#E7E5E4] border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.06)] rounded-2xl p-0 gap-0 overflow-hidden";
 
 const DIALOG_HEADER =
   "px-6 pt-6 pb-5 border-b border-[#1E2938]/08";

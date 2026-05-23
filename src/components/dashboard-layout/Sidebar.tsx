@@ -22,7 +22,7 @@ import { FaComments, FaUsers } from "react-icons/fa";
 import { HiOutlineChartSquareBar, HiOutlineUser } from "react-icons/hi";
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
-import { Compass, KeyRound, ShieldCheck, Sparkles, Globe  } from "lucide-react";
+import { Compass, KeyRound, ShieldCheck, Sparkles, Globe } from "lucide-react";
 import { MdBusiness, MdTravelExplore } from "react-icons/md";
 import { usePathname } from "next/navigation";
 import { TbPasswordFingerprint, TbReceipt } from "react-icons/tb";
@@ -49,7 +49,7 @@ const NEU_GROUP_BTN_ACTIVE =
 const NEU_DIVIDER = "border-[#1E2938]/10";
 const NEU_LOGO_WELL =
   "flex items-center justify-center rounded-2xl bg-[#006666] " +
-  "shadow-[2px_2px_4px_#004d4d,-1px_-1px_3px_#008080]";
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)]";
 const NEU_HEADING =
   "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
 const NEU_MUTED =
@@ -198,19 +198,15 @@ export function Sidebar({
   setIsCollapsed,
 }: SidebarProps) {
   const pathname = usePathname();
-  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(
+    navigationGroups.map((group) => group.title),
+  );
   const [hasAutoCollapsed, setHasAutoCollapsed] = useState(false);
 
   const { baseUser } = useCurrentUserStore();
   const isAdmin = baseUser?.role === USER_ROLE.ADMIN;
 
   useEffect(() => {
-    const activeGroup = navigationGroups.find((group) =>
-      group.items.some((item) => pathname.startsWith(item.href))
-    );
-    if (activeGroup) {
-      setExpandedGroups([activeGroup.title]);
-    }
     if (pathname.startsWith("/customer-support") && !hasAutoCollapsed) {
       if (isMobile && isOpen && onClose) {
         onClose();
@@ -221,13 +217,21 @@ export function Sidebar({
     } else if (!pathname.startsWith("/customer-support")) {
       setHasAutoCollapsed(false);
     }
-  }, [hasAutoCollapsed, isCollapsed, isMobile, isOpen, onClose, pathname, setIsCollapsed]);
+  }, [
+    hasAutoCollapsed,
+    isCollapsed,
+    isMobile,
+    isOpen,
+    onClose,
+    pathname,
+    setIsCollapsed,
+  ]);
 
   const toggleGroup = (groupTitle: string) => {
     setExpandedGroups((prev) =>
       prev.includes(groupTitle)
         ? prev.filter((t) => t !== groupTitle)
-        : [...prev, groupTitle]
+        : [...prev, groupTitle],
     );
   };
 
@@ -260,7 +264,7 @@ export function Sidebar({
         NEU_SIDEBAR,
         "border-r",
         NEU_DIVIDER,
-        isMobile ? "w-80" : "w-80 lg:relative lg:z-auto"
+        isMobile ? "w-80" : "w-80 lg:relative lg:z-auto",
       )}
       role="navigation"
       aria-label="Main navigation"
@@ -272,7 +276,7 @@ export function Sidebar({
           NEU_DIVIDER,
           isCollapsed
             ? "flex flex-col items-center gap-3"
-            : "flex items-center justify-between"
+            : "flex items-center justify-between",
         )}
       >
         <AnimatePresence mode="wait">
@@ -285,9 +289,11 @@ export function Sidebar({
               transition={{ duration: 0.2 }}
               className="flex items-center gap-3"
             >
-              {/* Brand icon — Globe  in teal neumorphic well */}
+              {/* Brand icon — BD text in teal neumorphic well */}
               <div className={cn(NEU_LOGO_WELL, "h-10 w-10")}>
-                <Globe  className="h-5 w-5 text-white" strokeWidth={2} />
+                <span className="text-white font-bold text-lg tracking-tight font-[family-name:var(--font-space-mono)]">
+                  BD
+                </span>
               </div>
 
               <div>
@@ -306,7 +312,7 @@ export function Sidebar({
               transition={{ duration: 0.2 }}
               className={cn(NEU_LOGO_WELL, "h-11 w-11")}
             >
-              <Globe  className="h-5 w-5 text-white" strokeWidth={2} />
+              <Globe className="h-5 w-5 text-white" strokeWidth={2} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -361,7 +367,7 @@ export function Sidebar({
                 className={cn(
                   NEU_GROUP_BTN,
                   isGroupActive && NEU_GROUP_BTN_ACTIVE,
-                  isCollapsed && "justify-center px-2 py-3"
+                  isCollapsed && "justify-center px-2 py-3",
                 )}
                 whileTap={{ scale: 0.98 }}
                 aria-expanded={isGroupActive}
@@ -371,7 +377,7 @@ export function Sidebar({
                   className={cn(
                     "flex-shrink-0 transition-colors duration-200",
                     isCollapsed ? "h-6 w-6" : "h-5 w-5",
-                    isGroupActive ? "text-[#006666]" : "text-[#1E2938]/50"
+                    isGroupActive ? "text-[#006666]" : "text-[#1E2938]/50",
                   )}
                 />
                 <AnimatePresence>
@@ -440,15 +446,15 @@ export function Sidebar({
               <div
                 className={cn(
                   "flex h-6 w-6 items-center justify-center rounded-lg bg-[#006666]/10",
-                  "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]"
+                  "shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
                 )}
               >
-                <Globe  className="h-3 w-3 text-[#006666]" />
+                <Globe className="h-3 w-3 text-[#006666]" />
               </div>
               <p
                 className={cn(
                   NEU_MUTED,
-                  "font-[family-name:var(--font-space-mono)] text-[10px] uppercase tracking-widest"
+                  "font-[family-name:var(--font-space-mono)] text-[10px] uppercase tracking-widest",
                 )}
               >
                 Travel Spirit v1.0
@@ -466,12 +472,10 @@ export function Sidebar({
               <div
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-xl",
-                  "bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]"
+                  "bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]",
                 )}
               >
-                <span
-                  className="font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#006666]"
-                >
+                <span className="font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#006666]">
                   TS
                 </span>
               </div>

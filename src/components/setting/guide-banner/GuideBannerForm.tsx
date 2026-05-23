@@ -30,15 +30,15 @@ const NEU_INPUT =
   "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200";
 const NEU_BTN_PRIMARY =
   "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide text-sm " +
-  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
-  "hover:bg-[#007777] hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:bg-[#007777] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
   "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
   "disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none";
 const NEU_BTN_GHOST =
   "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] text-sm " +
-  "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
-  "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
 const NEU_LABEL = "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest block mb-1.5";
 const NEU_HEADING = "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
@@ -152,7 +152,7 @@ export default function GuideBannerForm({ initial, mode, onClose, onSave, editId
   return (
     <Dialog open onOpenChange={(o) => (!o ? onClose() : undefined)}>
       <DialogContent
-        className={`sm:max-w-lg border-0 p-0 ${NEU_SURFACE} shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff] rounded-2xl overflow-hidden`}
+        className={`sm:max-w-lg border-0 p-0 ${NEU_SURFACE} shadow-[0_4px_12px_rgba(0,0,0,0.06)] rounded-2xl overflow-hidden`}
         aria-label={`${mode === "create" ? "Create" : "Edit"} guide banner`}
       >
         {/* Header */}

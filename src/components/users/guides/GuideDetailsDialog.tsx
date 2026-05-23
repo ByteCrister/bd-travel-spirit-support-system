@@ -78,8 +78,8 @@ const NEU_CHAR_HINT =
 const NEU_SAVE_BTN =
   "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm h-9 " +
   "font-[family-name:var(--font-space-mono)] font-bold text-white bg-[#006666] " +
-  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
-  "hover:bg-[#007777] hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:bg-[#007777] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
   "disabled:opacity-50 disabled:cursor-not-allowed " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
@@ -87,14 +87,14 @@ const NEU_SAVE_BTN =
 
 const NEU_DOC_BTN =
   "w-full flex items-center gap-3 p-4 rounded-xl " +
-  "bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+  "bg-[#E7E5E4] shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
   "text-left transition-all duration-200 group " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
 
 const NEU_DOC_ICON_WELL =
   "flex-shrink-0 p-2.5 rounded-lg bg-[#006666]/10 " +
-  "shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "group-hover:bg-[#006666]/20 transition-colors";
 
 const NEU_FOOTER =
@@ -103,7 +103,7 @@ const NEU_FOOTER =
 const NEU_FOOTER_CLOSE =
   "inline-flex items-center rounded-xl px-4 py-2.5 text-sm " +
   "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] " +
-  "bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+  "bg-[#E7E5E4] shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40 " +
   "transition-all duration-200";
@@ -111,7 +111,7 @@ const NEU_FOOTER_CLOSE =
 const NEU_FOOTER_ACTION_REJECT =
   "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm " +
   "font-[family-name:var(--font-space-mono)] font-bold text-[#FF2157] " +
-  "bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+  "bg-[#E7E5E4] shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
   "hover:bg-[#FF2157]/5 " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF2157]/40 " +
@@ -138,8 +138,8 @@ const NEU_FOOTER_ACTION_SUSPEND =
 const NEU_FOOTER_ACTION_UNSUSPEND =
   "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm " +
   "font-[family-name:var(--font-space-mono)] font-bold text-white bg-[#006666] " +
-  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
-  "hover:bg-[#007777] hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:bg-[#007777] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
   "transition-all duration-200";

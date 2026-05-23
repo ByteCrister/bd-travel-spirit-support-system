@@ -76,32 +76,32 @@ const NEU_CARD_HEADER =
   "px-5 py-3.5 border-b border-[#1E2938]/10 flex items-center justify-between bg-[#E7E5E4]/80";
 const NEU_BTN_PRIMARY =
   "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
-  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
-  "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:bg-[#007777] " +
   "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
   "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
 const NEU_BTN_GHOST =
   "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
-  "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
-  "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:bg-[#F1F2F5] " +
   "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
   "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
 const NEU_BTN_DANGER =
   "rounded-xl bg-[#FF2157] text-white font-[family-name:var(--font-space-mono)] font-bold " +
-  "shadow-[4px_4px_8px_#cc0040,-2px_-2px_6px_#ff5577] " +
-  "hover:bg-[#e01a4b] hover:shadow-[6px_6px_12px_#cc0040,-3px_-3px_8px_#ff5577] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:bg-[#e01a4b] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "active:shadow-[inset_3px_3px_6px_#cc0040] " +
   "transition-all duration-200";
 const NEU_BTN_WARNING =
   "rounded-xl bg-[#FE9900] text-white font-[family-name:var(--font-space-mono)] font-bold " +
-  "shadow-[4px_4px_8px_#cc7a00,-2px_-2px_6px_#ffb733] " +
-  "hover:bg-[#e68a00] hover:shadow-[6px_6px_12px_#cc7a00] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:bg-[#e68a00] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "active:shadow-[inset_3px_3px_6px_#cc7a00] " +
   "transition-all duration-200";
 const NEU_BTN_SUCCESS =
   "rounded-xl bg-[#00A63D] text-white font-[family-name:var(--font-space-mono)] font-bold " +
-  "shadow-[4px_4px_8px_#007a2e,-2px_-2px_6px_#00cc4a] " +
-  "hover:bg-[#009635] hover:shadow-[6px_6px_12px_#007a2e] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:bg-[#009635] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
   "active:shadow-[inset_3px_3px_6px_#007a2e] " +
   "transition-all duration-200";
 const NEU_INPUT =

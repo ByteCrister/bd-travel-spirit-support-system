@@ -155,7 +155,7 @@ export function LocationRow({ location, onEdit }: Props) {
                                 <span className="hidden sm:inline">Delete</span>
                             </motion.button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent className="rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_20px_#c8c6c5,-8px_-8px_20px_#ffffff] border border-white/60">
+                        <AlertDialogContent className="rounded-2xl bg-[#E7E5E4] shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-white/60">
                             <AlertDialogHeader>
                                 <AlertDialogTitle className="font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938]">
                                     Delete Location
