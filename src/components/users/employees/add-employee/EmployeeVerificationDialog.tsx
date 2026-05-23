@@ -6,12 +6,46 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { AlertCircle, Loader2, ShieldCheck, Mail, ArrowRight, X } from "lucide-react";
+
+// ── Neumorphic style tokens ────────────────────────────────────
+const NEU_CARD =
+    "bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff]";
+
+const NEU_BTN_PRIMARY =
+    "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+    "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
+    "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none";
+
+const NEU_BTN_GHOST =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
+    "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+    "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+    "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+    "transition-all duration-200 focus-visible:outline-none " +
+    "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none";
+
+const NEU_INPUT_INSET =
+    "bg-[#E7E5E4] shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff]";
+
+const NEU_LABEL =
+    "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+
+const NEU_HEADING =
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+
+const NEU_MUTED =
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+
+const NEU_ICON_WELL_PRIMARY =
+    "p-2.5 rounded-xl bg-[#006666]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
+// ─────────────────────────────────────────────────────────────
 
 interface EmployeeVerificationDialogProps {
     open: boolean;
@@ -38,9 +72,7 @@ export default function EmployeeVerificationDialog({
     const tokenInput = digits.join("");
 
     useEffect(() => {
-        if (open) {
-            setTimeout(() => inputRefs.current[0]?.focus(), 100);
-        }
+        if (open) setTimeout(() => inputRefs.current[0]?.focus(), 100);
     }, [open]);
 
     const handleDigitChange = (index: number, value: string) => {
@@ -52,12 +84,8 @@ export default function EmployeeVerificationDialog({
     };
 
     const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-        if (e.key === "Backspace" && !digits[index] && index > 0) {
-            inputRefs.current[index - 1]?.focus();
-        }
-        if (e.key === "Enter" && tokenInput.length === 6 && !verifying) {
-            handleVerify();
-        }
+        if (e.key === "Backspace" && !digits[index] && index > 0) inputRefs.current[index - 1]?.focus();
+        if (e.key === "Enter" && tokenInput.length === 6 && !verifying) handleVerify();
     };
 
     const handlePaste = (e: React.ClipboardEvent) => {
@@ -87,91 +115,71 @@ export default function EmployeeVerificationDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent className="sm:max-w-[420px] p-0 border border-gray-200 shadow-xl rounded-2xl overflow-hidden bg-white">
+            <DialogContent className="sm:max-w-[440px] p-0 border-0 shadow-none bg-transparent overflow-visible">
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.97, y: 6 }}
+                    initial={{ opacity: 0, scale: 0.96, y: 8 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.97, y: 6 }}
+                    exit={{ opacity: 0, scale: 0.96, y: 8 }}
                     transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                    className={`${NEU_CARD} rounded-2xl border border-white/60 overflow-hidden`}
                 >
-                    {/* Top accent bar */}
-                    <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600" />
+                    {/* Teal accent bar */}
+                    <div className="h-1 w-full bg-[#006666]" />
 
-                    <div className="px-7 pt-6 pb-7">
-                        {/* Icon */}
-                        <motion.div
-                            initial={{ scale: 0.6, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.08, duration: 0.35, type: "spring", stiffness: 220 }}
-                            className="mb-5 w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center"
-                        >
-                            <ShieldCheck className="w-5 h-5 text-blue-600" />
-                        </motion.div>
+                    <div className="px-7 pt-6 pb-7 space-y-6">
+                        {/* Icon + Header */}
+                        <DialogHeader className="text-left space-y-3">
+                            <motion.div
+                                initial={{ scale: 0.6, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 0.08, duration: 0.35, type: "spring", stiffness: 220 }}
+                                className={`${NEU_ICON_WELL_PRIMARY} w-11 h-11 flex items-center justify-center`}
+                            >
+                                <ShieldCheck className="w-5 h-5 text-[#006666]" />
+                            </motion.div>
 
-                        {/* Header */}
-                        <DialogHeader className="mb-5 text-left space-y-1.5">
-                            <DialogTitle className="text-[17px] font-semibold text-gray-900 tracking-tight">
+                            <DialogTitle className={`${NEU_HEADING} text-lg`}>
                                 Verify employee&apos;s identity
                             </DialogTitle>
-                            <DialogDescription className="text-sm text-gray-500 leading-relaxed">
+                            <DialogDescription className={NEU_MUTED}>
                                 We sent a 6-digit code to{" "}
-                                <span className="inline-flex items-center gap-1 font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-md px-1.5 py-0.5 text-xs">
-                                    <Mail className="w-3 h-3 text-gray-400" />
+                                <span className="inline-flex items-center gap-1 font-[family-name:var(--font-space-mono)] font-bold text-[#006666] bg-[#006666]/10 rounded-lg px-2 py-0.5 text-xs shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]">
+                                    <Mail className="w-3 h-3" />
                                     {email}
                                 </span>
                             </DialogDescription>
                         </DialogHeader>
 
                         {/* OTP inputs */}
-                        <div className="mb-5">
-                            <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-3">
-                                Verification code
-                            </p>
+                        <div className="space-y-3">
+                            <p className={NEU_LABEL}>Verification code</p>
                             <div className="flex gap-2" onPaste={handlePaste}>
                                 {digits.map((digit, i) => (
-                                    <motion.div
+                                    <motion.input
                                         key={i}
+                                        ref={(el) => { inputRefs.current[i] = el; }}
+                                        type="text"
+                                        inputMode="numeric"
+                                        maxLength={1}
+                                        value={digit}
+                                        onChange={(e) => handleDigitChange(i, e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(i, e)}
+                                        disabled={verifying}
                                         initial={{ opacity: 0, y: 6 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.12 + i * 0.04 }}
-                                    >
-                                        <input
-                                            ref={(el) => { inputRefs.current[i] = el; }}
-                                            type="text"
-                                            inputMode="numeric"
-                                            maxLength={1}
-                                            value={digit}
-                                            onChange={(e) => handleDigitChange(i, e.target.value)}
-                                            onKeyDown={(e) => handleKeyDown(i, e)}
-                                            disabled={verifying}
-                                            style={{
-                                                width: "46px",
-                                                height: "54px",
-                                                textAlign: "center",
-                                                fontSize: "20px",
-                                                fontWeight: 600,
-                                                borderRadius: "10px",
-                                                outline: "none",
-                                                transition: "all 0.15s ease",
-                                                background: digit ? "#eff6ff" : "#f9fafb",
-                                                border: digit ? "1.5px solid #3b82f6" : "1.5px solid #e5e7eb",
-                                                color: digit ? "#1d4ed8" : "#6b7280",
-                                                caretColor: "#3b82f6",
-                                                boxShadow: digit ? "0 0 0 3px rgba(59,130,246,0.1)" : "none",
-                                                opacity: verifying ? 0.6 : 1,
-                                            }}
-                                            onFocus={(e) => {
-                                                e.target.style.border = "1.5px solid #3b82f6";
-                                                e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.12)";
-                                                e.target.style.background = "#eff6ff";
-                                            }}
-                                            onBlur={(e) => {
-                                                e.target.style.border = digit ? "1.5px solid #3b82f6" : "1.5px solid #e5e7eb";
-                                                e.target.style.boxShadow = digit ? "0 0 0 3px rgba(59,130,246,0.1)" : "none";
-                                                e.target.style.background = digit ? "#eff6ff" : "#f9fafb";
-                                            }}
-                                        />
-                                    </motion.div>
+                                        transition={{ delay: 0.1 + i * 0.04 }}
+                                        className={`
+                                            w-[46px] h-[54px] text-center text-xl font-bold rounded-xl border-none
+                                            font-[family-name:var(--font-space-mono)] text-[#1E2938]
+                                            outline-none transition-all duration-150
+                                            focus:ring-2 focus:ring-[#006666]/50
+                                            disabled:opacity-50 disabled:cursor-not-allowed
+                                            ${digit
+                                                ? "bg-[#006666]/10 text-[#006666] shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff]"
+                                                : `${NEU_INPUT_INSET} text-[#1E2938]/40`
+                                            }
+                                        `}
+                                    />
                                 ))}
                             </div>
                         </div>
@@ -180,37 +188,35 @@ export default function EmployeeVerificationDialog({
                         <AnimatePresence>
                             {error && (
                                 <motion.div
-                                    initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                                    animate={{ opacity: 1, height: "auto", marginBottom: 20 }}
-                                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
                                     transition={{ duration: 0.18 }}
+                                    className="flex items-start gap-2.5 px-4 py-3 rounded-xl text-sm bg-[#FF2157]/5 border border-[#FF2157]/20 text-[#FF2157] font-[family-name:var(--font-jetbrains-mono)]"
                                 >
-                                    <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl text-sm bg-red-50 border border-red-200 text-red-700">
-                                        <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
-                                        <span>{error}</span>
-                                    </div>
+                                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                                    <span>{error}</span>
                                 </motion.div>
                             )}
                         </AnimatePresence>
 
-                        {/* Buttons */}
-                        <DialogFooter className="flex flex-row gap-2.5 sm:gap-2.5">
-                            <Button
+                        {/* Action buttons */}
+                        <div className="flex gap-3">
+                            <button
                                 type="button"
-                                variant="outline"
                                 onClick={handleCancel}
                                 disabled={verifying}
-                                className="flex-1 h-10 rounded-xl text-sm font-medium text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-800 transition-colors"
+                                className={`${NEU_BTN_GHOST} flex-1 flex items-center justify-center gap-2 h-11 text-sm`}
                             >
-                                <X className="w-3.5 h-3.5 mr-1.5" />
+                                <X className="w-3.5 h-3.5" />
                                 Cancel
-                            </Button>
+                            </button>
 
-                            <Button
+                            <button
                                 type="button"
                                 onClick={handleVerify}
                                 disabled={verifying || !isComplete}
-                                className="flex-[2] h-10 rounded-xl text-sm font-semibold transition-all duration-200 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-100 disabled:text-gray-400 disabled:border disabled:border-gray-200 shadow-sm disabled:shadow-none"
+                                className={`${NEU_BTN_PRIMARY} flex-[2] flex items-center justify-center h-11 text-sm`}
                             >
                                 <AnimatePresence mode="wait">
                                     {verifying ? (
@@ -219,7 +225,7 @@ export default function EmployeeVerificationDialog({
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
-                                            className="flex items-center justify-center gap-2"
+                                            className="flex items-center gap-2"
                                         >
                                             <Loader2 className="w-4 h-4 animate-spin" />
                                             Verifying…
@@ -230,25 +236,28 @@ export default function EmployeeVerificationDialog({
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
-                                            className="flex items-center justify-center gap-2"
+                                            className="flex items-center gap-2"
                                         >
-                                            Verify & Continue
+                                            Verify &amp; Continue
                                             <ArrowRight className="w-4 h-4" />
                                         </motion.span>
                                     )}
                                 </AnimatePresence>
-                            </Button>
-                        </DialogFooter>
+                            </button>
+                        </div>
 
                         {/* Resend */}
                         <motion.p
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.45 }}
-                            className="text-center text-xs text-gray-400 mt-4"
+                            className="text-center font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/40"
                         >
                             Didn&apos;t receive a code?{" "}
-                            <button className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                            <button
+                                type="button"
+                                className="text-[#006666] hover:text-[#007777] font-bold transition-colors"
+                            >
                                 Resend email
                             </button>
                         </motion.p>

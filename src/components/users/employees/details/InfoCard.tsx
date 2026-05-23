@@ -1,25 +1,40 @@
+// ── Neumorphism tokens ──────────────────────────────────────────
+const NEU_CARD =
+  "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+
+const NEU_CARD_HEADER =
+  "px-6 py-4 border-b border-white/40 bg-[#E7E5E4]/80 rounded-t-2xl";
+
+const NEU_ICON_WELL_PRIMARY =
+  "p-2.5 rounded-xl bg-[#006666]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
+
+const NEU_HEADING =
+  "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+
+// ───────────────────────────────────────────────────────────────
+
 export default function InfoCard({
-    icon: Icon,
-    title,
-    children,
-    className = ""
+  icon: Icon,
+  title,
+  children,
+  className = "",
 }: {
-    icon: React.ElementType;
-    title: string;
-    children: React.ReactNode;
-    className?: string;
+  icon: React.ElementType;
+  title: string;
+  children: React.ReactNode;
+  className?: string;
 }) {
-    return (
-        <div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden ${className}`}>
-            <div className="border-b border-slate-200 dark:border-slate-700 px-6 py-4 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-900">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                        <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold">{title}</h3>
-                </div>
-            </div>
-            <div className="p-6">{children}</div>
+  return (
+    <div className={`${NEU_CARD} overflow-hidden ${className}`}>
+      <div className={NEU_CARD_HEADER}>
+        <div className="flex items-center gap-3">
+          <div className={NEU_ICON_WELL_PRIMARY}>
+            <Icon className="h-5 w-5 text-[#006666]" />
+          </div>
+          <h3 className={`text-base ${NEU_HEADING}`}>{title}</h3>
         </div>
-    );
+      </div>
+      <div className="p-6">{children}</div>
+    </div>
+  );
 }

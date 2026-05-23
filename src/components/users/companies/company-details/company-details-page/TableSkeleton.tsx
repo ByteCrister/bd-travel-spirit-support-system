@@ -1,5 +1,20 @@
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
+// ── Neumorphic style tokens ───────────────────────────────────
+const NEU_TABLE_WRAP =
+    "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_20px_#c8c6c5,-8px_-8px_20px_#ffffff] border border-white/60 overflow-x-auto";
+
+const NEU_TH =
+    "px-4 py-3.5 text-left font-bold text-xs font-[family-name:var(--font-space-mono)] uppercase tracking-widest text-[#1E2938]/50";
+
+const NEU_TD =
+    "px-4 py-3.5";
+
+const NEU_SKELETON =
+    "rounded-lg bg-[#d0cecd] animate-pulse";
+
+const NEU_ROW_ODD =
+    "border-t border-[#d0cecd]/60";
+
+// ─────────────────────────────────────────────────────────────
 
 interface Props {
     columns: string[];
@@ -8,29 +23,32 @@ interface Props {
 
 export function TableSkeleton({ columns, rows = 8 }: Props) {
     return (
-        <div className="rounded-md border overflow-x-auto">
-            <Table>
-                <TableHeader>
-                    <TableRow>
+        <div className={NEU_TABLE_WRAP}>
+            <table className="w-full">
+                <thead>
+                    <tr className="border-b border-[#c8c6c5]">
                         {columns.map((col) => (
-                            <TableHead key={col}>
-                                <Skeleton className="h-3 w-24" />
-                            </TableHead>
+                            <th key={col} className={NEU_TH}>
+                                <div className={`${NEU_SKELETON} h-3 w-20`} />
+                            </th>
                         ))}
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
+                    </tr>
+                </thead>
+                <tbody>
                     {Array.from({ length: rows }).map((_, rIdx) => (
-                        <TableRow key={rIdx}>
+                        <tr key={rIdx} className={rIdx > 0 ? NEU_ROW_ODD : ""}>
                             {columns.map((_, cIdx) => (
-                                <TableCell key={cIdx}>
-                                    <Skeleton className="h-4 w-full max-w-[180px]" />
-                                </TableCell>
+                                <td key={cIdx} className={NEU_TD}>
+                                    <div
+                                        className={`${NEU_SKELETON} h-4`}
+                                        style={{ maxWidth: `${120 + ((cIdx * 37 + rIdx * 13) % 80)}px` }}
+                                    />
+                                </td>
                             ))}
-                        </TableRow>
+                        </tr>
                     ))}
-                </TableBody>
-            </Table>
+                </tbody>
+            </table>
         </div>
     );
 }

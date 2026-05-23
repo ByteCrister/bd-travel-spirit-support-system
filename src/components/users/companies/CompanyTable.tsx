@@ -1,94 +1,80 @@
-'use client';
+"use client";
 
-import { memo } from 'react';
-import { Building2, Mail, Users, MapPin, Star, Clock, Calendar, TrendingUp } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { memo } from "react";
 import {
-    Table,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import type { CompanyRowDTO } from '@/types/company/company.types';
-import TableBodyWithTooltips from './TableBodyWithTooltips';
-import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
+  Building2,
+  Mail,
+  Users,
+  MapPin,
+  Star,
+  Clock,
+  Calendar,
+  TrendingUp,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import type { CompanyRowDTO } from "@/types/company/company.types";
+import TableBodyWithTooltips from "./TableBodyWithTooltips";
+import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 
-/**
- * Props for CompanyTable.
- * @property rows - Array of company rows to render.
- */
+// ── Neumorphic style tokens ────────────────────────────────────
+const NEU_LABEL =
+  "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+
+const NEU_TABLE_HEADER =
+  "bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] border-b border-white/60";
+// ─────────────────────────────────────────────────────────────
+
 export interface CompanyTableProps {
-    rows: CompanyRowDTO[];
+  rows: CompanyRowDTO[];
 }
 
+const HEADERS = [
+  { icon: Building2, label: "Company", align: "left" },
+  { icon: Mail, label: "Host Email", align: "left" },
+  { icon: Users, label: "Employees", align: "right" },
+  { icon: MapPin, label: "Tours", align: "right" },
+  { icon: TrendingUp, label: "Reviews", align: "right" },
+  { icon: Star, label: "Rating", align: "right" },
+  { icon: Clock, label: "Last Login", align: "left" },
+  { icon: Calendar, label: "Created", align: "left" },
+] as const;
+
 export const CompanyTable = memo(function CompanyTable({
-    rows,
+  rows,
 }: CompanyTableProps) {
-    const router = useRouter();
+  const router = useRouter();
 
-    const handleViewCompany = (companyId: string) => {
-        router.push(`/users/companies/${encodeId(encodeURIComponent(companyId))}`);
-    };
+  const handleViewCompany = (companyId: string) => {
+    router.push(`/users/companies/${encodeId(encodeURIComponent(companyId))}`);
+  };
 
-    return (
-        <div className="overflow-hidden">
-            <Table>
-                <TableHeader>
-                    <TableRow className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/50">
-                        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">
-                            <div className="flex items-center gap-2">
-                                <Building2 className="w-4 h-4" />
-                                Company
-                            </div>
-                        </TableHead>
-                        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">
-                            <div className="flex items-center gap-2">
-                                <Mail className="w-4 h-4" />
-                                Host Email
-                            </div>
-                        </TableHead>
-                        <TableHead className="text-right font-semibold text-slate-700 dark:text-slate-300">
-                            <div className="flex items-center justify-end gap-2">
-                                <Users className="w-4 h-4" />
-                                Employees
-                            </div>
-                        </TableHead>
-                        <TableHead className="text-right font-semibold text-slate-700 dark:text-slate-300">
-                            <div className="flex items-center justify-end gap-2">
-                                <MapPin className="w-4 h-4" />
-                                Tours
-                            </div>
-                        </TableHead>
-                        <TableHead className="text-right font-semibold text-slate-700 dark:text-slate-300">
-                            <div className="flex items-center justify-end gap-2">
-                                <TrendingUp className="w-4 h-4" />
-                                Reviews
-                            </div>
-                        </TableHead>
-                        <TableHead className="text-right font-semibold text-slate-700 dark:text-slate-300">
-                            <div className="flex items-center justify-end gap-2">
-                                <Star className="w-4 h-4" />
-                                Rating
-                            </div>
-                        </TableHead>
-                        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">
-                            <div className="flex items-center gap-2">
-                                <Clock className="w-4 h-4" />
-                                Last Login
-                            </div>
-                        </TableHead>
-                        <TableHead className="font-semibold text-slate-700 dark:text-slate-300">
-                            <div className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4" />
-                                Created
-                            </div>
-                        </TableHead>
-                    </TableRow>
-                </TableHeader>
+  return (
+    <div className="overflow-hidden rounded-2xl">
+      <Table>
+        <TableHeader>
+          <TableRow className={`${NEU_TABLE_HEADER} hover:bg-transparent`}>
+            {HEADERS.map(({ icon: Icon, label, align }) => (
+              <TableHead
+                key={label}
+                className={`py-4 ${align === "right" ? "text-right" : ""}`}
+              >
+                <div
+                  className={`flex items-center gap-1.5 ${NEU_LABEL} ${align === "right" ? "justify-end" : ""}`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </div>
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
 
-                <TableBodyWithTooltips rows={rows} handleViewCompany={handleViewCompany} />
-
-            </Table>
-        </div>
-    );
+        <TableBodyWithTooltips
+          rows={rows}
+          handleViewCompany={handleViewCompany}
+        />
+      </Table>
+    </div>
+  );
 });
