@@ -10,13 +10,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   CheckCircle,
   XCircle,
@@ -36,46 +32,49 @@ import { usePasswordRequestStore } from "@/store/guide/guide-password-request.st
 import { FORGOT_PASSWORD_STATUS } from "@/constants/guide-forgot-password.const";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 import { showToast } from "@/components/global/showToast";
+import {
+  NEU_BTN_PRIMARY,
+  NEU_BTN_GHOST,
+  NEU_BTN_DANGER,
+  NEU_INPUT,
+  NEU_HEADING,
+  NEU_LABEL,
+  NEU_MUTED,
+  NEU_SURFACE_INSET,
+  NEU_SURFACE_INSET_SM,
+  NEU_SURFACE_RAISED,
+  NEU_DIVIDER,
+  NEU_BADGE_SUCCESS,
+  NEU_BADGE_WARNING,
+  NEU_BADGE_DANGER,
+  NEU_BADGE,
+  NEU_ICON_WELL,
+  NEU_ICON_WELL_PRIMARY,
+} from "@/styles/neu.styles";
+
+// ── Local style constants ────────────────────────────────────────────────────
+const INFO_ROW = "flex items-center gap-3";
+const INFO_VALUE = "text-sm font-bold text-[#1E2938] font-[family-name:var(--font-space-mono)]";
+const INFO_SUB = "text-xs text-[#1E2938]/50 font-[family-name:var(--font-jetbrains-mono)]";
+
+const STATUS_BADGE_MAP = {
+  [FORGOT_PASSWORD_STATUS.PENDING]: { cls: NEU_BADGE_WARNING, label: "Pending" },
+  [FORGOT_PASSWORD_STATUS.APPROVED]: { cls: NEU_BADGE_SUCCESS, label: "Approved" },
+  [FORGOT_PASSWORD_STATUS.REJECTED]: { cls: NEU_BADGE_DANGER, label: "Rejected" },
+  [FORGOT_PASSWORD_STATUS.EXPIRED]: { cls: NEU_BADGE, label: "Expired" },
+};
 
 interface PasswordRequestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const STATUS_CONFIG = {
-  [FORGOT_PASSWORD_STATUS.PENDING]: {
-    color: "text-amber-700",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-200",
-  },
-  [FORGOT_PASSWORD_STATUS.APPROVED]: {
-    color: "text-emerald-700",
-    bgColor: "bg-emerald-50",
-    borderColor: "border-emerald-200",
-  },
-  [FORGOT_PASSWORD_STATUS.REJECTED]: {
-    color: "text-rose-700",
-    bgColor: "bg-rose-50",
-    borderColor: "border-rose-200",
-  },
-  [FORGOT_PASSWORD_STATUS.EXPIRED]: {
-    color: "text-slate-700",
-    bgColor: "bg-slate-50",
-    borderColor: "border-slate-200",
-  },
-};
-
 export function PasswordRequestDialog({
   open,
   onOpenChange,
 }: PasswordRequestDialogProps) {
-  const {
-    selectedRequest,
-    approveRequest,
-    rejectRequest,
-    isUpdating,
-    selectRequest,
-  } = usePasswordRequestStore();
+  const { selectedRequest, approveRequest, rejectRequest, isUpdating, selectRequest } =
+    usePasswordRequestStore();
 
   const [rejectionReason, setRejectionReason] = useState("");
   const [generatedPassword, setGeneratedPassword] = useState("");
@@ -86,42 +85,34 @@ export function PasswordRequestDialog({
 
   const isPending = selectedRequest.status === FORGOT_PASSWORD_STATUS.PENDING;
   const isExpired = selectedRequest.status === FORGOT_PASSWORD_STATUS.EXPIRED;
+  const expiryPast = new Date(selectedRequest.expiresAt) < new Date();
+  const badgeCfg =
+    STATUS_BADGE_MAP[selectedRequest.status as keyof typeof STATUS_BADGE_MAP] ||
+    STATUS_BADGE_MAP[FORGOT_PASSWORD_STATUS.EXPIRED];
 
   const handleGeneratePassword = () => {
     setIsGenerating(true);
     setTimeout(() => {
-      const password = generateStrongPassword(12);
-      setGeneratedPassword(password);
+      setGeneratedPassword(generateStrongPassword(12));
       setIsGenerating(false);
-      showToast.success(
-        "Password Generated",
-        "A secure password has been generated successfully.",
-      );
+      showToast.success("Password Generated", "A secure password has been generated.");
     }, 300);
   };
 
   const handleApprove = async () => {
     if (!generatedPassword) {
-      showToast.warning(
-        "Provide a Password!",
-        "Please generate a valid password.",
-      );
+      showToast.warning("Provide a Password!", "Please generate a valid password.");
       return;
     }
-
     await approveRequest(selectedRequest.id, generatedPassword, sendEmail);
     onOpenChange(false);
   };
 
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
-      showToast.warning(
-        "Provide a reason!",
-        "Please provide a valid reason to reject the password reset request.",
-      );
+      showToast.warning("Provide a reason!", "Please provide a reason to reject.");
       return;
     }
-
     await rejectRequest(selectedRequest.id, rejectionReason);
     onOpenChange(false);
   };
@@ -134,330 +125,350 @@ export function PasswordRequestDialog({
     setTimeout(() => selectRequest(null), 300);
   };
 
-  const statusConfig =
-    STATUS_CONFIG[selectedRequest.status as keyof typeof STATUS_CONFIG];
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-slate-200 bg-white">
-        <DialogHeader>
+      <DialogContent
+        className={cn(
+          "max-w-2xl max-h-[90vh] overflow-y-auto p-0",
+          "bg-[#E7E5E4] border-white/60",
+          "shadow-[0_4px_12px_rgba(0,0,0,0.06)]",
+          "rounded-2xl"
+        )}
+      >
+        {/* ── Dialog Header ─────────────────────────────────── */}
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-white/40">
           <DialogTitle className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center shadow-sm">
-              <Key className="h-5 w-5 text-white" />
+            <div className={NEU_ICON_WELL_PRIMARY}>
+              <Key className="h-5 w-5 text-[#006666]" />
             </div>
-            <span className="text-slate-900">Password Reset Request</span>
+            <span className={cn(NEU_HEADING, "text-lg")}>Password Reset Request</span>
           </DialogTitle>
         </DialogHeader>
 
-        {/* User Information */}
+        {/* ── Body ──────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="space-y-6"
+          className="px-6 py-5 space-y-5"
         >
-          <div className="flex items-start gap-4 p-4 border border-slate-200 rounded-lg bg-slate-50/50">
-            <Avatar className="h-12 w-12 ring-2 ring-slate-200">
-              <AvatarImage src={selectedRequest.user.avatarUrl || undefined} />
-              <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-700 text-white font-medium">
-                {selectedRequest.user.name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-3">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <h3 className="font-semibold text-slate-900">
-                    {selectedRequest.user.name}
-                  </h3>
-                  <p className="text-sm text-slate-600 flex items-center gap-1.5">
-                    <Mail className="h-3.5 w-3.5" />
-                    {selectedRequest.user.email}
-                  </p>
-                </div>
-                <Badge
-                  variant={
-                    selectedRequest.status === FORGOT_PASSWORD_STATUS.PENDING
-                      ? "secondary"
-                      : selectedRequest.status ===
-                          FORGOT_PASSWORD_STATUS.APPROVED
-                        ? "default"
-                        : selectedRequest.status ===
-                            FORGOT_PASSWORD_STATUS.REJECTED
-                          ? "destructive"
-                          : "outline"
-                  }
-                  className={cn(
-                    "px-2.5 py-1 font-medium shadow-sm border",
-                    statusConfig.bgColor,
-                    statusConfig.color,
-                    statusConfig.borderColor,
-                  )}
-                >
-                  {selectedRequest.status}
-                </Badge>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <div className="p-1.5 rounded-md bg-slate-100">
-                    <Calendar className="h-3.5 w-3.5 text-slate-600" />
-                  </div>
+          {/* User card */}
+          <div className={cn(NEU_SURFACE_INSET, "p-4 rounded-2xl")}>
+            <div className="flex items-start gap-4">
+              <Avatar className="h-12 w-12 ring-2 ring-white/70 shadow-[2px_2px_6px_#c8c6c5] shrink-0">
+                <AvatarImage src={selectedRequest.user.avatarUrl || undefined} />
+                <AvatarFallback className="bg-[#006666] text-white font-bold text-base font-[family-name:var(--font-space-mono)]">
+                  {selectedRequest.user.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="flex-1 min-w-0 space-y-3">
+                {/* Name + status badge */}
+                <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
-                    <p className="text-xs text-slate-500">Created</p>
-                    <p className="font-medium">
-                      {format(
-                        new Date(selectedRequest.createdAt),
-                        "MMM d, yyyy",
-                      )}
+                    <h3 className={cn(NEU_HEADING, "text-base")}>
+                      {selectedRequest.user.name}
+                    </h3>
+                    <p className={cn(NEU_MUTED, "flex items-center gap-1.5 mt-0.5")}>
+                      <Mail className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{selectedRequest.user.email}</span>
                     </p>
                   </div>
+                  <span className={cn(badgeCfg.cls, "px-3 py-1 shrink-0")}>
+                    {badgeCfg.label}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-700">
-                  <div
-                    className={cn(
-                      "p-1.5 rounded-md",
-                      new Date(selectedRequest.expiresAt) < new Date()
-                        ? "bg-rose-100"
-                        : "bg-slate-100",
-                    )}
-                  >
-                    <Clock
-                      className={cn(
-                        "h-3.5 w-3.5",
-                        new Date(selectedRequest.expiresAt) < new Date()
-                          ? "text-rose-600"
-                          : "text-slate-600",
-                      )}
-                    />
+
+                {/* Date grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className={INFO_ROW}>
+                    <div className={NEU_ICON_WELL}>
+                      <Calendar className="h-3.5 w-3.5 text-[#006666]" />
+                    </div>
+                    <div>
+                      <p className={INFO_SUB}>Created</p>
+                      <p className={INFO_VALUE}>
+                        {format(new Date(selectedRequest.createdAt), "MMM d, yyyy")}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-500">Expires</p>
-                    <p
+                  <div className={INFO_ROW}>
+                    <div
                       className={cn(
-                        "font-medium",
-                        new Date(selectedRequest.expiresAt) < new Date()
-                          ? "text-rose-700"
-                          : "",
+                        NEU_ICON_WELL,
+                        expiryPast && "bg-[#FF2157]/10"
                       )}
                     >
-                      {format(
-                        new Date(selectedRequest.expiresAt),
-                        "MMM d, yyyy",
-                      )}
-                    </p>
+                      <Clock
+                        className={cn(
+                          "h-3.5 w-3.5",
+                          expiryPast ? "text-[#FF2157]" : "text-[#1E2938]/50"
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <p className={INFO_SUB}>Expires</p>
+                      <p
+                        className={cn(
+                          INFO_VALUE,
+                          expiryPast && "text-[#FF2157]"
+                        )}
+                      >
+                        {format(new Date(selectedRequest.expiresAt), "MMM d, yyyy")}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Reason for Request */}
+          {/* Reason */}
           <div className="space-y-2">
-            <Label className="text-slate-700 font-medium">
-              Reason for Password Reset
-            </Label>
+            <label className={NEU_LABEL}>Reason for Password Reset</label>
             <Textarea
               value={selectedRequest.reason}
               readOnly
-              className="resize-none border-slate-300 bg-slate-50 text-slate-900 min-h-[80px]"
+              className={cn(NEU_INPUT, "resize-none min-h-[76px] w-full py-2.5 px-3")}
             />
           </div>
 
-          {/* Password Generation Section (Only for Pending requests) */}
+          {/* ── Action section: only for pending non-expired ── */}
           {isPending && !isExpired && (
             <>
-              <Separator className="bg-slate-200" />
+              <div className={cn("border-t", NEU_DIVIDER)} />
+
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 className="space-y-4"
               >
-                <div className="flex items-center justify-between">
+                {/* Generate password header */}
+                <div className="flex items-center justify-between flex-wrap gap-3">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-slate-700" />
-                    <Label className="text-lg font-semibold text-slate-900">
+                    <div className={NEU_ICON_WELL_PRIMARY}>
+                      <ShieldCheck className="h-4 w-4 text-[#006666]" />
+                    </div>
+                    <span className={cn(NEU_HEADING, "text-base")}>
                       Generate New Password
-                    </Label>
+                    </span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <button
                     onClick={handleGeneratePassword}
                     disabled={isGenerating}
-                    className="border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all"
+                    className={cn(
+                      NEU_BTN_GHOST,
+                      "px-4 py-2 text-sm flex items-center gap-2",
+                      isGenerating && "opacity-60 cursor-not-allowed"
+                    )}
                   >
                     <RefreshCw
-                      className={cn(
-                        "h-4 w-4 mr-2",
-                        isGenerating && "animate-spin",
-                      )}
+                      className={cn("h-4 w-4", isGenerating && "animate-spin")}
                     />
-                    Generate Password
-                  </Button>
+                    {isGenerating ? "Generating…" : "Generate Password"}
+                  </button>
                 </div>
 
+                {/* Success banner */}
                 <AnimatePresence>
                   {generatedPassword && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="space-y-3"
                     >
-                      <div className="p-4 border border-emerald-200 rounded-lg bg-emerald-50/50">
-                        <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                          <Label className="text-emerald-900 font-medium">
-                            Password Generated Successfully
-                          </Label>
+                      <div
+                        className={cn(
+                          NEU_SURFACE_INSET_SM,
+                          "p-4 rounded-xl border border-[#00A63D]/20"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <CheckCircle2 className="h-4 w-4 text-[#00A63D]" />
+                          <span className={cn(NEU_LABEL, "text-[#00A63D]")}>
+                            Password Generated
+                          </span>
                         </div>
-                        <p className="text-sm text-emerald-700">
-                          A secure {generatedPassword.length}-character password
-                          has been generated. The password will be sent to the
-                          user via email when you approve this request.
+                        <p className={cn(NEU_MUTED, "text-[#00A63D]/80")}>
+                          A secure {generatedPassword.length}-character password is
+                          ready. It will be sent via email when you approve.
                         </p>
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
-                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg bg-slate-50/50">
-                  <div className="space-y-1 flex-1">
-                    <Label className="flex items-center gap-2 text-slate-900 font-medium">
-                      <Mail className="h-4 w-4 text-slate-600" />
+                {/* Send email toggle */}
+                <div
+                  className={cn(
+                    NEU_SURFACE_RAISED,
+                    "flex items-center justify-between p-4 rounded-xl"
+                  )}
+                >
+                  <div className="space-y-0.5 flex-1">
+                    <label className="flex items-center gap-2 text-sm font-bold text-[#1E2938] font-[family-name:var(--font-space-mono)]">
+                      <Mail className="h-4 w-4 text-[#006666]" />
                       Send Email Notification
-                    </Label>
-                    <p className="text-sm text-slate-600">
+                    </label>
+                    <p className={NEU_MUTED}>
                       Email the new password securely to the user
                     </p>
                   </div>
                   <Switch
                     checked={sendEmail}
                     onCheckedChange={setSendEmail}
-                    className="data-[state=checked]:bg-slate-700"
+                    className="data-[state=checked]:bg-[#006666]"
                   />
                 </div>
 
+                {/* No-email warning */}
                 {!sendEmail && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-2 p-3 border border-amber-200 rounded-lg bg-amber-50"
+                    className={cn(
+                      NEU_SURFACE_INSET_SM,
+                      "flex items-start gap-2 p-3 rounded-xl border border-[#FE9900]/20"
+                    )}
                   >
-                    <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                    <p className="text-sm text-amber-800">
-                      The password will be updated without notification. Make
-                      sure to communicate the password to the user through a
-                      secure channel.
+                    <AlertCircle className="h-4 w-4 text-[#FE9900] mt-0.5 shrink-0" />
+                    <p className={cn(NEU_MUTED, "text-[#FE9900]/80")}>
+                      The password will be updated without notification. Communicate it
+                      via a secure channel.
                     </p>
                   </motion.div>
                 )}
+
+                {/* Rejection reason */}
+                <div className="space-y-2">
+                  <label className={NEU_LABEL}>
+                    Rejection Reason{" "}
+                    <span className="normal-case opacity-50">(required to reject)</span>
+                  </label>
+                  <Textarea
+                    placeholder="Provide a detailed reason for rejection…"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    className={cn(
+                      NEU_INPUT,
+                      "resize-none min-h-[72px] w-full py-2.5 px-3"
+                    )}
+                  />
+                </div>
               </motion.div>
             </>
           )}
 
-          {/* Rejection Reason Section */}
-          {isPending && !isExpired && (
-            <div className="space-y-2">
-              <Label className="text-slate-700 font-medium">
-                Rejection Reason (Optional)
-              </Label>
-              <Textarea
-                placeholder="Provide a detailed reason for rejection..."
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                className="min-h-[80px] border-slate-300 focus:border-slate-400 focus:ring-slate-400"
-              />
-            </div>
-          )}
-
-          {/* Existing Rejection Reason (if already rejected) */}
+          {/* ── Existing rejection reason ── */}
           {selectedRequest.status === FORGOT_PASSWORD_STATUS.REJECTED &&
             selectedRequest.rejectionReason && (
               <div className="space-y-2">
-                <Label className="text-rose-700 font-medium">
+                <label className={cn(NEU_LABEL, "text-[#FF2157]")}>
                   Rejection Reason
-                </Label>
-                <div className="p-4 border border-rose-200 rounded-lg bg-rose-50">
-                  <p className="text-sm text-rose-900">
+                </label>
+                <div
+                  className={cn(
+                    NEU_SURFACE_INSET,
+                    "p-4 rounded-xl border border-[#FF2157]/15"
+                  )}
+                >
+                  <p className={cn(NEU_MUTED, "text-[#FF2157]/80")}>
                     {selectedRequest.rejectionReason}
                   </p>
                 </div>
               </div>
             )}
 
-          {/* Reviewer Info (if reviewed) */}
-          {selectedRequest.reviewer &&
-            selectedRequest.reviewer.reviewedById && (
-              <div className="p-4 border border-slate-200 rounded-lg bg-slate-50/50">
-                <Label className="text-sm font-medium text-slate-700 mb-3 block">
-                  Reviewed By
-                </Label>
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-slate-100">
-                    <User className="h-4 w-4 text-slate-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">
-                      {selectedRequest.reviewer.reviewerName}
-                    </p>
-                    <p className="text-xs text-slate-600">
-                      {selectedRequest.reviewer.reviewerEmail}
-                    </p>
-                  </div>
-                </div>
+          {/* ── Reviewer info ── */}
+          {selectedRequest.reviewer?.reviewedById && (
+            <div
+              className={cn(
+                NEU_SURFACE_INSET_SM,
+                "flex items-center gap-3 p-4 rounded-xl"
+              )}
+            >
+              <div className={NEU_ICON_WELL}>
+                <User className="h-4 w-4 text-[#006666]" />
               </div>
-            )}
+              <div>
+                <p className={cn(NEU_LABEL, "mb-0.5")}>Reviewed By</p>
+                <p className={INFO_VALUE}>{selectedRequest.reviewer.reviewerName}</p>
+                <p className={INFO_SUB}>{selectedRequest.reviewer.reviewerEmail}</p>
+              </div>
+            </div>
+          )}
         </motion.div>
 
-        <DialogFooter className="flex-col gap-3 sm:flex-row sm:gap-2 border-t border-slate-200 pt-4">
-          <Button
-            variant="outline"
+        {/* ── Footer ────────────────────────────────────────── */}
+        <DialogFooter
+          className={cn(
+            "flex flex-col gap-2 sm:flex-row sm:gap-2 px-6 py-4",
+            "border-t border-white/40"
+          )}
+        >
+          <button
             onClick={handleClose}
             disabled={isUpdating}
-            className="w-full sm:w-auto border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+            className={cn(
+              NEU_BTN_GHOST,
+              "w-full sm:w-auto px-5 py-2.5 text-sm flex items-center justify-center gap-2",
+              isUpdating && "opacity-50 cursor-not-allowed"
+            )}
           >
             Cancel
-          </Button>
+          </button>
 
           {isPending && !isExpired && (
             <>
-              <Button
-                variant="destructive"
+              <button
                 onClick={handleReject}
                 disabled={isUpdating || !rejectionReason.trim()}
-                className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white"
+                className={cn(
+                  NEU_BTN_DANGER,
+                  "w-full sm:w-auto px-5 py-2.5 text-sm flex items-center justify-center gap-2",
+                  (isUpdating || !rejectionReason.trim()) &&
+                  "opacity-40 cursor-not-allowed"
+                )}
               >
                 {isUpdating ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  <RefreshCw className="h-4 w-4 animate-spin" />
                 ) : (
-                  <XCircle className="h-4 w-4 mr-2" />
+                  <XCircle className="h-4 w-4" />
                 )}
                 Reject Request
-              </Button>
-              <Button
+              </button>
+
+              <button
                 onClick={handleApprove}
                 disabled={isUpdating || !generatedPassword}
-                className="w-full sm:w-auto bg-slate-700 hover:bg-slate-800 text-white"
+                className={cn(
+                  NEU_BTN_PRIMARY,
+                  "w-full sm:w-auto px-5 py-2.5 text-sm flex items-center justify-center gap-2",
+                  (isUpdating || !generatedPassword) &&
+                  "opacity-40 cursor-not-allowed shadow-none"
+                )}
               >
                 {isUpdating ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  <RefreshCw className="h-4 w-4 animate-spin" />
                 ) : (
-                  <CheckCircle className="h-4 w-4 mr-2" />
+                  <CheckCircle className="h-4 w-4" />
                 )}
-                Approve & {sendEmail ? "Send Email" : "Update Password"}
-              </Button>
+                Approve &amp; {sendEmail ? "Send Email" : "Update Password"}
+              </button>
             </>
           )}
 
-          {(selectedRequest.status === FORGOT_PASSWORD_STATUS.EXPIRED ||
-            !isPending) && (
-            <Button
+          {(isExpired || !isPending) && (
+            <button
               onClick={handleClose}
-              className="w-full sm:w-auto bg-slate-700 hover:bg-slate-800 text-white"
+              className={cn(
+                NEU_BTN_PRIMARY,
+                "w-full sm:w-auto px-5 py-2.5 text-sm flex items-center justify-center gap-2"
+              )}
             >
               Close
-            </Button>
+            </button>
           )}
         </DialogFooter>
       </DialogContent>

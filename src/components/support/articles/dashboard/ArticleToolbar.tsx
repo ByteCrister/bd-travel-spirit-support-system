@@ -1,5 +1,4 @@
 // components/article/ArticleToolbar.tsx
-
 'use client';
 
 import * as React from 'react';
@@ -12,10 +11,7 @@ import {
     OffsetPageRequest,
     ID,
 } from '@/types/article/article.types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
     HiMagnifyingGlass,
@@ -29,17 +25,110 @@ import {
     HiChatBubbleLeftRight,
     HiSparkles,
     HiChevronDown,
-    HiCheck
+    HiCheck,
 } from 'react-icons/hi2';
 import { FiRotateCcw } from 'react-icons/fi';
+import { HiTrash } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useArticleStore } from '@/store/article/article.store';
 import { useRouter } from 'next/navigation';
 import { ARTICLE_STATUS, ARTICLE_TYPE } from '@/constants/article.const';
 import { TOUR_CATEGORIES, TourCategories } from '@/constants/tour.const';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
-import { HiTrash } from 'react-icons/hi';
 
+// ── Style tokens ──────────────────────────────────────────────
+const S = {
+    // Buttons
+    btnPrimary:
+        'inline-flex items-center gap-2 px-5 py-2.5 rounded-xl ' +
+        'font-[family-name:var(--font-space-mono)] text-sm font-bold tracking-wide text-white ' +
+        'bg-[#006666] shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] ' +
+        'hover:bg-[#007777] hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] ' +
+        'active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] ' +
+        'disabled:opacity-40 disabled:cursor-not-allowed ' +
+        'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50',
+    btnGhost:
+        'inline-flex items-center gap-2 px-5 py-2.5 rounded-xl ' +
+        'font-[family-name:var(--font-space-mono)] text-sm font-bold text-[#1E2938] ' +
+        'bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] ' +
+        'hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] ' +
+        'active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'disabled:opacity-40 disabled:cursor-not-allowed ' +
+        'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40',
+    btnDanger:
+        'inline-flex items-center gap-2 px-5 py-2.5 rounded-xl ' +
+        'font-[family-name:var(--font-space-mono)] text-sm font-bold text-[#FF2157] ' +
+        'bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] ' +
+        'hover:bg-[#FF2157]/10 hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] ' +
+        'transition-all duration-200',
+
+    // Inputs
+    input:
+        'w-full rounded-xl px-4 py-2.5 text-sm ' +
+        'bg-[#E7E5E4] text-[#1E2938] placeholder:text-[#1E2938]/40 ' +
+        'font-[family-name:var(--font-jetbrains-mono)] ' +
+        'shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none ' +
+        'focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200',
+    inputSm:
+        'rounded-xl px-3 py-2 text-sm ' +
+        'bg-[#E7E5E4] text-[#1E2938] placeholder:text-[#1E2938]/40 ' +
+        'font-[family-name:var(--font-jetbrains-mono)] ' +
+        'shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none ' +
+        'focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200',
+
+    // Select
+    selectTrigger:
+        'rounded-xl border-none bg-[#E7E5E4] ' +
+        'font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938] ' +
+        'shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'focus:ring-2 focus:ring-[#006666]/40 transition-all',
+
+    // Sections
+    row: 'flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-[#E7E5E4] shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff] border border-white/60',
+    advancedPanel:
+        'rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60 p-6 space-y-5',
+    divider: 'border-t border-[#1E2938]/10',
+
+    // Labels
+    label:
+        'font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest flex items-center gap-1.5',
+    sectionLabel:
+        'font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/50 uppercase tracking-widest flex items-center gap-2',
+
+    // Badges (chips)
+    chip:
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs ' +
+        'font-[family-name:var(--font-space-mono)] font-bold text-[#006666] ' +
+        'bg-[#006666]/10 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] cursor-pointer ' +
+        'hover:bg-[#006666]/20 transition-all duration-200',
+    chipWarning:
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs ' +
+        'font-[family-name:var(--font-space-mono)] font-bold text-[#FE9900] ' +
+        'bg-[#FE9900]/10 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] cursor-pointer ' +
+        'hover:bg-[#FE9900]/20 transition-all duration-200',
+    filterCount:
+        'inline-flex items-center justify-center w-5 h-5 rounded-md text-xs ' +
+        'font-[family-name:var(--font-space-mono)] font-bold text-white bg-[#006666]',
+
+    // Icon btn (small)
+    iconBtnSm:
+        'w-9 h-9 flex items-center justify-center rounded-xl bg-[#006666] text-white ' +
+        'shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] ' +
+        'hover:bg-[#007777] active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] ' +
+        'transition-all duration-200',
+
+    // Dialog
+    dialogIconWell: 'w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0',
+    dialogTitle: 'font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] text-lg flex items-center gap-2',
+    presetRow:
+        'flex items-center justify-between p-3 rounded-xl border border-white/60 ' +
+        'bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] ' +
+        'hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] transition-all duration-200',
+    presetActionBtn:
+        'w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 focus-visible:outline-none',
+} as const;
+
+// ── Constants ──────────────────────────────────────────────────
 type Preset = {
     id: string;
     name: string;
@@ -49,21 +138,13 @@ type Preset = {
 };
 
 const PRESET_STORAGE_KEY = 'article_filter_presets';
-
 const STATUS_OPTIONS = Object.values(ARTICLE_STATUS);
 const TYPE_OPTIONS = Object.values(ARTICLE_TYPE);
 const CATEGORY_OPTIONS = Object.values(TOUR_CATEGORIES);
 
 const SORT_FIELDS: ArticleSortField[] = [
-    'updatedAt',
-    'publishedAt',
-    'createdAt',
-    'title',
-    'viewCount',
-    'likeCount',
-    'shareCount',
-    'readingTime',
-    'wordCount',
+    'updatedAt', 'publishedAt', 'createdAt', 'title',
+    'viewCount', 'likeCount', 'shareCount', 'readingTime', 'wordCount',
 ];
 
 const fieldLabels: Record<ArticleSortField, string> = {
@@ -91,42 +172,30 @@ export default function ArticleToolbar() {
     const setSort = useArticleStore((s) => s.setSort);
     const setPagination = useArticleStore((s) => s.setPagination);
     const reset = useArticleStore((s) => s.reset);
-
     const fetchArticleList = useArticleStore((s) => s.fetchArticleList);
 
-    // Local working state
     const [localFilter, setLocalFilter] = React.useState<ArticleFilter>(currentFilter);
     const [localSearch, setLocalSearch] = React.useState<ArticleSearch>(currentSearch);
     const [localSort, setLocalSort] = React.useState<ArticleSort>(currentSort);
     const [isResetting, setIsResetting] = React.useState(false);
     const [managePresetsOpen, setManagePresetsOpen] = React.useState(false);
-
-    // Token inputs
     const [tagsInput, setTagsInput] = React.useState('');
     const [authorsInput, setAuthorsInput] = React.useState('');
     const [searchInput, setSearchInput] = React.useState(currentSearch.query ?? '');
-
-    // Presets
     const [presetName, setPresetName] = React.useState('');
     const [presets, setPresets] = React.useState<Preset[]>(() => {
         try {
             const raw = typeof window !== 'undefined' ? localStorage.getItem(PRESET_STORAGE_KEY) : null;
             return raw ? (JSON.parse(raw) as Preset[]) : [];
-        } catch {
-            return [];
-        }
+        } catch { return []; }
     });
     const [presetOpen, setPresetOpen] = React.useState(false);
     const [showAdvanced, setShowAdvanced] = React.useState(false);
 
-    const debouncedSetSearch = useDebouncedCallback(
-        (query: string) => {
-            setLocalSearch({ query });
-        },
-        300 // 300ms delay
-    );
+    const debouncedSetSearch = useDebouncedCallback((query: string) => {
+        setLocalSearch({ query });
+    }, 300);
 
-    // Keep local in sync with store
     React.useEffect(() => {
         setLocalFilter(currentFilter);
         setLocalSearch(currentSearch);
@@ -137,7 +206,6 @@ export default function ArticleToolbar() {
         setSearchInput(currentSearch.query ?? '');
     }, [currentSearch.query]);
 
-    // Commit local changes to store and refetch
     const commitChanges = async () => {
         setFilter(localFilter);
         setSearch({ query: searchInput });
@@ -145,35 +213,26 @@ export default function ArticleToolbar() {
         await fetchArticleList();
     };
 
-    // Reset all filters
     const handleReset = async () => {
         setIsResetting(true);
         reset();
-        setSearchInput(''); // Clear the search input
+        setSearchInput('');
         await fetchArticleList();
         setIsResetting(false);
     };
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        setSearchInput(value); // Update UI immediately
-        debouncedSetSearch(value); // Debounced store update
+        setSearchInput(value);
+        debouncedSetSearch(value);
     };
 
-    // Navigate to create article
-    const handleCreateArticle = () => {
-        router.push('/support/articles/create');
-    };
-
-    // Token management
     const addToken = (value: string, key: 'tags' | 'authorNames') => {
         const trimmed = value.trim();
         if (!trimmed) return;
         setLocalFilter((f) => {
-            const next = { ...f };
-            const arr = Array.isArray(f[key]) ? ([...(f[key] as string[])] as string[]) : [];
-            next[key] = [...arr, trimmed];
-            return next;
+            const arr = Array.isArray(f[key]) ? [...(f[key] as string[])] : [];
+            return { ...f, [key]: [...arr, trimmed] };
         });
     };
 
@@ -184,7 +243,6 @@ export default function ArticleToolbar() {
         }));
     };
 
-    // Preset management
     const savePreset = () => {
         const newPreset: Preset = {
             id: crypto.randomUUID(),
@@ -195,11 +253,7 @@ export default function ArticleToolbar() {
         };
         const next = [...presets, newPreset];
         setPresets(next);
-        try {
-            localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(next));
-        } catch {
-            // ignore persist errors
-        }
+        try { localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(next)); } catch { }
         setPresetName('');
         setPresetOpen(false);
     };
@@ -215,22 +269,14 @@ export default function ArticleToolbar() {
     };
 
     const deletePreset = (id: string) => {
-        const next = presets.filter(p => p.id !== id);
+        const next = presets.filter((p) => p.id !== id);
         setPresets(next);
-        try {
-            localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(next));
-        } catch {
-            // ignore persist errors
-        }
+        try { localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(next)); } catch { }
     };
 
     const clearAllPresets = () => {
         setPresets([]);
-        try {
-            localStorage.removeItem(PRESET_STORAGE_KEY);
-        } catch {
-            // ignore persist errors
-        }
+        try { localStorage.removeItem(PRESET_STORAGE_KEY); } catch { }
     };
 
     const activeFiltersCount = [
@@ -246,113 +292,99 @@ export default function ArticleToolbar() {
 
     return (
         <motion.div
-            className="space-y-4"
+            className="space-y-3"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
         >
-            {/* Action Buttons Row */}
-            <div className="flex flex-wrap items-center gap-3 p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 rounded-xl border-2 border-blue-100 dark:border-slate-700">
-                <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex-1 sm:flex-initial"
+            {/* ── Top action row ─────────────────────────────── */}
+            <div className={S.row}>
+                <motion.button
+                    className={S.btnPrimary}
+                    onClick={() => router.push('/support/articles/create')}
+                    aria-label="Create new article"
+                    whileTap={{ scale: 0.97 }}
                 >
-                    <Button
-                        onClick={handleCreateArticle}
-                        className="w-full sm:w-auto h-11 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all font-semibold"
-                        aria-label="Create new article"
-                    >
-                        <HiPlus className="mr-2 h-5 w-5" />
-                        Create Article
-                    </Button>
-                </motion.div>
+                    <HiPlus className="h-4 w-4" />
+                    Create Article
+                </motion.button>
 
-                <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                <motion.button
+                    className={S.btnGhost}
+                    onClick={handleReset}
+                    disabled={isResetting}
+                    aria-label="Reset all filters"
+                    whileTap={{ scale: 0.97 }}
                 >
-                    <Button
-                        variant="outline"
-                        onClick={handleReset}
-                        disabled={isResetting}
-                        className="h-11 px-5 border-2 hover:border-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-all font-medium"
-                        aria-label="Reset all filters"
-                    >
-                        <FiRotateCcw className={`mr-2 h-4 w-4 ${isResetting ? 'animate-spin' : ''}`} />
-                        Reset All
-                    </Button>
-                </motion.div>
+                    <FiRotateCcw className={`h-4 w-4 ${isResetting ? 'animate-spin' : ''}`} />
+                    Reset All
+                </motion.button>
 
                 <div className="flex-1" />
-
-                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                    <span className="hidden sm:inline">Quick actions to manage your articles</span>
-                </div>
+                <span className="hidden sm:block font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/40">
+                    Quick actions to manage your articles
+                </span>
             </div>
-            {/* Search Bar & Quick Actions */}
+
+            {/* ── Search + Apply + Advanced ──────────────────── */}
             <div className="flex flex-col md:flex-row gap-3">
                 <div className="relative flex-1">
-                    <HiMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <Input
+                    <HiMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#1E2938]/40 pointer-events-none" />
+                    <input
                         value={searchInput}
                         onChange={handleSearchChange}
-                        placeholder="Search articles by title, summary, or tags..."
-                        className="pl-10 h-11 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        placeholder="Search articles by title, summary, or tags…"
+                        className={`${S.input} pl-10`}
                         aria-label="Search articles"
                     />
                 </div>
 
-                <div className="flex gap-2">
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <Button
-                            onClick={commitChanges}
-                            className="h-11 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all"
-                            aria-label="Apply filters"
-                        >
-                            <HiCheck className="mr-2 h-4 w-4" />
-                            Apply Filters
-                        </Button>
-                    </motion.div>
+                <div className="flex gap-2 flex-wrap">
+                    <motion.button
+                        className={S.btnPrimary}
+                        onClick={commitChanges}
+                        aria-label="Apply filters"
+                        whileTap={{ scale: 0.97 }}
+                    >
+                        <HiCheck className="h-4 w-4" />
+                        Apply
+                    </motion.button>
 
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowAdvanced(!showAdvanced)}
-                            className="h-11 px-4 border-2 hover:border-blue-500 hover:text-blue-600 transition-all"
-                            aria-label="Toggle advanced filters"
-                        >
-                            <HiAdjustmentsHorizontal className="mr-2 h-4 w-4" />
-                            Advanced
-                            {activeFiltersCount > 0 && (
-                                <Badge className="ml-2 bg-blue-600 text-white">
-                                    {activeFiltersCount}
-                                </Badge>
-                            )}
-                        </Button>
-                    </motion.div>
+                    <motion.button
+                        className={`${S.btnGhost} relative`}
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        aria-label="Toggle advanced filters"
+                        aria-expanded={showAdvanced}
+                        whileTap={{ scale: 0.97 }}
+                    >
+                        <HiAdjustmentsHorizontal className="h-4 w-4" />
+                        Advanced
+                        {activeFiltersCount > 0 && (
+                            <span className={S.filterCount}>{activeFiltersCount}</span>
+                        )}
+                    </motion.button>
                 </div>
             </div>
 
-            {/* Sort & Display Controls */}
-            <div className="flex flex-wrap items-center gap-3 p-4 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            {/* ── Sort & page-size row ───────────────────────── */}
+            <div className={`${S.row} gap-2`}>
+                <div className="flex items-center gap-2 text-[#1E2938]/60">
                     <HiArrowsUpDown className="h-4 w-4" />
-                    Sort by:
+                    <span className="font-[family-name:var(--font-space-mono)] text-xs font-bold uppercase tracking-widest">
+                        Sort
+                    </span>
                 </div>
 
                 <Select
                     value={localSort.field}
                     onValueChange={(val: ArticleSortField) => setLocalSort((s) => ({ ...s, field: val }))}
                 >
-                    <SelectTrigger className="w-44 h-9 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600" aria-label="Sort field">
+                    <SelectTrigger className={`${S.selectTrigger} w-44 h-9`} aria-label="Sort field">
                         <SelectValue placeholder="Sort field" />
                     </SelectTrigger>
                     <SelectContent>
                         {SORT_FIELDS.map((f) => (
-                            <SelectItem key={f} value={f}>
-                                {fieldLabels[f]}
-                            </SelectItem>
+                            <SelectItem key={f} value={f}>{fieldLabels[f]}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -361,19 +393,15 @@ export default function ArticleToolbar() {
                     value={localSort.order}
                     onValueChange={(val: SortOrder) => setLocalSort((s) => ({ ...s, order: val }))}
                 >
-                    <SelectTrigger className="w-32 h-9 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600" aria-label="Sort order">
+                    <SelectTrigger className={`${S.selectTrigger} w-32 h-9`} aria-label="Sort order">
                         <SelectValue placeholder="Order" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="asc">
-                            <div className="flex items-center gap-2">
-                                <HiChevronDown className="rotate-180" /> Ascending
-                            </div>
+                            <div className="flex items-center gap-2"><HiChevronDown className="rotate-180" />Ascending</div>
                         </SelectItem>
                         <SelectItem value="desc">
-                            <div className="flex items-center gap-2">
-                                <HiChevronDown /> Descending
-                            </div>
+                            <div className="flex items-center gap-2"><HiChevronDown />Descending</div>
                         </SelectItem>
                     </SelectContent>
                 </Select>
@@ -381,7 +409,9 @@ export default function ArticleToolbar() {
                 <div className="flex-1" />
 
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Show:</span>
+                    <span className="font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/50 uppercase tracking-widest hidden sm:block">
+                        Show:
+                    </span>
                     <Select
                         value={String(currentPagination.pageSize ?? 20)}
                         onValueChange={(val) => {
@@ -392,21 +422,19 @@ export default function ArticleToolbar() {
                         }}
                         aria-label="Page size"
                     >
-                        <SelectTrigger className="w-28 h-9 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600">
+                        <SelectTrigger className={`${S.selectTrigger} w-28 h-9`}>
                             <SelectValue placeholder="Page size" />
                         </SelectTrigger>
                         <SelectContent>
                             {[10, 20, 50, 100].map((n) => (
-                                <SelectItem key={n} value={String(n)}>
-                                    {n} items
-                                </SelectItem>
+                                <SelectItem key={n} value={String(n)}>{n} items</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
                 </div>
             </div>
 
-            {/* Advanced Filters */}
+            {/* ── Advanced filters panel ─────────────────────── */}
             <AnimatePresence>
                 {showAdvanced && (
                     <motion.div
@@ -416,95 +444,64 @@ export default function ArticleToolbar() {
                         transition={{ duration: 0.3 }}
                         className="overflow-hidden"
                     >
-                        <div className="space-y-4 p-6 bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg">
-                            {/* Status, Type, Category */}
+                        <div className={S.advancedPanel}>
+
+                            {/* Status / Type / Category */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                        <div className="w-1 h-4 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full" />
-                                        Status
-                                    </label>
-                                    <Select
-                                        value={(localFilter.status?.[0] as string) ?? ''}
-                                        onValueChange={(val) =>
-                                            setLocalFilter((f) => ({ ...f, status: val ? [val as ARTICLE_STATUS] : [] }))
-                                        }
-                                    >
-                                        <SelectTrigger className="bg-white dark:bg-slate-900" aria-label="Status filter">
-                                            <SelectValue placeholder="All statuses" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {STATUS_OPTIONS.map((s) => (
-                                                <SelectItem key={s} value={s}>
-                                                    {s}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                        <div className="w-1 h-4 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
-                                        Type
-                                    </label>
-                                    <Select
-                                        value={(localFilter.articleType?.[0] as string) ?? ''}
-                                        onValueChange={(val) =>
-                                            setLocalFilter((f) => ({ ...f, articleType: val ? [val as ARTICLE_TYPE] : [] }))
-                                        }
-                                    >
-                                        <SelectTrigger className="bg-white dark:bg-slate-900" aria-label="Type filter">
-                                            <SelectValue placeholder="All types" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {TYPE_OPTIONS.map((t) => (
-                                                <SelectItem key={t} value={t}>
-                                                    {t}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                        <div className="w-1 h-4 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full" />
-                                        Category
-                                    </label>
-                                    <Select
-                                        value={(localFilter.categories?.[0] as string) ?? ''}
-                                        onValueChange={(val) =>
-                                            setLocalFilter((f) => ({ ...f, categories: val ? [val as TourCategories] : [] }))
-                                        }
-                                    >
-                                        <SelectTrigger className="bg-white dark:bg-slate-900" aria-label="Category filter">
-                                            <SelectValue placeholder="All categories" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {CATEGORY_OPTIONS.map((c) => (
-                                                <SelectItem key={c} value={c}>
-                                                    {c}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                {[
+                                    {
+                                        label: 'Status', key: 'status' as const,
+                                        options: STATUS_OPTIONS,
+                                        value: (localFilter.status?.[0] as string) ?? '',
+                                        onChange: (val: string) =>
+                                            setLocalFilter((f) => ({ ...f, status: val ? [val as ARTICLE_STATUS] : [] })),
+                                    },
+                                    {
+                                        label: 'Type', key: 'articleType' as const,
+                                        options: TYPE_OPTIONS,
+                                        value: (localFilter.articleType?.[0] as string) ?? '',
+                                        onChange: (val: string) =>
+                                            setLocalFilter((f) => ({ ...f, articleType: val ? [val as ARTICLE_TYPE] : [] })),
+                                    },
+                                    {
+                                        label: 'Category', key: 'categories' as const,
+                                        options: CATEGORY_OPTIONS,
+                                        value: (localFilter.categories?.[0] as string) ?? '',
+                                        onChange: (val: string) =>
+                                            setLocalFilter((f) => ({ ...f, categories: val ? [val as TourCategories] : [] })),
+                                    },
+                                ].map(({ label, key, options, value, onChange }) => (
+                                    <div key={key} className="space-y-2">
+                                        <label className={S.label}>{label}</label>
+                                        <Select value={value} onValueChange={onChange}>
+                                            <SelectTrigger className={`${S.selectTrigger} h-10 w-full`} aria-label={label}>
+                                                <SelectValue placeholder={`All ${label.toLowerCase()}s`} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {options.map((o) => (
+                                                    <SelectItem key={o} value={o}>{o}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Tags & Authors */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-3">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                        <HiSparkles className="h-4 w-4 text-amber-500" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {/* Tags */}
+                                <div className="space-y-2">
+                                    <label className={S.label}>
+                                        <HiSparkles className="h-3.5 w-3.5 text-[#FE9900]" />
                                         Tags
                                     </label>
                                     <div className="flex gap-2">
-                                        <Input
+                                        <input
                                             value={tagsInput}
                                             onChange={(e) => setTagsInput(e.target.value)}
-                                            placeholder="Add tag..."
-                                            className="bg-white dark:bg-slate-900"
+                                            placeholder="Add tag…"
+                                            className={`${S.inputSm} flex-1`}
+                                            aria-label="Tags input"
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
                                                     e.preventDefault();
@@ -512,53 +509,44 @@ export default function ArticleToolbar() {
                                                     setTagsInput('');
                                                 }
                                             }}
-                                            aria-label="Tags input"
                                         />
-                                        <Button
-                                            size="sm"
-                                            onClick={() => {
-                                                addToken(tagsInput, 'tags');
-                                                setTagsInput('');
-                                            }}
-                                            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                                        <button
+                                            className={S.iconBtnSm}
+                                            onClick={() => { addToken(tagsInput, 'tags'); setTagsInput(''); }}
                                             aria-label="Add tag"
                                         >
                                             <HiPlus className="h-4 w-4" />
-                                        </Button>
+                                        </button>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-1.5">
                                         {(localFilter.tags ?? []).map((t) => (
-                                            <motion.div
+                                            <motion.button
                                                 key={t}
+                                                className={S.chipWarning}
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
                                                 exit={{ scale: 0 }}
-                                                whileHover={{ scale: 1.05 }}
+                                                onClick={() => removeToken(t, 'tags')}
                                             >
-                                                <Badge
-                                                    variant="outline"
-                                                    className="cursor-pointer bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-300 dark:border-amber-700 hover:border-amber-500 transition-all"
-                                                    onClick={() => removeToken(t, 'tags')}
-                                                >
-                                                    {t}
-                                                    <HiXMark className="ml-1 h-3 w-3" />
-                                                </Badge>
-                                            </motion.div>
+                                                {t} <HiXMark className="h-3 w-3" />
+                                            </motion.button>
                                         ))}
                                     </div>
                                 </div>
 
-                                <div className="space-y-3">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                        <HiSparkles className="h-4 w-4 text-blue-500" />
+                                {/* Authors */}
+                                <div className="space-y-2">
+                                    <label className={S.label}>
+                                        <HiSparkles className="h-3.5 w-3.5 text-[#006666]" />
                                         Author Names
                                     </label>
                                     <div className="flex gap-2">
-                                        <Input
+                                        <input
                                             value={authorsInput}
                                             onChange={(e) => setAuthorsInput(e.target.value)}
-                                            placeholder="Add author Name..."
-                                            className="bg-white dark:bg-slate-900"
+                                            placeholder="Add author name…"
+                                            className={`${S.inputSm} flex-1`}
+                                            aria-label="Authors input"
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
                                                     e.preventDefault();
@@ -566,121 +554,101 @@ export default function ArticleToolbar() {
                                                     setAuthorsInput('');
                                                 }
                                             }}
-                                            aria-label="Authors input"
                                         />
-                                        <Button
-                                            size="sm"
-                                            onClick={() => {
-                                                addToken(authorsInput, 'authorNames');
-                                                setAuthorsInput('');
-                                            }}
-                                            className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+                                        <button
+                                            className={S.iconBtnSm}
+                                            onClick={() => { addToken(authorsInput, 'authorNames'); setAuthorsInput(''); }}
                                             aria-label="Add author"
                                         >
                                             <HiPlus className="h-4 w-4" />
-                                        </Button>
+                                        </button>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-1.5">
                                         {(localFilter.authorNames ?? []).map((a) => (
-                                            <motion.div
+                                            <motion.button
                                                 key={a as ID}
+                                                className={S.chip}
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
                                                 exit={{ scale: 0 }}
-                                                whileHover={{ scale: 1.05 }}
+                                                onClick={() => removeToken(a as string, 'authorNames')}
                                             >
-                                                <Badge
-                                                    variant="outline"
-                                                    className="cursor-pointer bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-300 dark:border-blue-700 hover:border-blue-500 transition-all"
-                                                    onClick={() => removeToken(a as string, 'authorNames')}
-                                                >
-                                                    {a}
-                                                    <HiXMark className="ml-1 h-3 w-3" />
-                                                </Badge>
-                                            </motion.div>
+                                                {a} <HiXMark className="h-3 w-3" />
+                                            </motion.button>
                                         ))}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Date Range & Location */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-3">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                        <HiCalendarDays className="h-4 w-4 text-indigo-500" />
+                            {/* Date range & Destination */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="space-y-2">
+                                    <label className={S.label}>
+                                        <HiCalendarDays className="h-3.5 w-3.5 text-[#006666]" />
                                         Published Date Range
                                     </label>
                                     <div className="grid grid-cols-2 gap-2">
-                                        <Input
+                                        <input
                                             type="date"
                                             value={localFilter.publishedFrom ?? ''}
                                             onChange={(e) => {
                                                 const newFrom = e.target.value;
-                                                setLocalFilter((f) => {
-                                                    // If to date exists and is earlier than new from date, update both
-                                                    if (newFrom && f.publishedTo && newFrom > f.publishedTo) {
-                                                        return { ...f, publishedFrom: newFrom, publishedTo: newFrom };
-                                                    }
-                                                    return { ...f, publishedFrom: newFrom };
-                                                });
+                                                setLocalFilter((f) => ({
+                                                    ...f,
+                                                    publishedFrom: newFrom,
+                                                    publishedTo: newFrom && f.publishedTo && newFrom > f.publishedTo ? newFrom : f.publishedTo,
+                                                }));
                                             }}
-                                            className="bg-white dark:bg-slate-900"
+                                            className={S.inputSm}
                                             aria-label="Published from"
                                             max={localFilter.publishedTo || undefined}
                                         />
-                                        <Input
+                                        <input
                                             type="date"
                                             value={localFilter.publishedTo ?? ''}
                                             onChange={(e) => {
                                                 const newTo = e.target.value;
-                                                setLocalFilter((f) => {
-                                                    // If from date exists and is later than new to date, update both
-                                                    if (newTo && f.publishedFrom && newTo < f.publishedFrom) {
-                                                        return { ...f, publishedFrom: newTo, publishedTo: newTo };
-                                                    }
-                                                    return { ...f, publishedTo: newTo };
-                                                });
+                                                setLocalFilter((f) => ({
+                                                    ...f,
+                                                    publishedTo: newTo,
+                                                    publishedFrom: newTo && f.publishedFrom && newTo < f.publishedFrom ? newTo : f.publishedFrom,
+                                                }));
                                             }}
-                                            className="bg-white dark:bg-slate-900"
+                                            className={S.inputSm}
                                             aria-label="Published to"
                                             min={localFilter.publishedFrom || undefined}
                                         />
                                     </div>
-                                    {(localFilter.publishedFrom && localFilter.publishedTo && localFilter.publishedFrom > localFilter.publishedTo) ? (
-                                        <p className="text-xs text-red-500 dark:text-red-400">
+                                    {localFilter.publishedFrom && localFilter.publishedTo && localFilter.publishedFrom > localFilter.publishedTo && (
+                                        <p className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#FF2157]">
                                             End date cannot be earlier than start date
                                         </p>
-                                    ) : null}
+                                    )}
                                 </div>
 
-                                <div className="space-y-3">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                        <HiMapPin className="h-4 w-4 text-rose-500" />
+                                <div className="space-y-2">
+                                    <label className={S.label}>
+                                        <HiMapPin className="h-3.5 w-3.5 text-[#FF2157]" />
                                         Destination
                                     </label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <Input
-                                            placeholder="City"
-                                            value={localFilter.destinationCity ?? ''}
-                                            onChange={(e) => setLocalFilter((f) => ({ ...f, destinationCity: e.target.value }))}
-                                            className="bg-white dark:bg-slate-900"
-                                            aria-label="Destination city"
-                                        />
-                                    </div>
+                                    <input
+                                        placeholder="City"
+                                        value={localFilter.destinationCity ?? ''}
+                                        onChange={(e) => setLocalFilter((f) => ({ ...f, destinationCity: e.target.value }))}
+                                        className={S.inputSm}
+                                        aria-label="Destination city"
+                                    />
                                 </div>
                             </div>
 
                             {/* Comments & Presets */}
-                            <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <div className={`flex flex-wrap items-center gap-3 pt-4 ${S.divider}`}>
                                 <div className="flex items-center gap-2">
-                                    <HiChatBubbleLeftRight className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                                    <HiChatBubbleLeftRight className="h-4 w-4 text-[#1E2938]/40" />
                                     <Select
                                         value={
-                                            localFilter.allowComments === undefined
-                                                ? 'any'
-                                                : localFilter.allowComments
-                                                    ? 'true'
-                                                    : 'false'
+                                            localFilter.allowComments === undefined ? 'any'
+                                                : localFilter.allowComments ? 'true' : 'false'
                                         }
                                         onValueChange={(val) =>
                                             setLocalFilter((f) => ({
@@ -689,7 +657,7 @@ export default function ArticleToolbar() {
                                             }))
                                         }
                                     >
-                                        <SelectTrigger className="w-48 bg-white dark:bg-slate-900" aria-label="Allow comments">
+                                        <SelectTrigger className={`${S.selectTrigger} w-48 h-9`} aria-label="Allow comments">
                                             <SelectValue placeholder="Comments" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -702,46 +670,37 @@ export default function ArticleToolbar() {
 
                                 <div className="flex-1" />
 
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        variant="outline"
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <motion.button
+                                        className={S.btnGhost}
                                         onClick={() => setPresetOpen(true)}
-                                        className="border-2 hover:border-purple-500 hover:text-purple-600 transition-all"
                                         aria-label="Save current filter"
+                                        whileTap={{ scale: 0.97 }}
                                     >
-                                        <HiBookmark className="mr-2 h-4 w-4" />
+                                        <HiBookmark className="h-4 w-4" />
                                         Save Preset
-                                    </Button>
+                                    </motion.button>
 
-                                    <Button
-                                        variant="outline"
+                                    <motion.button
+                                        className={S.btnDanger}
                                         onClick={() => setManagePresetsOpen(true)}
-                                        className="border-2 hover:border-red-500 hover:text-red-600 transition-all"
                                         aria-label="Manage presets"
+                                        whileTap={{ scale: 0.97 }}
                                     >
-                                        <HiTrash className="mr-2 h-4 w-4" />
-                                        Manage Presets
-                                    </Button>
+                                        <HiTrash className="h-4 w-4" />
+                                        Manage
+                                    </motion.button>
 
                                     {presets.length > 0 && (
-                                        <Select
-                                            onValueChange={(id) => applyPreset(presets.find((p) => p.id === id))}
-                                            aria-label="Apply preset"
-                                        >
-                                            <SelectTrigger className="w-56 bg-white dark:bg-slate-900">
-                                                <SelectValue placeholder="Load saved preset..." />
+                                        <Select onValueChange={(id) => applyPreset(presets.find((p) => p.id === id))} aria-label="Apply preset">
+                                            <SelectTrigger className={`${S.selectTrigger} w-52 h-9`}>
+                                                <SelectValue placeholder="Load saved preset…" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {presets.map((p) => (
                                                     <SelectItem key={p.id} value={p.id}>
-                                                        <div className="flex items-center justify-between w-full">
-                                                            <div className="flex items-center gap-2">
-                                                                <HiBookmark className="h-3 w-3" />
-                                                                {p.name}
-                                                            </div>
-                                                            <span className="text-xs text-slate-500">
-                                                                {Object.keys(p.filter).length} filters
-                                                            </span>
+                                                        <div className="flex items-center gap-2">
+                                                            <HiBookmark className="h-3 w-3" />{p.name}
                                                         </div>
                                                     </SelectItem>
                                                 ))}
@@ -755,87 +714,76 @@ export default function ArticleToolbar() {
                 )}
             </AnimatePresence>
 
-            {/* Preset Save Dialog */}
+            {/* ── Manage Presets Dialog ─────────────────────── */}
             <Dialog open={managePresetsOpen} onOpenChange={setManagePresetsOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md bg-[#E7E5E4] border border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl">
-                            <div className="p-2 bg-gradient-to-br from-red-500 to-orange-600 rounded-lg">
-                                <HiTrash className="h-5 w-5 text-white" />
+                        <DialogTitle className={S.dialogTitle}>
+                            <div className={`${S.dialogIconWell} bg-[#FF2157]/10 text-[#FF2157]`}>
+                                <HiTrash className="h-5 w-5" />
                             </div>
                             Manage Filter Presets
                         </DialogTitle>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-3 py-4">
                         {presets.length === 0 ? (
                             <div className="text-center py-8">
-                                <HiBookmark className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                                <p className="text-slate-600 dark:text-slate-400">
-                                    No presets saved yet. Save your first preset to see it here.
+                                <HiBookmark className="h-10 w-10 text-[#1E2938]/20 mx-auto mb-3" />
+                                <p className="font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50">
+                                    No presets saved yet.
                                 </p>
                             </div>
                         ) : (
-                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                                 {presets.map((preset) => (
                                     <motion.div
                                         key={preset.id}
+                                        className={S.presetRow}
                                         initial={{ opacity: 0, x: -10 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 10 }}
-                                        className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                                     >
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                <HiBookmark className="h-4 w-4 text-purple-500" />
-                                                <span className="font-medium text-slate-800 dark:text-slate-200">
+                                                <HiBookmark className="h-4 w-4 text-[#006666]" />
+                                                <span className="font-[family-name:var(--font-space-mono)] font-bold text-sm text-[#1E2938]">
                                                     {preset.name}
                                                 </span>
                                             </div>
-                                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                                <div className="flex flex-wrap gap-1">
-                                                    {preset.filter.status && preset.filter.status.length > 0 && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                            {preset.filter.status[0]}
-                                                        </Badge>
-                                                    )}
-                                                    {preset.filter.articleType && preset.filter.articleType.length > 0 && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                            {preset.filter.articleType[0]}
-                                                        </Badge>
-                                                    )}
-                                                    {preset.filter.tags && preset.filter.tags.length > 0 && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                            {preset.filter.tags.length} tags
-                                                        </Badge>
-                                                    )}
-                                                    {preset.search.query && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                            Search: {preset.search.query.substring(0, 10)}...
-                                                        </Badge>
-                                                    )}
-                                                </div>
+                                            <div className="flex flex-wrap gap-1 mt-1.5">
+                                                {preset.filter.status?.[0] && (
+                                                    <span className="font-[family-name:var(--font-space-mono)] text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#006666]/10 text-[#006666]">
+                                                        {preset.filter.status[0]}
+                                                    </span>
+                                                )}
+                                                {preset.filter.articleType?.[0] && (
+                                                    <span className="font-[family-name:var(--font-space-mono)] text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#FE9900]/10 text-[#FE9900]">
+                                                        {preset.filter.articleType[0]}
+                                                    </span>
+                                                )}
+                                                {preset.search.query && (
+                                                    <span className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] px-1.5 py-0.5 rounded bg-[#1E2938]/5 text-[#1E2938]/50">
+                                                        &quot;{preset.search.query.substring(0, 12)}…&quot;
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
+                                        <div className="flex items-center gap-1.5">
+                                            <button
+                                                className={`${S.presetActionBtn} text-[#006666] hover:bg-[#006666]/10`}
                                                 onClick={() => applyPreset(preset)}
-                                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                                 aria-label="Apply preset"
                                             >
                                                 <HiCheck className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
+                                            </button>
+                                            <button
+                                                className={`${S.presetActionBtn} text-[#FF2157] hover:bg-[#FF2157]/10`}
                                                 onClick={() => deletePreset(preset.id)}
-                                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                 aria-label="Delete preset"
                                             >
                                                 <HiTrash className="h-4 w-4" />
-                                            </Button>
+                                            </button>
                                         </div>
                                     </motion.div>
                                 ))}
@@ -843,80 +791,62 @@ export default function ArticleToolbar() {
                         )}
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="flex items-center gap-2">
                         {presets.length > 0 && (
-                            <Button
-                                variant="outline"
-                                onClick={clearAllPresets}
-                                className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-500 hover:text-red-700"
-                                aria-label="Clear all presets"
-                            >
-                                <HiTrash className="mr-2 h-4 w-4" />
+                            <button className={S.btnDanger} onClick={clearAllPresets} aria-label="Clear all presets">
+                                <HiTrash className="h-4 w-4" />
                                 Clear All
-                            </Button>
+                            </button>
                         )}
                         <div className="flex-1" />
-                        <Button
-                            variant="outline"
-                            onClick={() => setManagePresetsOpen(false)}
-                            aria-label="Close"
-                        >
+                        <button className={S.btnGhost} onClick={() => setManagePresetsOpen(false)} aria-label="Close">
                             Close
-                        </Button>
+                        </button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
+            {/* ── Save Preset Dialog ────────────────────────── */}
             <Dialog open={presetOpen} onOpenChange={setPresetOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md bg-[#E7E5E4] border border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl">
-                            <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg">
-                                <HiBookmark className="h-5 w-5 text-white" />
+                        <DialogTitle className={S.dialogTitle}>
+                            <div className={`${S.dialogIconWell} bg-[#006666]/10 text-[#006666]`}>
+                                <HiBookmark className="h-5 w-5" />
                             </div>
                             Save Filter Preset
                         </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <label htmlFor="preset-name" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                Preset Name
-                            </label>
-                            <Input
+                            <label htmlFor="preset-name" className={S.label}>Preset Name</label>
+                            <input
                                 id="preset-name"
                                 value={presetName}
                                 onChange={(e) => setPresetName(e.target.value)}
                                 placeholder="Enter a name for this preset"
-                                className="bg-white dark:bg-slate-900"
+                                className={S.input}
                                 aria-label="Preset name"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        savePreset();
-                                    }
-                                }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') savePreset(); }}
                             />
                         </div>
-                        <div className="text-sm text-slate-600 dark:text-slate-400">
-                            This will save the current filter, sort, and search settings.
-                        </div>
+                        <p className="font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50">
+                            Saves current filter, sort, and search settings.
+                        </p>
                     </div>
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setPresetOpen(false)}
-                            aria-label="Cancel"
-                        >
+                    <DialogFooter className="flex items-center gap-2">
+                        <button className={S.btnGhost} onClick={() => setPresetOpen(false)} aria-label="Cancel">
                             Cancel
-                        </Button>
-                        <Button
+                        </button>
+                        <button
+                            className={S.btnPrimary}
                             onClick={savePreset}
                             disabled={!presetName.trim()}
-                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                             aria-label="Save preset"
                         >
-                            <HiBookmark className="mr-2 h-4 w-4" />
+                            <HiBookmark className="h-4 w-4" />
                             Save Preset
-                        </Button>
+                        </button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

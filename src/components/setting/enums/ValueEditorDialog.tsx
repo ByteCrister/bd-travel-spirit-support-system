@@ -16,7 +16,7 @@ import { HiOutlineKey, HiOutlineTag, HiOutlineHashtag, HiOutlineSwitchHorizontal
 const S = {
   overlay:
     "bg-[#E7E5E4] rounded-2xl overflow-hidden border border-white/60 " +
-    "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] p-0",
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] p-0",
   header: "flex items-center gap-3 px-6 pt-6 pb-5 border-b border-[#1E2938]/10",
   iconWell:
     "flex-none flex items-center justify-center w-10 h-10 rounded-xl bg-[#006666] " +

@@ -14,8 +14,8 @@ const NEU_TOPBAR =
 
 const NEU_BTN_PRIMARY_ICON =
   "rounded-xl flex items-center justify-center bg-[#006666] text-white " +
-  "shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
-  "hover:shadow-[6px_6px_12px_#004d4d,-3px_-3px_8px_#008080] hover:bg-[#007777] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:bg-[#007777] " +
   "transition-all duration-200";
 const NEU_HEADING =
   "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";

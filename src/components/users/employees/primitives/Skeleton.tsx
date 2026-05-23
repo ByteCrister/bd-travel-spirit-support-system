@@ -1,5 +1,8 @@
 // components/employees/primitives/Skeleton.tsx
-import React from "react";
+// ── Neumorphic style tokens ────────────────────────────────────
+const NEU_SKELETON = "animate-pulse rounded-lg bg-[#d0cecd]";
+// ─────────────────────────────────────────────────────────────
+
 export function Skeleton({ className = "" }: { className?: string }) {
-    return <div className={`animate-pulse rounded-md bg-muted ${className}`} />;
+  return <div className={`${NEU_SKELETON} ${className}`} />;
 }

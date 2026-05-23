@@ -4,47 +4,64 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { ArticleListItem } from '@/types/article/article.types';
-import { Badge } from '@/components/ui/badge';
 import { motion, Variants } from 'framer-motion';
 import { FiArrowRight } from 'react-icons/fi';
 import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
 
-type Props<T extends ArticleListItem> = {
-    item: T;
-    index: number;
+// ── Style tokens ──────────────────────────────────────────────
+const S = {
+    row:
+        'group cursor-pointer transition-colors duration-150 ' +
+        'hover:bg-[#006666]/[0.03] focus-visible:outline-none focus-visible:bg-[#006666]/[0.05]',
+    td: 'py-4 px-4',
+    title:
+        'font-[family-name:var(--font-jetbrains-mono)] font-semibold text-sm text-[#1E2938] ' +
+        'group-hover:text-[#006666] transition-colors line-clamp-1',
+    statusBase:
+        'inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]',
+    typeText:
+        'font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/60 capitalize',
+    avatar:
+        'w-7 h-7 rounded-full bg-[#006666]/10 text-[#006666] flex items-center justify-center ' +
+        'font-[family-name:var(--font-space-mono)] font-bold text-xs flex-shrink-0 ' +
+        'shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]',
+    authorName:
+        'font-[family-name:var(--font-jetbrains-mono)] text-sm font-medium text-[#1E2938]',
+    catBadge:
+        'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-[family-name:var(--font-space-mono)] font-bold shadow-[1px_1px_3px_#c8c6c5,-1px_-1px_3px_#ffffff]',
+    countBadge:
+        'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938]/50 shadow-[1px_1px_3px_#c8c6c5,-1px_-1px_3px_#ffffff] bg-[#E7E5E4]',
+    statNum:
+        'font-[family-name:var(--font-jetbrains-mono)] text-sm font-bold text-[#1E2938]',
+    dateText:
+        'font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/50',
+} as const;
+
+const statusStyles: Record<string, string> = {
+    published: 'bg-[#00A63D]/10 text-[#00A63D]',
+    draft: 'bg-[#FE9900]/10 text-[#FE9900]',
+    archived: 'bg-[#FF2157]/10 text-[#FF2157]',
 };
 
+const categoryColors = [
+    'bg-[#006666]/10 text-[#006666]',
+    'bg-[#FE9900]/10 text-[#FE9900]',
+    'bg-[#00A63D]/10 text-[#00A63D]',
+    'bg-[#1E2938]/10 text-[#1E2938]/70',
+];
+
 const rowVariants: Variants = {
-    hidden: { opacity: 0, x: -20 },
+    hidden: { opacity: 0, x: -16 },
     visible: {
         opacity: 1,
         x: 0,
-        transition: {
-            type: 'spring',
-            stiffness: 100,
-            damping: 15,
-        },
+        transition: { type: 'spring', stiffness: 100, damping: 15 },
     },
 };
 
-// 🎨 Custom status styles
-const statusStyles: Record<string, string> = {
-    published: 'bg-blue-100 text-blue-700 border border-blue-200',
-    draft: 'bg-amber-100 text-amber-700 border border-amber-200',
-    archived: 'bg-rose-100 text-rose-700 border border-rose-200',
-};
+type Props<T extends ArticleListItem> = { item: T; index: number };
 
-// 🎨 Category color rotation
-const categoryColors = [
-    'bg-violet-100 text-violet-700 border border-violet-200',
-    'bg-pink-100 text-pink-700 border border-pink-200',
-    'bg-teal-100 text-teal-700 border border-teal-200',
-    'bg-indigo-100 text-indigo-700 border border-indigo-200',
-];
-
-export default function ArticleTableRow<T extends ArticleListItem>({
-    item,
-}: Props<T>) {
+export default function ArticleTableRow<T extends ArticleListItem>({ item }: Props<T>) {
     const router = useRouter();
     const [isHovered, setIsHovered] = React.useState(false);
 
@@ -73,103 +90,89 @@ export default function ArticleTableRow<T extends ArticleListItem>({
                     onClick(e as unknown as React.MouseEvent<HTMLTableRowElement>);
                 }
             }}
-            className="group hover:bg-accent/50 cursor-pointer transition-all duration-200 hover:shadow-sm"
+            className={S.row}
             aria-label={`Open article ${item.title}`}
         >
-            {/* Title + destinations */}
-            <td className="py-4 px-4">
-                <div className="flex items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                                {item.title}
-                            </span>
-                            <motion.div
-                                initial={{ x: -5, opacity: 0 }}
-                                animate={{ x: isHovered ? 0 : -5, opacity: isHovered ? 1 : 0 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <FiArrowRight className="w-4 h-4 text-primary" />
-                            </motion.div>
-                        </div>
-                    </div>
+            {/* Title */}
+            <td className={S.td}>
+                <div className="flex items-center gap-2">
+                    <span className={S.title}>{item.title}</span>
+                    <motion.span
+                        initial={{ x: -4, opacity: 0 }}
+                        animate={{ x: isHovered ? 0 : -4, opacity: isHovered ? 1 : 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="text-[#006666] flex-shrink-0"
+                    >
+                        <FiArrowRight className="w-3.5 h-3.5" />
+                    </motion.span>
                 </div>
             </td>
 
             {/* Status */}
-            <td className="py-4 px-4">
-                <Badge
-                    className={`capitalize font-medium shadow-sm ${statusStyles[item.status.toLowerCase()] ??
-                        'bg-gray-100 text-gray-700 border border-gray-200'
-                        }`}
+            <td className={S.td}>
+                <span
+                    className={`${S.statusBase} ${statusStyles[item.status.toLowerCase()] ?? 'bg-[#1E2938]/10 text-[#1E2938]/60'}`}
                 >
                     {item.status}
-                </Badge>
-            </td>
-
-            {/* Article type */}
-            <td className="py-4 px-4">
-                <span className="text-sm text-muted-foreground font-medium capitalize">
-                    {item.articleType}
                 </span>
             </td>
 
+            {/* Type */}
+            <td className={S.td}>
+                <span className={S.typeText}>{item.articleType}</span>
+            </td>
+
             {/* Author */}
-            <td className="py-4 px-4">
+            <td className={S.td}>
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
+                    <div className={S.avatar}>
                         {(item.author?.name ?? item.author?.id ?? 'U')[0].toUpperCase()}
                     </div>
-                    <span className="text-sm font-medium text-foreground">
+                    <span className={S.authorName}>
                         {item.author?.name ?? item.author?.id}
                     </span>
                 </div>
             </td>
 
             {/* Categories */}
-            <td className="py-4 px-4">
-                <div className="flex flex-wrap gap-1.5 max-w-[200px]">
+            <td className={S.td}>
+                <div className="flex flex-wrap gap-1 max-w-[180px]">
                     {(item.categories ?? []).slice(0, 3).map((c, i) => (
-                        <Badge
+                        <span
                             key={`${c}-${i}`}
-                            className={`text-xs font-medium ${categoryColors[i % categoryColors.length]
-                                }`}
+                            className={`${S.catBadge} ${categoryColors[i % categoryColors.length]}`}
                         >
                             {c}
-                        </Badge>
+                        </span>
                     ))}
                     {(item.categories ?? []).length > 3 && (
-                        <Badge variant="outline" className="text-xs">
+                        <span className={S.countBadge}>
                             +{(item.categories ?? []).length - 3}
-                        </Badge>
+                        </span>
                     )}
                 </div>
             </td>
 
             {/* Views */}
-            <td className="py-4 px-4">
-                <span className="text-sm font-semibold text-foreground">
-                    {formatNumber(item.viewCount)}
-                </span>
+            <td className={S.td}>
+                <span className={S.statNum}>{formatNumber(item.viewCount)}</span>
             </td>
 
             {/* Likes */}
-            <td className="py-4 px-4">
-                <span className="text-sm font-semibold text-foreground">
-                    {formatNumber(item.likeCount)}
-                </span>
+            <td className={S.td}>
+                <span className={S.statNum}>{formatNumber(item.likeCount)}</span>
             </td>
 
             {/* Published date */}
-            <td className="py-4 px-4">
-                <span className="text-xs text-muted-foreground font-medium">
+            <td className={S.td}>
+                <span className={S.dateText}>
                     {item.publishedAt
                         ? new Date(item.publishedAt).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric',
                         })
-                        : '-'}
+                        : '—'}
                 </span>
             </td>
         </motion.tr>

@@ -2,16 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Loader2, X, List } from "lucide-react";
 import RequestRow from "./RequestRow";
 import PaginationControls from "./PaginationControls";
@@ -22,8 +12,44 @@ import { ResetRequestListQuery } from "@/types/employee/password-reset.types";
 import RequestSkeletonRow from "./skeletons/RequestSkeletonRow";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
-// Available page limit options
+// ─── Neumorphism Style Tokens ────────────────────────────────
+const NEU_SURFACE = "bg-[#E7E5E4]";
+const NEU_SURFACE_RAISED =
+    "bg-[#E7E5E4] shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff]";
+const NEU_SURFACE_INSET =
+    "bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff]";
+
+const NEU_BTN_PRIMARY =
+    "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
+    "disabled:opacity-40 disabled:cursor-not-allowed";
+const NEU_INPUT =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] placeholder:text-[#1E2938]/40 " +
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm " +
+    "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+    "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200";
+const NEU_LABEL =
+    "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+const NEU_SELECT =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] text-sm font-[family-name:var(--font-jetbrains-mono)] " +
+    "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+    "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200 px-3 py-2 cursor-pointer appearance-none";
+const NEU_BADGE_WARNING =
+    "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold " +
+    "bg-[#FE9900]/10 text-[#FE9900] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+// ────────────────────────────────────────────────────────────
+
 const PAGE_LIMIT_OPTIONS = [10, 20, 50, 100] as const;
+
+const STATUS_OPTIONS = [
+    { value: "all", label: "All Status" },
+    { value: REQUEST_STATUS.PENDING, label: "Pending" },
+    { value: REQUEST_STATUS.DENIED, label: "Denied" },
+    { value: REQUEST_STATUS.FULFILLED, label: "Fulfilled" },
+];
 
 export default function RequestList() {
     const {
@@ -39,103 +65,55 @@ export default function RequestList() {
     const [searchTerm, setSearchTerm] = useState(currentQuery.search ?? "");
     const [isSearching, setIsSearching] = useState(false);
 
-    // Create a debounced search callback
-    const debouncedSearch = useDebouncedCallback(
-        async (term: string) => {
-            setIsSearching(true);
-            
-            const newQuery = {
-                ...currentQuery,
-                search: term.trim() || undefined,
-                page: 1,
-            };
+    const debouncedSearch = useDebouncedCallback(async (term: string) => {
+        setIsSearching(true);
+        const newQuery = { ...currentQuery, search: term.trim() || undefined, page: 1 };
+        setQuery(newQuery);
+        await fetchList(newQuery);
+        setIsSearching(false);
+    }, 300);
 
-            setQuery(newQuery);
-            await fetchList(newQuery);
-            
-            setIsSearching(false);
+    const handleSearchChange = useCallback(
+        (value: string) => {
+            setSearchTerm(value);
+            debouncedSearch(value);
         },
-        300 // 300ms delay
+        [debouncedSearch]
     );
 
-    // Update search term in UI immediately, trigger debounced search
-    const handleSearchChange = useCallback((value: string) => {
-        setSearchTerm(value);
-        debouncedSearch(value);
-    }, [debouncedSearch]);
-
-    // Handle Enter key press for immediate search
-    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            // Cancel any pending debounced search
-            if (debouncedSearch.cancel) {
-                debouncedSearch.cancel();
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter") {
+                if (debouncedSearch.cancel) debouncedSearch.cancel();
+                setIsSearching(true);
+                const newQuery = { ...currentQuery, search: searchTerm.trim() || undefined, page: 1 };
+                setQuery(newQuery);
+                fetchList(newQuery).finally(() => setIsSearching(false));
             }
-            
-            // Execute search immediately
-            setIsSearching(true);
-            const newQuery = {
-                ...currentQuery,
-                search: searchTerm.trim() || undefined,
-                page: 1,
-            };
-            
-            setQuery(newQuery);
-            fetchList(newQuery).finally(() => {
-                setIsSearching(false);
-            });
-        }
-    }, [debouncedSearch, searchTerm, currentQuery, setQuery, fetchList]);
+        },
+        [debouncedSearch, searchTerm, currentQuery, setQuery, fetchList]
+    );
 
-    // Handle search button click
     const handleSearchClick = useCallback(() => {
-        // Cancel any pending debounced search
-        if (debouncedSearch.cancel) {
-            debouncedSearch.cancel();
-        }
-        
-        // Execute search immediately
+        if (debouncedSearch.cancel) debouncedSearch.cancel();
         setIsSearching(true);
-        const newQuery = {
-            ...currentQuery,
-            search: searchTerm.trim() || undefined,
-            page: 1,
-        };
-        
+        const newQuery = { ...currentQuery, search: searchTerm.trim() || undefined, page: 1 };
         setQuery(newQuery);
-        fetchList(newQuery).finally(() => {
-            setIsSearching(false);
-        });
+        fetchList(newQuery).finally(() => setIsSearching(false));
     }, [debouncedSearch, searchTerm, currentQuery, setQuery, fetchList]);
 
-    // Handle clear search
     const clearSearch = useCallback(async () => {
         setSearchTerm("");
-        
-        // Cancel any pending debounced search
-        if (debouncedSearch.cancel) {
-            debouncedSearch.cancel();
-        }
-        
+        if (debouncedSearch.cancel) debouncedSearch.cancel();
         setIsSearching(true);
-        const newQuery = {
-            ...currentQuery,
-            search: undefined,
-            page: 1,
-        };
-        
+        const newQuery = { ...currentQuery, search: undefined, page: 1 };
         setQuery(newQuery);
         await fetchList(newQuery);
         setIsSearching(false);
     }, [debouncedSearch, currentQuery, setQuery, fetchList]);
 
-    // Clean up debounced callbacks on unmount
     useEffect(() => {
-        return () => {
-            if (debouncedSearch.cancel) {
-                debouncedSearch.cancel();
-            }
-        };
+        return () => { if (debouncedSearch.cancel) debouncedSearch.cancel(); };
     }, [debouncedSearch]);
 
     const rows = useMemo(
@@ -143,175 +121,189 @@ export default function RequestList() {
         [currentPageIds, entities]
     );
 
-    const onStatusChange = useCallback(async (val?: ResetRequestListQuery["status"]) => {
-        setQuery({ status: val, page: 1 });
-        await fetchList({ ...currentQuery, status: val, page: 1 });
-    }, [currentQuery, setQuery, fetchList]);
+    const onStatusChange = useCallback(
+        async (val?: ResetRequestListQuery["status"]) => {
+            setQuery({ status: val, page: 1 });
+            await fetchList({ ...currentQuery, status: val, page: 1 });
+        },
+        [currentQuery, setQuery, fetchList]
+    );
 
-    const onLimitChange = useCallback(async (limit: number) => {
-        setQuery({ limit, page: 1 });
-        await fetchList({ ...currentQuery, limit, page: 1 });
-    }, [currentQuery, setQuery, fetchList]);
+    const onLimitChange = useCallback(
+        async (limit: number) => {
+            setQuery({ limit, page: 1 });
+            await fetchList({ ...currentQuery, limit, page: 1 });
+        },
+        [currentQuery, setQuery, fetchList]
+    );
 
-    // Synchronous wrapper required by Select's onValueChange signature
-    const handleSelectValueChange = useCallback((value: string): void => {
-        // Map the incoming string to your status union
-        const mapped: ResetRequestListQuery["status"] =
-            value === "all" ? "all" : (value as RequestStatus);
+    const handleSelectValueChange = useCallback(
+        (value: string): void => {
+            const mapped: ResetRequestListQuery["status"] =
+                value === "all" ? "all" : (value as RequestStatus);
+            void onStatusChange(mapped);
+        },
+        [onStatusChange]
+    );
 
-        // Call the async handler and intentionally ignore the Promise (void)
-        void onStatusChange(mapped);
-    }, [onStatusChange]);
-
-    const handleLimitChange = useCallback((value: string): void => {
-        const limit = parseInt(value, 10);
-        void onLimitChange(limit);
-    }, [onLimitChange]);
+    const handleLimitChange = useCallback(
+        (value: string): void => {
+            void onLimitChange(parseInt(value, 10));
+        },
+        [onLimitChange]
+    );
 
     return (
-        <section className="space-y-6 p-6">
-            {/* Filters & Actions Bar */}
+        <section className={`${NEU_SURFACE} p-4 lg:p-6 space-y-6`}>
+
+            {/* ── Filters Bar ───────────────────────────────────────── */}
             <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap gap-3 items-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800"
+                className="flex flex-wrap gap-3 items-end"
             >
-                {/* Search Input */}
-                <div className="flex-1 min-w-[280px] relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 text-slate-400">
-                        <Search className="w-4 h-4" />
-                    </span>
-
-                    <Input
-                        placeholder="Search by email, name or mobile..."
-                        value={searchTerm}
-                        onChange={(e) => handleSearchChange(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        aria-label="Search requests"
-                        className="pl-12 pr-12 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-full shadow-sm focus:shadow-md transition-shadow duration-150"
-                    />
-
-                    {searchTerm && (
-                        <button
-                            onClick={clearSearch}
-                            aria-label="Clear search"
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    )}
+                {/* Search */}
+                <div className="flex-1 min-w-[240px] space-y-1.5">
+                    <label className={NEU_LABEL}>Search</label>
+                    <div className="relative flex items-center">
+                        <span className="absolute left-3 text-[#1E2938]/40 pointer-events-none">
+                            <Search className="w-4 h-4" />
+                        </span>
+                        <input
+                            placeholder="Email, name or mobile…"
+                            value={searchTerm}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            aria-label="Search requests"
+                            className={`${NEU_INPUT} w-full pl-10 pr-10 py-2.5`}
+                        />
+                        {searchTerm && (
+                            <button
+                                onClick={clearSearch}
+                                aria-label="Clear search"
+                                className="absolute right-3 text-[#1E2938]/40 hover:text-[#1E2938] transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                {/* Search Button */}
-                <Button
+                {/* Search button */}
+                <button
                     onClick={handleSearchClick}
                     disabled={isSearching || isFetching}
                     aria-label="Execute search"
-                    className="ml-2 rounded-full px-4 py-2 flex items-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 text-white hover:from-sky-600 hover:to-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed shadow-md"
+                    className={`${NEU_BTN_PRIMARY} flex items-center gap-2 px-4 py-2.5 text-sm`}
                 >
                     {isSearching ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                         <Search className="w-4 h-4" />
                     )}
-                    <span className="font-medium">Search</span>
-                </Button>
+                    Search
+                </button>
 
-                {/* Status Filter */}
-                <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-slate-500" />
-                    <Select
-                        onValueChange={handleSelectValueChange}
+                {/* Status filter */}
+                <div className="space-y-1.5">
+                    <label className={`${NEU_LABEL} flex items-center gap-1`}>
+                        <Filter className="w-3 h-3" /> Status
+                    </label>
+                    <select
                         value={currentQuery.status ?? "all"}
+                        onChange={(e) => handleSelectValueChange(e.target.value)}
+                        className={`${NEU_SELECT} w-[160px]`}
                     >
-                        <SelectTrigger className="w-[160px] bg-white dark:bg-slate-950">
-                            <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value={REQUEST_STATUS.PENDING}>Pending</SelectItem>
-                            <SelectItem value={REQUEST_STATUS.DENIED}>Denied</SelectItem>
-                            <SelectItem value={REQUEST_STATUS.FULFILLED}>Fulfilled</SelectItem>
-                        </SelectContent>
-                    </Select>
+                        {STATUS_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                                {o.label}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
-                {/* Page Limit Selector */}
-                <div className="flex items-center gap-2">
-                    <List className="w-4 h-4 text-slate-500" />
-                    <Select
-                        onValueChange={handleLimitChange}
+                {/* Page limit */}
+                <div className="space-y-1.5">
+                    <label className={`${NEU_LABEL} flex items-center gap-1`}>
+                        <List className="w-3 h-3" /> Per page
+                    </label>
+                    <select
                         value={String(currentQuery.limit ?? 20)}
+                        onChange={(e) => handleLimitChange(e.target.value)}
+                        className={`${NEU_SELECT} w-[130px]`}
                     >
-                        <SelectTrigger className="w-[120px] bg-white dark:bg-slate-950">
-                            <SelectValue placeholder="Per page" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {PAGE_LIMIT_OPTIONS.map((option) => (
-                                <SelectItem key={option} value={String(option)}>
-                                    {option} per page
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        {PAGE_LIMIT_OPTIONS.map((o) => (
+                            <option key={o} value={String(o)}>
+                                {o} / page
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
-                {/* Revalidating Badge */}
+                {/* Revalidating badge */}
                 {revalidating && (
-                    <motion.div
+                    <motion.span
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
+                        className={NEU_BADGE_WARNING}
                     >
-                        <Badge variant="secondary" className="gap-1.5">
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                            Refreshing
-                        </Badge>
-                    </motion.div>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Refreshing
+                    </motion.span>
                 )}
             </motion.div>
 
-            {/* Table */}
-            <div className="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                            <TableHead className="font-semibold">Email</TableHead>
-                            <TableHead className="font-semibold">Name</TableHead>
-                            <TableHead className="font-semibold">Status</TableHead>
-                            <TableHead className="font-semibold">Requested At</TableHead>
-                            <TableHead className="text-right font-semibold">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-
-                    {/* Ensure TableBody only contains TRs (no nested tbody) */}
-                    <TableBody>
-                        {/* isFetching state (single table row spanning all columns) */}
-                        {isFetching && !revalidating ? (
-                            Array.from({ length: currentQuery.limit ?? 20 }).map((_, i) => (<RequestSkeletonRow key={i} />))
-                        ) : rows.length === 0 ? (
-                            <TableRow key="empty">
-                                <TableCell colSpan={6} className="h-64">
-                                    <div className="flex flex-col items-center justify-center gap-3">
-                                        <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                            <Search className="w-8 h-8 text-slate-400" />
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="font-medium text-slate-700 dark:text-slate-300">No requests found</p>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Try adjusting your search or filters</p>
-                                        </div>
-                                    </div>
-                                </TableCell>
+            {/* ── Table ─────────────────────────────────────────────── */}
+            <div className={`${NEU_SURFACE_INSET} rounded-2xl overflow-hidden`}>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className={`${NEU_SURFACE_RAISED} border-b border-[#1E2938]/10 hover:bg-transparent`}>
+                                {["Email", "Name", "Status", "Requested At", "Actions"].map((h, i) => (
+                                    <TableHead
+                                        key={h}
+                                        className={`py-3 px-4 font-[family-name:var(--font-space-mono)] text-xs font-bold uppercase tracking-widest text-[#1E2938]/60 ${i === 4 ? "text-right" : ""}`}
+                                    >
+                                        {h}
+                                    </TableHead>
+                                ))}
                             </TableRow>
-                        ) : (
-                            // Normal rows: render RequestRow components (they return <tr />)
-                            rows.map((r) => <RequestRow key={r.id} entity={r} />)
-                        )}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+
+                        <TableBody>
+                            {isFetching && !revalidating ? (
+                                Array.from({ length: currentQuery.limit ?? 20 }).map((_, i) => (
+                                    <RequestSkeletonRow key={i} />
+                                ))
+                            ) : rows.length === 0 ? (
+                                <TableRow key="empty">
+                                    <TableCell colSpan={5} className="h-64">
+                                        <div className="flex flex-col items-center justify-center gap-3 py-8">
+                                            <div
+                                                className={`w-16 h-16 rounded-2xl ${NEU_SURFACE_RAISED} flex items-center justify-center`}
+                                            >
+                                                <Search className="w-7 h-7 text-[#1E2938]/30" />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] text-sm">
+                                                    No requests found
+                                                </p>
+                                                <p className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/50 mt-1">
+                                                    Try adjusting your search or filters
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                rows.map((r) => <RequestRow key={r.id} entity={r} />)
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
 
-
-            {/* Pagination */}
+            {/* ── Pagination ────────────────────────────────────────── */}
             {rows.length > 0 && <PaginationControls />}
         </section>
     );

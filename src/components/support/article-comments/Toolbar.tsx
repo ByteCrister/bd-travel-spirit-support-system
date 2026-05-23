@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -10,7 +8,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -27,9 +24,7 @@ import { useArticleCommentsStore } from '@/store/article/article-comment.store';
 import { exportSliceToCsv, useDebouncedCallback } from '@/utils/helpers/article-comments.debounce';
 import { COMMENT_STATUS } from '@/constants/articleComment.const';
 
-// ---------------------------------------------------------------------------
-// Defaults
-// ---------------------------------------------------------------------------
+// ── Defaults ───────────────────────────────────────────────────
 const DEFAULTS = {
     status: 'any' as 'any' | COMMENT_STATUS,
     searchQuery: null as string | null,
@@ -40,15 +35,68 @@ const DEFAULTS = {
     pageSize: 20,
 };
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+// ── Style constants ────────────────────────────────────────────
+const S = {
+    root: 'w-full space-y-4',
+
+    // primary row
+    row1: 'flex flex-col sm:flex-row sm:items-center gap-3',
+
+    // search wrapper (inset well)
+    searchWrap: 'relative flex-1 max-w-sm',
+    searchInput:
+        'w-full pl-10 pr-10 py-2.5 rounded-xl bg-[#E7E5E4] text-[#1E2938] ' +
+        'placeholder:text-[#1E2938]/40 text-sm ' +
+        'font-[family-name:var(--font-jetbrains-mono)] ' +
+        'shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none ' +
+        'focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200',
+    searchIcon: 'absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#1E2938]/40 pointer-events-none',
+    clearBtn:
+        'absolute right-3 top-1/2 -translate-y-1/2 text-[#1E2938]/40 ' +
+        'hover:text-[#1E2938]/70 transition-colors',
+
+    // action buttons
+    actions: 'flex items-center gap-2',
+    btnGhost:
+        'flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm ' +
+        'font-[family-name:var(--font-space-mono)] text-[#1E2938] ' +
+        'bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] ' +
+        'hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] ' +
+        'active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40',
+    btnReset:
+        'flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm ' +
+        'font-[family-name:var(--font-space-mono)] text-[#FF2157] ' +
+        'bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] ' +
+        'hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'transition-all duration-200',
+
+    // divider
+    divider: 'border-b border-[#1E2938]/10 pb-2',
+
+    // secondary row
+    row2: 'flex flex-col sm:flex-row sm:items-center gap-3',
+
+    // filter group label
+    filterLabel:
+        'font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest whitespace-nowrap',
+
+    filterGroup: 'flex items-center gap-3',
+
+    // select trigger override (inset look)
+    selectTrigger:
+        'h-9 text-sm font-[family-name:var(--font-jetbrains-mono)] ' +
+        'bg-[#E7E5E4] border-none rounded-xl ' +
+        'shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'focus:ring-2 focus:ring-[#006666]/50 focus:outline-none ' +
+        'text-[#1E2938] placeholder:text-[#1E2938]/40',
+
+    mlAuto: 'sm:ml-auto',
+};
+
+// ── Component ──────────────────────────────────────────────────
 export function Toolbar() {
     const store = useArticleCommentsStore();
-
-    // -----------------------------------------------------------------------
-    // Search + debounce
-    // -----------------------------------------------------------------------
     const [search, setSearch] = useState(store.tableQuery.filters.searchQuery ?? '');
 
     const debouncedUpdate = useDebouncedCallback(() => {
@@ -61,12 +109,9 @@ export function Toolbar() {
 
     useEffect(() => {
         debouncedUpdate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search]);
 
-    // -----------------------------------------------------------------------
-    // Handlers
-    // -----------------------------------------------------------------------
     const onReset = () => {
         store.setTableQuery({
             filters: {
@@ -83,9 +128,7 @@ export function Toolbar() {
         setSearch('');
     };
 
-    const onExportCsv = () => {
-        exportSliceToCsv(store.tableVM);
-    };
+    const onExportCsv = () => exportSliceToCsv(store.tableVM);
 
     const onChangeSortKey = (key: ArticleSortKey) => {
         store.setTableQuery({ sort: { ...store.tableQuery.sort, key }, page: 1 });
@@ -107,31 +150,25 @@ export function Toolbar() {
         store.fetchTable();
     };
 
-    // Check if filters are active
     const hasActiveFilters =
         search ||
         store.tableQuery.filters.status !== 'any' ||
         store.tableQuery.pageSize !== DEFAULTS.pageSize;
 
-    // -----------------------------------------------------------------------
-    // JSX
-    // -----------------------------------------------------------------------
     return (
-        <div className="w-full space-y-4">
-            {/* Primary toolbar row */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                {/* Search input */}
-                <div className="relative flex-1 max-w-sm">
-                    <HiMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                    <Label htmlFor="search" className="sr-only">
-                        Search articles
-                    </Label>
-                    <Input
-                        id="search"
+        <div className={S.root}>
+            {/* Row 1 — Search + actions */}
+            <div className={S.row1}>
+                <div className={S.searchWrap}>
+                    <HiMagnifyingGlass className={S.searchIcon} />
+                    <label htmlFor="toolbar-search" className="sr-only">Search articles</label>
+                    <input
+                        id="toolbar-search"
+                        type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search articles by title..."
-                        className="pl-10 pr-10 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-blue-500 dark:focus:ring-blue-400 rounded-lg"
+                        placeholder="Search articles by title…"
+                        className={S.searchInput}
                         onKeyDown={(e) => {
                             if (e.key === 'Escape') setSearch('');
                             if (e.key === 'Enter') debouncedUpdate.flush?.();
@@ -139,72 +176,43 @@ export function Toolbar() {
                         aria-label="Search articles"
                     />
                     {search && (
-                        <button
-                            onClick={() => setSearch('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                            aria-label="Clear search"
-                        >
+                        <button onClick={() => setSearch('')} className={S.clearBtn} aria-label="Clear search">
                             <HiXMark className="h-4 w-4" />
                         </button>
                     )}
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex items-center gap-2">
-                    <Button
-                        onClick={onExportCsv}
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
-                        aria-label="Export to CSV"
-                    >
+                <div className={S.actions}>
+                    <button onClick={onExportCsv} className={S.btnGhost} aria-label="Export to CSV">
                         <HiArrowDownTray className="h-4 w-4" />
                         <span className="hidden sm:inline">Export</span>
-                    </Button>
+                    </button>
 
-                    {/* Column visibility */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="gap-2 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                aria-label="Column visibility"
-                            >
+                            <button className={S.btnGhost} aria-label="Column visibility">
                                 <HiAdjustmentsHorizontal className="h-4 w-4" />
                                 <span className="hidden sm:inline">Columns</span>
                                 <HiChevronDown className="h-3 w-3 opacity-50" />
-                            </Button>
+                            </button>
                         </DropdownMenuTrigger>
                     </DropdownMenu>
 
-                    {/* Reset button */}
                     {hasActiveFilters && (
-                        <Button
-                            onClick={onReset}
-                            variant="ghost"
-                            size="sm"
-                            className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
-                            aria-label="Reset all filters"
-                        >
+                        <button onClick={onReset} className={S.btnReset} aria-label="Reset all filters">
                             Reset
-                        </Button>
+                        </button>
                     )}
                 </div>
             </div>
 
-            {/* Secondary toolbar row - Filters */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-2 border-b border-slate-200 dark:border-slate-800">
-                {/* Sort controls */}
-                <div className="flex items-center gap-3">
-                    <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        Sort
-                    </Label>
-                    <Select
-                        value={store.tableQuery.sort.key}
-                        onValueChange={(v) => onChangeSortKey(v as ArticleSortKey)}
-                    >
-                        <SelectTrigger className="w-40 h-9 text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg" aria-label="Sort key">
+            {/* Row 2 — Sort + filter + page size */}
+            <div className={`${S.row2} ${S.divider}`}>
+                {/* Sort */}
+                <div className={S.filterGroup}>
+                    <span className={S.filterLabel}>Sort</span>
+                    <Select value={store.tableQuery.sort.key} onValueChange={(v) => onChangeSortKey(v as ArticleSortKey)}>
+                        <SelectTrigger className={`${S.selectTrigger} w-40`} aria-label="Sort key">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -216,11 +224,8 @@ export function Toolbar() {
                         </SelectContent>
                     </Select>
 
-                    <Select
-                        value={store.tableQuery.sort.direction}
-                        onValueChange={(v) => onChangeSortDir(v as 'asc' | 'desc')}
-                    >
-                        <SelectTrigger className="w-24 h-9 text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg" aria-label="Sort direction">
+                    <Select value={store.tableQuery.sort.direction} onValueChange={(v) => onChangeSortDir(v as 'asc' | 'desc')}>
+                        <SelectTrigger className={`${S.selectTrigger} w-28`} aria-label="Sort direction">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -230,36 +235,31 @@ export function Toolbar() {
                     </Select>
                 </div>
 
-                {/* Status filter */}
-                <div className="flex items-center gap-3">
-                    <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        Status
-                    </Label>
+                {/* Status */}
+                <div className={S.filterGroup}>
+                    <span className={S.filterLabel}>Status</span>
                     <Select
                         value={String(store.tableQuery.filters.status ?? 'any')}
                         onValueChange={(v) => onChangeStatus(v as 'any' | COMMENT_STATUS)}
                     >
-                        <SelectTrigger className="w-40 h-9 text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg" aria-label="Status filter">
+                        <SelectTrigger className={`${S.selectTrigger} w-40`} aria-label="Status filter">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="any">Any status</SelectItem>
                             <SelectItem value="pending">
                                 <span className="flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                                    Pending
+                                    <span className="w-2 h-2 rounded-full bg-[#FE9900]" />Pending
                                 </span>
                             </SelectItem>
                             <SelectItem value="approved">
                                 <span className="flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                                    Approved
+                                    <span className="w-2 h-2 rounded-full bg-[#00A63D]" />Approved
                                 </span>
                             </SelectItem>
                             <SelectItem value="rejected">
                                 <span className="flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                                    Rejected
+                                    <span className="w-2 h-2 rounded-full bg-[#FF2157]" />Rejected
                                 </span>
                             </SelectItem>
                         </SelectContent>
@@ -267,15 +267,13 @@ export function Toolbar() {
                 </div>
 
                 {/* Page size */}
-                <div className="flex items-center gap-3 sm:ml-auto">
-                    <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        Per page
-                    </Label>
+                <div className={`${S.filterGroup} ${S.mlAuto}`}>
+                    <span className={S.filterLabel}>Per page</span>
                     <Select
                         value={String(store.tableQuery.pageSize)}
                         onValueChange={(v) => onChangePageSize(Number(v))}
                     >
-                        <SelectTrigger className="w-24 h-9 text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg" aria-label="Items per page">
+                        <SelectTrigger className={`${S.selectTrigger} w-24`} aria-label="Items per page">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

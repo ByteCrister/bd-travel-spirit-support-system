@@ -2,7 +2,6 @@
 "use client";
 
 import { motion, Variants } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CheckCircle,
   XCircle,
@@ -11,207 +10,188 @@ import {
   BarChart3,
   RefreshCw,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import StatsSkeleton from "./skeletons/StatsSkeleton";
 import { usePasswordRequestStore } from "@/store/guide/guide-password-request.store";
+import {
+  NEU_CARD,
+  NEU_CARD_HOVER,
+  NEU_BTN_GHOST,
+  NEU_HEADING,
+  NEU_LABEL,
+  NEU_ICON_WELL,
+  NEU_ICON_WELL_PRIMARY,
+  NEU_SURFACE_INSET,
+} from "@/styles/neu.styles";
+
+// ── Local style constants ───────────────────────────────────────────────────
+const STATS_GRID = "grid gap-4 md:grid-cols-2 lg:grid-cols-5";
+const STAT_VALUE = "text-3xl font-bold tabular-nums text-[#1E2938] font-[family-name:var(--font-space-mono)]";
+const STAT_SUBLABEL = "text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50";
+const PROGRESS_TRACK = "h-1.5 w-full rounded-full bg-[#c8c6c5]/40 overflow-hidden mt-1";
 
 const STAT_CARDS = [
   {
     key: "total",
     label: "Total Requests",
     icon: BarChart3,
-    color: "text-slate-700",
-    bgColor: "bg-slate-100",
-    gradient: "from-slate-500 to-slate-600",
+    iconColor: "text-[#006666]",
+    iconWell: NEU_ICON_WELL_PRIMARY,
+    dotColor: "bg-[#006666]",
+    barColor: "bg-[#006666]",
   },
   {
     key: "pending",
     label: "Pending",
     icon: Clock,
-    color: "text-amber-700",
-    bgColor: "bg-amber-50",
-    gradient: "from-amber-500 to-amber-600",
+    iconColor: "text-[#FE9900]",
+    iconWell: "p-2.5 rounded-xl bg-[#FE9900]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]",
+    dotColor: "bg-[#FE9900]",
+    barColor: "bg-[#FE9900]",
   },
   {
     key: "approved",
     label: "Approved",
     icon: CheckCircle,
-    color: "text-emerald-700",
-    bgColor: "bg-emerald-50",
-    gradient: "from-emerald-500 to-emerald-600",
+    iconColor: "text-[#00A63D]",
+    iconWell: "p-2.5 rounded-xl bg-[#00A63D]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]",
+    dotColor: "bg-[#00A63D]",
+    barColor: "bg-[#00A63D]",
   },
   {
     key: "rejected",
     label: "Rejected",
     icon: XCircle,
-    color: "text-rose-700",
-    bgColor: "bg-rose-50",
-    gradient: "from-rose-500 to-rose-600",
+    iconColor: "text-[#FF2157]",
+    iconWell: "p-2.5 rounded-xl bg-[#FF2157]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]",
+    dotColor: "bg-[#FF2157]",
+    barColor: "bg-[#FF2157]",
   },
   {
     key: "expired",
     label: "Expired",
     icon: AlertCircle,
-    color: "text-slate-700",
-    bgColor: "bg-slate-50",
-    gradient: "from-slate-400 to-slate-500",
+    iconColor: "text-[#1E2938]/50",
+    iconWell: NEU_ICON_WELL,
+    dotColor: "bg-[#1E2938]/30",
+    barColor: "bg-[#1E2938]/30",
   },
-];
+] as const;
 
+// ── Animation variants ──────────────────────────────────────────────────────
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
 
 const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 20, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.4,
-      ease: "easeOut",
-    },
-  },
+  hidden: { opacity: 0, y: 20, scale: 0.96 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: "easeOut" } },
 };
 
 export function PasswordRequestStats() {
   const { stats, isFetching, fetchStats } = usePasswordRequestStore();
 
-  if (isFetching && !stats) {
-    return <StatsSkeleton />;
-  }
+  if (isFetching && !stats) return <StatsSkeleton />;
 
   if (!stats) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center justify-center py-12 px-4"
+        className={cn(
+          NEU_SURFACE_INSET,
+          "flex flex-col items-center justify-center py-14 px-4 rounded-2xl"
+        )}
       >
-        <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-          <BarChart3 className="h-8 w-8 text-slate-400" />
+        <div className={cn(NEU_ICON_WELL, "mb-4")}>
+          <BarChart3 className="h-7 w-7 text-[#1E2938]/40" />
         </div>
-        <p className="text-slate-600 font-medium mb-1">No statistics available</p>
-        <p className="text-sm text-slate-500 mb-4">Try refreshing to load data</p>
-        <Button
-          variant="outline"
-          size="sm"
+        <p className={cn(NEU_HEADING, "text-base mb-1")}>No statistics available</p>
+        <p className={cn(STAT_SUBLABEL, "mb-5")}>Try refreshing to load data</p>
+        <button
           onClick={() => fetchStats(true)}
-          className="border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200"
+          className={cn(NEU_BTN_GHOST, "px-4 py-2 text-sm flex items-center gap-2")}
         >
-          <RefreshCw className="h-4 w-4 mr-2" />
+          <RefreshCw className="h-4 w-4" />
           Refresh Stats
-        </Button>
+        </button>
       </motion.div>
     );
   }
 
   return (
     <motion.div
-      className="grid gap-4 md:grid-cols-2 lg:grid-cols-5"
+      className={STATS_GRID}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       {STAT_CARDS.map((stat, index) => {
         const value = stats[stat.key as keyof typeof stats];
-        const showPendingPercentage = stat.key === "pending";
-        const showApprovalRate = stat.key === "approved";
-        // We keep the logic but always render a placeholder to keep height consistent
-        const hasExtraInfo = showPendingPercentage || showApprovalRate;
+        const isPending = stat.key === "pending";
+        const isApproved = stat.key === "approved";
+        const hasBar = isPending || isApproved;
+        const barWidth = isPending
+          ? `${stats.pendingPercentage}%`
+          : isApproved
+            ? `${stats.approvalRate}%`
+            : "0%";
 
         return (
-          <motion.div key={stat.key} variants={cardVariants} className="h-full">
-            <Card className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 bg-white/80 backdrop-blur-sm group h-full flex flex-col">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-slate-700">
-                  {stat.label}
-                </CardTitle>
-                <div
-                  className={cn(
-                    "p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110",
-                    stat.bgColor
-                  )}
-                >
-                  <stat.icon className={cn("h-4 w-4", stat.color)} />
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col justify-between flex-1 space-y-2">
+          <motion.div
+            key={stat.key}
+            variants={cardVariants}
+            className={cn(NEU_CARD, NEU_CARD_HOVER, "p-5 flex flex-col gap-3 h-full")}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <span className={cn(NEU_LABEL, "text-[10px]")}>{stat.label}</span>
+              <div className={stat.iconWell}>
+                <stat.icon className={cn("h-4 w-4", stat.iconColor)} />
+              </div>
+            </div>
+
+            {/* Value */}
+            <motion.span
+              className={STAT_VALUE}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + index * 0.05 }}
+            >
+              {value}
+            </motion.span>
+
+            {/* Sub-label (fixed height) */}
+            <div className="min-h-[1rem] flex items-center gap-1.5">
+              {hasBar ? (
                 <motion.div
-                  className="text-3xl font-semibold text-slate-900 tabular-nums"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex items-center gap-1.5"
                 >
-                  {value}
+                  <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", stat.dotColor)} />
+                  <span className={STAT_SUBLABEL}>
+                    {isPending
+                      ? `${stats.pendingPercentage}% of total`
+                      : `${stats.approvalRate}% approval rate`}
+                  </span>
                 </motion.div>
+              ) : (
+                <span aria-hidden className="text-xs opacity-0">—</span>
+              )}
+            </div>
 
-                {/* Fixed-height container for percentage info – always rendered */}
-                <div className="min-h-[1.25rem] flex items-center gap-1.5">
-                  {hasExtraInfo ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                      className="flex items-center gap-1.5"
-                    >
-                      {showPendingPercentage && (
-                        <>
-                          <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                          <p className="text-xs text-slate-600 font-medium">
-                            {stats.pendingPercentage}% of total
-                          </p>
-                        </>
-                      )}
-                      {showApprovalRate && (
-                        <>
-                          <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          <p className="text-xs text-slate-600 font-medium">
-                            {stats.approvalRate}% approval rate
-                          </p>
-                        </>
-                      )}
-                    </motion.div>
-                  ) : (
-                    // invisible placeholder to preserve height
-                    <span aria-hidden className="text-xs opacity-0">
-                      &mdash;
-                    </span>
-                  )}
-                </div>
-
-                {/* Progress bar area – always rendered, width depends on data */}
-                <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <motion.div
-                    className={cn(
-                      "h-full bg-gradient-to-r",
-                      hasExtraInfo
-                        ? stat.gradient
-                        : "from-transparent to-transparent" // invisible bar for other cards
-                    )}
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: hasExtraInfo
-                        ? stat.key === "pending"
-                          ? `${stats.pendingPercentage}%`
-                          : stat.key === "approved"
-                            ? `${stats.approvalRate}%`
-                            : "0%"
-                        : "0%",
-                    }}
-                    transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            {/* Progress bar */}
+            <div className={PROGRESS_TRACK}>
+              <motion.div
+                className={cn("h-full rounded-full", hasBar ? stat.barColor : "")}
+                initial={{ width: 0 }}
+                animate={{ width: hasBar ? barWidth : "0%" }}
+                transition={{ duration: 0.9, delay: 0.4, ease: "easeOut" }}
+              />
+            </div>
           </motion.div>
         );
       })}

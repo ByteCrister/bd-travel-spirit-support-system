@@ -16,59 +16,45 @@ import {
     Minus,
 } from "lucide-react";
 
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_CARD =
+    "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_CARD_HOVER =
+    "hover:shadow-[10px_10px_20px_#c8c6c5,-10px_-10px_20px_#ffffff] hover:-translate-y-1 transition-all duration-300";
+const NEU_ICON_WELL =
+    "p-2.5 rounded-xl bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]";
+const NEU_HEADING =
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_LABEL =
+    "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+const NEU_SURFACE_INSET_SM =
+    "bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]";
+
+// ── KPI accent colours (tints only — no heavy gradients) ─────
+const KPI_META = {
+    pending: { iconColor: "text-[#FE9900]", accentBg: "bg-[#FE9900]/10", bar: "bg-[#FE9900]", label: "text-[#FE9900]" },
+    approved: { iconColor: "text-[#00A63D]", accentBg: "bg-[#00A63D]/10", bar: "bg-[#00A63D]", label: "text-[#00A63D]" },
+    rejected: { iconColor: "text-[#FF2157]", accentBg: "bg-[#FF2157]/10", bar: "bg-[#FF2157]", label: "text-[#FF2157]" },
+    suspended: { iconColor: "text-[#1E2938]/50", accentBg: "bg-[#1E2938]/10", bar: "bg-[#1E2938]/40", label: "text-[#1E2938]/50" },
+    total: { iconColor: "text-[#006666]", accentBg: "bg-[#006666]/10", bar: "bg-[#006666]", label: "text-[#006666]" },
+} as const;
+
+// ── Animation variants ────────────────────────────────────────
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.08,
-            delayChildren: 0.1,
-        },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
 };
-
 const cardVariants: Variants = {
-    hidden: {
-        opacity: 0,
-        y: 20,
-        scale: 0.95,
-    },
-    visible: {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        transition: {
-            duration: 0.5,
-            ease: "easeOut",
-        },
-    },
+    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: "easeOut" } },
 };
-
 const iconVariants: Variants = {
     hidden: { scale: 0, rotate: -180 },
-    visible: {
-        scale: 1,
-        rotate: 0,
-        transition: {
-            type: "spring",
-            stiffness: 200,
-            damping: 15,
-            delay: 0.2,
-        },
-    },
+    visible: { scale: 1, rotate: 0, transition: { type: "spring", stiffness: 200, damping: 15, delay: 0.2 } },
 };
-
 const numberVariants: Variants = {
     hidden: { opacity: 0, y: 10 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-            duration: 0.6,
-            ease: "easeOut",
-            delay: 0.3,
-        },
-    },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut", delay: 0.3 } },
 };
 
 export default function Kpis() {
@@ -76,73 +62,12 @@ export default function Kpis() {
 
     const kpis = useMemo(() => {
         const s = stats || { pending: 0, approved: 0, rejected: 0, suspended: 0, total: 0 };
-
         return [
-            {
-                id: "pending",
-                label: "Pending Review",
-                value: s.pending,
-                icon: Clock,
-                gradient: "from-amber-500 to-orange-500",
-                bgGradient: "from-amber-50 to-orange-50",
-                borderColor: "border-amber-200",
-                iconBg: "bg-amber-500",
-                textColor: "text-amber-700",
-                glowColor: "shadow-amber-500/20",
-                trend: 0, // You can calculate trend based on previous data
-            },
-            {
-                id: "approved",
-                label: "Approved",
-                value: s.approved,
-                icon: CheckCircle2,
-                gradient: "from-green-500 to-emerald-500",
-                bgGradient: "from-green-50 to-emerald-50",
-                borderColor: "border-green-200",
-                iconBg: "bg-green-500",
-                textColor: "text-green-700",
-                glowColor: "shadow-green-500/20",
-                trend: 0,
-            },
-            {
-                id: "rejected",
-                label: "Rejected",
-                value: s.rejected,
-                icon: XCircle,
-                gradient: "from-red-500 to-rose-500",
-                bgGradient: "from-red-50 to-rose-50",
-                borderColor: "border-red-200",
-                iconBg: "bg-red-500",
-                textColor: "text-red-700",
-                glowColor: "shadow-red-500/20",
-                trend: 0,
-            },
-            {
-                id: "suspended",
-                label: "Suspended",
-                value: s.suspended,
-                icon: Ban,
-                gradient: "from-slate-500 to-gray-500",
-                bgGradient: "from-slate-50 to-gray-50",
-                borderColor: "border-slate-200",
-                iconBg: "bg-slate-500",
-                textColor: "text-slate-700",
-                glowColor: "shadow-slate-500/20",
-                trend: 0,
-            },
-            {
-                id: "total",
-                label: "Total Tours",
-                value: s.total,
-                icon: BarChart3,
-                gradient: "from-blue-500 to-indigo-500",
-                bgGradient: "from-blue-50 to-indigo-50",
-                borderColor: "border-blue-200",
-                iconBg: "bg-blue-500",
-                textColor: "text-blue-700",
-                glowColor: "shadow-blue-500/20",
-                trend: 0,
-            },
+            { id: "pending" as const, label: "Pending Review", value: s.pending, icon: Clock, trend: 0 },
+            { id: "approved" as const, label: "Approved", value: s.approved, icon: CheckCircle2, trend: 0 },
+            { id: "rejected" as const, label: "Rejected", value: s.rejected, icon: XCircle, trend: 0 },
+            { id: "suspended" as const, label: "Suspended", value: s.suspended, icon: Ban, trend: 0 },
+            { id: "total" as const, label: "Total Tours", value: s.total, icon: BarChart3, trend: 0 },
         ];
     }, [stats]);
 
@@ -152,131 +77,91 @@ export default function Kpis() {
         return <Minus className="w-3 h-3" />;
     };
 
-    const getTrendColor = (trend: number) => {
-        if (trend > 0) return "text-green-600 bg-green-50";
-        if (trend < 0) return "text-red-600 bg-red-50";
-        return "text-slate-600 bg-slate-50";
-    };
+    const getTrendClass = (trend: number) =>
+        trend > 0
+            ? "text-[#00A63D] bg-[#00A63D]/10"
+            : trend < 0
+                ? "text-[#FF2157] bg-[#FF2157]/10"
+                : "text-[#1E2938]/50 bg-[#1E2938]/5";
 
     return (
-        <section aria-labelledby="kpis">
+        <section aria-labelledby="kpis-heading">
+            <p id="kpis-heading" className="sr-only">KPI Overview</p>
             <motion.div
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5"
             >
                 {kpis.map((kpi) => {
                     const Icon = kpi.icon;
+                    const meta = KPI_META[kpi.id];
+                    const pct = Math.min((kpi.value / (stats?.total || 1)) * 100, 100);
 
                     return (
-                        <motion.div
+                        <motion.article
                             key={kpi.id}
                             variants={cardVariants}
-                            whileHover={{
-                                y: -8,
-                                scale: 1.02,
-                                transition: { duration: 0.2 },
-                            }}
-                            className={cn(
-                                "group relative overflow-hidden rounded-2xl border shadow-lg hover:shadow-xl transition-all duration-300",
-                                kpi.borderColor,
-                                kpi.glowColor
-                            )}
+                            whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                            className={cn(NEU_CARD, NEU_CARD_HOVER, "overflow-hidden")}
                         >
-                            {/* Animated gradient background */}
-                            <div
-                                className={cn(
-                                    "absolute inset-0 bg-gradient-to-br opacity-50 group-hover:opacity-70 transition-opacity duration-300",
-                                    kpi.bgGradient
-                                )}
-                            />
-
-                            {/* Shimmer effect on hover */}
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                            </div>
-
-                            {/* Content */}
-                            <div className="relative p-5 md:p-6">
-                                {/* Header with Icon */}
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex-1">
-                                        <p className={cn("text-xs md:text-sm font-semibold mb-1", kpi.textColor)}>
-                                            {kpi.label}
-                                        </p>
-
-                                        {/* Trend indicator (if applicable) */}
-                                        {kpi.trend !== undefined && kpi.trend !== 0 && (
-                                            <div className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", getTrendColor(kpi.trend))}>
+                            <div className="p-5 space-y-4">
+                                {/* Header row */}
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="space-y-1 flex-1 min-w-0">
+                                        <p className={cn(NEU_LABEL, meta.label)}>{kpi.label}</p>
+                                        {kpi.trend !== 0 && (
+                                            <span className={cn(
+                                                "inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-xs",
+                                                "font-[family-name:var(--font-space-mono)] font-bold",
+                                                getTrendClass(kpi.trend)
+                                            )}>
                                                 {getTrendIcon(kpi.trend)}
-                                                <span>{Math.abs(kpi.trend)}%</span>
-                                            </div>
+                                                {Math.abs(kpi.trend)}%
+                                            </span>
                                         )}
                                     </div>
 
-                                    {/* Icon with animation */}
+                                    {/* Icon well */}
                                     <motion.div
                                         variants={iconVariants}
                                         className={cn(
-                                            "flex items-center justify-center w-11 h-11 md:w-12 md:h-12 rounded-xl bg-gradient-to-br shadow-lg",
-                                            kpi.gradient,
-                                            "group-hover:scale-110 transition-transform duration-300"
+                                            NEU_ICON_WELL,
+                                            meta.accentBg,
+                                            "w-11 h-11 flex items-center justify-center flex-shrink-0"
                                         )}
                                     >
-                                        <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                                        <Icon className={cn("w-5 h-5", meta.iconColor)} />
                                     </motion.div>
                                 </div>
 
                                 {/* Value */}
-                                <motion.div variants={numberVariants} className="space-y-1">
-                                    <div className="flex items-baseline gap-2">
-                                        <motion.p
-                                            key={kpi.value}
-                                            initial={{ scale: 1.2, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            transition={{ duration: 0.4, ease: "easeOut" }}
-                                            className="text-3xl md:text-4xl font-bold text-slate-900"
-                                        >
-                                            {kpi.value.toLocaleString()}
-                                        </motion.p>
+                                <motion.div variants={numberVariants} className="space-y-2">
+                                    <motion.p
+                                        key={kpi.value}
+                                        initial={{ scale: 1.15, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ duration: 0.4, ease: "easeOut" }}
+                                        className={cn(NEU_HEADING, "text-3xl md:text-4xl")}
+                                    >
+                                        {kpi.value.toLocaleString()}
+                                    </motion.p>
 
-                                        {/* Sparkle animation for high values */}
-                                        {kpi.value > 0 && (
-                                            <motion.div
-                                                initial={{ scale: 0, rotate: 0 }}
-                                                animate={{ scale: [0, 1, 0], rotate: [0, 180, 360] }}
-                                                transition={{
-                                                    duration: 2,
-                                                    repeat: Infinity,
-                                                    repeatDelay: 3,
-                                                    ease: "easeInOut",
-                                                }}
-                                                className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-yellow-400 to-amber-400"
-                                            />
-                                        )}
-                                    </div>
-
-                                    {/* Progress bar (visual indicator) */}
-                                    <div className="h-1.5 bg-slate-200/50 rounded-full overflow-hidden">
+                                    {/* Progress bar — inset track */}
+                                    <div className={cn(NEU_SURFACE_INSET_SM, "h-2 rounded-full overflow-hidden")}>
                                         <motion.div
                                             initial={{ width: 0 }}
-                                            animate={{ width: `${Math.min((kpi.value / (stats?.total || 1)) * 100, 100)}%` }}
+                                            animate={{ width: `${pct}%` }}
                                             transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
-                                            className={cn("h-full rounded-full bg-gradient-to-r", kpi.gradient)}
+                                            className={cn("h-full rounded-full", meta.bar)}
                                         />
                                     </div>
                                 </motion.div>
-
-                                {/* Decorative elements */}
-                                <div className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                                    <div className={cn("w-full h-full rounded-full bg-gradient-to-br", kpi.gradient)} />
-                                </div>
                             </div>
 
-                            {/* Bottom accent line */}
-                            <div className={cn("absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r", kpi.gradient)} />
-                        </motion.div>
+                            {/* Bottom accent strip */}
+                            <div className={cn("h-0.5 w-full", meta.bar)} />
+                        </motion.article>
                     );
                 })}
             </motion.div>

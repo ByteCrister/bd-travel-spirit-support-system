@@ -8,21 +8,21 @@ import { Loader2, Edit2, Info, Trash2 } from "lucide-react";
 // ── Neumorphism style tokens ──────────────────────────────────
 const NEU_BTN_PRIMARY =
     "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold text-xs " +
-    "shadow-[3px_3px_6px_#004d4d,-2px_-2px_5px_#008080] " +
-    "hover:bg-[#007777] hover:shadow-[5px_5px_10px_#004d4d,-3px_-3px_7px_#008080] " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:bg-[#007777] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
     "active:shadow-[inset_2px_2px_5px_#004d4d,inset_-1px_-1px_3px_#008080] " +
     "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
     "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none";
 const NEU_BTN_GHOST =
     "rounded-xl bg-[#E7E5E4] text-[#006666] font-[family-name:var(--font-space-mono)] text-xs " +
-    "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] " +
-    "hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
     "active:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-1px_-1px_4px_#ffffff] " +
     "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
 const NEU_BTN_DANGER =
     "rounded-xl bg-[#E7E5E4] text-[#FF2157] font-[family-name:var(--font-space-mono)] text-xs " +
-    "shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] " +
-    "hover:bg-[#FF2157]/10 hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:bg-[#FF2157]/10 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
     "transition-all duration-200 " +
     "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none";
 

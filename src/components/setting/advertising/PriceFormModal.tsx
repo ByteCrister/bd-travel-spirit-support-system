@@ -50,7 +50,7 @@ import { FaBangladeshiTakaSign } from "react-icons/fa6";
 const S = {
   dialogContent:
     "sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-[#E7E5E4] border-none " +
-    "shadow-[12px_12px_28px_#c8c6c5,-12px_-12px_28px_#ffffff]",
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)]",
 
   iconWell:
     "h-14 w-14 rounded-2xl bg-[#006666] flex items-center justify-center flex-shrink-0 " +

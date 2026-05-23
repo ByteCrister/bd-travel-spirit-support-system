@@ -95,7 +95,7 @@ const NEU_BADGE_BASE =
 // Alert Dialog styles
 const ALERT_CONTENT =
   "bg-[#E7E5E4] border border-white/60 rounded-2xl " +
-  "shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff]";
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)]";
 
 const ALERT_TITLE =
   "font-[family-name:var(--font-space-mono)] font-bold text-xl text-[#1E2938] text-center";

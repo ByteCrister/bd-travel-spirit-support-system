@@ -1,7 +1,7 @@
+// components/article/ArticlePagination.tsx
 'use client';
 
 import * as React from 'react';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -20,10 +20,52 @@ import {
 } from 'react-icons/fi';
 import { useArticleStore } from '@/store/article/article.store';
 
-type Props = {
-  totalPages: number;
-  totalCount?: number;
-};
+// ── Style tokens ──────────────────────────────────────────────
+const S = {
+  container:
+    'relative flex flex-col sm:flex-row items-center justify-between gap-4 p-5 ' +
+    'rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60',
+  iconBtn:
+    'w-9 h-9 rounded-xl flex items-center justify-center bg-[#E7E5E4] text-[#1E2938]/60 ' +
+    'shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] ' +
+    'hover:text-[#006666] hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+    'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none ' +
+    'transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40',
+  pageBtn:
+    'w-9 h-9 rounded-xl flex items-center justify-center text-sm ' +
+    'font-[family-name:var(--font-jetbrains-mono)] font-bold text-[#1E2938]/70 ' +
+    'bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] ' +
+    'hover:text-[#006666] hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+    'disabled:opacity-40 disabled:cursor-not-allowed ' +
+    'transition-all duration-200',
+  pageBtnActive:
+    'w-9 h-9 rounded-xl flex items-center justify-center text-sm ' +
+    'font-[family-name:var(--font-jetbrains-mono)] font-bold text-white ' +
+    'bg-[#006666] shadow-[inset_2px_2px_5px_#004d4d,inset_-2px_-2px_5px_#008080]',
+  infoText:
+    'font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/70',
+  accent: 'text-[#006666] font-bold',
+  label:
+    'font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/50 uppercase tracking-widest hidden sm:inline',
+  selectTrigger:
+    'h-8 w-[72px] text-xs rounded-lg border-none ' +
+    'bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+    'font-[family-name:var(--font-jetbrains-mono)] ' +
+    'focus:ring-2 focus:ring-[#006666]/40 transition-all',
+  mobilePill:
+    'md:hidden px-3 py-1.5 rounded-lg text-xs font-[family-name:var(--font-jetbrains-mono)] font-bold text-[#1E2938]/70 ' +
+    'bg-[#E7E5E4] shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff]',
+  loadingOverlay:
+    'absolute inset-0 bg-[#E7E5E4]/70 backdrop-blur-sm rounded-2xl flex items-center justify-center',
+  loadingPill:
+    'flex items-center gap-2 px-5 py-2.5 rounded-full ' +
+    'bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] border border-white/60',
+  spinner: 'w-4 h-4 border-2 border-[#006666] border-t-transparent rounded-full animate-spin',
+  spinnerLabel:
+    'text-sm font-[family-name:var(--font-jetbrains-mono)] font-bold text-[#1E2938]/70',
+} as const;
+
+type Props = { totalPages: number; totalCount?: number };
 
 export default function ArticlePagination({ totalPages, totalCount }: Props) {
   const { currentPagination, setPagination, fetchArticleList } = useArticleStore();
@@ -52,19 +94,18 @@ export default function ArticlePagination({ totalPages, totalCount }: Props) {
   const canPrev = page > 1;
   const canNext = totalPages ? page < totalPages : true;
 
-  const getPageNumbers = () => {
+  const getPageNumbers = (): (number | string)[] => {
     const pages: (number | string)[] = [];
     const showPages = 5;
-
     if (totalPages <= showPages + 2) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       pages.push(1);
-      if (page > 3) pages.push('...');
+      if (page > 3) pages.push('…');
       const start = Math.max(2, page - 1);
       const end = Math.min(totalPages - 1, page + 1);
       for (let i = start; i <= end; i++) pages.push(i);
-      if (page < totalPages - 2) pages.push('...');
+      if (page < totalPages - 2) pages.push('…');
       pages.push(totalPages);
     }
     return pages;
@@ -74,182 +115,137 @@ export default function ArticlePagination({ totalPages, totalCount }: Props) {
   const endItem = Math.min(page * pageSize, totalCount || 0);
 
   return (
-    <div
-      className="
-        relative flex flex-col sm:flex-row items-center justify-between gap-4
-        pt-6 pb-4 px-5
-        bg-gradient-to-br from-slate-50/60 to-slate-100/60 dark:from-slate-800/60 dark:to-slate-900/40
-        border border-slate-200/60 dark:border-slate-700/50
-        rounded-2xl shadow-[0_0_25px_-10px_rgba(30,41,59,0.3)]
-        backdrop-blur-md transition-all duration-300
-      "
-    >
-      {/* Left side - Info */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 text-sm">
-          <FiFileText className="w-4 h-4 text-blue-500" />
-          <span className="font-medium text-slate-700 dark:text-slate-200">
+    <div className={S.container}>
+      {/* Left – info + page size */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <FiFileText className="w-4 h-4 text-[#006666]" />
+          <span className={S.infoText}>
             {typeof totalCount === 'number' && totalCount > 0 ? (
               <>
-                <span className="text-blue-600 dark:text-blue-400 font-semibold">
-                  {startItem}-{endItem}
-                </span>
-                <span className="text-slate-500 dark:text-slate-400"> of </span>
-                <span className="font-semibold text-slate-700 dark:text-slate-200">
-                  {totalCount.toLocaleString()}
-                </span>
+                <span className={S.accent}>{startItem}–{endItem}</span>
+                {' of '}
+                <span className="font-bold text-[#1E2938]">{totalCount.toLocaleString()}</span>
               </>
             ) : (
-              <span className="text-slate-400">No results</span>
+              <span className="text-[#1E2938]/40">No results</span>
             )}
           </span>
         </div>
 
-        {/* Page size selector */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 hidden sm:inline">Show:</span>
-          <Select
-            value={pageSize.toString()}
-            onValueChange={handlePageSizeChange}
-            disabled={isLoading}
-          >
-            <SelectTrigger className="
-              h-8 w-[75px] text-xs rounded-md
-              border border-slate-300/70 dark:border-slate-700
-              bg-white/60 dark:bg-slate-800/50
-              hover:border-blue-400 focus:ring-1 focus:ring-blue-400
-              transition-all
-            ">
+          <span className={S.label}>Show:</span>
+          <Select value={pageSize.toString()} onValueChange={handlePageSizeChange} disabled={isLoading}>
+            <SelectTrigger className={S.selectTrigger}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[10, 20, 50, 100].map((size) => (
-                <SelectItem key={size} value={size.toString()}>
-                  {size}
-                </SelectItem>
+              {[10, 20, 50, 100].map((n) => (
+                <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      {/* Right side - Navigation */}
-      <div className="flex items-center gap-2">
-        {/* Buttons */}
-        {[
-          { icon: FiChevronsLeft, label: 'First', action: () => go(1), hide: true },
-          { icon: FiChevronLeft, label: 'Prev', action: () => go(page - 1) },
-        ].map(({ icon: Icon, label, action, hide }, i) => (
-          <motion.div key={i} whileTap={{ scale: 0.92 }}>
-            <Button
-              variant="outline"
-              size="icon"
-              className={`
-                h-9 w-9 rounded-lg 
-                border border-slate-300/70 dark:border-slate-700 
-                bg-white/60 dark:bg-slate-800/50
-                hover:bg-blue-50 dark:hover:bg-slate-700/70 
-                hover:text-blue-600 dark:hover:text-blue-400 
-                transition-all
-                ${hide ? 'hidden sm:flex' : ''}
-              `}
-              disabled={!canPrev || isLoading}
-              onClick={action}
-              aria-label={label}
-            >
-              <Icon className="h-4 w-4" />
-            </Button>
-          </motion.div>
-        ))}
+      {/* Right – navigation */}
+      <div className="flex items-center gap-1.5">
+        {/* First */}
+        <motion.button
+          className={`${S.iconBtn} hidden sm:flex`}
+          disabled={!canPrev || isLoading}
+          onClick={() => go(1)}
+          aria-label="First page"
+          whileTap={{ scale: 0.93 }}
+        >
+          <FiChevronsLeft className="h-4 w-4" />
+        </motion.button>
 
-        {/* Page numbers */}
+        {/* Prev */}
+        <motion.button
+          className={S.iconBtn}
+          disabled={!canPrev || isLoading}
+          onClick={() => go(page - 1)}
+          aria-label="Previous page"
+          whileTap={{ scale: 0.93 }}
+        >
+          <FiChevronLeft className="h-4 w-4" />
+        </motion.button>
+
+        {/* Page numbers – desktop */}
         <div className="hidden md:flex items-center gap-1">
           <AnimatePresence mode="wait">
             {getPageNumbers().map((p, idx) =>
-              p === '...' ? (
-                <span key={idx} className="px-2 text-slate-400 dark:text-slate-500">...</span>
+              p === '…' ? (
+                <span
+                  key={`ellipsis-${idx}`}
+                  className="px-1.5 font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/40 text-sm"
+                >
+                  …
+                </span>
               ) : (
-                <motion.div
+                <motion.button
                   key={p}
+                  className={page === p ? S.pageBtnActive : S.pageBtn}
+                  disabled={isLoading}
+                  onClick={() => go(p as number)}
+                  aria-label={`Page ${p}`}
+                  aria-current={page === p ? 'page' : undefined}
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.85 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.15 }}
+                  whileTap={{ scale: 0.93 }}
                 >
-                  <Button
-                    size="icon"
-                    variant={page === p ? 'default' : 'ghost'}
-                    className={`
-                      h-9 w-9 rounded-lg font-medium 
-                      transition-all duration-200
-                      ${
-                        page === p
-                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                          : 'text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700/70 hover:text-blue-600 dark:hover:text-blue-400'
-                      }
-                    `}
-                    disabled={isLoading}
-                    onClick={() => go(p as number)}
-                  >
-                    {p}
-                  </Button>
-                </motion.div>
+                  {p}
+                </motion.button>
               )
             )}
           </AnimatePresence>
         </div>
 
-        {/* Mobile indicator */}
-        <div className="md:hidden px-3 py-1.5 bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/60 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300">
-          {page} / {totalPages || 1}
-        </div>
+        {/* Page indicator – mobile */}
+        <div className={S.mobilePill}>{page} / {totalPages || 1}</div>
 
-        {/* Next Buttons */}
-        {[
-          { icon: FiChevronRight, label: 'Next', action: () => go(page + 1) },
-          { icon: FiChevronsRight, label: 'Last', action: () => go(totalPages), hide: true },
-        ].map(({ icon: Icon, label, action, hide }, i) => (
-          <motion.div key={i} whileTap={{ scale: 0.92 }}>
-            <Button
-              variant="outline"
-              size="icon"
-              className={`
-                h-9 w-9 rounded-lg
-                border border-slate-300/70 dark:border-slate-700
-                bg-white/60 dark:bg-slate-800/50
-                hover:bg-blue-50 dark:hover:bg-slate-700/70
-                hover:text-blue-600 dark:hover:text-blue-400
-                transition-all
-                ${hide ? 'hidden sm:flex' : ''}
-              `}
-              disabled={!canNext || isLoading}
-              onClick={action}
-              aria-label={label}
-            >
-              <Icon className="h-4 w-4" />
-            </Button>
-          </motion.div>
-        ))}
+        {/* Next */}
+        <motion.button
+          className={S.iconBtn}
+          disabled={!canNext || isLoading}
+          onClick={() => go(page + 1)}
+          aria-label="Next page"
+          whileTap={{ scale: 0.93 }}
+        >
+          <FiChevronRight className="h-4 w-4" />
+        </motion.button>
+
+        {/* Last */}
+        <motion.button
+          className={`${S.iconBtn} hidden sm:flex`}
+          disabled={!canNext || isLoading}
+          onClick={() => go(totalPages)}
+          aria-label="Last page"
+          whileTap={{ scale: 0.93 }}
+        >
+          <FiChevronsRight className="h-4 w-4" />
+        </motion.button>
       </div>
 
-      {/* Loading Overlay */}
+      {/* Loading overlay */}
       <AnimatePresence>
         {isLoading && (
           <motion.div
+            className={S.loadingOverlay}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-slate-100/60 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl flex items-center justify-center"
           >
             <motion.div
+              className={S.loadingPill}
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
-              className="flex items-center gap-2 bg-white/80 dark:bg-slate-800/80 px-5 py-2 rounded-full border border-slate-300/70 dark:border-slate-700/70 shadow-md"
             >
-              <div className="w-4 h-4 border-[2.5px] border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Loading...
-              </span>
+              <div className={S.spinner} />
+              <span className={S.spinnerLabel}>Loading…</span>
             </motion.div>
           </motion.div>
         )}

@@ -18,7 +18,7 @@ import {
 const S = {
   content:
     "sm:max-w-md rounded-2xl bg-[#E7E5E4] border-none " +
-    "shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff]",
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)]",
 
   iconWell:
     "h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 " +

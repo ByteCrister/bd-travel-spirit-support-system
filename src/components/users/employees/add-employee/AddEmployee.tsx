@@ -1,35 +1,75 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Formik, Form, Field, FieldArray, FieldProps, FormikErrors, FormikHelpers } from "formik";
-import { motion, AnimatePresence } from "framer-motion";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-    Plus, Trash2, RefreshCw, Upload, File, Image as ImageIcon, X, AlertCircle,
-    Loader2, User, Mail, Phone, Calendar, Briefcase, Clock,
-    FileText, Shield, Heart, Sparkles, CheckCircle2,
-    CreditCard, Info
+  Formik,
+  Form,
+  Field,
+  FieldArray,
+  FieldProps,
+  FormikErrors,
+  FormikHelpers,
+} from "formik";
+import { motion, AnimatePresence } from "framer-motion";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Plus,
+  Trash2,
+  RefreshCw,
+  Upload,
+  File,
+  Image as ImageIcon,
+  X,
+  AlertCircle,
+  Loader2,
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  Briefcase,
+  Clock,
+  FileText,
+  Shield,
+  Heart,
+  Sparkles,
+  CheckCircle2,
+  CreditCard,
+  Info,
 } from "lucide-react";
 import Image from "next/image";
 
-import { CreateEmployeeFormValues, createEmployeeValidationSchema } from "@/utils/validators/employee/employee.validator";
-import { CreateEmployeePayload, ShiftDTO, DayOfWeek, DocumentDTO } from "@/types/employee/employee.types";
-import { EMPLOYMENT_TYPE, SALARY_PAYMENT_MODE, SalaryPaymentMode } from "@/constants/employee.const";
+import {
+  CreateEmployeeFormValues,
+  createEmployeeValidationSchema,
+} from "@/utils/validators/employee/employee.validator";
+import {
+  CreateEmployeePayload,
+  ShiftDTO,
+  DayOfWeek,
+  DocumentDTO,
+} from "@/types/employee/employee.types";
+import {
+  EMPLOYMENT_TYPE,
+  SALARY_PAYMENT_MODE,
+  SalaryPaymentMode,
+} from "@/constants/employee.const";
 import { CARD_BRAND, CardBrand } from "@/constants/payment.const";
 import { CURRENCY } from "@/constants/tour.const";
 import {
-    fileToDocumentDTO,
-    fileToAvatarBase64,
-    IMAGE_EXTENSIONS,
-    DOCUMENT_EXTENSIONS,
-    ALLOWED_EXTENSIONS,
-    removeDocumentAt
+  fileToDocumentDTO,
+  fileToAvatarBase64,
+  IMAGE_EXTENSIONS,
+  DOCUMENT_EXTENSIONS,
+  ALLOWED_EXTENSIONS,
+  removeDocumentAt,
 } from "@/utils/helpers/file-conversion";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 import { showToast } from "@/components/global/showToast";
@@ -37,1113 +77,1467 @@ import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 import { useEmployeeStore } from "@/store/employee/employee.store";
 import { cn } from "@/lib/utils";
 import { FaBangladeshiTakaSign } from "react-icons/fa6";
-
 import { EmailVerificationService } from "@/utils/api/email-verification.api";
 import { EMAIL_VERIFICATION_PURPOSE } from "@/constants/email-verification-purpose.const";
 import EmployeeVerificationDialog from "./EmployeeVerificationDialog";
 
-// Constants
-const DAYS_OF_WEEK: DayOfWeek[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+// ── Neumorphic style tokens ────────────────────────────────────
+const NEU_PAGE_BG = "min-h-screen bg-[#E7E5E4]";
+const NEU_CARD =
+  "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_CARD_SM =
+  "rounded-xl bg-[#E7E5E4] shadow-[4px_4px_10px_#c8c6c5,-4px_-4px_10px_#ffffff] border border-white/60";
+const NEU_SURFACE_INSET =
+  "bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff]";
+const NEU_SURFACE_INSET_SM =
+  "bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]";
+const NEU_INPUT =
+  "rounded-xl bg-[#E7E5E4] text-[#1E2938] placeholder:text-[#1E2938]/40 " +
+  "font-[family-name:var(--font-jetbrains-mono)] text-sm " +
+  "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+  "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200";
+const NEU_BTN_PRIMARY =
+  "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] hover:bg-[#007777] " +
+  "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+  "transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none";
+const NEU_BTN_GHOST =
+  "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] hover:bg-[#1E2938]/10 " +
+  "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+  "transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none";
+const NEU_BTN_DANGER =
+  "rounded-xl bg-[#E7E5E4] text-[#FF2157] font-[family-name:var(--font-space-mono)] " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:bg-[#FF2157]/10 hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+  "transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed";
+const NEU_HEADING =
+  "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_LABEL =
+  "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+const NEU_MUTED =
+  "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_ICON_WELL =
+  "p-2.5 rounded-xl bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]";
+const NEU_ICON_WELL_PRIMARY =
+  "p-2.5 rounded-xl bg-[#006666]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
+// ─────────────────────────────────────────────────────────────
+
+const DAYS_OF_WEEK: DayOfWeek[] = [
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+  "Sun",
+];
 const MAX_DOCUMENTS = 5;
 const MAX_FILE_SIZE_MB = 2;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-
-// Avatar & Document options
-const AVATAR_OPTIONS = { maxWidth: 800, quality: 0.7, maxFileBytes: MAX_FILE_SIZE_BYTES };
-const DOCUMENT_OPTIONS = { compressImages: true, maxWidth: 1200, quality: 0.8, maxFileBytes: MAX_FILE_SIZE_BYTES, allowedExtensions: ALLOWED_EXTENSIONS };
+const AVATAR_OPTIONS = {
+  maxWidth: 800,
+  quality: 0.7,
+  maxFileBytes: MAX_FILE_SIZE_BYTES,
+};
+const DOCUMENT_OPTIONS = {
+  compressImages: true,
+  maxWidth: 1200,
+  quality: 0.8,
+  maxFileBytes: MAX_FILE_SIZE_BYTES,
+  allowedExtensions: ALLOWED_EXTENSIONS,
+};
 
 const breadcrumbItems = [
-    { label: "Home", href: '/' },
-    { label: "Employees", href: "/users/employees" },
-    { label: "Add Employee", href: "/users/employees/add-employee" },
+  { label: "Home", href: "/" },
+  { label: "Employees", href: "/users/employees" },
+  { label: "Add Employee", href: "/users/employees/add-employee" },
 ];
 
-// Initial form values
 const getInitialValues = (): CreateEmployeeFormValues => ({
-    name: "",
-    password: generateStrongPassword(10),
-    employmentType: EMPLOYMENT_TYPE.FULL_TIME,
-    avatar: null,
-    salary: null,
-    currency: CURRENCY.BDT,
-    paymentMode: SALARY_PAYMENT_MODE.AUTO,
-    paymentCard: null,
-    dateOfJoining: new Date(),
-    contactInfo: { phone: "", email: "", emergencyContact: { name: "", phone: "", relation: "" } },
-    shifts: [],
-    documents: [],
-    notes: "",
+  name: "",
+  password: generateStrongPassword(10),
+  employmentType: EMPLOYMENT_TYPE.FULL_TIME,
+  avatar: null,
+  salary: null,
+  currency: CURRENCY.BDT,
+  paymentMode: SALARY_PAYMENT_MODE.AUTO,
+  paymentCard: null,
+  dateOfJoining: new Date(),
+  contactInfo: {
+    phone: "",
+    email: "",
+    emergencyContact: { name: "", phone: "", relation: "" },
+  },
+  shifts: [],
+  documents: [],
+  notes: "",
 });
 
-// Animation variants
 const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
-
 const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
 };
 
-// Formik-compatible FormItem components
-const FormItem: React.FC<{ children: React.ReactNode }> = ({ children }) => <div className="space-y-2">{children}</div>;
-const FormLabel: React.FC<{ children: React.ReactNode; icon?: React.ReactNode }> = ({ children, icon }) => (
-    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-        {icon && <span className="text-blue-600">{icon}</span>}
-        {children}
-    </label>
-);
-const FormMessage: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
-    <motion.p
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="text-xs text-red-500 mt-1 flex items-center gap-1"
-    >
-        <AlertCircle className="h-3 w-3" />{children}
-    </motion.p>
+// ── Internal sub-components ───────────────────────────────────
+const FormItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="space-y-2">{children}</div>
 );
 
-// Type guards for shift errors
-const isShiftErrorObject = (error: unknown): error is FormikErrors<ShiftDTO> => !!error && typeof error === "object" && !Array.isArray(error);
-const getShiftError = (shiftError: unknown, field: keyof ShiftDTO): string | undefined => isShiftErrorObject(shiftError) ? shiftError[field] as string | undefined : undefined;
-type SetFieldValue = <K extends keyof CreateEmployeeFormValues>(field: K, value: CreateEmployeeFormValues[K]) => void;
+const FormLabel: React.FC<{
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+}> = ({ children, icon }) => (
+  <label className={`flex items-center gap-2 ${NEU_LABEL}`}>
+    {icon && <span className="text-[#006666]">{icon}</span>}
+    {children}
+  </label>
+);
+
+const FormMessage: React.FC<{ children?: React.ReactNode }> = ({ children }) =>
+  children ? (
+    <motion.p
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="text-xs text-[#FF2157] font-[family-name:var(--font-jetbrains-mono)] flex items-center gap-1 mt-1"
+    >
+      <AlertCircle className="h-3 w-3 flex-shrink-0" />
+      {children}
+    </motion.p>
+  ) : null;
+
+// Section header helper
+const SectionHeader: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  accent?: string;
+}> = ({ icon, title, accent = "#006666" }) => (
+  <div className="flex items-center gap-3 mb-5">
+    <div
+      className="p-2.5 rounded-xl flex items-center justify-center shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]"
+      style={{ background: `${accent}15` }}
+    >
+      <span style={{ color: accent }}>{icon}</span>
+    </div>
+    <h3 className={`${NEU_HEADING} text-lg`}>{title}</h3>
+  </div>
+);
+
+const isShiftErrorObject = (e: unknown): e is FormikErrors<ShiftDTO> =>
+  !!e && typeof e === "object" && !Array.isArray(e);
+const getShiftError = (
+  shiftError: unknown,
+  field: keyof ShiftDTO,
+): string | undefined =>
+  isShiftErrorObject(shiftError)
+    ? (shiftError[field] as string | undefined)
+    : undefined;
+type SetFieldValue = <K extends keyof CreateEmployeeFormValues>(
+  field: K,
+  value: CreateEmployeeFormValues[K],
+) => void;
+
+// ─────────────────────────────────────────────────────────────
 
 export default function AddEmployeePage() {
-    const { createEmployee, fetchEnums } = useEmployeeStore()
-    const [employmentTypes, setEmploymentTypes] = useState<string[]>([]);
-    const [, setCurrencies] = useState<string[]>([]);
-    const [uploadingAvatar, setUploadingAvatar] = useState(false);
-    const [uploadingDocuments, setUploadingDocuments] = useState(false);
-    const [avatarError, setAvatarError] = useState<string | null>(null);
-    const [documentErrors, setDocumentErrors] = useState<{ [key: number]: string }>({});
+  const { createEmployee, fetchEnums } = useEmployeeStore();
+  const [employmentTypes, setEmploymentTypes] = useState<string[]>([]);
+  const [, setCurrencies] = useState<string[]>([]);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingDocuments, setUploadingDocuments] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [documentErrors, setDocumentErrors] = useState<{
+    [key: number]: string;
+  }>({});
+  const [showVerificationDialog, setShowVerificationDialog] = useState(false);
+  const [pendingSubmission, setPendingSubmission] = useState<{
+    values: CreateEmployeeFormValues;
+    resetForm: () => void;
+  } | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(
+    null,
+  );
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
-    // NEW state for email verification
-    const [showVerificationDialog, setShowVerificationDialog] = useState(false);
-    const [pendingSubmission, setPendingSubmission] = useState<{ values: CreateEmployeeFormValues; resetForm: () => void } | null>(null);
-
-    const [verifying, setVerifying] = useState(false);
-    const [verificationError, setVerificationError] = useState<string | null>(null);
-
-    const avatarInputRef = useRef<HTMLInputElement>(null);
-    const documentInputRef = useRef<HTMLInputElement>(null);
-
-    const router = useRouter();
-
+  useEffect(() => {
+    loadEnums();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => { loadEnums() }, []);
+  }, []);
 
-    const loadEnums = async () => {
-        try { await fetchEnums(); } catch { }
-        setEmploymentTypes(Object.values(EMPLOYMENT_TYPE));
-        setCurrencies(Object.values(CURRENCY));
-    };
+  const loadEnums = async () => {
+    try {
+      await fetchEnums();
+    } catch {}
+    setEmploymentTypes(Object.values(EMPLOYMENT_TYPE));
+    setCurrencies(Object.values(CURRENCY));
+  };
 
-    const formatDateForInput = (date: Date) => date.toISOString().split('T')[0];
+  const formatDateForInput = (date: Date) => date.toISOString().split("T")[0];
 
-    // Avatar upload
-    const handleAvatarUpload = async (file: File, setFieldValue: SetFieldValue) => {
-        setAvatarError(null); setUploadingAvatar(true);
+  const handleAvatarUpload = async (
+    file: File,
+    setFieldValue: SetFieldValue,
+  ) => {
+    setAvatarError(null);
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (!IMAGE_EXTENSIONS.includes(ext as any))
+        throw new Error(`Invalid file type: ${ext}`);
+      if (file.size > MAX_FILE_SIZE_BYTES)
+        throw new Error(`File too large (> ${MAX_FILE_SIZE_MB}MB)`);
+      const base64 = await fileToAvatarBase64(file, AVATAR_OPTIONS);
+      setFieldValue("avatar", base64);
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : "Upload failed");
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleDocumentUpload = async (
+    files: FileList | File[],
+    currentDocs: DocumentDTO[],
+    setFieldValue: SetFieldValue,
+  ) => {
+    setUploadingDocuments(true);
+    const newErrors: { [key: number]: string } = {};
+    try {
+      const arr = Array.from(files);
+      if (currentDocs.length + arr.length > MAX_DOCUMENTS)
+        throw new Error(`Max ${MAX_DOCUMENTS} documents allowed`);
+      for (let i = 0; i < arr.length; i++) {
+        const file = arr[i];
+        const index = currentDocs.length + i;
         try {
-            const ext = file.name.split('.').pop()?.toLowerCase() || '';
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            if (!IMAGE_EXTENSIONS.includes(ext as any)) throw new Error(`Invalid file type: ${ext}`);
-            if (file.size > MAX_FILE_SIZE_BYTES) throw new Error(`File too large (> ${MAX_FILE_SIZE_MB}MB)`);
-            const base64 = await fileToAvatarBase64(file, AVATAR_OPTIONS);
-            setFieldValue("avatar", base64);
+          const ext = file.name.split(".").pop()?.toLowerCase() || "";
+          if (
+            !IMAGE_EXTENSIONS.includes(ext) &&
+            !DOCUMENT_EXTENSIONS.includes(ext)
+          )
+            throw new Error(`Unsupported file type: ${ext}`);
+          if (file.size > MAX_FILE_SIZE_BYTES)
+            throw new Error(`File too large (> ${MAX_FILE_SIZE_MB}MB)`);
+          const dto = await fileToDocumentDTO(file, DOCUMENT_OPTIONS);
+          setFieldValue("documents", [...currentDocs, dto]);
         } catch (err) {
-            setAvatarError(err instanceof Error ? err.message : "Upload failed");
-            if (avatarInputRef.current) avatarInputRef.current.value = "";
-        } finally { setUploadingAvatar(false); }
-    };
-
-    // Document upload
-    const handleDocumentUpload = async (files: FileList | File[], currentDocs: DocumentDTO[], setFieldValue: SetFieldValue) => {
-        setUploadingDocuments(true); const newErrors: { [key: number]: string } = {};
-        try {
-            const arr = Array.from(files);
-            if (currentDocs.length + arr.length > MAX_DOCUMENTS) throw new Error(`Max ${MAX_DOCUMENTS} documents allowed`);
-            for (let i = 0; i < arr.length; i++) {
-                const file = arr[i], index = currentDocs.length + i;
-                try {
-                    const ext = file.name.split('.').pop()?.toLowerCase() || '';
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    if (!IMAGE_EXTENSIONS.includes(ext as any) && !DOCUMENT_EXTENSIONS.includes(ext as any))
-                        throw new Error(`Unsupported file type: ${ext}`);
-                    if (file.size > MAX_FILE_SIZE_BYTES) throw new Error(`File too large (> ${MAX_FILE_SIZE_MB}MB)`);
-                    const dto = await fileToDocumentDTO(file, DOCUMENT_OPTIONS);
-                    setFieldValue("documents", [...currentDocs, dto]);
-                } catch (err) { newErrors[index] = err instanceof Error ? err.message : "Upload failed"; }
-            }
-            setDocumentErrors(newErrors);
-            if (Object.keys(newErrors).length < arr.length && documentInputRef.current) documentInputRef.current.value = "";
-        } catch (err) { alert(err instanceof Error ? err.message : "Upload failed"); }
-        finally { setUploadingDocuments(false); }
-    };
-
-    const handleRemoveDocument = (index: number, currentDocs: DocumentDTO[], setFieldValue: SetFieldValue) => {
-        setFieldValue("documents", removeDocumentAt(currentDocs, index));
-        const newErrors = { ...documentErrors }; delete newErrors[index]; setDocumentErrors(newErrors);
-    };
-
-    const handleClearAvatar = (setFieldValue: SetFieldValue) => {
-        setFieldValue("avatar", null); setAvatarError(null);
-        if (avatarInputRef.current) avatarInputRef.current.value = "";
-    };
-
-    // NEW: Handle form submission with email verification
-    const handleSubmit = async (
-        values: CreateEmployeeFormValues,
-        { resetForm, setSubmitting }: FormikHelpers<CreateEmployeeFormValues>
-    ) => {
-        try {
-            setSubmitting(true);
-            // Step 1: Send verification email
-            const service = new EmailVerificationService(values.contactInfo.email);
-            // Use appropriate purpose – adjust according to your constants
-            const sendResult = await service.sendVerificationEmail(EMAIL_VERIFICATION_PURPOSE.EMPLOYEE_VERIFICATION);
-            if (!sendResult.success) {
-                showToast.error(sendResult.message);
-                setSubmitting(false);
-                return;
-            }
-
-            // Step 2: Store submission and open dialog
-            setPendingSubmission({ values, resetForm });
-            setShowVerificationDialog(true);
-            setSubmitting(false); // Allow user to interact with dialog
-        } catch {
-            showToast.error('Failed to send verification email');
-            setSubmitting(false);
+          newErrors[index] =
+            err instanceof Error ? err.message : "Upload failed";
         }
-    };
+      }
+      setDocumentErrors(newErrors);
+      if (
+        Object.keys(newErrors).length < arr.length &&
+        documentInputRef.current
+      )
+        documentInputRef.current.value = "";
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadingDocuments(false);
+    }
+  };
 
-    const handleVerifyToken = async (token: string) => {
-        if (!pendingSubmission) return;
-        setVerifying(true);
-        setVerificationError(null);
-        try {
-            const service = new EmailVerificationService(pendingSubmission.values.contactInfo.email);
-            const verifyResult = await service.verifyToken(token, EMAIL_VERIFICATION_PURPOSE.EMPLOYEE_VERIFICATION);
-            if (!verifyResult.success) {
-                setVerificationError(verifyResult.message);
-                setVerifying(false);
-                return;
-            }
+  const handleRemoveDocument = (
+    index: number,
+    currentDocs: DocumentDTO[],
+    setFieldValue: SetFieldValue,
+  ) => {
+    setFieldValue("documents", removeDocumentAt(currentDocs, index));
+    const newErrors = { ...documentErrors };
+    delete newErrors[index];
+    setDocumentErrors(newErrors);
+  };
 
-            // Token verified – create employee
-            const payload: CreateEmployeePayload = {
-                name: pendingSubmission.values.name,
-                password: pendingSubmission.values.password,
-                employmentType: pendingSubmission.values.employmentType,
-                avatar: pendingSubmission.values.avatar ?? "",
-                salary: pendingSubmission.values.salary,
-                currency: pendingSubmission.values.currency,
-                paymentMode: pendingSubmission.values.paymentMode,
-                paymentCard: pendingSubmission.values.paymentCard ?? undefined,
-                dateOfJoining: pendingSubmission.values.dateOfJoining.toISOString(),
-                contactInfo: pendingSubmission.values.contactInfo,
-                shifts: pendingSubmission.values.shifts,
-                documents: pendingSubmission.values.documents,
-                notes: pendingSubmission.values.notes || undefined,
-            };
-            await createEmployee(payload);
+  const handleClearAvatar = (setFieldValue: SetFieldValue) => {
+    setFieldValue("avatar", null);
+    setAvatarError(null);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  };
 
-            // Reset form and close dialog
-            pendingSubmission.resetForm();
-            showToast.success("Successfully added new employee.");
-            setShowVerificationDialog(false);
-            setPendingSubmission(null);
-        } catch {
-            setVerificationError('Verification failed');
-        } finally {
-            setVerifying(false);
-        }
-    };
+  const handleSubmit = async (
+    values: CreateEmployeeFormValues,
+    { resetForm, setSubmitting }: FormikHelpers<CreateEmployeeFormValues>,
+  ) => {
+    try {
+      setSubmitting(true);
+      const service = new EmailVerificationService(values.contactInfo.email);
+      const sendResult = await service.sendVerificationEmail(
+        EMAIL_VERIFICATION_PURPOSE.EMPLOYEE_VERIFICATION,
+      );
+      if (!sendResult.success) {
+        showToast.error(sendResult.message);
+        setSubmitting(false);
+        return;
+      }
+      setPendingSubmission({ values, resetForm });
+      setShowVerificationDialog(true);
+      setSubmitting(false);
+    } catch {
+      showToast.error("Failed to send verification email");
+      setSubmitting(false);
+    }
+  };
 
-    const handleCancelVerification = () => {
-        setShowVerificationDialog(false);
-        setPendingSubmission(null);
-        setVerificationError(null);
+  const handleVerifyToken = async (token: string) => {
+    if (!pendingSubmission) return;
+    setVerifying(true);
+    setVerificationError(null);
+    try {
+      const service = new EmailVerificationService(
+        pendingSubmission.values.contactInfo.email,
+      );
+      const verifyResult = await service.verifyToken(
+        token,
+        EMAIL_VERIFICATION_PURPOSE.EMPLOYEE_VERIFICATION,
+      );
+      if (!verifyResult.success) {
+        setVerificationError(verifyResult.message);
         setVerifying(false);
-        showToast.info('Employee creation cancelled.');
-    };
+        return;
+      }
+      const payload: CreateEmployeePayload = {
+        name: pendingSubmission.values.name,
+        password: pendingSubmission.values.password,
+        employmentType: pendingSubmission.values.employmentType,
+        avatar: pendingSubmission.values.avatar ?? "",
+        salary: pendingSubmission.values.salary,
+        currency: pendingSubmission.values.currency,
+        paymentMode: pendingSubmission.values.paymentMode,
+        paymentCard: pendingSubmission.values.paymentCard ?? undefined,
+        dateOfJoining: pendingSubmission.values.dateOfJoining.toISOString(),
+        contactInfo: pendingSubmission.values.contactInfo,
+        shifts: pendingSubmission.values.shifts,
+        documents: pendingSubmission.values.documents,
+        notes: pendingSubmission.values.notes || undefined,
+      };
+      await createEmployee(payload);
+      pendingSubmission.resetForm();
+      showToast.success("Successfully added new employee.");
+      setShowVerificationDialog(false);
+      setPendingSubmission(null);
+    } catch {
+      setVerificationError("Verification failed");
+    } finally {
+      setVerifying(false);
+    }
+  };
 
-    return (
-        <div className="overflow-y-auto flex-1 px-8 py-6" >
-            <Breadcrumbs items={breadcrumbItems} />
+  const handleCancelVerification = () => {
+    setShowVerificationDialog(false);
+    setPendingSubmission(null);
+    setVerificationError(null);
+    setVerifying(false);
+    showToast.info("Employee creation cancelled.");
+  };
 
-            <Formik
-                initialValues={getInitialValues()}
-                validationSchema={createEmployeeValidationSchema}
-                onSubmit={handleSubmit}
+  return (
+    <div className={`${NEU_PAGE_BG} overflow-y-auto flex-1 px-6 py-6 lg:px-8`}>
+      <Breadcrumbs items={breadcrumbItems} />
+
+      <Formik
+        initialValues={getInitialValues()}
+        validationSchema={createEmployeeValidationSchema}
+        onSubmit={handleSubmit}
+      >
+        {({ values, errors, touched, setFieldValue, isSubmitting }) => (
+          <Form>
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-6 pt-5"
             >
-                {({ values, errors, touched, setFieldValue, isSubmitting }) => (
-                    <Form>
-                        <motion.div
-                            variants={containerVariants}
-                            initial="hidden"
-                            animate="visible"
-                            className="space-y-6 pt-5"
+              {/* ── Security Credentials ─────────────────────── */}
+              <motion.div variants={itemVariants}>
+                <div className={`${NEU_CARD} p-6`}>
+                  <SectionHeader
+                    icon={<Shield className="h-5 w-5" />}
+                    title="Security Credentials"
+                    accent="#FE9900"
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormItem>
+                      <FormLabel icon={<User className="h-4 w-4" />}>
+                        Name *
+                      </FormLabel>
+                      <Field name="name">
+                        {({ field }: FieldProps<string>) => (
+                          <input
+                            {...field}
+                            disabled={showVerificationDialog}
+                            placeholder="Enter employee name"
+                            className={`${NEU_INPUT} w-full h-10 px-4`}
+                          />
+                        )}
+                      </Field>
+                      <FormMessage>{touched.name && errors.name}</FormMessage>
+                    </FormItem>
+
+                    <FormItem>
+                      <FormLabel icon={<Shield className="h-4 w-4" />}>
+                        Password *
+                      </FormLabel>
+                      <div className="flex gap-3">
+                        <Field name="password">
+                          {({ field }: FieldProps<string>) => (
+                            <input
+                              {...field}
+                              type="password"
+                              disabled={showVerificationDialog}
+                              placeholder="Enter secure password"
+                              className={`${NEU_INPUT} flex-1 h-10 px-4`}
+                            />
+                          )}
+                        </Field>
+                        <button
+                          type="button"
+                          disabled={showVerificationDialog}
+                          onClick={() =>
+                            setFieldValue("password", generateStrongPassword())
+                          }
+                          className={`${NEU_BTN_GHOST} flex items-center gap-2 px-4 h-10 text-sm`}
                         >
-                            {/* Security Section */}
-                            <motion.div variants={itemVariants} className="group">
-                                <div className="relative bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 rounded-2xl p-6 border-2 border-amber-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-300/20 rounded-full blur-3xl" />
-                                    <div className="relative">
-                                        <h3 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-3">
-                                            <div className="p-2 bg-amber-500 rounded-xl shadow-md">
-                                                <Shield className="h-5 w-5 text-white" />
-                                            </div>
-                                            Security Credentials
-                                        </h3>
+                          <RefreshCw className="h-4 w-4" />
+                          <span className="hidden sm:inline">Generate</span>
+                        </button>
+                      </div>
+                      <FormMessage>
+                        {touched.password && errors.password}
+                      </FormMessage>
+                    </FormItem>
+                  </div>
+                </div>
+              </motion.div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {/* Name */}
-                                            <FormItem>
-                                                <FormLabel icon={<User className="h-4 w-4" />}>Name *</FormLabel>
-                                                <Field name="name">
-                                                    {({ field }: FieldProps<string>) => (
-                                                        <Input
-                                                            {...field}
-                                                            disabled={showVerificationDialog} // Disable when dialog open
-                                                            placeholder="Enter your name"
-                                                            className="w-full bg-white/80 backdrop-blur-sm border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all"
-                                                        />
-                                                    )}
-                                                </Field>
-                                                <FormMessage>{touched.name && errors.name}</FormMessage>
-                                            </FormItem>
+              {/* ── Profile Information ───────────────────────── */}
+              <motion.div variants={itemVariants}>
+                <div className={`${NEU_CARD} p-6`}>
+                  <SectionHeader
+                    icon={<User className="h-5 w-5" />}
+                    title="Profile Information"
+                    accent="#006666"
+                  />
 
-                                            {/* Password */}
-                                            <FormItem>
-                                                <FormLabel icon={<Shield className="h-4 w-4" />}>Password *</FormLabel>
-                                                <div className="flex gap-3">
-                                                    <Field name="password">
-                                                        {({ field }: FieldProps<string>) => (
-                                                            <Input
-                                                                {...field}
-                                                                type="password"
-                                                                disabled={showVerificationDialog}
-                                                                placeholder="Enter secure password"
-                                                                className="flex-1 bg-white/80 backdrop-blur-sm border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all"
-                                                            />
-                                                        )}
-                                                    </Field>
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        disabled={showVerificationDialog}
-                                                        className="border-amber-400 bg-white hover:bg-amber-100 hover:border-amber-500 hover:scale-105 transition-all shadow-md"
-                                                        onClick={() => setFieldValue("password", generateStrongPassword())}
-                                                    >
-                                                        <RefreshCw className="h-4 w-4 mr-2" /> Generate
-                                                    </Button>
-                                                </div>
-                                                <FormMessage>{touched.password && errors.password}</FormMessage>
-                                            </FormItem>
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Profile Section */}
-                            <motion.div variants={itemVariants}>
-                                <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                                    <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-300/20 rounded-full blur-3xl" />
-                                    <div className="relative">
-                                        <h3 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-3">
-                                            <div className="p-2 bg-blue-500 rounded-xl shadow-md">
-                                                <User className="h-5 w-5 text-white" />
-                                            </div>
-                                            Profile Information
-                                        </h3>
-
-                                        {/* Avatar Upload */}
-                                        <FormItem>
-                                            <FormLabel icon={<ImageIcon className="h-4 w-4" />}>Profile Picture</FormLabel>
-                                            <div className="flex items-start gap-6">
-                                                <AnimatePresence mode="wait">
-                                                    {values.avatar ? (
-                                                        <motion.div
-                                                            initial={{ scale: 0, rotate: -90 }}
-                                                            animate={{ scale: 1, rotate: 0 }}
-                                                            exit={{ scale: 0, rotate: 90 }}
-                                                            className="relative group"
-                                                        >
-                                                            <div className="relative w-36 h-36 rounded-3xl overflow-hidden border-4 border-white shadow-2xl ring-4 ring-blue-200 group-hover:ring-blue-400 transition-all">
-                                                                <Image src={values.avatar} alt="Avatar" fill className="object-cover" />
-                                                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                            </div>
-                                                            <motion.button
-                                                                whileHover={{ scale: 1.1 }}
-                                                                whileTap={{ scale: 0.9 }}
-                                                                type="button"
-                                                                disabled={showVerificationDialog}
-                                                                className="absolute -top-2 -right-2 p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 disabled:opacity-50"
-                                                                onClick={() => handleClearAvatar(setFieldValue)}
-                                                            >
-                                                                <X className="h-4 w-4" />
-                                                            </motion.button>
-                                                        </motion.div>
-                                                    ) : (
-                                                        <motion.div
-                                                            initial={{ scale: 0 }}
-                                                            animate={{ scale: 1 }}
-                                                            className="w-36 h-36 rounded-3xl bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center border-4 border-white shadow-xl"
-                                                        >
-                                                            <User className="h-16 w-16 text-gray-400" />
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-
-                                                <div className="flex-1 space-y-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <Input
-                                                            ref={avatarInputRef}
-                                                            type="file"
-                                                            accept={IMAGE_EXTENSIONS.map(ext => `.${ext}`).join(',')}
-                                                            onChange={e => e.target.files && handleAvatarUpload(e.target.files[0], setFieldValue)}
-                                                            className="cursor-pointer bg-white/80 border-blue-300 focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-500 file:text-white hover:file:bg-blue-600"
-                                                            disabled={uploadingAvatar || showVerificationDialog}
-                                                        />
-                                                        {uploadingAvatar && <Loader2 className="h-5 w-5 animate-spin text-blue-600" />}
-                                                    </div>
-                                                    <p className="text-xs text-gray-500 flex items-center gap-1">
-                                                        <Sparkles className="h-3 w-3" />
-                                                        Recommended: Square image, max {MAX_FILE_SIZE_MB}MB
-                                                    </p>
-                                                    {avatarError && (
-                                                        <Alert variant="destructive" className="py-2 bg-red-50 border-red-300">
-                                                            <AlertCircle className="h-4 w-4" />
-                                                            <AlertDescription className="text-xs">{avatarError}</AlertDescription>
-                                                        </Alert>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <FormMessage>{touched.avatar && errors.avatar}</FormMessage>
-                                        </FormItem>
-
-                                        {/* Employment Type */}
-                                        <FormItem>
-                                            <FormLabel icon={<Briefcase className="h-4 w-4" />}>Employment Type</FormLabel>
-                                            <Field name="employmentType">
-                                                {({ field }: FieldProps<string>) => (
-                                                    <Select
-                                                        value={field.value}
-                                                        onValueChange={v => setFieldValue("employmentType", v)}
-                                                        disabled={showVerificationDialog}
-                                                    >
-                                                        <SelectTrigger className="bg-white/80 border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
-                                                            <SelectValue placeholder="Select employment type" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {employmentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
-                                                )}
-                                            </Field>
-                                            <FormMessage>{touched.employmentType && errors.employmentType}</FormMessage>
-                                        </FormItem>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Compensation Section */}
-                            <motion.div variants={itemVariants}>
-                                <div className="relative bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 rounded-2xl p-6 border-2 border-green-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                                    <div className="absolute top-0 left-1/2 w-32 h-32 bg-green-300/20 rounded-full blur-3xl" />
-                                    <div className="relative">
-                                        <h3 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-3">
-                                            <div className="p-2 bg-green-500 rounded-xl shadow-md">
-                                                <FaBangladeshiTakaSign className="h-5 w-5 text-white" />
-                                            </div>
-                                            Compensation Details
-                                        </h3>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                            <FormItem>
-                                                <FormLabel icon={<FaBangladeshiTakaSign className="h-4 w-4" />}>Salary *</FormLabel>
-                                                <div className="flex gap-2">
-                                                    <Field name="salary">
-                                                        {({ field }: FieldProps<number>) => (
-                                                            <Input
-                                                                {...field}
-                                                                type="text"
-                                                                inputMode="decimal"
-                                                                pattern="[0-9]*"
-                                                                value={field.value ?? ""}
-                                                                disabled={showVerificationDialog}
-                                                                onChange={(e) => {
-                                                                    const value = e.target.value;
-                                                                    if (value === "") {
-                                                                        setFieldValue("salary", value);
-                                                                        return;
-                                                                    }
-                                                                    if (/^(?:0|[1-9]\d*)(?:\.\d*)?$/.test(value)) {
-                                                                        setFieldValue("salary", value);
-                                                                    }
-                                                                }}
-                                                                className="flex-1 bg-white/80 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200"
-                                                                placeholder="Enter amount"
-                                                            />
-                                                        )}
-                                                    </Field>
-                                                    <Field name="currency">
-                                                        {({ field }: FieldProps<string>) => (
-                                                            <Select
-                                                                value={field.value}
-                                                                onValueChange={(v) => setFieldValue("currency", v)}
-                                                                disabled={showVerificationDialog}
-                                                            >
-                                                                <SelectTrigger className="w-[130px] bg-white/80 border-green-300 focus:border-green-500">
-                                                                    <SelectValue placeholder="Currency" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem key={CURRENCY.BDT} value={CURRENCY.BDT}>BDT</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        )}
-                                                    </Field>
-                                                </div>
-                                                <FormMessage>{touched.salary && errors.salary}</FormMessage>
-                                            </FormItem>
-
-                                            <FormItem>
-                                                <FormLabel icon={<Calendar className="h-4 w-4" />}>Date of Joining</FormLabel>
-                                                <Field name="dateOfJoining">
-                                                    {({ field }: FieldProps<Date>) => (
-                                                        <Input
-                                                            type="date"
-                                                            value={field.value ? formatDateForInput(field.value) : ""}
-                                                            min={formatDateForInput(new Date())}
-                                                            disabled={showVerificationDialog}
-                                                            onChange={(e) =>
-                                                                setFieldValue("dateOfJoining", new Date(e.target.value))
-                                                            }
-                                                            className="bg-white/80 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200"
-                                                        />
-                                                    )}
-                                                </Field>
-                                                <FormMessage>{touched.dateOfJoining && errors.dateOfJoining && String(errors.dateOfJoining)}</FormMessage>
-                                            </FormItem>
-
-                                            <div className="md:col-span-2">
-                                                <FormItem>
-                                                    <FormLabel icon={<CreditCard className="h-4 w-4" />}>Payment Mode *</FormLabel>
-                                                    <Field name="paymentMode">
-                                                        {({ field }: FieldProps<SalaryPaymentMode>) => (
-                                                            <div className="grid grid-cols-2 gap-4">
-                                                                {Object.values(SALARY_PAYMENT_MODE).map((mode) => (
-                                                                    <div
-                                                                        key={mode}
-                                                                        className={cn(
-                                                                            "relative flex items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer",
-                                                                            field.value === mode
-                                                                                ? "bg-green-100 border-green-500 shadow-sm"
-                                                                                : "bg-white/80 border-green-200 hover:border-green-300",
-                                                                            showVerificationDialog && "pointer-events-none opacity-60"
-                                                                        )}
-                                                                        onClick={() => !showVerificationDialog && setFieldValue("paymentMode", mode)}
-                                                                    >
-                                                                        <div className="flex items-center gap-3">
-                                                                            <div className={cn(
-                                                                                "h-5 w-5 rounded-full border-2 flex items-center justify-center",
-                                                                                field.value === mode
-                                                                                    ? "border-green-500 bg-green-500"
-                                                                                    : "border-gray-300"
-                                                                            )}>
-                                                                                {field.value === mode && (
-                                                                                    <div className="h-2 w-2 rounded-full bg-white" />
-                                                                                )}
-                                                                            </div>
-                                                                            <span className="font-medium text-gray-700">
-                                                                                {mode === SALARY_PAYMENT_MODE.AUTO ? "Automatic" : "Manual"}
-                                                                            </span>
-                                                                        </div>
-
-                                                                        {mode === SALARY_PAYMENT_MODE.AUTO && (
-                                                                            <div className="absolute -top-1 -right-1">
-                                                                                <div className="px-2 py-0.5 text-[10px] font-semibold bg-amber-500 text-white rounded-full">
-                                                                                    Recommended
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </Field>
-                                                    <div className="mt-3 flex items-start gap-2 text-sm text-gray-600">
-                                                        <Info className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                                                        <span>
-                                                            <strong>Automatic:</strong> Salary is paid automatically on the set date.{" "}
-                                                            <strong>Manual:</strong> Requires manual approval and processing for each payment.
-                                                        </span>
-                                                    </div>
-                                                    <FormMessage>{touched.paymentMode && errors.paymentMode}</FormMessage>
-                                                </FormItem>
-                                            </div>
-
-                                            {/* Payment Card Details — shown when paymentMode is AUTO */}
-                                            {values.paymentMode === SALARY_PAYMENT_MODE.AUTO && (
-                                                <div className="md:col-span-2">
-                                                    <motion.div
-                                                        initial={{ opacity: 0, height: 0 }}
-                                                        animate={{ opacity: 1, height: "auto" }}
-                                                        exit={{ opacity: 0, height: 0 }}
-                                                        transition={{ duration: 0.3 }}
-                                                        className="bg-white/80 backdrop-blur-sm border-2 border-green-300 rounded-xl p-5 space-y-4 shadow-inner"
-                                                    >
-                                                        <h4 className="font-semibold text-gray-700 flex items-center gap-2">
-                                                            <div className="p-1.5 bg-green-100 rounded-lg">
-                                                                <CreditCard className="h-4 w-4 text-green-600" />
-                                                            </div>
-                                                            Payment Card Details *
-                                                        </h4>
-
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            {/* Card Brand */}
-                                                            <FormItem>
-                                                                <FormLabel>Card Brand *</FormLabel>
-                                                                <Select
-                                                                    value={values.paymentCard?.brand ?? CARD_BRAND.UNKNOWN}
-                                                                    onValueChange={(v) => {
-                                                                        if (showVerificationDialog) return;
-                                                                        setFieldValue("paymentCard", {
-                                                                            ...(values.paymentCard ?? { last4: "", expMonth: 1, expYear: new Date().getFullYear(), brand: CARD_BRAND.UNKNOWN }),
-                                                                            brand: v as CardBrand,
-                                                                        });
-                                                                    }}
-                                                                    disabled={showVerificationDialog}
-                                                                >
-                                                                    <SelectTrigger className="bg-white/80 border-green-300 focus:border-green-500">
-                                                                        <SelectValue placeholder="Select card brand" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {Object.values(CARD_BRAND).map((brand) => (
-                                                                            <SelectItem key={brand} value={brand}>
-                                                                                {brand.charAt(0).toUpperCase() + brand.slice(1)}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </FormItem>
-
-                                                            {/* Last 4 Digits */}
-                                                            <FormItem>
-                                                                <FormLabel>Last 4 Digits *</FormLabel>
-                                                                <Input
-                                                                    type="text"
-                                                                    inputMode="numeric"
-                                                                    maxLength={4}
-                                                                    placeholder="1234"
-                                                                    disabled={showVerificationDialog}
-                                                                    value={values.paymentCard?.last4 ?? ""}
-                                                                    onChange={(e) => {
-                                                                        const val = e.target.value.replace(/\D/g, "").slice(0, 4);
-                                                                        setFieldValue("paymentCard", {
-                                                                            ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, expMonth: 1, expYear: new Date().getFullYear() }),
-                                                                            last4: val,
-                                                                        });
-                                                                    }}
-                                                                    className="bg-white/80 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 font-mono tracking-widest"
-                                                                />
-                                                            </FormItem>
-
-                                                            {/* Expiration Month */}
-                                                            <FormItem>
-                                                                <FormLabel>Exp. Month *</FormLabel>
-                                                                <Select
-                                                                    value={String(values.paymentCard?.expMonth ?? 1)}
-                                                                    onValueChange={(v) => {
-                                                                        if (showVerificationDialog) return;
-                                                                        setFieldValue("paymentCard", {
-                                                                            ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expYear: new Date().getFullYear() }),
-                                                                            expMonth: parseInt(v, 10),
-                                                                        });
-                                                                    }}
-                                                                    disabled={showVerificationDialog}
-                                                                >
-                                                                    <SelectTrigger className="bg-white/80 border-green-300 focus:border-green-500">
-                                                                        <SelectValue placeholder="Month" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                                                                            <SelectItem key={m} value={String(m)}>
-                                                                                {String(m).padStart(2, "0")}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </FormItem>
-
-                                                            {/* Expiration Year */}
-                                                            <FormItem>
-                                                                <FormLabel>Exp. Year *</FormLabel>
-                                                                <Select
-                                                                    value={String(values.paymentCard?.expYear ?? new Date().getFullYear())}
-                                                                    onValueChange={(v) => {
-                                                                        if (showVerificationDialog) return;
-                                                                        setFieldValue("paymentCard", {
-                                                                            ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expMonth: 1 }),
-                                                                            expYear: parseInt(v, 10),
-                                                                        });
-                                                                    }}
-                                                                    disabled={showVerificationDialog}
-                                                                >
-                                                                    <SelectTrigger className="bg-white/80 border-green-300 focus:border-green-500">
-                                                                        <SelectValue placeholder="Year" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map((y) => (
-                                                                            <SelectItem key={y} value={String(y)}>
-                                                                                {y}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </FormItem>
-
-                                                            {/* Cardholder Name */}
-                                                            <div className="md:col-span-2">
-                                                                <FormItem>
-                                                                    <FormLabel>Cardholder Name</FormLabel>
-                                                                    <Input
-                                                                        type="text"
-                                                                        placeholder="Name as shown on card"
-                                                                        disabled={showVerificationDialog}
-                                                                        value={values.paymentCard?.cardholderName ?? ""}
-                                                                        onChange={(e) => {
-                                                                            setFieldValue("paymentCard", {
-                                                                                ...(values.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expMonth: 1, expYear: new Date().getFullYear() }),
-                                                                                cardholderName: e.target.value,
-                                                                            });
-                                                                        }}
-                                                                        className="bg-white/80 border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200"
-                                                                    />
-                                                                </FormItem>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex items-start gap-2 text-sm text-gray-600 mt-2">
-                                                            <Info className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                                                            <span>Card details are stored securely and used only for automatic salary disbursement.</span>
-                                                        </div>
-                                                    </motion.div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Contact Information */}
-                            <motion.div variants={itemVariants}>
-                                <div className="relative bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-2xl p-6 border-2 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                                    <div className="absolute bottom-0 right-0 w-40 h-40 bg-purple-300/20 rounded-full blur-3xl" />
-                                    <div className="relative">
-                                        <h3 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-3">
-                                            <div className="p-2 bg-purple-500 rounded-xl shadow-md">
-                                                <Mail className="h-5 w-5 text-white" />
-                                            </div>
-                                            Contact Information
-                                        </h3>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                                            <FormItem>
-                                                <FormLabel icon={<Phone className="h-4 w-4" />}>Phone *</FormLabel>
-                                                <Field name="contactInfo.phone">
-                                                    {({ field }: FieldProps<string>) => (
-                                                        <Input
-                                                            {...field}
-                                                            value={field.value ?? ""}
-                                                            type="tel"
-                                                            disabled={showVerificationDialog}
-                                                            placeholder="01XXXXXXXXX"
-                                                            className="bg-white/80 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
-                                                        />
-                                                    )}
-                                                </Field>
-                                                <FormMessage>{touched.contactInfo?.phone && errors.contactInfo?.phone}</FormMessage>
-                                            </FormItem>
-
-                                            <FormItem>
-                                                <FormLabel icon={<Mail className="h-4 w-4" />}>Email *</FormLabel>
-                                                <Field name="contactInfo.email">
-                                                    {({ field }: FieldProps<string>) => (
-                                                        <Input
-                                                            {...field}
-                                                            type="email"
-                                                            disabled={showVerificationDialog}
-                                                            placeholder="email@example.com"
-                                                            className="bg-white/80 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
-                                                        />
-                                                    )}
-                                                </Field>
-                                                <FormMessage>{touched.contactInfo?.email && errors.contactInfo?.email}</FormMessage>
-                                            </FormItem>
-                                        </div>
-
-                                        {/* Emergency Contact */}
-                                        <div className="bg-white/80 backdrop-blur-sm border-2 border-purple-300 rounded-xl p-5 space-y-4 shadow-inner">
-                                            <h4 className="font-semibold text-gray-700 flex items-center gap-2">
-                                                <div className="p-1.5 bg-red-100 rounded-lg">
-                                                    <Heart className="h-4 w-4 text-red-600" />
-                                                </div>
-                                                Emergency Contact *
-                                            </h4>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <FormItem>
-                                                    <FormLabel>Name *</FormLabel>
-                                                    <Field name="contactInfo.emergencyContact.name">
-                                                        {({ field }: FieldProps<string>) => (
-                                                            <Input {...field} disabled={showVerificationDialog} placeholder="Full name" className="border-purple-200" />
-                                                        )}
-                                                    </Field>
-                                                    <FormMessage>{touched.contactInfo?.emergencyContact?.name && errors.contactInfo?.emergencyContact?.name}</FormMessage>
-                                                </FormItem>
-                                                <FormItem>
-                                                    <FormLabel>Phone *</FormLabel>
-                                                    <Field name="contactInfo.emergencyContact.phone">
-                                                        {({ field }: FieldProps<string>) => (
-                                                            <Input {...field} type="tel" disabled={showVerificationDialog} placeholder="01XXXXXXXXX" className="border-purple-200" />
-                                                        )}
-                                                    </Field>
-                                                    <FormMessage>{touched.contactInfo?.emergencyContact?.phone && errors.contactInfo?.emergencyContact?.phone}</FormMessage>
-                                                </FormItem>
-                                                <FormItem>
-                                                    <FormLabel>Relation *</FormLabel>
-                                                    <Field name="contactInfo.emergencyContact.relation">
-                                                        {({ field }: FieldProps<string>) => (
-                                                            <Input {...field} disabled={showVerificationDialog} placeholder="e.g., Father" className="border-purple-200" />
-                                                        )}
-                                                    </Field>
-                                                    <FormMessage>{touched.contactInfo?.emergencyContact?.relation && errors.contactInfo?.emergencyContact?.relation}</FormMessage>
-                                                </FormItem>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Shifts Section */}
-                            <motion.div variants={itemVariants}>
-                                <div className="relative bg-gradient-to-br from-cyan-50 via-sky-50 to-blue-50 rounded-2xl p-6 border-2 border-cyan-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-300/20 rounded-full blur-3xl" />
-                                    <div className="relative">
-                                        <div className="flex justify-between items-center mb-5">
-                                            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
-                                                <div className="p-2 bg-cyan-500 rounded-xl shadow-md">
-                                                    <Clock className="h-5 w-5 text-white" />
-                                                </div>
-                                                Work Shifts
-                                            </h3>
-                                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                <Button
-                                                    type="button"
-                                                    size="sm"
-                                                    disabled={showVerificationDialog}
-                                                    className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-lg"
-                                                    onClick={() => setFieldValue("shifts", [...values.shifts, { startTime: "09:00", endTime: "17:00", days: [] }])}
-                                                >
-                                                    <Plus className="mr-2 h-4 w-4" /> Add Shift
-                                                </Button>
-                                            </motion.div>
-                                        </div>
-
-                                        <FieldArray name="shifts">
-                                            {({ remove }) => (
-                                                <div className="space-y-4">
-                                                    <AnimatePresence mode="popLayout">
-                                                        {values.shifts.length === 0 ? (
-                                                            <motion.div
-                                                                initial={{ opacity: 0, scale: 0.9 }}
-                                                                animate={{ opacity: 1, scale: 1 }}
-                                                                exit={{ opacity: 0, scale: 0.9 }}
-                                                                className="text-center py-12 border-2 border-dashed border-cyan-200 rounded-xl bg-white/50"
-                                                            >
-                                                                <Clock className="h-16 w-16 mx-auto mb-3 text-gray-300" />
-                                                                <p className="text-gray-400 font-medium">No shifts added yet</p>
-                                                                <p className="text-sm text-gray-400">Click &quot;Add Shift&quot; to get started</p>
-                                                            </motion.div>
-                                                        ) : (
-                                                            values.shifts.map((shift, index) => {
-                                                                const shiftError = errors.shifts?.[index];
-                                                                const touchedShift = touched.shifts?.[index];
-                                                                const startTimeError = getShiftError(shiftError, "startTime");
-                                                                const endTimeError = getShiftError(shiftError, "endTime");
-                                                                return (
-                                                                    <motion.div
-                                                                        key={index}
-                                                                        initial={{ opacity: 0, x: -20 }}
-                                                                        animate={{ opacity: 1, x: 0 }}
-                                                                        exit={{ opacity: 0, x: 20 }}
-                                                                        layout
-                                                                        className="bg-white/80 backdrop-blur-sm border-2 border-cyan-200 rounded-xl p-5 space-y-4 hover:shadow-lg transition-all"
-                                                                    >
-                                                                        <div className="flex justify-between items-center">
-                                                                            <h4 className="font-semibold text-gray-700 flex items-center gap-3">
-                                                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-md">
-                                                                                    {index + 1}
-                                                                                </div>
-                                                                                Shift {index + 1}
-                                                                            </h4>
-                                                                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="ghost"
-                                                                                    size="sm"
-                                                                                    disabled={showVerificationDialog}
-                                                                                    className="hover:bg-red-100 text-red-500"
-                                                                                    onClick={() => remove(index)}
-                                                                                >
-                                                                                    <Trash2 className="h-4 w-4" />
-                                                                                </Button>
-                                                                            </motion.div>
-                                                                        </div>
-
-                                                                        <div className="grid grid-cols-2 gap-4">
-                                                                            <Field name={`shifts.${index}.startTime`}>
-                                                                                {({ field }: FieldProps<string>) => (
-                                                                                    <FormItem>
-                                                                                        <FormLabel>Start Time *</FormLabel>
-                                                                                        <Input {...field} type="time" value={field.value ?? ""} disabled={showVerificationDialog} className="border-cyan-200 focus:border-cyan-400" />
-                                                                                        <FormMessage>{touchedShift?.startTime && startTimeError}</FormMessage>
-                                                                                    </FormItem>
-                                                                                )}
-                                                                            </Field>
-                                                                            <Field name={`shifts.${index}.endTime`}>
-                                                                                {({ field }: FieldProps<string>) => (
-                                                                                    <FormItem>
-                                                                                        <FormLabel>End Time *</FormLabel>
-                                                                                        <Input {...field} type="time" value={field.value ?? ""} disabled={showVerificationDialog} className="border-cyan-200 focus:border-cyan-400" />
-                                                                                        <FormMessage>{touchedShift?.endTime && endTimeError}</FormMessage>
-                                                                                    </FormItem>
-                                                                                )}
-                                                                            </Field>
-                                                                        </div>
-
-                                                                        <Field name={`shifts.${index}.days`}>
-                                                                            {({ field }: FieldProps<DayOfWeek[]>) => {
-                                                                                const selectedDays: DayOfWeek[] = Array.isArray(field.value) ? field.value : [];
-                                                                                return (
-                                                                                    <FormItem>
-                                                                                        <FormLabel>Working Days</FormLabel>
-                                                                                        <div className="flex gap-2 flex-wrap">
-                                                                                            {DAYS_OF_WEEK.map(day => {
-                                                                                                const isSelected = selectedDays.includes(day);
-                                                                                                return (
-                                                                                                    <motion.div
-                                                                                                        key={day}
-                                                                                                        whileHover={{ scale: 1.1 }}
-                                                                                                        whileTap={{ scale: 0.95 }}
-                                                                                                    >
-                                                                                                        <Badge
-                                                                                                            className={`cursor-pointer px-4 py-2 transition-all font-medium ${isSelected
-                                                                                                                ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg scale-105"
-                                                                                                                : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                                                                                                                } ${showVerificationDialog ? "pointer-events-none opacity-60" : ""}`}
-                                                                                                            onClick={() => {
-                                                                                                                if (showVerificationDialog) return;
-                                                                                                                const newDays = selectedDays.includes(day)
-                                                                                                                    ? selectedDays.filter(d => d !== day)
-                                                                                                                    : [...selectedDays, day];
-                                                                                                                setFieldValue(`shifts.${index}.days`, newDays);
-                                                                                                            }}
-                                                                                                        >
-                                                                                                            {day}
-                                                                                                        </Badge>
-                                                                                                    </motion.div>
-                                                                                                );
-                                                                                            })}
-                                                                                        </div>
-                                                                                    </FormItem>
-                                                                                );
-                                                                            }}
-                                                                        </Field>
-                                                                    </motion.div>
-                                                                );
-                                                            })
-                                                        )}
-                                                    </AnimatePresence>
-                                                </div>
-                                            )}
-                                        </FieldArray>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Documents Section */}
-                            <motion.div variants={itemVariants}>
-                                <div className="relative bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 rounded-2xl p-6 border-2 border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                                    <div className="absolute bottom-0 left-0 w-40 h-40 bg-slate-300/20 rounded-full blur-3xl" />
-                                    <div className="relative">
-                                        <h3 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-3">
-                                            <div className="p-2 bg-slate-600 rounded-xl shadow-md">
-                                                <FileText className="h-5 w-5 text-white" />
-                                            </div>
-                                            Documents & Files
-                                        </h3>
-
-                                        <FormItem>
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-3">
-                                                    <Input
-                                                        ref={documentInputRef}
-                                                        type="file"
-                                                        multiple
-                                                        accept={ALLOWED_EXTENSIONS.map(ext => `.${ext}`).join(',')}
-                                                        onChange={e => e.target.files && handleDocumentUpload(e.target.files, values.documents, setFieldValue)}
-                                                        className="cursor-pointer bg-white/80 border-slate-300 focus:border-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-slate-600 file:text-white hover:file:bg-slate-700"
-                                                        disabled={uploadingDocuments || showVerificationDialog}
-                                                    />
-                                                    {uploadingDocuments && <Loader2 className="h-5 w-5 animate-spin text-slate-600" />}
-                                                </div>
-                                                <p className="text-xs text-gray-500 flex items-center gap-1">
-                                                    <Upload className="h-3 w-3" />
-                                                    Upload up to {MAX_DOCUMENTS} documents (max {MAX_FILE_SIZE_MB}MB each)
-                                                </p>
-
-                                                <AnimatePresence mode="popLayout">
-                                                    {values.documents.length > 0 ? (
-                                                        <motion.div layout className="space-y-3 mt-4">
-                                                            {values.documents.map((doc, i) => (
-                                                                <motion.div
-                                                                    key={i}
-                                                                    initial={{ opacity: 0, y: 10 }}
-                                                                    animate={{ opacity: 1, y: 0 }}
-                                                                    exit={{ opacity: 0, x: -20 }}
-                                                                    layout
-                                                                    className="flex justify-between items-center bg-white border-2 border-slate-200 rounded-xl p-4 hover:shadow-md transition-all group"
-                                                                >
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${doc.type.startsWith("image/") ? "bg-blue-100" : "bg-gray-100"}`}>
-                                                                            {doc.type.startsWith("image/") ? (
-                                                                                <ImageIcon className="h-6 w-6 text-blue-600" />
-                                                                            ) : (
-                                                                                <File className="h-6 w-6 text-gray-600" />
-                                                                            )}
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="text-sm font-medium text-gray-700">{doc.type}</p>
-                                                                            {documentErrors[i] && <FormMessage>{documentErrors[i]}</FormMessage>}
-                                                                        </div>
-                                                                    </div>
-                                                                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                                                                        <Button
-                                                                            type="button"
-                                                                            size="sm"
-                                                                            variant="ghost"
-                                                                            disabled={showVerificationDialog}
-                                                                            className="hover:bg-red-100 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                            onClick={() => handleRemoveDocument(i, values.documents, setFieldValue)}
-                                                                        >
-                                                                            <Trash2 className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </motion.div>
-                                                                </motion.div>
-                                                            ))}
-                                                        </motion.div>
-                                                    ) : (
-                                                        <motion.div
-                                                            initial={{ opacity: 0 }}
-                                                            animate={{ opacity: 1 }}
-                                                            className="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl bg-white/50"
-                                                        >
-                                                            <Upload className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                                                            <p className="text-sm text-gray-400 font-medium">No documents uploaded</p>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
-                                        </FormItem>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Notes Section */}
-                            <motion.div variants={itemVariants}>
-                                <div className="relative bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 rounded-2xl p-6 border-2 border-yellow-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-300/20 rounded-full blur-3xl" />
-                                    <div className="relative">
-                                        <h3 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-3">
-                                            <div className="p-2 bg-yellow-500 rounded-xl shadow-md">
-                                                <FileText className="h-5 w-5 text-white" />
-                                            </div>
-                                            Additional Notes
-                                        </h3>
-                                        <FormItem>
-                                            <Field name="notes">
-                                                {({ field }: FieldProps<string>) => (
-                                                    <Textarea
-                                                        {...field}
-                                                        value={field.value ?? ""}
-                                                        disabled={showVerificationDialog}
-                                                        placeholder="Add any additional notes, comments, or special requirements..."
-                                                        className="min-h-[120px] bg-white/80 border-yellow-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 resize-none"
-                                                    />
-                                                )}
-                                            </Field>
-                                        </FormItem>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-
-                        {/* Sticky Footer */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="sticky bottom-0 -mx-8 -mb-6 mt-8 bg-gradient-to-t from-white via-white to-transparent pt-6 pb-6 px-8 border-t-2 border-gray-200"
-                        >
-                            <div className="flex gap-3">
-                                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        disabled={showVerificationDialog}
-                                        onClick={() => router.push(`/users/employees`)}
-                                        className="w-full border-2 border-gray-300 hover:bg-gray-100 hover:border-gray-400 font-semibold"
-                                    >
-                                        Return
-                                    </Button>
-                                </motion.div>
-                                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
-                                    <Button
-                                        type="submit"
-                                        disabled={isSubmitting || uploadingAvatar || uploadingDocuments || showVerificationDialog}
-                                        className="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-gray-950 text-white shadow-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isSubmitting ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                                Creating Employee...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <CheckCircle2 className="mr-2 h-5 w-5" />
-                                                Create Employee
-                                            </>
-                                        )}
-                                    </Button>
-                                </motion.div>
+                  {/* Avatar Upload */}
+                  <FormItem>
+                    <FormLabel icon={<ImageIcon className="h-4 w-4" />}>
+                      Profile Picture
+                    </FormLabel>
+                    <div className="flex items-start gap-6">
+                      <AnimatePresence mode="wait">
+                        {values.avatar ? (
+                          <motion.div
+                            key="preview"
+                            initial={{ scale: 0, rotate: -90 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            exit={{ scale: 0, rotate: 90 }}
+                            className="relative group flex-shrink-0"
+                          >
+                            <div className="relative w-28 h-28 rounded-2xl overflow-hidden shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff] border border-white/60">
+                              <Image
+                                src={values.avatar}
+                                alt="Avatar"
+                                fill
+                                className="object-cover"
+                              />
                             </div>
-                        </motion.div>
-                    </Form>
-                )}
-            </Formik>
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              type="button"
+                              disabled={showVerificationDialog}
+                              className="absolute -top-2 -right-2 p-1.5 bg-[#FF2157] text-white rounded-xl shadow-md hover:bg-[#e0003e] disabled:opacity-50"
+                              onClick={() => handleClearAvatar(setFieldValue)}
+                            >
+                              <X className="h-3 w-3" />
+                            </motion.button>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="placeholder"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className={`w-28 h-28 rounded-2xl flex-shrink-0 flex items-center justify-center ${NEU_SURFACE_INSET}`}
+                          >
+                            <User className="h-12 w-12 text-[#1E2938]/20" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
-            <EmployeeVerificationDialog
-                open={showVerificationDialog}
-                onOpenChange={setShowVerificationDialog}
-                email={pendingSubmission?.values.contactInfo.email || ""}
-                onVerify={handleVerifyToken}
-                onCancel={handleCancelVerification}
-                verifying={verifying}
-                error={verificationError}
-            />
-        </div>
-    );
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <input
+                            ref={avatarInputRef}
+                            type="file"
+                            accept={IMAGE_EXTENSIONS.map(
+                              (ext) => `.${ext}`,
+                            ).join(",")}
+                            onChange={(e) =>
+                              e.target.files &&
+                              handleAvatarUpload(
+                                e.target.files[0],
+                                setFieldValue,
+                              )
+                            }
+                            disabled={uploadingAvatar || showVerificationDialog}
+                            className={`${NEU_INPUT} cursor-pointer h-10 px-3 flex-1 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-[#006666] file:text-white file:text-xs file:font-[family-name:var(--font-space-mono)] file:font-bold hover:file:bg-[#007777] text-xs`}
+                          />
+                          {uploadingAvatar && (
+                            <Loader2 className="h-5 w-5 animate-spin text-[#006666]" />
+                          )}
+                        </div>
+                        <p
+                          className={`${NEU_MUTED} text-xs flex items-center gap-1`}
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          Square image recommended, max {MAX_FILE_SIZE_MB}MB
+                        </p>
+                        {avatarError && (
+                          <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-[#FF2157] font-[family-name:var(--font-jetbrains-mono)] bg-[#FF2157]/5 border border-[#FF2157]/20">
+                            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                            {avatarError}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <FormMessage>{touched.avatar && errors.avatar}</FormMessage>
+                  </FormItem>
+
+                  <div className="mt-5">
+                    <FormItem>
+                      <FormLabel icon={<Briefcase className="h-4 w-4" />}>
+                        Employment Type
+                      </FormLabel>
+                      <Field name="employmentType">
+                        {({ field }: FieldProps<string>) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={(v) =>
+                              setFieldValue("employmentType", v)
+                            }
+                            disabled={showVerificationDialog}
+                          >
+                            <SelectTrigger
+                              className={`${NEU_BTN_GHOST} w-full h-10 px-4 flex items-center justify-between text-sm`}
+                            >
+                              <SelectValue placeholder="Select employment type" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60">
+                              {employmentTypes.map((type) => (
+                                <SelectItem
+                                  key={type}
+                                  value={type}
+                                  className="font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938] hover:bg-[#006666]/10 focus:bg-[#006666]/10 rounded-lg cursor-pointer"
+                                >
+                                  {type}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </Field>
+                      <FormMessage>
+                        {touched.employmentType && errors.employmentType}
+                      </FormMessage>
+                    </FormItem>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* ── Compensation Details ──────────────────────── */}
+              <motion.div variants={itemVariants}>
+                <div className={`${NEU_CARD} p-6`}>
+                  <SectionHeader
+                    icon={<FaBangladeshiTakaSign className="h-5 w-5" />}
+                    title="Compensation Details"
+                    accent="#00A63D"
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* Salary */}
+                    <FormItem>
+                      <FormLabel
+                        icon={<FaBangladeshiTakaSign className="h-4 w-4" />}
+                      >
+                        Salary *
+                      </FormLabel>
+                      <div className="flex gap-2">
+                        <Field name="salary">
+                          {({ field }: FieldProps<number>) => (
+                            <input
+                              {...field}
+                              type="text"
+                              inputMode="decimal"
+                              value={field.value ?? ""}
+                              disabled={showVerificationDialog}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (
+                                  val === "" ||
+                                  /^(?:0|[1-9]\d*)(?:\.\d*)?$/.test(val)
+                                )
+                                  setFieldValue("salary", val);
+                              }}
+                              placeholder="Enter amount"
+                              className={`${NEU_INPUT} flex-1 h-10 px-4`}
+                            />
+                          )}
+                        </Field>
+                        <Field name="currency">
+                          {({ field }: FieldProps<string>) => (
+                            <Select
+                              value={field.value}
+                              onValueChange={(v) =>
+                                setFieldValue("currency", v)
+                              }
+                              disabled={showVerificationDialog}
+                            >
+                              <SelectTrigger
+                                className={`${NEU_BTN_GHOST} w-[100px] h-10 px-3 text-sm`}
+                              >
+                                <SelectValue placeholder="Currency" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60">
+                                <SelectItem
+                                  value={CURRENCY.BDT}
+                                  className="font-[family-name:var(--font-jetbrains-mono)] text-sm cursor-pointer"
+                                >
+                                  BDT
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </Field>
+                      </div>
+                      <FormMessage>
+                        {touched.salary && errors.salary}
+                      </FormMessage>
+                    </FormItem>
+
+                    {/* Date of Joining */}
+                    <FormItem>
+                      <FormLabel icon={<Calendar className="h-4 w-4" />}>
+                        Date of Joining
+                      </FormLabel>
+                      <Field name="dateOfJoining">
+                        {({ field }: FieldProps<Date>) => (
+                          <input
+                            type="date"
+                            value={
+                              field.value ? formatDateForInput(field.value) : ""
+                            }
+                            min={formatDateForInput(new Date())}
+                            disabled={showVerificationDialog}
+                            onChange={(e) =>
+                              setFieldValue(
+                                "dateOfJoining",
+                                new Date(e.target.value),
+                              )
+                            }
+                            className={`${NEU_INPUT} w-full h-10 px-4`}
+                          />
+                        )}
+                      </Field>
+                      <FormMessage>
+                        {touched.dateOfJoining &&
+                          errors.dateOfJoining &&
+                          String(errors.dateOfJoining)}
+                      </FormMessage>
+                    </FormItem>
+
+                    {/* Payment Mode */}
+                    <div className="md:col-span-2">
+                      <FormItem>
+                        <FormLabel icon={<CreditCard className="h-4 w-4" />}>
+                          Payment Mode *
+                        </FormLabel>
+                        <Field name="paymentMode">
+                          {({ field }: FieldProps<SalaryPaymentMode>) => (
+                            <div className="grid grid-cols-2 gap-4">
+                              {Object.values(SALARY_PAYMENT_MODE).map(
+                                (mode) => (
+                                  <div
+                                    key={mode}
+                                    onClick={() =>
+                                      !showVerificationDialog &&
+                                      setFieldValue("paymentMode", mode)
+                                    }
+                                    className={cn(
+                                      "relative flex items-center justify-center p-4 rounded-xl cursor-pointer transition-all duration-200",
+                                      field.value === mode
+                                        ? "bg-[#006666]/10 shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] border border-[#006666]/20"
+                                        : `${NEU_CARD_SM} hover:shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff]`,
+                                      showVerificationDialog &&
+                                        "pointer-events-none opacity-60",
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div
+                                        className={cn(
+                                          "h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all",
+                                          field.value === mode
+                                            ? "border-[#006666] bg-[#006666]"
+                                            : "border-[#1E2938]/30 bg-[#E7E5E4] shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff]",
+                                        )}
+                                      >
+                                        {field.value === mode && (
+                                          <div className="h-2 w-2 rounded-full bg-white" />
+                                        )}
+                                      </div>
+                                      <span className="font-[family-name:var(--font-space-mono)] font-bold text-sm text-[#1E2938]">
+                                        {mode === SALARY_PAYMENT_MODE.AUTO
+                                          ? "Automatic"
+                                          : "Manual"}
+                                      </span>
+                                    </div>
+                                    {mode === SALARY_PAYMENT_MODE.AUTO && (
+                                      <div className="absolute -top-2 -right-2">
+                                        <span className="px-2 py-0.5 text-[10px] font-[family-name:var(--font-space-mono)] font-bold bg-[#FE9900] text-white rounded-lg shadow-sm">
+                                          Recommended
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          )}
+                        </Field>
+                        <div
+                          className={`mt-3 flex items-start gap-2 text-xs ${NEU_MUTED}`}
+                        >
+                          <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                          <span>
+                            <strong className="text-[#1E2938]/70">
+                              Automatic:
+                            </strong>{" "}
+                            Paid on set date.{" "}
+                            <strong className="text-[#1E2938]/70">
+                              Manual:
+                            </strong>{" "}
+                            Requires approval each payment.
+                          </span>
+                        </div>
+                        <FormMessage>
+                          {touched.paymentMode && errors.paymentMode}
+                        </FormMessage>
+                      </FormItem>
+                    </div>
+
+                    {/* Payment Card */}
+                    {values.paymentMode === SALARY_PAYMENT_MODE.AUTO && (
+                      <div className="md:col-span-2">
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className={`${NEU_SURFACE_INSET} rounded-xl p-5 space-y-4`}
+                        >
+                          <h4
+                            className={`${NEU_HEADING} text-sm flex items-center gap-2`}
+                          >
+                            <div className={`${NEU_ICON_WELL_PRIMARY} p-1.5`}>
+                              <CreditCard className="h-4 w-4 text-[#006666]" />
+                            </div>
+                            Payment Card Details *
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormItem>
+                              <FormLabel>Card Brand *</FormLabel>
+                              <Select
+                                value={
+                                  values.paymentCard?.brand ??
+                                  CARD_BRAND.UNKNOWN
+                                }
+                                onValueChange={(v) => {
+                                  if (showVerificationDialog) return;
+                                  setFieldValue("paymentCard", {
+                                    ...(values.paymentCard ?? {
+                                      last4: "",
+                                      expMonth: 1,
+                                      expYear: new Date().getFullYear(),
+                                      brand: CARD_BRAND.UNKNOWN,
+                                    }),
+                                    brand: v as CardBrand,
+                                  });
+                                }}
+                                disabled={showVerificationDialog}
+                              >
+                                <SelectTrigger
+                                  className={`${NEU_BTN_GHOST} w-full h-10 px-4 text-sm`}
+                                >
+                                  <SelectValue placeholder="Select card brand" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60">
+                                  {Object.values(CARD_BRAND).map((brand) => (
+                                    <SelectItem
+                                      key={brand}
+                                      value={brand}
+                                      className="font-[family-name:var(--font-jetbrains-mono)] text-sm cursor-pointer"
+                                    >
+                                      {brand.charAt(0).toUpperCase() +
+                                        brand.slice(1)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                            <FormItem>
+                              <FormLabel>Last 4 Digits *</FormLabel>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={4}
+                                placeholder="1234"
+                                disabled={showVerificationDialog}
+                                value={values.paymentCard?.last4 ?? ""}
+                                onChange={(e) => {
+                                  const val = e.target.value
+                                    .replace(/\D/g, "")
+                                    .slice(0, 4);
+                                  setFieldValue("paymentCard", {
+                                    ...(values.paymentCard ?? {
+                                      brand: CARD_BRAND.UNKNOWN,
+                                      expMonth: 1,
+                                      expYear: new Date().getFullYear(),
+                                    }),
+                                    last4: val,
+                                  });
+                                }}
+                                className={`${NEU_INPUT} w-full h-10 px-4 font-mono tracking-widest`}
+                              />
+                            </FormItem>
+                            <FormItem>
+                              <FormLabel>Exp. Month *</FormLabel>
+                              <Select
+                                value={String(
+                                  values.paymentCard?.expMonth ?? 1,
+                                )}
+                                onValueChange={(v) => {
+                                  if (showVerificationDialog) return;
+                                  setFieldValue("paymentCard", {
+                                    ...(values.paymentCard ?? {
+                                      brand: CARD_BRAND.UNKNOWN,
+                                      last4: "",
+                                      expYear: new Date().getFullYear(),
+                                    }),
+                                    expMonth: parseInt(v, 10),
+                                  });
+                                }}
+                                disabled={showVerificationDialog}
+                              >
+                                <SelectTrigger
+                                  className={`${NEU_BTN_GHOST} w-full h-10 px-4 text-sm`}
+                                >
+                                  <SelectValue placeholder="Month" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60">
+                                  {Array.from(
+                                    { length: 12 },
+                                    (_, i) => i + 1,
+                                  ).map((m) => (
+                                    <SelectItem
+                                      key={m}
+                                      value={String(m)}
+                                      className="font-[family-name:var(--font-jetbrains-mono)] text-sm cursor-pointer"
+                                    >
+                                      {String(m).padStart(2, "0")}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                            <FormItem>
+                              <FormLabel>Exp. Year *</FormLabel>
+                              <Select
+                                value={String(
+                                  values.paymentCard?.expYear ??
+                                    new Date().getFullYear(),
+                                )}
+                                onValueChange={(v) => {
+                                  if (showVerificationDialog) return;
+                                  setFieldValue("paymentCard", {
+                                    ...(values.paymentCard ?? {
+                                      brand: CARD_BRAND.UNKNOWN,
+                                      last4: "",
+                                      expMonth: 1,
+                                    }),
+                                    expYear: parseInt(v, 10),
+                                  });
+                                }}
+                                disabled={showVerificationDialog}
+                              >
+                                <SelectTrigger
+                                  className={`${NEU_BTN_GHOST} w-full h-10 px-4 text-sm`}
+                                >
+                                  <SelectValue placeholder="Year" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60">
+                                  {Array.from(
+                                    { length: 10 },
+                                    (_, i) => new Date().getFullYear() + i,
+                                  ).map((y) => (
+                                    <SelectItem
+                                      key={y}
+                                      value={String(y)}
+                                      className="font-[family-name:var(--font-jetbrains-mono)] text-sm cursor-pointer"
+                                    >
+                                      {y}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                            <div className="md:col-span-2">
+                              <FormItem>
+                                <FormLabel>Cardholder Name</FormLabel>
+                                <input
+                                  type="text"
+                                  placeholder="Name as shown on card"
+                                  disabled={showVerificationDialog}
+                                  value={
+                                    values.paymentCard?.cardholderName ?? ""
+                                  }
+                                  onChange={(e) =>
+                                    setFieldValue("paymentCard", {
+                                      ...(values.paymentCard ?? {
+                                        brand: CARD_BRAND.UNKNOWN,
+                                        last4: "",
+                                        expMonth: 1,
+                                        expYear: new Date().getFullYear(),
+                                      }),
+                                      cardholderName: e.target.value,
+                                    })
+                                  }
+                                  className={`${NEU_INPUT} w-full h-10 px-4`}
+                                />
+                              </FormItem>
+                            </div>
+                          </div>
+                          <div
+                            className={`flex items-start gap-2 text-xs ${NEU_MUTED}`}
+                          >
+                            <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                            <span>
+                              Card details are stored securely and used only for
+                              automatic salary disbursement.
+                            </span>
+                          </div>
+                        </motion.div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* ── Contact Information ───────────────────────── */}
+              <motion.div variants={itemVariants}>
+                <div className={`${NEU_CARD} p-6`}>
+                  <SectionHeader
+                    icon={<Mail className="h-5 w-5" />}
+                    title="Contact Information"
+                    accent="#006666"
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                    <FormItem>
+                      <FormLabel icon={<Phone className="h-4 w-4" />}>
+                        Phone *
+                      </FormLabel>
+                      <Field name="contactInfo.phone">
+                        {({ field }: FieldProps<string>) => (
+                          <input
+                            {...field}
+                            value={field.value ?? ""}
+                            type="tel"
+                            disabled={showVerificationDialog}
+                            placeholder="01XXXXXXXXX"
+                            className={`${NEU_INPUT} w-full h-10 px-4`}
+                          />
+                        )}
+                      </Field>
+                      <FormMessage>
+                        {touched.contactInfo?.phone &&
+                          errors.contactInfo?.phone}
+                      </FormMessage>
+                    </FormItem>
+                    <FormItem>
+                      <FormLabel icon={<Mail className="h-4 w-4" />}>
+                        Email *
+                      </FormLabel>
+                      <Field name="contactInfo.email">
+                        {({ field }: FieldProps<string>) => (
+                          <input
+                            {...field}
+                            type="email"
+                            disabled={showVerificationDialog}
+                            placeholder="email@example.com"
+                            className={`${NEU_INPUT} w-full h-10 px-4`}
+                          />
+                        )}
+                      </Field>
+                      <FormMessage>
+                        {touched.contactInfo?.email &&
+                          errors.contactInfo?.email}
+                      </FormMessage>
+                    </FormItem>
+                  </div>
+
+                  {/* Emergency Contact */}
+                  <div
+                    className={`${NEU_SURFACE_INSET} rounded-xl p-5 space-y-4`}
+                  >
+                    <h4
+                      className={`${NEU_HEADING} text-sm flex items-center gap-2`}
+                    >
+                      <div className="p-1.5 rounded-lg bg-[#FF2157]/10 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]">
+                        <Heart className="h-4 w-4 text-[#FF2157]" />
+                      </div>
+                      Emergency Contact *
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {[
+                        {
+                          name: "contactInfo.emergencyContact.name",
+                          label: "Name *",
+                          placeholder: "Full name",
+                          errKey: "name" as const,
+                        },
+                        {
+                          name: "contactInfo.emergencyContact.phone",
+                          label: "Phone *",
+                          placeholder: "01XXXXXXXXX",
+                          errKey: "phone" as const,
+                        },
+                        {
+                          name: "contactInfo.emergencyContact.relation",
+                          label: "Relation *",
+                          placeholder: "e.g., Father",
+                          errKey: "relation" as const,
+                        },
+                      ].map(({ name, label, placeholder, errKey }) => (
+                        <FormItem key={name}>
+                          <FormLabel>{label}</FormLabel>
+                          <Field name={name}>
+                            {({ field }: FieldProps<string>) => (
+                              <input
+                                {...field}
+                                disabled={showVerificationDialog}
+                                placeholder={placeholder}
+                                className={`${NEU_INPUT} w-full h-10 px-4`}
+                              />
+                            )}
+                          </Field>
+                          <FormMessage>
+                            {touched.contactInfo?.emergencyContact?.[errKey] &&
+                              errors.contactInfo?.emergencyContact?.[errKey]}
+                          </FormMessage>
+                        </FormItem>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* ── Work Shifts ───────────────────────────────── */}
+              <motion.div variants={itemVariants}>
+                <div className={`${NEU_CARD} p-6`}>
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-[#006666]/10 shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]">
+                        <Clock className="h-5 w-5 text-[#006666]" />
+                      </div>
+                      <h3 className={`${NEU_HEADING} text-lg`}>Work Shifts</h3>
+                    </div>
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      disabled={showVerificationDialog}
+                      className={`${NEU_BTN_PRIMARY} flex items-center gap-2 px-4 h-9 text-sm`}
+                      onClick={() =>
+                        setFieldValue("shifts", [
+                          ...values.shifts,
+                          { startTime: "09:00", endTime: "17:00", days: [] },
+                        ])
+                      }
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Shift
+                    </motion.button>
+                  </div>
+
+                  <FieldArray name="shifts">
+                    {({ remove }) => (
+                      <div className="space-y-4">
+                        <AnimatePresence mode="popLayout">
+                          {values.shifts.length === 0 ? (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.9 }}
+                              className={`${NEU_SURFACE_INSET} rounded-xl text-center py-12`}
+                            >
+                              <Clock className="h-12 w-12 mx-auto mb-3 text-[#1E2938]/20" />
+                              <p
+                                className={`${NEU_HEADING} text-sm text-[#1E2938]/40`}
+                              >
+                                No shifts added yet
+                              </p>
+                              <p className={`${NEU_MUTED} text-xs mt-1`}>
+                                Click &quot;Add Shift&quot; to get started
+                              </p>
+                            </motion.div>
+                          ) : (
+                            values.shifts.map((shift, index) => {
+                              const shiftError = errors.shifts?.[index];
+                              const touchedShift = touched.shifts?.[index];
+                              return (
+                                <motion.div
+                                  key={index}
+                                  initial={{ opacity: 0, x: -16 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: 20 }}
+                                  layout
+                                  className={`${NEU_SURFACE_INSET_SM} rounded-xl p-5 space-y-4`}
+                                >
+                                  <div className="flex justify-between items-center">
+                                    <h4
+                                      className={`${NEU_HEADING} text-sm flex items-center gap-3`}
+                                    >
+                                      <div className="w-8 h-8 rounded-xl bg-[#006666] flex items-center justify-center text-white text-xs font-bold shadow-[inset_2px_2px_4px_#004d4d,inset_-2px_-2px_4px_#008080]">
+                                        {index + 1}
+                                      </div>
+                                      Shift {index + 1}
+                                    </h4>
+                                    <button
+                                      type="button"
+                                      disabled={showVerificationDialog}
+                                      onClick={() => remove(index)}
+                                      className={`${NEU_BTN_DANGER} flex items-center gap-1 px-3 h-8 text-xs`}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <Field name={`shifts.${index}.startTime`}>
+                                      {({ field }: FieldProps<string>) => (
+                                        <FormItem>
+                                          <FormLabel>Start Time *</FormLabel>
+                                          <input
+                                            {...field}
+                                            type="time"
+                                            value={field.value ?? ""}
+                                            disabled={showVerificationDialog}
+                                            className={`${NEU_INPUT} w-full h-10 px-4`}
+                                          />
+                                          <FormMessage>
+                                            {touchedShift?.startTime &&
+                                              getShiftError(
+                                                shiftError,
+                                                "startTime",
+                                              )}
+                                          </FormMessage>
+                                        </FormItem>
+                                      )}
+                                    </Field>
+                                    <Field name={`shifts.${index}.endTime`}>
+                                      {({ field }: FieldProps<string>) => (
+                                        <FormItem>
+                                          <FormLabel>End Time *</FormLabel>
+                                          <input
+                                            {...field}
+                                            type="time"
+                                            value={field.value ?? ""}
+                                            disabled={showVerificationDialog}
+                                            className={`${NEU_INPUT} w-full h-10 px-4`}
+                                          />
+                                          <FormMessage>
+                                            {touchedShift?.endTime &&
+                                              getShiftError(
+                                                shiftError,
+                                                "endTime",
+                                              )}
+                                          </FormMessage>
+                                        </FormItem>
+                                      )}
+                                    </Field>
+                                  </div>
+                                  <Field name={`shifts.${index}.days`}>
+                                    {({ field }: FieldProps<DayOfWeek[]>) => {
+                                      const selectedDays: DayOfWeek[] =
+                                        Array.isArray(field.value)
+                                          ? field.value
+                                          : [];
+                                      return (
+                                        <FormItem>
+                                          <FormLabel>Working Days</FormLabel>
+                                          <div className="flex gap-2 flex-wrap">
+                                            {DAYS_OF_WEEK.map((day) => {
+                                              const isSelected =
+                                                selectedDays.includes(day);
+                                              return (
+                                                <motion.button
+                                                  key={day}
+                                                  type="button"
+                                                  whileHover={{ scale: 1.05 }}
+                                                  whileTap={{ scale: 0.95 }}
+                                                  disabled={
+                                                    showVerificationDialog
+                                                  }
+                                                  onClick={() => {
+                                                    if (showVerificationDialog)
+                                                      return;
+                                                    const newDays =
+                                                      selectedDays.includes(day)
+                                                        ? selectedDays.filter(
+                                                            (d) => d !== day,
+                                                          )
+                                                        : [
+                                                            ...selectedDays,
+                                                            day,
+                                                          ];
+                                                    setFieldValue(
+                                                      `shifts.${index}.days`,
+                                                      newDays,
+                                                    );
+                                                  }}
+                                                  className={cn(
+                                                    "px-3 py-1.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed",
+                                                    isSelected
+                                                      ? "bg-[#006666] text-white shadow-[inset_2px_2px_4px_#004d4d,inset_-2px_-2px_4px_#008080]"
+                                                      : "bg-[#E7E5E4] text-[#1E2938]/60 shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] hover:text-[#006666]",
+                                                  )}
+                                                >
+                                                  {day}
+                                                </motion.button>
+                                              );
+                                            })}
+                                          </div>
+                                        </FormItem>
+                                      );
+                                    }}
+                                  </Field>
+                                </motion.div>
+                              );
+                            })
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
+                  </FieldArray>
+                </div>
+              </motion.div>
+
+              {/* ── Documents & Files ─────────────────────────── */}
+              <motion.div variants={itemVariants}>
+                <div className={`${NEU_CARD} p-6`}>
+                  <SectionHeader
+                    icon={<FileText className="h-5 w-5" />}
+                    title="Documents & Files"
+                    accent="#1E2938"
+                  />
+                  <FormItem>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <input
+                          ref={documentInputRef}
+                          type="file"
+                          multiple
+                          accept={ALLOWED_EXTENSIONS.map(
+                            (ext) => `.${ext}`,
+                          ).join(",")}
+                          onChange={(e) =>
+                            e.target.files &&
+                            handleDocumentUpload(
+                              e.target.files,
+                              values.documents,
+                              setFieldValue,
+                            )
+                          }
+                          disabled={
+                            uploadingDocuments || showVerificationDialog
+                          }
+                          className={`${NEU_INPUT} flex-1 cursor-pointer h-10 px-3 text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-[#1E2938] file:text-white file:text-xs file:font-[family-name:var(--font-space-mono)] file:font-bold hover:file:bg-[#1E2938]/80`}
+                        />
+                        {uploadingDocuments && (
+                          <Loader2 className="h-5 w-5 animate-spin text-[#006666]" />
+                        )}
+                      </div>
+                      <p
+                        className={`${NEU_MUTED} text-xs flex items-center gap-1`}
+                      >
+                        <Upload className="h-3 w-3" />
+                        Upload up to {MAX_DOCUMENTS} documents (max{" "}
+                        {MAX_FILE_SIZE_MB}MB each)
+                      </p>
+
+                      <AnimatePresence mode="popLayout">
+                        {values.documents.length > 0 ? (
+                          <motion.div layout className="space-y-3 mt-2">
+                            {values.documents.map((doc, i) => (
+                              <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                layout
+                                className={`${NEU_CARD_SM} flex items-center justify-between p-4 group`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${doc.type.startsWith("image/") ? "bg-[#006666]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]" : NEU_ICON_WELL}`}
+                                  >
+                                    {doc.type.startsWith("image/") ? (
+                                      <ImageIcon className="h-5 w-5 text-[#006666]" />
+                                    ) : (
+                                      <File className="h-5 w-5 text-[#1E2938]/60" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p
+                                      className={`${NEU_LABEL} text-[#1E2938]/70 normal-case tracking-normal`}
+                                    >
+                                      {doc.type}
+                                    </p>
+                                    {documentErrors[i] && (
+                                      <p className="text-xs text-[#FF2157] font-[family-name:var(--font-jetbrains-mono)]">
+                                        {documentErrors[i]}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <motion.button
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  type="button"
+                                  disabled={showVerificationDialog}
+                                  className={`${NEU_BTN_DANGER} flex items-center p-2 opacity-0 group-hover:opacity-100 transition-opacity`}
+                                  onClick={() =>
+                                    handleRemoveDocument(
+                                      i,
+                                      values.documents,
+                                      setFieldValue,
+                                    )
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </motion.button>
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className={`${NEU_SURFACE_INSET} rounded-xl text-center py-10`}
+                          >
+                            <Upload className="h-10 w-10 mx-auto mb-3 text-[#1E2938]/20" />
+                            <p className={`${NEU_MUTED} text-sm`}>
+                              No documents uploaded
+                            </p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </FormItem>
+                </div>
+              </motion.div>
+
+              {/* ── Additional Notes ─────────────────────────── */}
+              <motion.div variants={itemVariants}>
+                <div className={`${NEU_CARD} p-6`}>
+                  <SectionHeader
+                    icon={<FileText className="h-5 w-5" />}
+                    title="Additional Notes"
+                    accent="#FE9900"
+                  />
+                  <FormItem>
+                    <Field name="notes">
+                      {({ field }: FieldProps<string>) => (
+                        <Textarea
+                          {...field}
+                          value={field.value ?? ""}
+                          disabled={showVerificationDialog}
+                          placeholder="Add any additional notes, comments, or special requirements..."
+                          className={`${NEU_INPUT} min-h-[120px] p-4 resize-none`}
+                        />
+                      )}
+                    </Field>
+                  </FormItem>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* ── Sticky Footer ─────────────────────────────── */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className={`sticky bottom-0 -mx-6 lg:-mx-8 -mb-6 mt-8 bg-[#E7E5E4] shadow-[0_-4px_16px_#c8c6c5] border-t border-white/60 pt-4 pb-5 px-6 lg:px-8`}
+            >
+              <div className="flex gap-3">
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={showVerificationDialog}
+                  onClick={() => router.push("/users/employees")}
+                  className={`${NEU_BTN_GHOST} flex-1 flex items-center justify-center h-11 text-sm`}
+                >
+                  Return
+                </motion.button>
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={
+                    isSubmitting ||
+                    uploadingAvatar ||
+                    uploadingDocuments ||
+                    showVerificationDialog
+                  }
+                  className={`${NEU_BTN_PRIMARY} flex-1 flex items-center justify-center gap-2 h-11 text-sm`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Creating Employee…
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-5 w-5" />
+                      Create Employee
+                    </>
+                  )}
+                </motion.button>
+              </div>
+            </motion.div>
+          </Form>
+        )}
+      </Formik>
+
+      <EmployeeVerificationDialog
+        open={showVerificationDialog}
+        onOpenChange={setShowVerificationDialog}
+        email={pendingSubmission?.values.contactInfo.email || ""}
+        onVerify={handleVerifyToken}
+        onCancel={handleCancelVerification}
+        verifying={verifying}
+        error={verificationError}
+      />
+    </div>
+  );
 }

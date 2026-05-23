@@ -2,837 +2,907 @@
 
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from "@/components/ui/accordion";
-
 import {
-    MdArrowBack,
-    MdArrowForward,
-    MdCalendarToday,
-    MdStar,
-    MdPeople,
-    MdTrendingUp,
-    MdOpenInNew,
-    MdRemoveRedEye,
-    MdThumbUp,
-    MdShare,
-    MdFavorite,
-    MdRateReview,
-    MdFlag,
-    MdSchedule,
-    MdLocalOffer,
-    MdPlace,
-    MdTerrain,
-    MdCategory,
-    MdGroup,
+  MdArrowBack,
+  MdArrowForward,
+  MdCalendarToday,
+  MdStar,
+  MdPeople,
+  MdTrendingUp,
+  MdOpenInNew,
+  MdRemoveRedEye,
+  MdThumbUp,
+  MdShare,
+  MdFavorite,
+  MdRateReview,
+  MdFlag,
+  MdSchedule,
+  MdLocalOffer,
+  MdPlace,
+  MdTerrain,
+  MdCategory,
+  MdGroup,
 } from "react-icons/md";
-
-import { TOUR_STATUS, MODERATION_STATUS, ModerationStatus, DifficultyLevel, DIFFICULTY_LEVEL, TourStatus, TOUR_DISCOUNT_TYPE } from "@/constants/tour.const";
+import {
+  TOUR_STATUS,
+  MODERATION_STATUS,
+  ModerationStatus,
+  DifficultyLevel,
+  DIFFICULTY_LEVEL,
+  TourStatus,
+  TOUR_DISCOUNT_TYPE,
+} from "@/constants/tour.const";
 import { TourListItemDTO } from "@/types/tour/tour.types";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 import Image from "next/image";
 import Link from "next/link";
 
-interface Props {
-    companyId: string;
-    items: TourListItemDTO[];
-    total: number;
-    page: number;
-    pages: number;
-    limit: number;
-    loading: boolean;
-    error?: string;
-    onPageChange: (page: number) => void;
+// ─── Neumorphism Design Tokens ───────────────────────────────────────
+const NEU_CARD =
+  "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+
+const NEU_CARD_SM =
+  "rounded-xl bg-[#E7E5E4] shadow-[4px_4px_10px_#c8c6c5,-4px_-4px_10px_#ffffff] border border-white/60";
+
+const NEU_CARD_HOVER =
+  "hover:shadow-[10px_10px_20px_#c8c6c5,-10px_-10px_20px_#ffffff] hover:-translate-y-0.5 transition-all duration-300";
+
+const NEU_SURFACE_INSET =
+  "bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff]";
+
+const NEU_SURFACE_INSET_SM =
+  "bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]";
+
+const NEU_BTN_PRIMARY =
+  "inline-flex items-center justify-center gap-2 rounded-xl bg-[#006666] text-white " +
+  "font-[family-name:var(--font-space-mono)] font-bold tracking-wide text-sm px-4 py-2.5 " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] hover:bg-[#007777] " +
+  "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+  "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50";
+
+const NEU_BTN_ICON =
+  "inline-flex items-center justify-center rounded-xl w-10 h-10 bg-[#E7E5E4] text-[#1E2938]/60 " +
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+  "hover:text-[#006666] hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+  "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none " +
+  "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
+
+const NEU_BTN_ACTIVE_PAGE =
+  "inline-flex items-center justify-center rounded-xl w-10 h-10 bg-[#006666] text-white " +
+  "shadow-[inset_2px_2px_5px_#004d4d,inset_-2px_-2px_5px_#008080] " +
+  "font-[family-name:var(--font-space-mono)] font-bold text-sm";
+
+const NEU_BADGE =
+  "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs " +
+  "font-[family-name:var(--font-space-mono)] font-bold " +
+  "bg-[#E7E5E4] text-[#1E2938] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+
+const NEU_BADGE_PRIMARY =
+  "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs " +
+  "font-[family-name:var(--font-space-mono)] font-bold " +
+  "bg-[#006666]/10 text-[#006666] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+
+const NEU_BADGE_SUCCESS =
+  "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs " +
+  "font-[family-name:var(--font-space-mono)] font-bold " +
+  "bg-[#00A63D]/10 text-[#00A63D] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+
+const NEU_BADGE_WARNING =
+  "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs " +
+  "font-[family-name:var(--font-space-mono)] font-bold " +
+  "bg-[#FE9900]/10 text-[#FE9900] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+
+const NEU_BADGE_DANGER =
+  "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs " +
+  "font-[family-name:var(--font-space-mono)] font-bold " +
+  "bg-[#FF2157]/10 text-[#FF2157] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+
+const NEU_HEADING =
+  "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+
+const NEU_LABEL =
+  "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+
+const NEU_MONO = "font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]";
+
+const NEU_MUTED =
+  "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+
+const NEU_ICON_WELL_PRIMARY =
+  "flex items-center justify-center p-2.5 rounded-xl bg-[#006666]/10 " +
+  "shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
+
+const NEU_SKELETON = "rounded-xl bg-[#d0cecd] animate-pulse";
+
+// ─── Badge helpers ───────────────────────────────────────────────────
+const statusBadge = (status: TourStatus) => {
+  switch (status) {
+    case TOUR_STATUS.ACTIVE:
+      return <span className={NEU_BADGE_SUCCESS}>Active</span>;
+    case TOUR_STATUS.DRAFT:
+      return <span className={NEU_BADGE_WARNING}>Draft</span>;
+    case TOUR_STATUS.SUBMITTED:
+      return <span className={NEU_BADGE_PRIMARY}>Submitted</span>;
+    case TOUR_STATUS.COMPLETED:
+      return <span className={NEU_BADGE}>Completed</span>;
+    case TOUR_STATUS.TERMINATED:
+      return <span className={NEU_BADGE_DANGER}>Terminated</span>;
+    case TOUR_STATUS.ARCHIVED:
+    default:
+      return <span className={NEU_BADGE}>Archived</span>;
+  }
+};
+
+const moderationStatusBadge = (status: ModerationStatus) => {
+  switch (status) {
+    case MODERATION_STATUS.APPROVED:
+      return <span className={NEU_BADGE_SUCCESS}>Approved</span>;
+    case MODERATION_STATUS.PENDING:
+      return <span className={NEU_BADGE_WARNING}>Pending</span>;
+    case MODERATION_STATUS.DENIED:
+      return <span className={NEU_BADGE_DANGER}>Denied</span>;
+    case MODERATION_STATUS.SUSPENDED:
+      return <span className={`${NEU_BADGE_DANGER}`}>Suspended</span>;
+    default:
+      return <span className={NEU_BADGE}>{status}</span>;
+  }
+};
+
+const difficultyBadge = (difficulty: DifficultyLevel) => {
+  switch (difficulty) {
+    case DIFFICULTY_LEVEL.EASY:
+      return (
+        <span className={`${NEU_BADGE_SUCCESS} flex items-center gap-1`}>
+          <MdTerrain className="w-3 h-3" /> Easy
+        </span>
+      );
+    case DIFFICULTY_LEVEL.MODERATE:
+      return (
+        <span className={`${NEU_BADGE_WARNING} flex items-center gap-1`}>
+          <MdTerrain className="w-3 h-3" /> Moderate
+        </span>
+      );
+    case DIFFICULTY_LEVEL.CHALLENGING:
+      return (
+        <span className={`${NEU_BADGE_DANGER} flex items-center gap-1`}>
+          <MdTerrain className="w-3 h-3" /> Challenging
+        </span>
+      );
+    default:
+      return <span className={NEU_BADGE}>{difficulty}</span>;
+  }
+};
+
+// ─── Engagement stat tile ────────────────────────────────────────────
+function EngagementTile({
+  icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  accent: string;
+}) {
+  return (
+    <div
+      className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3 flex items-center gap-2.5`}
+    >
+      <span className={`text-lg ${accent}`}>{icon}</span>
+      <div>
+        <div className={NEU_LABEL}>{label}</div>
+        <div className={`${NEU_HEADING} text-base`}>{value}</div>
+      </div>
+    </div>
+  );
 }
 
+// ─── Section label ────────────────────────────────────────────────────
+function SectionLabel({
+  accent,
+  children,
+}: {
+  accent?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <div className={`h-1.5 w-1.5 rounded-full ${accent ?? "bg-[#006666]"}`} />
+      <span className={NEU_LABEL}>{children}</span>
+    </div>
+  );
+}
+
+// ─── Props ────────────────────────────────────────────────────────────
+interface Props {
+  companyId: string;
+  items: TourListItemDTO[];
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
+  loading: boolean;
+  error?: string;
+  onPageChange: (page: number) => void;
+}
+
+// ─── Component ────────────────────────────────────────────────────────
 export function ToursTable({
-    companyId,
-    items,
-    total,
-    page,
-    pages,
-    limit,
-    loading,
-    error,
-    onPageChange,
+  companyId,
+  items,
+  total,
+  page,
+  pages,
+  limit,
+  loading,
+  error,
+  onPageChange,
 }: Props) {
+  const dateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+    [],
+  );
 
-    const dateFormatter = useMemo(
-        () =>
-            new Intl.DateTimeFormat(undefined, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-            }),
-        []
-    );
+  const currencyFormatter = (currency: string, amount: number) => {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    } catch {
+      return `${amount} ${currency}`;
+    }
+  };
 
-    const currencyFormatter = (currency: string, amount: number) => {
-        try {
-            return new Intl.NumberFormat(undefined, {
-                style: "currency",
-                currency,
-                maximumFractionDigits: 0,
-            }).format(amount);
-        } catch {
-            return `${amount} ${currency}`;
-        }
-    };
+  return (
+    <div className="space-y-6">
+      {/* ── Error Banner ──────────────────────────────────────── */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`${NEU_CARD_SM} flex items-center gap-3 p-4 border border-[#FF2157]/20`}
+        >
+          <div
+            className={`${NEU_ICON_WELL_PRIMARY} bg-[#FF2157]/10 text-[#FF2157]`}
+          >
+            <MdFlag className="h-5 w-5" />
+          </div>
+          <div>
+            <span className="font-[family-name:var(--font-space-mono)] font-bold text-[#FF2157] text-sm">
+              Error:&nbsp;
+            </span>
+            <span className={`${NEU_MUTED}`}>{error}</span>
+          </div>
+        </motion.div>
+      )}
 
-    const statusBadge = (status: TourStatus) => {
-        switch (status) {
-            case TOUR_STATUS.ACTIVE:
-                return (
-                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 shadow-sm">
-                        Active
-                    </Badge>
-                );
-            case TOUR_STATUS.DRAFT:
-                return (
-                    <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-sm">
-                        Draft
-                    </Badge>
-                );
-            case TOUR_STATUS.SUBMITTED:
-                return (
-                    <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 shadow-sm">
-                        Submitted
-                    </Badge>
-                );
-            case TOUR_STATUS.COMPLETED:
-                return (
-                    <Badge variant="outline" className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                        Completed
-                    </Badge>
-                );
-            case TOUR_STATUS.TERMINATED:
-                return (
-                    <Badge className="bg-gradient-to-r from-red-600 to-rose-600 text-white border-0 shadow-sm">
-                        Terminated
-                    </Badge>
-                );
-            case TOUR_STATUS.ARCHIVED:
-            default:
-                return (
-                    <Badge variant="outline" className="text-slate-600 dark:text-slate-400">
-                        Archived
-                    </Badge>
-                );
-        }
-    };
+      {/* ── Tours List ────────────────────────────────────────── */}
+      <div className="space-y-4">
+        <AnimatePresence mode="popLayout">
+          {items.map((tour, index) => {
+            const updated = dateFormatter.format(new Date(tour.updatedAt));
+            const created = dateFormatter.format(new Date(tour.createdAt));
+            const published = tour.publishedAt
+              ? dateFormatter.format(new Date(tour.publishedAt))
+              : "—";
+            const nextDeparture = tour.nextDeparture
+              ? dateFormatter.format(new Date(tour.nextDeparture))
+              : "—";
+            const basePrice = currencyFormatter(
+              tour.basePrice.currency,
+              tour.basePrice.amount,
+            );
 
-    const moderationStatusBadge = (status: ModerationStatus) => {
-        switch (status) {
-            case MODERATION_STATUS.APPROVED:
-                return (
-                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 shadow-sm">
-                        Approved
-                    </Badge>
-                );
-            case MODERATION_STATUS.PENDING:
-                return (
-                    <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-sm">
-                        Pending
-                    </Badge>
-                );
-            case MODERATION_STATUS.DENIED:
-                return (
-                    <Badge className="bg-gradient-to-r from-red-600 to-rose-600 text-white border-0 shadow-sm">
-                        Denied
-                    </Badge>
-                );
-            case MODERATION_STATUS.SUSPENDED:
-                return (
-                    <Badge variant="outline" className="border-rose-600 text-rose-600 dark:text-rose-400">
-                        Suspended
-                    </Badge>
-                );
-            default:
-                return (
-                    <Badge variant="outline" className="text-slate-600 dark:text-slate-400">
-                        {status}
-                    </Badge>
-                );
-        }
-    };
+            const isFlat = tour.activeDiscountType
+              ? tour.activeDiscountType === TOUR_DISCOUNT_TYPE.FLAT_AMOUNT
+              : (tour.activeDiscountValue ?? 0) > 100;
 
-    const difficultyBadge = (difficulty: DifficultyLevel) => {
-        switch (difficulty) {
-            case DIFFICULTY_LEVEL.EASY:
-                return (
-                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 shadow-sm">
-                        Easy
-                    </Badge>
-                );
-            case DIFFICULTY_LEVEL.MODERATE:
-                return (
-                    <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-sm">
-                        Moderate
-                    </Badge>
-                );
-            case DIFFICULTY_LEVEL.CHALLENGING:
-                return (
-                    <Badge className="bg-gradient-to-r from-red-600 to-rose-600 text-white border-0 shadow-sm">
-                        Challenging
-                    </Badge>
-                );
-            default:
-                return (
-                    <Badge variant="outline" className="text-slate-600 dark:text-slate-400">
-                        {difficulty}
-                    </Badge>
-                );
-        }
-    };
+            const discountedPrice =
+              tour.hasActiveDiscount && tour.activeDiscountValue
+                ? currencyFormatter(
+                    tour.basePrice.currency,
+                    isFlat
+                      ? Math.max(
+                          0,
+                          tour.basePrice.amount - tour.activeDiscountValue,
+                        )
+                      : tour.basePrice.amount *
+                          (1 - tour.activeDiscountValue / 100),
+                  )
+                : null;
 
-    return (
-        <div className="space-y-6">
-            {error && (
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 border border-red-200 dark:border-red-800 shadow-sm"
-                >
-                    <MdFlag className="h-5 w-5 text-red-600 dark:text-red-400" />
-                    <div>
-                        <span className="font-semibold text-red-900 dark:text-red-100">Error:</span>
-                        <span className="ml-2 text-sm text-red-700 dark:text-red-300">{error}</span>
-                    </div>
-                </motion.div>
-            )}
+            const occupancyAccent =
+              (tour.occupancyPercentage ?? 0) >= 80
+                ? NEU_BADGE_SUCCESS
+                : (tour.occupancyPercentage ?? 0) >= 50
+                  ? NEU_BADGE_WARNING
+                  : NEU_BADGE_PRIMARY;
 
-            {/* Tours List */}
-            <div className="space-y-3">
-                <AnimatePresence mode="popLayout">
-                    {items.map((tour, index) => {
-                        const updated = dateFormatter.format(new Date(tour.updatedAt));
-                        const created = dateFormatter.format(new Date(tour.createdAt));
-                        const published = tour.publishedAt ? dateFormatter.format(new Date(tour.publishedAt)) : "—";
-                        const nextDeparture = tour.nextDeparture ? dateFormatter.format(new Date(tour.nextDeparture)) : "—";
-                        const basePrice = currencyFormatter(tour.basePrice.currency, tour.basePrice.amount);
-
-                        // Determine discount type: use explicit type if available,
-                        // otherwise infer from value (model caps percentage at 100, so >100 = flat)
-                        const isFlat = tour.activeDiscountType
-                            ? tour.activeDiscountType === TOUR_DISCOUNT_TYPE.FLAT_AMOUNT
-                            : (tour.activeDiscountValue ?? 0) > 100;
-
-                        const discountedPrice = tour.hasActiveDiscount && tour.activeDiscountValue
-                            ? currencyFormatter(
-                                tour.basePrice.currency,
-                                isFlat
-                                    ? Math.max(0, tour.basePrice.amount - tour.activeDiscountValue)
-                                    : tour.basePrice.amount * (1 - tour.activeDiscountValue / 100)
-                            )
-                            : null;
-
-                        return (
-                            <motion.div
-                                key={tour.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ delay: index * 0.05 }}
-                            >
-                                <Accordion type="single" collapsible className="w-full">
-                                    <AccordionItem
-                                        value={tour.id}
-                                        className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm hover:shadow-lg transition-all duration-300"
-                                    >
-                                        {/* Always Visible Header */}
-                                        <div className="relative">
-                                            {tour.featured && (
-                                                <div className="absolute -top-0 -right-0 z-10">
-                                                    <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-bl-xl rounded-tr-xl text-xs font-semibold shadow-lg">
-                                                        ⭐ Featured
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Header row with trigger on the left and button on the right */}
-                                            <div className="px-6 py-5 hover:no-underline hover:bg-gradient-to-r hover:from-slate-50/50 hover:to-indigo-50/30 dark:hover:from-slate-800/40 dark:hover:to-indigo-950/20 transition-all flex items-center justify-between w-full pr-4">
-                                                {/* AccordionTrigger wraps exactly one child (left section) */}
-                                                <AccordionTrigger>
-                                                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                                                        <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-600/10 to-purple-600/10 flex items-center justify-center">
-                                                            {tour.heroImage ? (
-                                                                <Image
-                                                                    src={tour.heroImage}
-                                                                    alt={tour.title}
-                                                                    width={48}
-                                                                    height={48}
-                                                                    className="rounded-xl object-cover"
-                                                                    priority={index < 3}
-                                                                />
-                                                            ) : (
-                                                                <div className="h-full w-full flex items-center justify-center">
-                                                                    <MdTrendingUp className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="flex-1 min-w-0 space-y-3">
-                                                            {/* Title Row */}
-                                                            <div className="flex items-center gap-3 flex-wrap">
-                                                                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 line-clamp-1">
-                                                                    {tour.title}
-                                                                </h3>
-                                                                {statusBadge(tour.status)}
-                                                                {moderationStatusBadge(tour.moderationStatus)}
-                                                            </div>
-
-                                                            {/* Key Metrics Row */}
-                                                            <div className="flex flex-wrap items-center gap-3">
-                                                                {/* Location */}
-                                                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                                                                    <MdPlace className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                                                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                                                        {tour.district}, {tour.division}
-                                                                    </span>
-                                                                </div>
-
-                                                                {/* Tour Type */}
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300"
-                                                                >
-                                                                    <MdCategory className="h-3.5 w-3.5 mr-1" />
-                                                                    {tour.tourType}
-                                                                </Badge>
-
-                                                                {/* Difficulty */}
-                                                                {difficultyBadge(tour.difficulty)}
-
-                                                                {/* Duration */}
-                                                                {tour.duration && (
-                                                                    <Badge
-                                                                        variant="outline"
-                                                                        className="bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300"
-                                                                    >
-                                                                        <MdSchedule className="h-3.5 w-3.5 mr-1" />
-                                                                        {tour.duration.days} days
-                                                                        {tour.duration.nights && ` / ${tour.duration.nights} nights`}
-                                                                    </Badge>
-                                                                )}
-
-                                                                {/* Next Departure */}
-                                                                {tour.nextDeparture && (
-                                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                                                                        <MdCalendarToday className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                                                                        <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                                                                            Next: {nextDeparture}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-
-                                                                {/* Occupancy */}
-                                                                {tour.occupancyPercentage !== undefined && (
-                                                                    <Badge className="bg-gradient-to-r from-blue-600/10 to-indigo-600/10 text-blue-700 dark:text-blue-300 border border-blue-600/20">
-                                                                        <MdPeople className="h-3.5 w-3.5 mr-1" />
-                                                                        {tour.occupancyPercentage}% full
-                                                                    </Badge>
-                                                                )}
-
-                                                                {/* Discount */}
-                                                                {tour.hasActiveDiscount && tour.activeDiscountValue && (
-                                                                    <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0 shadow-sm animate-pulse">
-                                                                        <MdLocalOffer className="h-3.5 w-3.5 mr-1" />
-                                                                        {isFlat
-                                                                            ? `-৳${tour.activeDiscountValue} off`
-                                                                            : `-${tour.activeDiscountValue}% off`
-                                                                        }
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Summary */}
-                                                            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
-                                                                {tour.summary}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </AccordionTrigger>
-
-                                                {/* Right Section - View Button */}
-                                                <Link
-                                                    href={`/users/companies/${encodeId(
-                                                        encodeURIComponent(companyId)
-                                                    )}/${encodeId(encodeURIComponent(tour.id))}`}
-                                                    // target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <Button size="sm" className="h-10 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all ml-4"
-                                                    >
-                                                        <MdOpenInNew className="h-4 w-4 mr-2" />
-                                                        View
-                                                    </Button>
-                                                </Link>
-                                            </div>
-
-                                            {/* Expandable Content */}
-                                            <AccordionContent className="px-6 pb-6 pt-2">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-                                                    {/* Pricing */}
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                                            <div className="h-1 w-1 rounded-full bg-emerald-600" />
-                                                            Pricing
-                                                        </div>
-
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-sm text-slate-600 dark:text-slate-400">Base Price:</span>
-                                                                <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                                                                    {basePrice}
-                                                                    {discountedPrice && (
-                                                                        <span className="ml-2 text-sm line-through text-slate-400 dark:text-slate-500">
-                                                                            {discountedPrice}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            {tour.hasActiveDiscount && (
-                                                                <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-800">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <MdLocalOffer className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                                                                        <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                                                                            Active discount applied: {isFlat
-                                                                                ? `৳${tour.activeDiscountValue} off`
-                                                                                : `${tour.activeDiscountValue}% off`
-                                                                            }
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Status Info */}
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                                            <div className="h-1 w-1 rounded-full bg-blue-600" />
-                                                            Status Information
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-2">
-                                                            <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                                                                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
-                                                                    Status
-                                                                </div>
-                                                                <div className="text-sm font-medium">
-                                                                    {statusBadge(tour.status)}
-                                                                </div>
-                                                            </div>
-                                                            <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                                                                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
-                                                                    Moderation
-                                                                </div>
-                                                                <div className="text-sm font-medium">
-                                                                    {moderationStatusBadge(tour.moderationStatus)}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Location Details */}
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                                            <div className="h-1 w-1 rounded-full bg-indigo-600" />
-                                                            Location
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center gap-2 p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800">
-                                                                <MdPlace className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                                                                <div>
-                                                                    <div className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
-                                                                        {tour.district}
-                                                                    </div>
-                                                                    <div className="text-xs text-indigo-600/70 dark:text-indigo-400/70">
-                                                                        {tour.division} Division
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-                                                                <MdTerrain className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                                                <div>
-                                                                    <div className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                                                                        Difficulty: {tour.difficulty}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Ratings */}
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                                            <div className="h-1 w-1 rounded-full bg-amber-600" />
-                                                            Ratings
-                                                        </div>
-                                                        {tour.ratings ? (
-                                                            <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-                                                                <div className="flex items-center gap-1">
-                                                                    <MdStar className="h-5 w-5 text-amber-600 dark:text-amber-400 fill-current" />
-                                                                    <span className="text-xl font-bold text-amber-700 dark:text-amber-300">
-                                                                        {tour.ratings.average.toFixed(1)}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="h-8 w-px bg-amber-200 dark:bg-amber-800" />
-                                                                <div>
-                                                                    <div className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                                                                        {tour.ratings.count} reviews
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                                                                <span className="text-sm text-slate-400 dark:text-slate-500">
-                                                                    No ratings yet
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Schedule */}
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                                            <div className="h-1 w-1 rounded-full bg-violet-600" />
-                                                            Schedule
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            {tour.nextDeparture && (
-                                                                <div className="p-2 rounded-lg bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800">
-                                                                    <div className="text-xs text-violet-600 dark:text-violet-400 mb-1">
-                                                                        Next Departure
-                                                                    </div>
-                                                                    <div className="text-sm font-medium text-violet-700 dark:text-violet-300">
-                                                                        {nextDeparture}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                            {tour.duration && (
-                                                                <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                                                                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
-                                                                        Duration
-                                                                    </div>
-                                                                    <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                                                        {tour.duration.days} days
-                                                                        {tour.duration.nights && `, ${tour.duration.nights} nights`}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Status Indicators */}
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                                            <div className="h-1 w-1 rounded-full bg-slate-600" />
-                                                            Status Indicators
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-2">
-                                                            {tour.isUpcoming && (
-                                                                <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 shadow-sm">
-                                                                    Upcoming
-                                                                </Badge>
-                                                            )}
-                                                            {tour.isExpired && (
-                                                                <Badge className="bg-gradient-to-r from-red-600 to-rose-600 text-white border-0 shadow-sm">
-                                                                    Expired
-                                                                </Badge>
-                                                            )}
-                                                            {tour.occupancyPercentage !== undefined && (
-                                                                <Badge className={`${tour.occupancyPercentage >= 80
-                                                                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600'
-                                                                    : tour.occupancyPercentage >= 50
-                                                                        ? 'bg-gradient-to-r from-amber-500 to-orange-500'
-                                                                        : 'bg-gradient-to-r from-blue-600 to-indigo-600'
-                                                                    } text-white border-0 shadow-sm`}>
-                                                                    {tour.occupancyPercentage}% Occupied
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Engagement Stats */}
-                                                    <div className="space-y-2 lg:col-span-3">
-                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                                            <div className="h-1 w-1 rounded-full bg-pink-600" />
-                                                            Engagement Metrics
-                                                        </div>
-
-                                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                                                            <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800">
-                                                                <MdRemoveRedEye className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                                                <div>
-                                                                    <div className="text-xs text-slate-600 dark:text-slate-400">
-                                                                        Views
-                                                                    </div>
-                                                                    <div className="text-lg font-bold text-blue-700 dark:text-blue-300">
-                                                                        {tour.viewCount ?? 0}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20 border border-pink-200 dark:border-pink-800">
-                                                                <MdThumbUp className="h-5 w-5 text-pink-600 dark:text-pink-400" />
-                                                                <div>
-                                                                    <div className="text-xs text-slate-600 dark:text-slate-400">
-                                                                        Likes
-                                                                    </div>
-                                                                    <div className="text-lg font-bold text-pink-700 dark:text-pink-300">
-                                                                        {tour.likeCount ?? 0}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-800">
-                                                                <MdShare className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                                                                <div>
-                                                                    <div className="text-xs text-slate-600 dark:text-slate-400">
-                                                                        Shares
-                                                                    </div>
-                                                                    <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">
-                                                                        {tour.shareCount ?? 0}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 border border-red-200 dark:border-red-800">
-                                                                <MdFavorite className="h-5 w-5 text-red-600 dark:text-red-400" />
-                                                                <div>
-                                                                    <div className="text-xs text-slate-600 dark:text-slate-400">
-                                                                        Wishlist
-                                                                    </div>
-                                                                    <div className="text-lg font-bold text-red-700 dark:text-red-300">
-                                                                        {tour.wishlistCount ?? 0}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 border border-amber-200 dark:border-amber-800">
-                                                                <MdRateReview className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                                                                <div>
-                                                                    <div className="text-xs text-slate-600 dark:text-slate-400">
-                                                                        Reviews
-                                                                    </div>
-                                                                    <div className="text-lg font-bold text-amber-700 dark:text-amber-300">
-                                                                        {tour.ratings?.count ?? 0}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800 dark:to-gray-900 border border-slate-200 dark:border-slate-700">
-                                                                <MdGroup className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                                                                <div>
-                                                                    <div className="text-xs text-slate-600 dark:text-slate-400">
-                                                                        Occupancy
-                                                                    </div>
-                                                                    <div className="text-lg font-bold text-slate-700 dark:text-slate-300">
-                                                                        {tour.occupancyPercentage ?? 0}%
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Lifecycle Info */}
-                                                    <div className="space-y-2 lg:col-span-3">
-                                                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                                            <div className="h-1 w-1 rounded-full bg-slate-600" />
-                                                            Lifecycle Information
-                                                        </div>
-
-                                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                                            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                                                                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
-                                                                    Created
-                                                                </div>
-                                                                <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                                                    {created}
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                                                                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
-                                                                    Last Updated
-                                                                </div>
-                                                                <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                                                    {updated}
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                                                                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
-                                                                    Published
-                                                                </div>
-                                                                <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                                                    {published}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </AccordionContent>
-                                        </div>
-                                    </AccordionItem>
-                                </Accordion>
-                            </motion.div>
-                        );
-                    })}
-                </AnimatePresence>
-
-                {/* Empty State */}
-                {items.length === 0 && !loading && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex flex-col items-center justify-center py-20 px-4 bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700"
-                    >
-                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 mb-6">
-                            <MdTrendingUp className="h-12 w-12 text-slate-400 dark:text-slate-500" />
+            return (
+              <motion.div
+                key={tour.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem
+                    value={tour.id}
+                    className={`${NEU_CARD} ${NEU_CARD_HOVER} overflow-hidden border-0`}
+                  >
+                    {/* ── Always-visible header ──────────────────── */}
+                    <div className="relative">
+                      {/* Featured ribbon */}
+                      {tour.featured && (
+                        <div className="absolute top-0 right-0 z-10">
+                          <div
+                            className={`${NEU_BADGE_WARNING} rounded-none rounded-bl-xl rounded-tr-2xl px-3 py-1.5 text-[11px]`}
+                          >
+                            ⭐ Featured
+                          </div>
                         </div>
-                        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                            No tours found
-                        </h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-md">
-                            Try adjusting your filters or search criteria to find tours.
-                        </p>
-                    </motion.div>
-                )}
+                      )}
 
-                {/* Loading Skeleton */}
-                {loading && items.length === 0 && (
-                    <div className="space-y-3">
-                        {Array.from({ length: Math.min(limit, 5) }).map((_, i) => (
+                      <div className="flex items-center justify-between px-5 py-4 gap-3">
+                        {/* AccordionTrigger: left content */}
+                        <AccordionTrigger className="flex-1 min-w-0 hover:no-underline group">
+                          <div className="flex items-start gap-4 flex-1 min-w-0 text-left">
+                            {/* Thumbnail */}
                             <div
-                                key={`skeleton-${i}`}
-                                className="border border-slate-200 dark:border-slate-800 rounded-2xl p-6 bg-white dark:bg-slate-900 animate-pulse"
+                              className={`flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden ${NEU_SURFACE_INSET_SM} flex items-center justify-center`}
                             >
-                                <div className="flex items-start gap-4">
-                                    <div className="h-12 w-12 rounded-xl bg-slate-200 dark:bg-slate-800" />
-                                    <div className="flex-1 space-y-3">
-                                        <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
-                                        <div className="flex gap-2">
-                                            <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-24" />
-                                            <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-32" />
-                                            <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-20" />
-                                        </div>
-                                    </div>
-                                </div>
+                              {tour.heroImage ? (
+                                <Image
+                                  src={tour.heroImage}
+                                  alt={tour.title}
+                                  width={56}
+                                  height={56}
+                                  className="w-full h-full object-cover"
+                                  priority={index < 3}
+                                />
+                              ) : (
+                                <MdTrendingUp className="h-7 w-7 text-[#006666]" />
+                              )}
                             </div>
-                        ))}
+
+                            {/* Main info */}
+                            <div className="flex-1 min-w-0 space-y-2.5">
+                              {/* Title + status badges */}
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3
+                                  className={`${NEU_HEADING} text-base line-clamp-1 group-hover:text-[#006666] transition-colors`}
+                                >
+                                  {tour.title}
+                                </h3>
+                                {statusBadge(tour.status)}
+                                {moderationStatusBadge(tour.moderationStatus)}
+                              </div>
+
+                              {/* Metric chips */}
+                              <div className="flex flex-wrap items-center gap-2">
+                                {/* Location */}
+                                <span
+                                  className={`${NEU_BADGE} flex items-center gap-1`}
+                                >
+                                  <MdPlace className="w-3 h-3 text-[#006666]" />
+                                  {tour.district}, {tour.division}
+                                </span>
+
+                                {/* Tour type */}
+                                <span
+                                  className={`${NEU_BADGE_PRIMARY} flex items-center gap-1`}
+                                >
+                                  <MdCategory className="w-3 h-3" />
+                                  {tour.tourType}
+                                </span>
+
+                                {/* Difficulty */}
+                                {difficultyBadge(tour.difficulty)}
+
+                                {/* Duration */}
+                                {tour.duration && (
+                                  <span
+                                    className={`${NEU_BADGE} flex items-center gap-1`}
+                                  >
+                                    <MdSchedule className="w-3 h-3 text-[#006666]" />
+                                    {tour.duration.days}d
+                                    {tour.duration.nights
+                                      ? ` / ${tour.duration.nights}n`
+                                      : ""}
+                                  </span>
+                                )}
+
+                                {/* Next departure */}
+                                {tour.nextDeparture && (
+                                  <span
+                                    className={`${NEU_BADGE_SUCCESS} flex items-center gap-1`}
+                                  >
+                                    <MdCalendarToday className="w-3 h-3" />
+                                    Next: {nextDeparture}
+                                  </span>
+                                )}
+
+                                {/* Occupancy */}
+                                {tour.occupancyPercentage !== undefined && (
+                                  <span
+                                    className={`${NEU_BADGE_PRIMARY} flex items-center gap-1`}
+                                  >
+                                    <MdPeople className="w-3 h-3" />
+                                    {tour.occupancyPercentage}% full
+                                  </span>
+                                )}
+
+                                {/* Discount chip */}
+                                {tour.hasActiveDiscount &&
+                                  tour.activeDiscountValue && (
+                                    <span
+                                      className={`${NEU_BADGE_WARNING} flex items-center gap-1`}
+                                    >
+                                      <MdLocalOffer className="w-3 h-3" />
+                                      {isFlat
+                                        ? `-৳${tour.activeDiscountValue}`
+                                        : `-${tour.activeDiscountValue}%`}
+                                    </span>
+                                  )}
+                              </div>
+
+                              {/* Summary */}
+                              {tour.summary && (
+                                <p
+                                  className={`${NEU_MUTED} text-xs line-clamp-2`}
+                                >
+                                  {tour.summary}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+
+                        {/* View button */}
+                        <Link
+                          href={`/users/companies/${encodeId(
+                            encodeURIComponent(companyId),
+                          )}/${encodeId(encodeURIComponent(tour.id))}`}
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-shrink-0 ml-2"
+                        >
+                          <span className={NEU_BTN_PRIMARY}>
+                            <MdOpenInNew className="h-4 w-4" />
+                            <span className="hidden sm:inline">View</span>
+                          </span>
+                        </Link>
+                      </div>
                     </div>
-                )}
+
+                    {/* ── Expandable detail panel ─────────────────── */}
+                    <AccordionContent>
+                      <div
+                        className={`${NEU_SURFACE_INSET} rounded-b-2xl px-5 pb-6 pt-4`}
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {/* Pricing */}
+                          <div>
+                            <SectionLabel accent="bg-[#00A63D]">
+                              Pricing
+                            </SectionLabel>
+                            <div className={`${NEU_CARD_SM} p-4 space-y-3`}>
+                              <div className="flex items-center justify-between">
+                                <span className={NEU_LABEL}>Base Price</span>
+                                <div className="text-right">
+                                  <span className="font-[family-name:var(--font-space-mono)] font-bold text-lg text-[#00A63D]">
+                                    {basePrice}
+                                  </span>
+                                  {discountedPrice && (
+                                    <span
+                                      className={`${NEU_MUTED} text-xs line-through ml-2`}
+                                    >
+                                      {discountedPrice}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {tour.hasActiveDiscount && (
+                                <div
+                                  className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3 flex items-center gap-2`}
+                                >
+                                  <MdLocalOffer className="text-[#00A63D] flex-shrink-0" />
+                                  <span className="font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#00A63D]">
+                                    {isFlat
+                                      ? `৳${tour.activeDiscountValue} off`
+                                      : `${tour.activeDiscountValue}% off`}{" "}
+                                    applied
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Status Info */}
+                          <div>
+                            <SectionLabel accent="bg-[#006666]">
+                              Status Information
+                            </SectionLabel>
+                            <div className={`${NEU_CARD_SM} p-4`}>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div
+                                  className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3`}
+                                >
+                                  <div className={`${NEU_LABEL} mb-1.5`}>
+                                    Status
+                                  </div>
+                                  {statusBadge(tour.status)}
+                                </div>
+                                <div
+                                  className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3`}
+                                >
+                                  <div className={`${NEU_LABEL} mb-1.5`}>
+                                    Moderation
+                                  </div>
+                                  {moderationStatusBadge(tour.moderationStatus)}
+                                </div>
+                              </div>
+                              {/* Status indicators */}
+                              <div className="flex flex-wrap gap-2 mt-3">
+                                {tour.isUpcoming && (
+                                  <span className={NEU_BADGE_PRIMARY}>
+                                    Upcoming
+                                  </span>
+                                )}
+                                {tour.isExpired && (
+                                  <span className={NEU_BADGE_DANGER}>
+                                    Expired
+                                  </span>
+                                )}
+                                {tour.occupancyPercentage !== undefined && (
+                                  <span className={occupancyAccent}>
+                                    {tour.occupancyPercentage}% Occupied
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Location */}
+                          <div>
+                            <SectionLabel accent="bg-[#006666]">
+                              Location
+                            </SectionLabel>
+                            <div className={`${NEU_CARD_SM} p-4 space-y-3`}>
+                              <div
+                                className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3 flex items-center gap-2`}
+                              >
+                                <MdPlace className="text-[#006666] flex-shrink-0" />
+                                <div>
+                                  <div
+                                    className={`${NEU_MONO} text-sm font-semibold`}
+                                  >
+                                    {tour.district}
+                                  </div>
+                                  <div className={`${NEU_MUTED} text-xs`}>
+                                    {tour.division} Division
+                                  </div>
+                                </div>
+                              </div>
+                              <div
+                                className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3 flex items-center gap-2`}
+                              >
+                                <MdTerrain className="text-[#FE9900] flex-shrink-0" />
+                                <div
+                                  className={`${NEU_MONO} text-sm font-semibold`}
+                                >
+                                  Difficulty: {tour.difficulty}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Ratings */}
+                          <div>
+                            <SectionLabel accent="bg-[#FE9900]">
+                              Ratings
+                            </SectionLabel>
+                            <div className={`${NEU_CARD_SM} p-4`}>
+                              {tour.ratings ? (
+                                <div
+                                  className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3 flex items-center gap-3`}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    <MdStar className="text-[#FE9900] text-xl" />
+                                    <span className="font-[family-name:var(--font-space-mono)] font-bold text-xl text-[#1E2938]">
+                                      {tour.ratings.average.toFixed(1)}
+                                    </span>
+                                  </div>
+                                  <div className="h-8 w-px bg-[#1E2938]/10" />
+                                  <div className={`${NEU_MUTED} text-sm`}>
+                                    {tour.ratings.count} reviews
+                                  </div>
+                                </div>
+                              ) : (
+                                <div
+                                  className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3`}
+                                >
+                                  <span className={NEU_MUTED}>
+                                    No ratings yet
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Schedule */}
+                          <div>
+                            <SectionLabel accent="bg-[#006666]">
+                              Schedule
+                            </SectionLabel>
+                            <div className={`${NEU_CARD_SM} p-4 space-y-3`}>
+                              {tour.nextDeparture && (
+                                <div
+                                  className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3`}
+                                >
+                                  <div
+                                    className={`${NEU_LABEL} text-[#006666] mb-1`}
+                                  >
+                                    Next Departure
+                                  </div>
+                                  <div
+                                    className={`${NEU_MONO} text-sm font-semibold`}
+                                  >
+                                    {nextDeparture}
+                                  </div>
+                                </div>
+                              )}
+                              {tour.duration && (
+                                <div
+                                  className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3`}
+                                >
+                                  <div className={`${NEU_LABEL} mb-1`}>
+                                    Duration
+                                  </div>
+                                  <div
+                                    className={`${NEU_MONO} text-sm font-semibold`}
+                                  >
+                                    {tour.duration.days} days
+                                    {tour.duration.nights
+                                      ? `, ${tour.duration.nights} nights`
+                                      : ""}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Engagement Metrics – spans full width on lg */}
+                          <div className="md:col-span-2 lg:col-span-3">
+                            <SectionLabel accent="bg-[#FF2157]">
+                              Engagement Metrics
+                            </SectionLabel>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                              <EngagementTile
+                                icon={<MdRemoveRedEye />}
+                                label="Views"
+                                value={tour.viewCount ?? 0}
+                                accent="text-[#006666]"
+                              />
+                              <EngagementTile
+                                icon={<MdThumbUp />}
+                                label="Likes"
+                                value={tour.likeCount ?? 0}
+                                accent="text-[#FF2157]"
+                              />
+                              <EngagementTile
+                                icon={<MdShare />}
+                                label="Shares"
+                                value={tour.shareCount ?? 0}
+                                accent="text-[#00A63D]"
+                              />
+                              <EngagementTile
+                                icon={<MdFavorite />}
+                                label="Wishlist"
+                                value={tour.wishlistCount ?? 0}
+                                accent="text-[#FF2157]"
+                              />
+                              <EngagementTile
+                                icon={<MdRateReview />}
+                                label="Reviews"
+                                value={tour.ratings?.count ?? 0}
+                                accent="text-[#FE9900]"
+                              />
+                              <EngagementTile
+                                icon={<MdGroup />}
+                                label="Occupancy"
+                                value={`${tour.occupancyPercentage ?? 0}%`}
+                                accent="text-[#006666]"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Lifecycle Information – spans full width on lg */}
+                          <div className="md:col-span-2 lg:col-span-3">
+                            <SectionLabel accent="bg-[#1E2938]/40">
+                              Lifecycle Information
+                            </SectionLabel>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              {[
+                                { label: "Created", value: created },
+                                { label: "Last Updated", value: updated },
+                                { label: "Published", value: published },
+                              ].map((item) => (
+                                <div
+                                  key={item.label}
+                                  className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3`}
+                                >
+                                  <div className={`${NEU_LABEL} mb-1`}>
+                                    {item.label}
+                                  </div>
+                                  <div
+                                    className={`${NEU_MONO} text-sm font-semibold`}
+                                  >
+                                    {item.value}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+
+        {/* ── Empty State ───────────────────────────────────── */}
+        {items.length === 0 && !loading && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`${NEU_CARD} flex flex-col items-center justify-center py-20 px-4 border-2 border-dashed border-[#1E2938]/15`}
+          >
+            <div
+              className={`${NEU_SURFACE_INSET} w-20 h-20 rounded-full flex items-center justify-center mb-6`}
+            >
+              <MdTrendingUp className="h-10 w-10 text-[#006666]" />
+            </div>
+            <h3 className={`${NEU_HEADING} text-xl mb-2`}>No tours found</h3>
+            <p className={`${NEU_MUTED} text-center max-w-md`}>
+              Try adjusting your filters or search criteria to find tours.
+            </p>
+          </motion.div>
+        )}
+
+        {/* ── Loading Skeletons ─────────────────────────────── */}
+        {loading && items.length === 0 && (
+          <div className="space-y-4">
+            {Array.from({ length: Math.min(limit, 5) }).map((_, i) => (
+              <div key={`skeleton-${i}`} className={`${NEU_CARD} p-5`}>
+                <div className="flex items-start gap-4">
+                  <div className={`${NEU_SKELETON} w-14 h-14 flex-shrink-0`} />
+                  <div className="flex-1 space-y-3">
+                    <div className={`${NEU_SKELETON} h-5 w-3/4`} />
+                    <div className="flex gap-2">
+                      <div className={`${NEU_SKELETON} h-6 w-20`} />
+                      <div className={`${NEU_SKELETON} h-6 w-28`} />
+                      <div className={`${NEU_SKELETON} h-6 w-16`} />
+                    </div>
+                    <div className={`${NEU_SKELETON} h-4 w-full`} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Pagination ────────────────────────────────────────── */}
+      {total > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+          {/* Results summary */}
+          <div className={`${NEU_CARD_SM} flex items-center gap-2 px-5 py-3`}>
+            <span className={NEU_MUTED}>Showing</span>
+            <span className={`${NEU_HEADING} text-base`}>
+              {Math.min((page - 1) * limit + 1, total)}
+            </span>
+            <span className={NEU_MUTED}>–</span>
+            <span className={`${NEU_HEADING} text-base`}>
+              {Math.min(page * limit, total)}
+            </span>
+            <span className={NEU_MUTED}>of</span>
+            <span className="font-[family-name:var(--font-space-mono)] font-bold text-base text-[#006666]">
+              {total}
+            </span>
+            <span className={NEU_MUTED}>tours</span>
+          </div>
+
+          {/* Page controls */}
+          <div className="flex items-center gap-2">
+            {/* Prev */}
+            <button
+              onClick={() => onPageChange(Math.max(1, page - 1))}
+              disabled={page <= 1 || loading}
+              className={NEU_BTN_ICON}
+              aria-label="Previous page"
+            >
+              <MdArrowBack className="h-4 w-4" />
+            </button>
+
+            {/* Page numbers */}
+            <div className="flex items-center gap-1">
+              {(() => {
+                const visible: (number | string)[] = [];
+                const maxShown = 7;
+
+                if (pages <= maxShown) {
+                  for (let i = 1; i <= pages; i++) visible.push(i);
+                } else {
+                  const start = Math.max(2, page - 2);
+                  const end = Math.min(pages - 1, page + 2);
+                  visible.push(1);
+                  if (start > 2) visible.push("…");
+                  for (let i = start; i <= end; i++) visible.push(i);
+                  if (end < pages - 1) visible.push("…");
+                  visible.push(pages);
+                }
+
+                return visible.map((p, idx) => {
+                  if (typeof p === "string") {
+                    return (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className={`w-10 h-10 inline-flex items-center justify-center ${NEU_MUTED} font-bold`}
+                      >
+                        {p}
+                      </span>
+                    );
+                  }
+
+                  const isActive = page === p;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => onPageChange(p)}
+                      disabled={loading}
+                      className={isActive ? NEU_BTN_ACTIVE_PAGE : NEU_BTN_ICON}
+                      aria-label={`Page ${p}`}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      {p}
+                    </button>
+                  );
+                });
+              })()}
             </div>
 
-            {/* Pagination */}
-            {total > 0 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 px-2 pt-4">
-                    {/* Results Info */}
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-3 px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/50 shadow-sm">
-                            <span className="text-sm text-slate-600 dark:text-slate-400">Showing</span>
-                            <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                                {Math.min((page - 1) * limit + 1, total)}
-                            </span>
-                            <span className="text-sm text-slate-600 dark:text-slate-400">-</span>
-                            <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                                {Math.min(page * limit, total)}
-                            </span>
-                            <span className="text-sm text-slate-600 dark:text-slate-400">of</span>
-                            <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                                {total}
-                            </span>
-                            <span className="text-sm text-slate-600 dark:text-slate-400">tours</span>
-                        </div>
-                    </div>
-
-                    {/* Pagination Controls */}
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onPageChange(Math.max(1, page - 1))}
-                            disabled={page <= 1 || loading}
-                            className="gap-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 border-slate-200 dark:border-slate-800 px-4 py-5 transition-all hover:shadow-md"
-                        >
-                            <MdArrowBack className="h-4 w-4" />
-                            <span className="hidden sm:inline font-medium">Previous</span>
-                        </Button>
-
-                        {/* Page Numbers */}
-                        <div className="flex items-center gap-1">
-                            {(() => {
-                                const visible: (number | string)[] = [];
-                                const maxShown = 7;
-
-                                if (pages <= maxShown) {
-                                    for (let i = 1; i <= pages; i++) visible.push(i);
-                                } else {
-                                    const start = Math.max(2, page - 2);
-                                    const end = Math.min(pages - 1, page + 2);
-                                    visible.push(1);
-                                    if (start > 2) visible.push("…");
-                                    for (let i = start; i <= end; i++) visible.push(i);
-                                    if (end < pages - 1) visible.push("…");
-                                    visible.push(pages);
-                                }
-
-                                return visible.map((p, idx) => {
-                                    if (typeof p === "string") {
-                                        return (
-                                            <span
-                                                key={`ellipsis-${idx}`}
-                                                className="h-10 w-10 inline-flex items-center justify-center text-slate-500 dark:text-slate-400 font-medium"
-                                            >
-                                                {p}
-                                            </span>
-                                        );
-                                    }
-
-                                    const isActive = page === p;
-                                    return (
-                                        <Button
-                                            key={p}
-                                            variant={isActive ? "default" : "outline"}
-                                            size="sm"
-                                            onClick={() => onPageChange(p)}
-                                            disabled={loading}
-                                            className={[
-                                                "h-10 w-10 rounded-xl transition-all duration-300 font-semibold",
-                                                isActive
-                                                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/30 scale-105"
-                                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800 hover:scale-105 hover:shadow-md",
-                                            ].join(" ")}
-                                        >
-                                            {p}
-                                        </Button>
-                                    );
-                                });
-                            })()}
-                        </div>
-
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onPageChange(Math.min(pages, page + 1))}
-                            disabled={page >= pages || loading}
-                            className="gap-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 border-slate-200 dark:border-slate-800 px-4 py-5 transition-all hover:shadow-md"
-                        >
-                            <span className="hidden sm:inline font-medium">Next</span>
-                            <MdArrowForward className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-            )}
+            {/* Next */}
+            <button
+              onClick={() => onPageChange(Math.min(pages, page + 1))}
+              disabled={page >= pages || loading}
+              className={NEU_BTN_ICON}
+              aria-label="Next page"
+            >
+              <MdArrowForward className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 }

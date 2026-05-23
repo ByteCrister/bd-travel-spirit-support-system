@@ -30,7 +30,7 @@ import { Loader2, CreditCard, Shield, Tag, Check, X } from "lucide-react";
 // ── Neumorphism style tokens ──────────────────────────────────
 const DIALOG_CONTENT =
   "sm:max-w-[480px] gap-0 p-0 bg-[#E7E5E4] border border-white/60 overflow-hidden rounded-2xl " +
-  "shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff]";
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)]";
 
 const DIALOG_HEADER =
   "px-6 pt-6 pb-5 border-b border-[#1E2938]/08";

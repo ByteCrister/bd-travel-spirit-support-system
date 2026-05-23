@@ -3,43 +3,50 @@
 
 import { useEffect, useState } from "react";
 import { motion, Variants } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { PasswordRequestDto } from "@/types/guide/guide-forgot-password.types";
 import { RefreshCw, AlertCircle, Shield } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { usePasswordRequestStore } from "@/store/guide/guide-password-request.store";
 import { PasswordRequestStats } from "./PasswordRequestStats";
 import { PasswordRequestFilters } from "./PasswordRequestFilters";
 import { PasswordRequestsTable } from "./PasswordRequestsTable";
 import { PasswordRequestDialog } from "./PasswordRequestDialog";
+import { cn } from "@/lib/utils";
+import {
+  NEU_PAGE_BG,
+  NEU_CARD,
+  NEU_BTN_GHOST,
+  NEU_HEADING,
+  NEU_MUTED,
+  NEU_ICON_WELL_PRIMARY,
+  NEU_SURFACE_INSET,
+  NEU_DIVIDER,
+} from "@/styles/neu.styles";
+import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 
+// ── Local style constants ────────────────────────────────────────────────────
+const PAGE_CONTAINER = "container mx-auto py-8 px-4 space-y-6 max-w-7xl";
+const SECTION_CARD = cn(NEU_CARD, "overflow-hidden");
+const CARD_HEADER = cn(
+  "px-6 py-5 flex items-center justify-between border-b",
+  NEU_DIVIDER,
+);
+const CARD_TITLE = cn(NEU_HEADING, "text-base");
+const CARD_DESC = cn(NEU_MUTED, "text-xs mt-0.5");
+
+const breadcrumbItems = [
+  { href: "/", label: "Home" },
+  { href: "/support/guide-password-requests", label: "Guide Password" },
+];
+
+// ── Animation variants ───────────────────────────────────────────────────────
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
 };
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.4,
-      ease: "easeOut",
-    },
-  },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
 };
 
 export default function GuidePasswordRequestsPage() {
@@ -61,7 +68,7 @@ export default function GuidePasswordRequestsPage() {
     fetchStats();
   }, [fetchRequests, fetchStats]);
 
-  // Fetch when filters or pagination changes
+  // Fetch on filter/pagination change
   useEffect(() => {
     fetchRequests();
   }, [filters, pagination.page, pagination.limit, fetchRequests]);
@@ -77,113 +84,117 @@ export default function GuidePasswordRequestsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+    <div className={NEU_PAGE_BG}>
       <motion.div
-        className="container mx-auto py-8 px-4 space-y-6"
+        className={PAGE_CONTAINER}
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* Header Section */}
+        {/* ── Breadcrumbs ────────────────────────────────── */}
+        <motion.div variants={itemVariants} className="mb-2">
+          <Breadcrumbs items={breadcrumbItems} />
+        </motion.div>
+
+        {/* ── Page Header ───────────────────────────────────── */}
         <motion.div
           variants={itemVariants}
           className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
         >
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center shadow-sm">
-                <Shield className="h-5 w-5 text-white" />
-              </div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+          <div className="flex items-center gap-4">
+            <div className={NEU_ICON_WELL_PRIMARY}>
+              <Shield className="h-6 w-6 text-[#006666]" />
+            </div>
+            <div>
+              <h1 className={cn(NEU_HEADING, "text-2xl sm:text-3xl")}>
                 Password Reset Requests
               </h1>
+              <p className={cn(NEU_MUTED, "mt-0.5")}>
+                Manage and review guide password reset requests
+              </p>
             </div>
-            <p className="text-sm text-slate-600 pl-[52px]">
-              Manage and review guide password reset requests
-            </p>
           </div>
-          <Button
-            variant="outline"
+
+          <button
             onClick={handleRefresh}
             disabled={isFetching}
-            className="border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 shadow-sm"
+            className={cn(
+              NEU_BTN_GHOST,
+              "px-4 py-2.5 text-sm flex items-center gap-2 shrink-0",
+              isFetching && "opacity-60 cursor-not-allowed",
+            )}
           >
             <RefreshCw
-              className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""
-                }`}
+              className={cn("h-4 w-4", isFetching && "animate-spin")}
             />
             Refresh
-          </Button>
+          </button>
         </motion.div>
 
-        {/* Error Alert */}
+        {/* ── Error Banner ──────────────────────────────────── */}
         {error && (
           <motion.div
             variants={itemVariants}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
+            className={cn(
+              NEU_SURFACE_INSET,
+              "flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[#FF2157]/20",
+            )}
           >
-            <Alert
-              variant="destructive"
-              className="border-red-200 bg-red-50 text-red-900"
+            <div className="flex items-center gap-2.5 min-w-0">
+              <AlertCircle className="h-4 w-4 text-[#FF2157] shrink-0" />
+              <span className={cn(NEU_MUTED, "text-[#FF2157]/80 truncate")}>
+                {error}
+              </span>
+            </div>
+            <button
+              onClick={clearError}
+              className={cn(
+                NEU_BTN_GHOST,
+                "px-3 py-1.5 text-xs text-[#FF2157] shrink-0 flex items-center gap-1",
+              )}
             >
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="flex items-center justify-between">
-                <span>{error}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="ml-2 h-7 text-red-700 hover:text-red-900 hover:bg-red-100"
-                  onClick={clearError}
-                >
-                  Dismiss
-                </Button>
-              </AlertDescription>
-            </Alert>
+              Dismiss
+            </button>
           </motion.div>
         )}
 
-        {/* Stats Section */}
-        <motion.div variants={itemVariants}>
-          <Card className="border-slate-200 shadow-sm bg-white/80 backdrop-blur-sm">
-            <CardHeader className="border-b border-slate-100 pb-4">
-              <CardTitle className="text-lg font-semibold text-slate-900">
-                Overview
-              </CardTitle>
-              <CardDescription className="text-slate-600">
+        {/* ── Stats Section ─────────────────────────────────── */}
+        <motion.div variants={itemVariants} className={SECTION_CARD}>
+          <div className={CARD_HEADER}>
+            <div>
+              <h2 className={CARD_TITLE}>Overview</h2>
+              <p className={CARD_DESC}>
                 Real-time statistics for password reset requests
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <PasswordRequestStats />
-            </CardContent>
-          </Card>
+              </p>
+            </div>
+          </div>
+          <div className="p-6">
+            <PasswordRequestStats />
+          </div>
         </motion.div>
 
-        {/* Filters Section */}
+        {/* ── Filters Section ───────────────────────────────── */}
         <motion.div variants={itemVariants}>
           <PasswordRequestFilters />
         </motion.div>
 
-        {/* Table Section */}
-        <motion.div variants={itemVariants}>
-          <Card className="border-slate-200 shadow-sm bg-white/80 backdrop-blur-sm">
-            <CardHeader className="border-b border-slate-100 pb-4">
-              <CardTitle className="text-lg font-semibold text-slate-900">
-                Requests
-              </CardTitle>
-              <CardDescription className="text-slate-600">
-                Click on any row to view detailed information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <PasswordRequestsTable onSelectRequest={handleSelectRequest} />
-            </CardContent>
-          </Card>
+        {/* ── Table Section ─────────────────────────────────── */}
+        <motion.div variants={itemVariants} className={SECTION_CARD}>
+          <div className={CARD_HEADER}>
+            <div>
+              <h2 className={CARD_TITLE}>Requests</h2>
+              <p className={CARD_DESC}>
+                Click any row to view detailed information
+              </p>
+            </div>
+          </div>
+          <PasswordRequestsTable onSelectRequest={handleSelectRequest} />
         </motion.div>
 
-        {/* Dialog for request details */}
+        {/* ── Detail Dialog ─────────────────────────────────── */}
         <PasswordRequestDialog
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}

@@ -1,9 +1,6 @@
-// Create a new file: ThreadFilterBar.tsx
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -13,7 +10,50 @@ import {
 } from '@/components/ui/select';
 import { CommentFiltersDTO } from '@/types/article/article-comment.types';
 import { COMMENT_STATUS, CommentStatus } from '@/constants/articleComment.const';
-import { HiFilter, HiX } from 'react-icons/hi';
+import { HiAdjustmentsHorizontal, HiXMark } from 'react-icons/hi2';
+
+// ── Style constants ────────────────────────────────────────────
+const S = {
+    root: 'space-y-3 mb-4',
+
+    topRow: 'flex items-center justify-between',
+
+    btnToggle:
+        'flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm ' +
+        'font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] ' +
+        'bg-[#E7E5E4] shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] ' +
+        'hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] ' +
+        'transition-all duration-200',
+
+    btnClear:
+        'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs ' +
+        'font-[family-name:var(--font-space-mono)] font-bold text-[#FF2157] ' +
+        'bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] ' +
+        'hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'transition-all duration-200',
+
+    panelWrap:
+        'grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-2xl ' +
+        'bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff] ' +
+        'border border-white/40',
+
+    fieldLabel:
+        'font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 ' +
+        'uppercase tracking-widest mb-2 block',
+
+    selectTrigger:
+        'h-9 w-full text-sm font-[family-name:var(--font-jetbrains-mono)] ' +
+        'bg-[#E7E5E4] border-none rounded-xl text-[#1E2938] ' +
+        'shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'focus:ring-2 focus:ring-[#006666]/50 focus:outline-none',
+
+    textInput:
+        'w-full px-3 py-2 rounded-xl text-sm ' +
+        'font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938] ' +
+        'placeholder:text-[#1E2938]/40 bg-[#E7E5E4] border-none ' +
+        'shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] ' +
+        'focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200',
+};
 
 interface ThreadFilterBarProps {
     articleId: string;
@@ -22,91 +62,82 @@ interface ThreadFilterBarProps {
     currentFilters: CommentFiltersDTO;
 }
 
-export function ThreadFilterBar({
-    onFilterChange,
-    currentFilters
-}: ThreadFilterBarProps) {
+export function ThreadFilterBar({ onFilterChange, currentFilters }: ThreadFilterBarProps) {
     const [showFilters, setShowFilters] = useState(false);
+    const hasActive = currentFilters.status || currentFilters.authorName;
 
     const handleStatusChange = (status: string) => {
         onFilterChange({
             ...currentFilters,
-            status: status === 'any' ? undefined : status as CommentStatus | 'any'
+            status: status === 'any' ? undefined : (status as CommentStatus | 'any'),
         });
     };
 
     const handleAuthorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onFilterChange({
-            ...currentFilters,
-            authorName: e.target.value || undefined
-        });
+        onFilterChange({ ...currentFilters, authorName: e.target.value || undefined });
     };
 
-    const handleClearFilters = () => {
-        onFilterChange({});
-        setShowFilters(false);
-    };
+    const handleClear = () => { onFilterChange({}); setShowFilters(false); };
 
     return (
-        <div className="space-y-3 mb-4">
-            {/* Filter toggle button */}
-            <div className="flex items-center justify-between">
-                <Button
-                    variant="outline"
-                    size="sm"
+        <div className={S.root}>
+            <div className={S.topRow}>
+                <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className="gap-2"
+                    className={S.btnToggle}
+                    aria-expanded={showFilters}
                 >
-                    <HiFilter className="h-4 w-4" />
+                    <HiAdjustmentsHorizontal className="h-4 w-4" />
                     {showFilters ? 'Hide Filters' : 'Show Filters'}
-                </Button>
+                </button>
 
-                {(currentFilters.status || currentFilters.authorName) && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleClearFilters}
-                        className="gap-2"
-                    >
-                        <HiX className="h-4 w-4" />
+                {hasActive && (
+                    <button onClick={handleClear} className={S.btnClear}>
+                        <HiXMark className="h-4 w-4" />
                         Clear Filters
-                    </Button>
+                    </button>
                 )}
             </div>
 
-            {/* Filter controls */}
             {showFilters && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 border rounded-lg bg-slate-50 dark:bg-slate-800/30">
-                    {/* Status filter */}
+                <div className={S.panelWrap}>
+                    {/* Status */}
                     <div>
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
-                            Status
-                        </label>
-                        <Select
-                            value={currentFilters.status || 'any'}
-                            onValueChange={handleStatusChange}
-                        >
-                            <SelectTrigger>
+                        <label className={S.fieldLabel}>Status</label>
+                        <Select value={currentFilters.status || 'any'} onValueChange={handleStatusChange}>
+                            <SelectTrigger className={S.selectTrigger}>
                                 <SelectValue placeholder="Filter by status" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="any">Any Status</SelectItem>
-                                <SelectItem value={COMMENT_STATUS.APPROVED}>Approved</SelectItem>
-                                <SelectItem value={COMMENT_STATUS.PENDING}>Pending</SelectItem>
-                                <SelectItem value={COMMENT_STATUS.REJECTED}>Rejected</SelectItem>
+                                <SelectItem value={COMMENT_STATUS.APPROVED}>
+                                    <span className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-[#00A63D]" />Approved
+                                    </span>
+                                </SelectItem>
+                                <SelectItem value={COMMENT_STATUS.PENDING}>
+                                    <span className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-[#FE9900]" />Pending
+                                    </span>
+                                </SelectItem>
+                                <SelectItem value={COMMENT_STATUS.REJECTED}>
+                                    <span className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-[#FF2157]" />Rejected
+                                    </span>
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {/* Author filter */}
+                    {/* Author */}
                     <div>
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
-                            Author Name
-                        </label>
-                        <Input
-                            placeholder="Search by author..."
+                        <label className={S.fieldLabel}>Author Name</label>
+                        <input
+                            type="text"
+                            placeholder="Search by author…"
                             value={currentFilters.authorName || ''}
                             onChange={handleAuthorChange}
+                            className={S.textInput}
                         />
                     </div>
                 </div>

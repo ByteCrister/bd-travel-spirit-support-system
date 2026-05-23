@@ -6,8 +6,6 @@ import { motion, AnimatePresence, Variants } from "framer-motion";
 import { MODERATION_STATUS, DIFFICULTY_LEVEL, TRAVEL_TYPE } from "@/constants/tour.const";
 import { cn } from "@/lib/utils";
 import { useTourApproval } from "@/store/tour-approval.store";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
     Calendar,
     MapPin,
@@ -30,17 +28,103 @@ import { RejectDialog } from "./details/RejectDialog";
 import { useRouter } from "next/navigation";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_CARD =
+    "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
+const NEU_CARD_SM =
+    "rounded-xl bg-[#E7E5E4] shadow-[4px_4px_10px_#c8c6c5,-4px_-4px_10px_#ffffff] border border-white/60";
+const NEU_CARD_HOVER =
+    "hover:shadow-[10px_10px_20px_#c8c6c5,-10px_-10px_20px_#ffffff] hover:-translate-y-0.5 transition-all duration-300";
+const NEU_SURFACE_INSET_SM =
+    "bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]";
+const NEU_BTN_PRIMARY =
+    "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
+    "disabled:opacity-50 disabled:cursor-not-allowed";
+const NEU_BTN_GHOST =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40 " +
+    "disabled:opacity-50 disabled:cursor-not-allowed";
+const NEU_BTN_DANGER =
+    "rounded-xl bg-[#E7E5E4] text-[#FF2157] font-[family-name:var(--font-space-mono)] " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:bg-[#FF2157]/10 hover:shadow-[4px_4px_8px_#004d4d,-2px_-2px_6px_#008080] " +
+    "transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
+const NEU_BADGE =
+    "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold " +
+    "bg-[#E7E5E4] text-[#1E2938] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+const NEU_BADGE_SUCCESS =
+    "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold " +
+    "bg-[#00A63D]/10 text-[#00A63D] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+const NEU_BADGE_WARNING =
+    "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold " +
+    "bg-[#FE9900]/10 text-[#FE9900] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+const NEU_BADGE_DANGER =
+    "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold " +
+    "bg-[#FF2157]/10 text-[#FF2157] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]";
+const NEU_ICON_WELL =
+    "p-2.5 rounded-xl bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff]";
+const NEU_HEADING =
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_LABEL =
+    "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+const NEU_MONO =
+    "font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]";
+const NEU_MUTED =
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+const NEU_DIVIDER = "border-[#1E2938]/10";
+
+// ── Animation variants ────────────────────────────────────────
 const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.4, ease: "easeOut" },
-    },
-    hover: {
-        y: -4,
-        transition: { duration: 0.2 },
-    },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+};
+
+// ── Badge helpers ─────────────────────────────────────────────
+const getDifficultyBadge = (difficulty: string) => {
+    switch (difficulty) {
+        case DIFFICULTY_LEVEL.EASY: return NEU_BADGE_SUCCESS;
+        case DIFFICULTY_LEVEL.MODERATE: return NEU_BADGE_WARNING;
+        case DIFFICULTY_LEVEL.CHALLENGING: return NEU_BADGE_DANGER;
+        default: return NEU_BADGE;
+    }
+};
+
+const getTravelTypeBadge = (type: string) => {
+    const map: Record<string, string> = {
+        [TRAVEL_TYPE.COUPLES]: "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold bg-pink-500/10 text-pink-600 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+        [TRAVEL_TYPE.FAMILIES]: "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold bg-sky-500/10 text-sky-600 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+        [TRAVEL_TYPE.SOLO]: "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold bg-indigo-500/10 text-indigo-600 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+        [TRAVEL_TYPE.ADVENTURE_SEEKERS]: "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold bg-[#FE9900]/10 text-[#FE9900] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+        [TRAVEL_TYPE.GROUP_OF_FRIENDS]: "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-[family-name:var(--font-space-mono)] font-bold bg-violet-500/10 text-violet-600 shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+    };
+    return map[type] || NEU_BADGE;
+};
+
+const getStatusBadge = (status: string) => {
+    switch (status) {
+        case MODERATION_STATUS.APPROVED: return NEU_BADGE_SUCCESS;
+        case MODERATION_STATUS.DENIED: return NEU_BADGE_DANGER;
+        case MODERATION_STATUS.SUSPENDED: return NEU_BADGE;
+        case MODERATION_STATUS.PENDING: return NEU_BADGE_WARNING;
+        default: return NEU_BADGE;
+    }
+};
+
+const getStatusIcon = (status: string) => {
+    switch (status) {
+        case MODERATION_STATUS.APPROVED: return <CheckCircle2 className="w-3.5 h-3.5" />;
+        case MODERATION_STATUS.DENIED: return <XCircle className="w-3.5 h-3.5" />;
+        case MODERATION_STATUS.SUSPENDED: return <Ban className="w-3.5 h-3.5" />;
+        case MODERATION_STATUS.PENDING: return <Clock className="w-3.5 h-3.5" />;
+        default: return <AlertCircle className="w-3.5 h-3.5" />;
+    }
 };
 
 export default function ToursTable() {
@@ -64,256 +148,213 @@ export default function ToursTable() {
 
     const formatDate = (dateString?: string) => {
         if (!dateString) return "N/A";
-        try {
-            return format(new Date(dateString), "MMM dd, yyyy");
-        } catch {
-            return "Invalid date";
-        }
-    };
-
-    const getDifficultyColor = (difficulty: string) => {
-        switch (difficulty) {
-            case DIFFICULTY_LEVEL.EASY:
-                return "bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border-green-200";
-            case DIFFICULTY_LEVEL.MODERATE:
-                return "bg-gradient-to-r from-yellow-50 to-amber-50 text-yellow-700 border-yellow-200";
-            case DIFFICULTY_LEVEL.CHALLENGING:
-                return "bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-200";
-            default:
-                return "bg-slate-50 text-slate-700 border-slate-200";
-        }
-    };
-
-    const getTravelTypeColor = (type: string) => {
-        const colors: Record<string, string> = {
-            [TRAVEL_TYPE.COUPLES]: "from-pink-50 to-rose-50 text-pink-700 border-pink-200",
-            [TRAVEL_TYPE.FAMILIES]: "from-sky-50 to-blue-50 text-sky-700 border-sky-200",
-            [TRAVEL_TYPE.SOLO]: "from-indigo-50 to-purple-50 text-indigo-700 border-indigo-200",
-            [TRAVEL_TYPE.BUSINESS]: "from-slate-50 to-gray-50 text-slate-700 border-slate-200",
-            [TRAVEL_TYPE.ADVENTURE_SEEKERS]: "from-orange-50 to-amber-50 text-orange-700 border-orange-200",
-            [TRAVEL_TYPE.GROUP_OF_FRIENDS]: "from-violet-50 to-purple-50 text-violet-700 border-violet-200",
-        };
-        return colors[type] || "from-slate-50 to-gray-50 text-slate-700 border-slate-200";
-    };
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case MODERATION_STATUS.APPROVED:
-                return <CheckCircle2 className="w-4 h-4" />;
-            case MODERATION_STATUS.DENIED:
-                return <XCircle className="w-4 h-4" />;
-            case MODERATION_STATUS.SUSPENDED:
-                return <Ban className="w-4 h-4" />;
-            case MODERATION_STATUS.PENDING:
-                return <Clock className="w-4 h-4" />;
-            default:
-                return <AlertCircle className="w-4 h-4" />;
-        }
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case MODERATION_STATUS.PENDING:
-                return "from-amber-50 to-orange-50 text-amber-700 border-amber-200";
-            case MODERATION_STATUS.APPROVED:
-                return "from-green-50 to-emerald-50 text-green-700 border-green-200";
-            case MODERATION_STATUS.DENIED:
-                return "from-red-50 to-rose-50 text-red-700 border-red-200";
-            case MODERATION_STATUS.SUSPENDED:
-                return "from-slate-50 to-gray-50 text-slate-700 border-slate-200";
-            default:
-                return "from-slate-50 to-gray-50 text-slate-700 border-slate-200";
-        }
+        try { return format(new Date(dateString), "MMM dd, yyyy"); }
+        catch { return "Invalid date"; }
     };
 
     if (tours.length === 0) {
         return (
-            <div className="text-center py-16">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-slate-100 mb-4">
-                    <AlertCircle className="w-10 h-10 text-slate-400" />
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className={cn(NEU_CARD_SM, "w-20 h-20 flex items-center justify-center")}>
+                    <AlertCircle className="w-9 h-9 text-[#1E2938]/30" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No tours found</h3>
-                <p className="text-sm text-slate-600">Try adjusting your filters or check back later.</p>
+                <h3 className={cn(NEU_HEADING, "text-base")}>No tours found</h3>
+                <p className={NEU_MUTED}>Try adjusting your filters or check back later.</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
-            {/* Results Count */}
-            <div className="flex items-center justify-between px-1">
-                <p className="text-sm font-medium text-slate-600">
-                    Showing <span className="text-slate-900 font-semibold">{tours.length}</span> tours on page{" "}
-                    <span className="text-slate-900 font-semibold">{pagination.page}</span>
-                </p>
+        <div className="space-y-5">
+            {/* Results count */}
+            <div className={cn(NEU_SURFACE_INSET_SM, "inline-flex items-center px-3 py-1.5 rounded-xl")}>
+                <span className={NEU_MUTED}>
+                    Showing{" "}
+                    <span className="font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938]">
+                        {tours.length}
+                    </span>{" "}
+                    tours on page{" "}
+                    <span className="font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938]">
+                        {pagination.page}
+                    </span>
+                </span>
             </div>
 
-            {/* Tours Grid */}
-            <div className="grid grid-cols-1 gap-6">
+            {/* Tours list */}
+            <div className="grid grid-cols-1 gap-5">
                 <AnimatePresence mode="popLayout">
                     {tours.map((t) => {
                         const isExpanded = expandedTours.has(t.id);
 
                         return (
-                            <motion.div
+                            <motion.article
                                 key={t.id}
                                 layout
                                 variants={cardVariants}
                                 initial="hidden"
                                 animate="visible"
-                                whileHover="hover"
-                                className="group relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-xl transition-all"
+                                className={cn(NEU_CARD, NEU_CARD_HOVER, "overflow-hidden")}
                             >
-                                {/* Gradient Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 via-indigo-50/0 to-purple-50/0 group-hover:from-blue-50/40 group-hover:via-indigo-50/30 group-hover:to-purple-50/40 transition-all duration-500 pointer-events-none" />
-
-                                <div className="relative p-6 space-y-6">
-                                    {/* Header Section */}
+                                <div className="p-5 md:p-6 space-y-5">
+                                    {/* ── Header ────────────────────────────────────── */}
                                     <div className="flex items-start justify-between gap-4">
-                                        <div className="flex-1 min-w-0 space-y-3">
-                                            {/* Title with Featured Badge */}
+                                        <div className="flex-1 min-w-0 space-y-2">
                                             <div className="flex items-start gap-2">
                                                 {t.featured && (
                                                     <motion.div
                                                         initial={{ scale: 0, rotate: -180 }}
                                                         animate={{ scale: 1, rotate: 0 }}
                                                         transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+                                                        className="flex-shrink-0 mt-1"
                                                     >
-                                                        <Sparkles className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                                                        <Sparkles className="w-4 h-4 text-[#FE9900]" />
                                                     </motion.div>
                                                 )}
-                                                <h3 className="text-xl md:text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">
+                                                <h3 className={cn(NEU_HEADING, "text-lg md:text-xl leading-snug")}>
                                                     {t.title}
                                                 </h3>
                                             </div>
-
-                                            {/* Summary */}
-                                            <p className="text-sm md:text-base text-slate-600 line-clamp-2">{t.summary}</p>
+                                            <p className={cn(NEU_MUTED, "line-clamp-2")}>{t.summary}</p>
 
                                             {/* Tags */}
-                                            <div className="flex flex-wrap gap-2">
-                                                <Badge className={cn("bg-gradient-to-r border", getTravelTypeColor(t.tourType))}>
+                                            <div className="flex flex-wrap gap-2 pt-1">
+                                                <span className={getTravelTypeBadge(t.tourType)}>
                                                     {t.tourType.replace(/_/g, " ")}
-                                                </Badge>
+                                                </span>
                                                 {t.duration && (
-                                                    <Badge variant="outline" className="flex items-center gap-1.5 border-slate-300">
-                                                        <Clock className="h-3.5 w-3.5" />
+                                                    <span className={cn(NEU_BADGE, "gap-1")}>
+                                                        <Clock className="w-3 h-3" />
                                                         {t.duration.days}D{t.duration.nights ? `/${t.duration.nights}N` : ""}
-                                                    </Badge>
+                                                    </span>
                                                 )}
-                                                <Badge className={cn("border", getDifficultyColor(t.difficulty))}>
+                                                <span className={getDifficultyBadge(t.difficulty)}>
                                                     {t.difficulty}
-                                                </Badge>
+                                                </span>
                                             </div>
                                         </div>
 
-                                        {/* Status Badge */}
-                                        <Badge className={cn("flex items-center gap-1.5 px-3 py-1.5 border bg-gradient-to-r shrink-0", getStatusColor(t.moderationStatus))}>
+                                        {/* Status badge */}
+                                        <span className={cn(getStatusBadge(t.moderationStatus), "flex-shrink-0 flex items-center gap-1.5")}>
                                             {getStatusIcon(t.moderationStatus)}
                                             <span className="hidden sm:inline">{t.moderationStatus}</span>
-                                        </Badge>
+                                        </span>
                                     </div>
 
-                                    {/* Quick Info Grid */}
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gradient-to-br from-slate-50/50 to-white rounded-xl border border-slate-100">
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-2 rounded-lg bg-blue-100">
-                                                <MapPin className="w-4 h-4 text-blue-600" />
+                                    {/* ── Quick info grid ───────────────────────────── */}
+                                    <div className={cn(NEU_SURFACE_INSET_SM, "rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4")}>
+                                        {/* Location */}
+                                        <div className="flex items-center gap-3">
+                                            <div className={cn(NEU_ICON_WELL, "flex-shrink-0 w-9 h-9 flex items-center justify-center")}>
+                                                <MapPin className="w-4 h-4 text-[#006666]" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-xs text-slate-500 font-medium">Location</p>
-                                                <p className="text-sm font-semibold text-slate-900 truncate">{t.division}</p>
-                                                <p className="text-xs text-slate-600 truncate">{t.district}</p>
+                                                <p className={NEU_LABEL}>Location</p>
+                                                <p className={cn(NEU_MONO, "text-sm font-semibold truncate")}>{t.division}</p>
+                                                <p className={cn(NEU_MUTED, "text-xs truncate")}>{t.district}</p>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-2 rounded-lg bg-green-100">
-                                                <div className="w-4 h-4 text-green-600 font-bold flex items-center justify-center">৳</div>
+                                        {/* Price */}
+                                        <div className="flex items-center gap-3">
+                                            <div className={cn(NEU_ICON_WELL, "flex-shrink-0 w-9 h-9 flex items-center justify-center")}>
+                                                <span className="text-[#00A63D] font-bold text-sm">৳</span>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-slate-500 font-medium">Price</p>
-                                                <div className="flex items-baseline gap-1">
-                                                    <p className="text-sm font-semibold text-slate-900">
-                                                        {t.basePrice?.amount} {t.basePrice?.currency}
+                                                <p className={NEU_LABEL}>Price</p>
+                                                <p className={cn(NEU_MONO, "text-sm font-semibold")}>
+                                                    {t.basePrice?.amount} {t.basePrice?.currency}
+                                                </p>
+                                                {t.hasActiveDiscount && (
+                                                    <p className="text-xs font-bold text-[#00A63D] font-[family-name:var(--font-space-mono)]">
+                                                        -{t.activeDiscountValue}%
                                                     </p>
-                                                    {t.hasActiveDiscount && (
-                                                        <span className="text-xs font-bold text-green-600">-{t.activeDiscountValue}%</span>
-                                                    )}
-                                                </div>
+                                                )}
                                             </div>
                                         </div>
 
+                                        {/* Rating */}
                                         {t.ratings && (
-                                            <div className="flex items-center gap-2">
-                                                <div className="p-2 rounded-lg bg-yellow-100">
-                                                    <Star className="w-4 h-4 text-yellow-600 fill-yellow-600" />
+                                            <div className="flex items-center gap-3">
+                                                <div className={cn(NEU_ICON_WELL, "flex-shrink-0 w-9 h-9 flex items-center justify-center")}>
+                                                    <Star className="w-4 h-4 text-[#FE9900] fill-[#FE9900]" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-slate-500 font-medium">Rating</p>
-                                                    <p className="text-sm font-semibold text-slate-900">
+                                                    <p className={NEU_LABEL}>Rating</p>
+                                                    <p className={cn(NEU_MONO, "text-sm font-semibold")}>
                                                         {t.ratings.average.toFixed(1)}{" "}
-                                                        <span className="text-xs text-slate-500">({t.ratings.count})</span>
+                                                        <span className={cn(NEU_MUTED, "text-xs")}>
+                                                            ({t.ratings.count})
+                                                        </span>
                                                     </p>
                                                 </div>
                                             </div>
                                         )}
 
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-2 rounded-lg bg-purple-100">
-                                                <Eye className="w-4 h-4 text-purple-600" />
+                                        {/* Views */}
+                                        <div className="flex items-center gap-3">
+                                            <div className={cn(NEU_ICON_WELL, "flex-shrink-0 w-9 h-9 flex items-center justify-center")}>
+                                                <Eye className="w-4 h-4 text-[#006666]" />
                                             </div>
                                             <div>
-                                                <p className="text-xs text-slate-500 font-medium">Views</p>
-                                                <p className="text-sm font-semibold text-slate-900">{t.viewCount}</p>
+                                                <p className={NEU_LABEL}>Views</p>
+                                                <p className={cn(NEU_MONO, "text-sm font-semibold")}>{t.viewCount}</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Action Buttons */}
+                                    {/* ── Action buttons ─────────────────────────────── */}
                                     <div className="flex flex-wrap gap-3">
-                                        {
-                                            t.moderationStatus === MODERATION_STATUS.PENDING && (
-                                                <Button
-                                                    onClick={() => setApproveOpenFor(t.id)}
-                                                    disabled={isProcessing}
-                                                    className="flex-1 min-w-[140px] bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md hover:shadow-lg transition-all"
-                                                >
-                                                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                                                    Approve
-                                                </Button>
-                                            )
-                                        }
-                                        <Button
+                                        {t.moderationStatus === MODERATION_STATUS.PENDING && (
+                                            <button
+                                                onClick={() => setApproveOpenFor(t.id)}
+                                                disabled={isProcessing}
+                                                className={cn(NEU_BTN_PRIMARY, "flex-1 min-w-[130px] h-10 flex items-center justify-center gap-2 text-sm")}
+                                            >
+                                                <CheckCircle2 className="w-4 h-4" />
+                                                Approve
+                                            </button>
+                                        )}
+                                        <button
                                             onClick={() => setRejectOpenFor(t.id)}
                                             disabled={isProcessing}
-                                            className="flex-1 min-w-[140px] bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white shadow-md hover:shadow-lg transition-all"
+                                            className={cn(NEU_BTN_DANGER, "flex-1 min-w-[130px] h-10 flex items-center justify-center gap-2 text-sm")}
                                         >
-                                            <XCircle className="w-4 h-4 mr-2" />
+                                            <XCircle className="w-4 h-4" />
                                             Reject
-                                        </Button>
-                                        <Button
-                                            onClick={() => router.push(`/support/tours/${encodeURIComponent(encodeId(t.id))}`)}
-                                            variant="outline"
-                                            className="flex-1 min-w-[140px] border-2 hover:bg-slate-50 hover:border-slate-300 transition-all"
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                router.push(`/support/tours/${encodeURIComponent(encodeId(t.id))}`)
+                                            }
+                                            className={cn(NEU_BTN_GHOST, "flex-1 min-w-[130px] h-10 flex items-center justify-center gap-2 text-sm")}
                                         >
-                                            <Eye className="w-4 h-4 mr-2" />
+                                            <Eye className="w-4 h-4" />
                                             View Details
-                                        </Button>
+                                        </button>
                                     </div>
 
-                                    {/* Expand/Collapse Button */}
-                                    <motion.button
+                                    {/* ── Expand/collapse ───────────────────────────── */}
+                                    <button
                                         onClick={() => toggleExpanded(t.id)}
-                                        className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all"
+                                        className={cn(
+                                            "w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-sm",
+                                            NEU_BTN_GHOST
+                                        )}
+                                        aria-expanded={isExpanded}
                                     >
-                                        <span>{isExpanded ? "Show Less" : "Show More Details"}</span>
-                                        <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.3 }}>
-                                            <ChevronDown className="w-4 h-4" />
-                                        </motion.div>
-                                    </motion.button>
+                                        <span className={cn(NEU_LABEL)}>
+                                            {isExpanded ? "Show Less" : "Show More Details"}
+                                        </span>
+                                        <motion.span
+                                            animate={{ rotate: isExpanded ? 180 : 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="inline-flex"
+                                        >
+                                            <ChevronDown className="w-4 h-4 text-[#1E2938]/50" />
+                                        </motion.span>
+                                    </button>
 
-                                    {/* Expandable Content */}
+                                    {/* ── Expandable details ────────────────────────── */}
                                     <AnimatePresence>
                                         {isExpanded && (
                                             <motion.div
@@ -323,35 +364,35 @@ export default function ToursTable() {
                                                 transition={{ duration: 0.3 }}
                                                 className="overflow-hidden"
                                             >
-                                                <div className="pt-6 border-t space-y-6">
-                                                    {/* Engagement Stats */}
+                                                <div className={cn("pt-5 border-t space-y-5", NEU_DIVIDER)}>
+                                                    {/* Engagement stats */}
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                        <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl border border-red-100">
-                                                            <Heart className="w-5 h-5 text-red-500" />
+                                                        <div className={cn(NEU_CARD_SM, "flex items-center gap-3 p-4")}>
+                                                            <Heart className="w-5 h-5 text-[#FF2157] flex-shrink-0" />
                                                             <div>
-                                                                <p className="text-xs text-slate-600 font-medium">Wishlist</p>
-                                                                <p className="text-lg font-bold text-slate-900">{t.wishlistCount}</p>
+                                                                <p className={NEU_LABEL}>Wishlist</p>
+                                                                <p className={cn(NEU_HEADING, "text-lg")}>{t.wishlistCount}</p>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
-                                                            <TrendingUp className="w-5 h-5 text-green-500" />
+                                                        <div className={cn(NEU_CARD_SM, "flex items-center gap-3 p-4")}>
+                                                            <TrendingUp className="w-5 h-5 text-[#00A63D] flex-shrink-0" />
                                                             <div>
-                                                                <p className="text-xs text-slate-600 font-medium">Likes</p>
-                                                                <p className="text-lg font-bold text-slate-900">{t.likeCount}</p>
+                                                                <p className={NEU_LABEL}>Likes</p>
+                                                                <p className={cn(NEU_HEADING, "text-lg")}>{t.likeCount}</p>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl border border-purple-100">
-                                                            <Share2 className="w-5 h-5 text-purple-500" />
+                                                        <div className={cn(NEU_CARD_SM, "flex items-center gap-3 p-4")}>
+                                                            <Share2 className="w-5 h-5 text-[#006666] flex-shrink-0" />
                                                             <div>
-                                                                <p className="text-xs text-slate-600 font-medium">Shares</p>
-                                                                <p className="text-lg font-bold text-slate-900">{t.shareCount}</p>
+                                                                <p className={NEU_LABEL}>Shares</p>
+                                                                <p className={cn(NEU_HEADING, "text-lg")}>{t.shareCount}</p>
                                                             </div>
                                                         </div>
                                                         {t.occupancyPercentage !== undefined && (
-                                                            <div className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
-                                                                <p className="text-xs text-slate-600 font-medium mb-2">Occupancy</p>
+                                                            <div className={cn(NEU_CARD_SM, "p-4 space-y-2")}>
+                                                                <p className={NEU_LABEL}>Occupancy</p>
                                                                 <div className="flex items-center gap-2">
-                                                                    <div className="flex-1 h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                                                                    <div className={cn(NEU_SURFACE_INSET_SM, "flex-1 h-2 rounded-full overflow-hidden")}>
                                                                         <motion.div
                                                                             initial={{ width: 0 }}
                                                                             animate={{ width: `${Math.min(t.occupancyPercentage, 100)}%` }}
@@ -359,14 +400,14 @@ export default function ToursTable() {
                                                                             className={cn(
                                                                                 "h-full rounded-full",
                                                                                 t.occupancyPercentage >= 80
-                                                                                    ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                                                                                    ? "bg-[#00A63D]"
                                                                                     : t.occupancyPercentage >= 50
-                                                                                        ? "bg-gradient-to-r from-yellow-500 to-amber-500"
-                                                                                        : "bg-gradient-to-r from-blue-500 to-cyan-500"
+                                                                                        ? "bg-[#FE9900]"
+                                                                                        : "bg-[#006666]"
                                                                             )}
                                                                         />
                                                                     </div>
-                                                                    <span className="text-sm font-bold text-slate-900 min-w-[3ch]">
+                                                                    <span className={cn(NEU_HEADING, "text-sm min-w-[3ch]")}>
                                                                         {t.occupancyPercentage}%
                                                                     </span>
                                                                 </div>
@@ -374,49 +415,45 @@ export default function ToursTable() {
                                                         )}
                                                     </div>
 
-                                                    {/* Date Information */}
+                                                    {/* Dates */}
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         {t.nextDeparture && (
-                                                            <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                                <Calendar className="w-5 h-5 text-blue-600" />
+                                                            <div className={cn(NEU_CARD_SM, "flex items-center gap-3 p-4")}>
+                                                                <Calendar className="w-4 h-4 text-[#006666] flex-shrink-0" />
                                                                 <div>
-                                                                    <p className="text-xs text-slate-600 font-medium">Next Departure</p>
-                                                                    <p className="text-sm font-semibold text-slate-900">{formatDate(t.nextDeparture)}</p>
+                                                                    <p className={NEU_LABEL}>Next Departure</p>
+                                                                    <p className={cn(NEU_MONO, "text-sm font-semibold")}>{formatDate(t.nextDeparture)}</p>
                                                                 </div>
                                                             </div>
                                                         )}
-                                                        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                            <Clock className="w-5 h-5 text-slate-600" />
+                                                        <div className={cn(NEU_CARD_SM, "flex items-center gap-3 p-4")}>
+                                                            <Clock className="w-4 h-4 text-[#1E2938]/50 flex-shrink-0" />
                                                             <div>
-                                                                <p className="text-xs text-slate-600 font-medium">Published</p>
-                                                                <p className="text-sm font-semibold text-slate-900">{formatDate(t.publishedAt)}</p>
+                                                                <p className={NEU_LABEL}>Published</p>
+                                                                <p className={cn(NEU_MONO, "text-sm font-semibold")}>{formatDate(t.publishedAt)}</p>
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    {/* Additional Metadata */}
-                                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-slate-600 font-medium">Slug:</span>
-                                                            <code className="text-xs bg-white px-2 py-1 rounded border border-slate-200 font-mono">
-                                                                {t.slug}
-                                                            </code>
-                                                        </div>
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-slate-600 font-medium">Created:</span>
-                                                            <span className="text-slate-900">{formatDate(t.createdAt)}</span>
-                                                        </div>
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-slate-600 font-medium">Last Updated:</span>
-                                                            <span className="text-slate-900">{formatDate(t.updatedAt)}</span>
-                                                        </div>
+                                                    {/* Metadata */}
+                                                    <div className={cn(NEU_SURFACE_INSET_SM, "rounded-xl p-4 space-y-3")}>
+                                                        {[
+                                                            { label: "Slug", value: <code className={cn(NEU_MONO, "text-xs bg-[#E7E5E4] shadow-[inset_1px_1px_3px_#c8c6c5,inset_-1px_-1px_3px_#ffffff] px-2 py-0.5 rounded-lg")}>{t.slug}</code> },
+                                                            { label: "Created", value: <span className={cn(NEU_MONO, "text-sm")}>{formatDate(t.createdAt)}</span> },
+                                                            { label: "Last Updated", value: <span className={cn(NEU_MONO, "text-sm")}>{formatDate(t.updatedAt)}</span> },
+                                                        ].map(({ label, value }) => (
+                                                            <div key={label} className={cn("flex justify-between items-center pb-3 last:pb-0 last:border-0 border-b", NEU_DIVIDER)}>
+                                                                <span className={NEU_LABEL}>{label}</span>
+                                                                {value}
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
                                 </div>
-                            </motion.div>
+                            </motion.article>
                         );
                     })}
                 </AnimatePresence>

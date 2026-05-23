@@ -13,12 +13,86 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// ── Neumorphism tokens ──────────────────────────────────────────
+const NEU_SURFACE_INSET =
+  "bg-[#E7E5E4] shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] rounded-xl border-none";
+
+const NEU_BTN_GHOST =
+  "inline-flex items-center gap-1.5 rounded-xl bg-[#E7E5E4] text-[#1E2938] text-sm sm:w-auto " +
+  "font-[family-name:var(--font-space-mono)] px-4 py-2 " +
+  "shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff] " +
+  "hover:shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] " +
+  "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
+
+const NEU_LABEL =
+  "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+
+const NEU_HEADING =
+  "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+
+const NEU_MUTED =
+  "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
+// ───────────────────────────────────────────────────────────────
+
 interface ConfirmationDialogProps {
   open: boolean;
   onOpenChange: (s: boolean) => void;
   onConfirm: (reason: string) => void | Promise<void>;
   mode: "delete" | "restore";
   employeeName: string;
+}
+
+const DIALOG_CONFIG = {
+  delete: {
+    Icon: AlertTriangle,
+    iconBg: "bg-[#FF2157]/10",
+    iconColor: "text-[#FF2157]",
+    infoBg: "bg-[#FE9900]/5 border border-[#FE9900]/20",
+    infoText: "text-[#1E2938]",
+    title: "Delete Employee Record?",
+    description:
+      "This will soft delete the employee record. The record can be restored later if needed.",
+    ButtonIcon: Flame,
+    buttonClass:
+      "inline-flex items-center gap-1.5 rounded-xl bg-[#FF2157] text-white text-sm sm:w-auto " +
+      "font-[family-name:var(--font-space-mono)] font-bold px-4 py-2 " +
+      "shadow-[4px_4px_8px_#cc0040,-2px_-2px_6px_#ff4d7a] " +
+      "hover:bg-[#e61f50] hover:shadow-[6px_6px_12px_#cc0040,-3px_-3px_8px_#ff4d7a] " +
+      "active:shadow-[inset_3px_3px_6px_#cc0040,inset_-2px_-2px_4px_#ff4d7a] " +
+      "disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200",
+    buttonText: "Delete Record",
+    loadingText: "Deleting…",
+    placeholder: "Enter reason for deletion (minimum 10 characters)…",
+  },
+  restore: {
+    Icon: CheckCircle2,
+    iconBg: "bg-[#00A63D]/10",
+    iconColor: "text-[#00A63D]",
+    infoBg: "bg-[#00A63D]/5 border border-[#00A63D]/20",
+    infoText: "text-[#1E2938]",
+    title: "Restore Employee Record?",
+    description:
+      "This will restore the employee record and make it active again in the system.",
+    ButtonIcon: RotateCcw,
+    buttonClass:
+      "inline-flex items-center gap-1.5 rounded-xl bg-[#00A63D] text-white text-sm sm:w-auto " +
+      "font-[family-name:var(--font-space-mono)] font-bold px-4 py-2 " +
+      "shadow-[4px_4px_8px_#007a2d,-2px_-2px_6px_#00cc4a] " +
+      "hover:bg-[#009935] hover:shadow-[6px_6px_12px_#007a2d,-3px_-3px_8px_#00cc4a] " +
+      "active:shadow-[inset_3px_3px_6px_#007a2d,inset_-2px_-2px_4px_#00cc4a] " +
+      "disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200",
+    buttonText: "Restore Record",
+    loadingText: "Restoring…",
+    placeholder: "Enter reason for restoration (minimum 10 characters)…",
+  },
+} as const;
+
+function validateReason(value: string): string {
+  if (!value.trim()) return "Reason is required";
+  if (value.trim().length < 10) return "Reason must be at least 10 characters";
+  if (value.trim().length > 500)
+    return "Reason must be less than 500 characters";
+  return "";
 }
 
 export default function ConfirmationDialog({
@@ -33,27 +107,8 @@ export default function ConfirmationDialog({
   const [error, setError] = useState("");
   const [touched, setTouched] = useState(false);
 
-  const validateReason = (value: string): string => {
-    if (!value.trim()) return "Reason is required";
-    if (value.trim().length < 10)
-      return "Reason must be at least 10 characters";
-    if (value.trim().length > 500)
-      return "Reason must be less than 500 characters";
-    return "";
-  };
-
-  const handleReasonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setReason(value);
-    if (touched) {
-      setError(validateReason(value));
-    }
-  };
-
-  const handleBlur = () => {
-    setTouched(true);
-    setError(validateReason(reason));
-  };
+  const cfg = DIALOG_CONFIG[mode];
+  const { Icon, ButtonIcon } = cfg;
 
   const resetForm = () => {
     setReason("");
@@ -62,17 +117,25 @@ export default function ConfirmationDialog({
     setIsLoading(false);
   };
 
+  const handleReasonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const v = e.target.value;
+    setReason(v);
+    if (touched) setError(validateReason(v));
+  };
+
+  const handleBlur = () => {
+    setTouched(true);
+    setError(validateReason(reason));
+  };
+
   const handleConfirm = async () => {
     setTouched(true);
-
-    const validationError = validateReason(reason);
-    if (mode === "delete" && validationError) {
-      setError(validationError);
+    const ve = validateReason(reason);
+    if (mode === "delete" && ve) {
+      setError(ve);
       return;
     }
-
     setIsLoading(true);
-
     try {
       await onConfirm(reason.trim());
       onOpenChange(false);
@@ -90,43 +153,6 @@ export default function ConfirmationDialog({
     resetForm();
   };
 
-  const config = {
-    delete: {
-      icon: AlertTriangle,
-      iconBg: "bg-red-100",
-      iconColor: "text-red-600",
-      title: "Delete Employee Record?",
-      description:
-        "This will soft delete the employee record. The record can be restored later if needed.",
-      infoBg: "bg-amber-50 border-amber-200",
-      infoText: "text-amber-800",
-      buttonBg: "bg-red-600 hover:bg-red-700 disabled:bg-red-300",
-      buttonIcon: Flame,
-      buttonText: "Delete Record",
-      loadingText: "Deleting...",
-      placeholder: "Enter reason for deletion (minimum 10 characters)...",
-    },
-    restore: {
-      icon: CheckCircle2,
-      iconBg: "bg-green-100",
-      iconColor: "text-green-600",
-      title: "Restore Employee Record?",
-      description:
-        "This will restore the employee record and make it active again in the system.",
-      infoBg: "bg-green-50 border-green-200",
-      infoText: "text-green-800",
-      buttonBg: "bg-green-600 hover:bg-green-700 disabled:bg-green-300",
-      buttonIcon: RotateCcw,
-      buttonText: "Restore Record",
-      loadingText: "Restoring...",
-      placeholder: "Enter reason for restoration (minimum 10 characters)...",
-    },
-  };
-
-  const current = config[mode];
-  const Icon = current.icon;
-  const ButtonIcon = current.buttonIcon;
-
   return (
     <AlertDialog
       open={open}
@@ -134,7 +160,7 @@ export default function ConfirmationDialog({
         if (!isOpen) handleCancel();
       }}
     >
-      <AlertDialogContent className="sm:max-w-md">
+      <AlertDialogContent className="sm:max-w-md rounded-2xl bg-[#E7E5E4] shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-white/60 p-0 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={mode}
@@ -149,119 +175,111 @@ export default function ConfirmationDialog({
                 handleConfirm();
               }}
             >
-              <AlertDialogHeader>
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{
-                    delay: 0.1,
-                    type: "spring",
-                    stiffness: 200,
-                  }}
-                  className={`mx-auto mb-4 w-16 h-16 rounded-full ${current.iconBg} flex items-center justify-center`}
-                >
-                  <Icon className={`h-8 w-8 ${current.iconColor}`} />
-                </motion.div>
-
-                <AlertDialogTitle className="text-center text-xl">
-                  {current.title}
-                </AlertDialogTitle>
-
-                <AlertDialogDescription asChild>
-                  <div className="space-y-3 text-center">
-                    <span className="text-muted-foreground">
-                      {current.description}
-                    </span>
-
-                    {employeeName && (
-                      <div
-                        className={`mt-3 p-3 ${current.infoBg} rounded-lg border`}
-                      >
-                        <div
-                          className={`text-sm ${current.infoText} font-medium`}
-                        >
-                          Employee: {employeeName}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-
-              {mode === 'delete' && (<div className="mt-6 space-y-4">
-                <div>
-                  <label
-                    htmlFor="reason"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+              <div className="p-6 space-y-5">
+                <AlertDialogHeader>
+                  {/* Icon */}
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                    className={`mx-auto mb-2 w-14 h-14 rounded-2xl ${cfg.iconBg} flex items-center justify-center shadow-[4px_4px_8px_#c8c6c5,-4px_-4px_8px_#ffffff]`}
                   >
-                    Reason *
-                  </label>
+                    <Icon className={`h-7 w-7 ${cfg.iconColor}`} />
+                  </motion.div>
 
-                  <textarea
-                    id="reason"
-                    value={reason}
-                    onChange={handleReasonChange}
-                    onBlur={handleBlur}
-                    placeholder={current.placeholder}
-                    rows={4}
-                    disabled={isLoading}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${error && touched
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-blue-500"
-                      } ${isLoading ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  />
+                  <AlertDialogTitle
+                    className={`text-center text-lg ${NEU_HEADING}`}
+                  >
+                    {cfg.title}
+                  </AlertDialogTitle>
 
-                  <div className="flex justify-between mt-1">
-                    {error && touched && (
-                      <p className="text-sm text-red-600">{error}</p>
-                    )}
-                    <p
-                      className={`text-sm ml-auto ${reason.length > 500
-                          ? "text-red-600"
-                          : "text-gray-500"
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-3 text-center">
+                      <span className={NEU_MUTED}>{cfg.description}</span>
+                      {employeeName && (
+                        <div className={`mt-2 p-3 rounded-xl ${cfg.infoBg}`}>
+                          <p
+                            className={`text-sm font-[family-name:var(--font-space-mono)] font-bold ${cfg.infoText}`}
+                          >
+                            Employee: {employeeName}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                {/* Reason textarea — delete only */}
+                {mode === "delete" && (
+                  <div className="space-y-2">
+                    <label htmlFor="reason" className={NEU_LABEL}>
+                      Reason *
+                    </label>
+                    <textarea
+                      id="reason"
+                      value={reason}
+                      onChange={handleReasonChange}
+                      onBlur={handleBlur}
+                      placeholder={cfg.placeholder}
+                      rows={4}
+                      disabled={isLoading}
+                      className={`w-full p-3 resize-none ${NEU_SURFACE_INSET} text-[#1E2938] font-[family-name:var(--font-jetbrains-mono)] text-sm placeholder:text-[#1E2938]/40 focus:outline-none focus:ring-2 focus:ring-[#006666]/50 disabled:opacity-50 ${
+                        error && touched ? "ring-2 ring-[#FF2157]/50" : ""
+                      }`}
+                    />
+                    <div className="flex justify-between items-center">
+                      {error && touched && (
+                        <p className="text-xs text-[#FF2157] font-[family-name:var(--font-jetbrains-mono)]">
+                          {error}
+                        </p>
+                      )}
+                      <p
+                        className={`text-xs ml-auto font-[family-name:var(--font-jetbrains-mono)] ${
+                          reason.length > 500
+                            ? "text-[#FF2157]"
+                            : "text-[#1E2938]/40"
                         }`}
-                    >
-                      {reason.length}/500
-                    </p>
+                      >
+                        {reason.length}/500
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </div>)}
+                )}
+              </div>
 
-
-              <AlertDialogFooter className="sm:flex-row sm:justify-center gap-2 mt-6">
+              <AlertDialogFooter className="px-6 pb-6 sm:flex-row sm:justify-center gap-2">
                 <AlertDialogCancel
                   type="button"
                   onClick={handleCancel}
                   disabled={isLoading}
-                  className="sm:w-auto"
+                  className={NEU_BTN_GHOST}
                 >
-                  <X className="mr-2 h-4 w-4" />
+                  <X className="h-4 w-4" />
                   Cancel
                 </AlertDialogCancel>
 
-                {/* IMPORTANT: normal submit button, not AlertDialogAction */}
                 <button
                   type="submit"
-                  disabled={isLoading || !!error}
-                  className={`${current.buttonBg} text-white sm:w-auto inline-flex items-center justify-center rounded-md px-4 py-2`}
+                  disabled={isLoading || (touched && !!error)}
+                  className={cfg.buttonClass}
                 >
                   {isLoading ? (
                     <>
-                      <motion.div
+                      <motion.span
                         animate={{ rotate: 360 }}
                         transition={{
                           duration: 1,
                           repeat: Infinity,
                           ease: "linear",
                         }}
-                        className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"
+                        className="inline-block h-4 w-4 rounded-full border-2 border-white border-t-transparent"
                       />
-                      {current.loadingText}
+                      {cfg.loadingText}
                     </>
                   ) : (
                     <>
-                      <ButtonIcon className="mr-2 h-4 w-4" />
-                      {current.buttonText}
+                      <ButtonIcon className="h-4 w-4" />
+                      {cfg.buttonText}
                     </>
                   )}
                 </button>

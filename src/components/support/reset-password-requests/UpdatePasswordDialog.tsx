@@ -1,16 +1,56 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Key, Loader2, AlertCircle, Mail, CheckCircle2, Shield, RefreshCw } from "lucide-react";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 
-// Set the length of the generated password
+// ─── Neumorphism Style Tokens ────────────────────────────────
+const NEU_SURFACE = "bg-[#E7E5E4]";
+const NEU_SURFACE_INSET =
+    "bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff]";
+const NEU_SURFACE_INSET_SM =
+    "bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]";
+const NEU_BTN_PRIMARY =
+    "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:bg-[#007777] " +
+    "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/50 " +
+    "disabled:opacity-40 disabled:cursor-not-allowed";
+const NEU_BTN_GHOST =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "active:shadow-[inset_4px_4px_8px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40 " +
+    "disabled:opacity-40 disabled:cursor-not-allowed";
+const NEU_BTN_ICON =
+    "rounded-xl w-10 h-10 flex items-center justify-center bg-[#E7E5E4] text-[#1E2938]/60 " +
+    "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "hover:text-[#006666] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
+    "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
+const NEU_INPUT =
+    "rounded-xl bg-[#E7E5E4] text-[#1E2938] placeholder:text-[#1E2938]/40 " +
+    "font-[family-name:var(--font-jetbrains-mono)] text-sm " +
+    "shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none " +
+    "focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200";
+const NEU_LABEL =
+    "font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest";
+const NEU_HEADING =
+    "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
+const NEU_ICON_WELL_PRIMARY =
+    "p-2.5 rounded-xl bg-[#006666]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]";
+// ────────────────────────────────────────────────────────────
+
 const PASSWORD_LENGTH = 10;
 
 interface UpdatePasswordDialogProps {
@@ -18,6 +58,26 @@ interface UpdatePasswordDialogProps {
     onOpenChange: (v: boolean) => void;
     onConfirm: (newPassword: string, notify: boolean) => Promise<void>;
 }
+
+const StrengthCheck = ({
+    met,
+    label,
+}: {
+    met: boolean;
+    label: string;
+}) => (
+    <div
+        className={`flex items-center gap-1.5 text-xs font-[family-name:var(--font-jetbrains-mono)] transition-colors duration-200 ${met ? "text-[#00A63D]" : "text-[#1E2938]/30"
+            }`}
+    >
+        {met ? (
+            <CheckCircle2 className="w-3 h-3" />
+        ) : (
+            <div className="w-3 h-3 rounded-full border-2 border-current" />
+        )}
+        {label}
+    </div>
+);
 
 export default function UpdatePasswordDialog({
     open,
@@ -29,11 +89,8 @@ export default function UpdatePasswordDialog({
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Generate initial password when dialog opens
     useEffect(() => {
-        if (open) {
-            setGeneratedPassword(generateStrongPassword(PASSWORD_LENGTH));
-        }
+        if (open) setGeneratedPassword(generateStrongPassword(PASSWORD_LENGTH));
     }, [open]);
 
     const handleGenerateNew = () => {
@@ -41,7 +98,6 @@ export default function UpdatePasswordDialog({
         setError(null);
     };
 
-    // Password strength checks
     const hasMinLength = generatedPassword.length >= 8;
     const hasUpperCase = /[A-Z]/.test(generatedPassword);
     const hasLowerCase = /[a-z]/.test(generatedPassword);
@@ -53,13 +109,10 @@ export default function UpdatePasswordDialog({
             setError("Please generate a password first");
             return;
         }
-
         setSubmitting(true);
         setError(null);
-
         try {
             await onConfirm(generatedPassword, notifyRequester);
-            // Reset on success
             setGeneratedPassword(generateStrongPassword(PASSWORD_LENGTH));
             setNotifyRequester(true);
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -81,195 +134,175 @@ export default function UpdatePasswordDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleCancel}>
-            <DialogContent className="sm:max-w-lg w-full max-h-[90vh] overflow-auto rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/50 shadow-xl p-6">
-                {/* Decorative gradient */}
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-cyan-500/5 pointer-events-none rounded-lg" />
-
-                <DialogHeader className="relative">
-                    <div className="flex items-start gap-4">
-                        <motion.div
-                            initial={{ scale: 0, rotate: -180 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            transition={{ type: "spring", duration: 0.6 }}
-                            className="relative"
-                        >
-                            <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-xl shadow-violet-500/30">
-                                <Key className="w-7 h-7 text-white" />
-                            </div>
-                            <div className="absolute inset-0 bg-violet-500 rounded-2xl blur-xl opacity-40 animate-pulse" />
-                        </motion.div>
-                        <div className="flex-1 space-y-1">
-                            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 dark:from-violet-400 dark:to-fuchsia-400 bg-clip-text text-transparent">
-                                Update Password
-                            </DialogTitle>
-                            <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
-                                A secure password has been generated for you
-                            </DialogDescription>
-                        </div>
-                    </div>
-                </DialogHeader>
-
+            <DialogContent
+                className={`sm:max-w-lg ${NEU_SURFACE} border border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.06)] rounded-2xl p-0 overflow-hidden`}
+            >
                 <AnimatePresence mode="wait">
                     {submitting ? (
+                        /* ── Loading state ─────────────────────────────── */
                         <motion.div
                             key="loading"
-                            initial={{ opacity: 0, scale: 0.9 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="flex flex-col items-center justify-center py-16 gap-4"
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="flex flex-col items-center justify-center py-20 gap-4 px-8"
                         >
-                            <div className="relative">
-                                <Loader2 className="w-12 h-12 animate-spin text-violet-500" />
-                                <div className="absolute inset-0 blur-xl bg-violet-500/30 animate-pulse" />
+                            <div className={`${NEU_ICON_WELL_PRIMARY} p-4`}>
+                                <Loader2 className="w-8 h-8 text-[#006666] animate-spin" />
                             </div>
                             <div className="text-center space-y-1">
-                                <p className="font-semibold text-slate-700 dark:text-slate-300">
-                                    Updating password...
-                                </p>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                <p className={`${NEU_HEADING} text-base`}>Updating password…</p>
+                                <p className="font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50">
                                     {notifyRequester ? "Sending notification to requester" : "Completing update"}
                                 </p>
                             </div>
                         </motion.div>
                     ) : (
+                        /* ── Form state ────────────────────────────────── */
                         <motion.div
                             key="form"
-                            initial={{ opacity: 0, y: 10 }}
+                            initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="space-y-5 py-4 relative"
+                            exit={{ opacity: 0, y: -8 }}
+                            className="p-6 space-y-5"
                         >
-                            {/* Generated Password Display */}
+                            {/* Header */}
+                            <DialogHeader>
+                                <div className="flex items-start gap-4">
+                                    <motion.div
+                                        initial={{ scale: 0, rotate: -90 }}
+                                        animate={{ scale: 1, rotate: 0 }}
+                                        transition={{ type: "spring", duration: 0.4 }}
+                                        className={NEU_ICON_WELL_PRIMARY}
+                                    >
+                                        <Key className="w-6 h-6 text-[#006666]" />
+                                    </motion.div>
+                                    <div className="flex-1 space-y-1 pt-0.5">
+                                        <DialogTitle className={`text-xl ${NEU_HEADING}`}>
+                                            Update Password
+                                        </DialogTitle>
+                                        <DialogDescription className="font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50">
+                                            A secure password has been generated for you
+                                        </DialogDescription>
+                                    </div>
+                                </div>
+                            </DialogHeader>
+
+                            {/* Generated password field */}
                             <motion.div
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.1 }}
-                                className="space-y-3"
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.08 }}
+                                className="space-y-2"
                             >
-                                <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <label className={`${NEU_LABEL} flex items-center gap-1.5`}>
                                     Generated Password
-                                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-500 text-white text-xs font-bold">
+                                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#006666] text-white text-[10px] font-bold">
                                         *
                                     </span>
-                                </Label>
+                                </label>
                                 <div className="flex gap-2">
-                                    <div className="relative flex-1">
-                                        <Input
-                                            readOnly
-                                            type={"password"}
-                                            value={generatedPassword}
-                                            className="pr-12 h-12 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 focus:border-violet-400 dark:focus:border-violet-600 focus:ring-violet-400/20 rounded-xl transition-all font-mono"
-                                        />
-                                    </div>
-                                    <Button
-                                        type="button"
+                                    <input
+                                        readOnly
+                                        type="password"
+                                        value={generatedPassword}
+                                        className={`${NEU_INPUT} flex-1 px-4 py-3 font-mono`}
+                                    />
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
                                         onClick={handleGenerateNew}
-                                        variant="outline"
-                                        className="h-12 px-4 rounded-xl border-violet-200 dark:border-violet-800 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+                                        type="button"
+                                        aria-label="Generate new password"
+                                        className={NEU_BTN_ICON}
                                     >
                                         <RefreshCw className="w-4 h-4" />
-                                    </Button>
+                                    </motion.button>
                                 </div>
 
-                                {/* Password Strength Indicators */}
+                                {/* Strength indicators */}
                                 <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    className="space-y-2 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className={`${NEU_SURFACE_INSET_SM} rounded-xl p-3 space-y-2`}
                                 >
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <Shield className="w-3.5 h-3.5 text-slate-500" />
-                                        <span className="font-semibold text-slate-600 dark:text-slate-400">
-                                            Password Strength
-                                        </span>
+                                    <div className="flex items-center gap-1.5">
+                                        <Shield className="w-3 h-3 text-[#1E2938]/40" />
+                                        <span className={NEU_LABEL}>Password Strength</span>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className={`flex items-center gap-1.5 text-xs ${hasMinLength ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}>
-                                            {hasMinLength ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border-2 border-current" />}
-                                            8+ characters
-                                        </div>
-                                        <div className={`flex items-center gap-1.5 text-xs ${hasUpperCase ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}>
-                                            {hasUpperCase ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border-2 border-current" />}
-                                            Uppercase
-                                        </div>
-                                        <div className={`flex items-center gap-1.5 text-xs ${hasLowerCase ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}>
-                                            {hasLowerCase ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border-2 border-current" />}
-                                            Lowercase
-                                        </div>
-                                        <div className={`flex items-center gap-1.5 text-xs ${hasNumber ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}>
-                                            {hasNumber ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border-2 border-current" />}
-                                            Number
-                                        </div>
-                                        <div className={`flex items-center gap-1.5 text-xs ${hasSpecial ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}>
-                                            {hasSpecial ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border-2 border-current" />}
-                                            Special char
-                                        </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-1.5 gap-x-4">
+                                        <StrengthCheck met={hasMinLength} label="8+ characters" />
+                                        <StrengthCheck met={hasUpperCase} label="Uppercase" />
+                                        <StrengthCheck met={hasLowerCase} label="Lowercase" />
+                                        <StrengthCheck met={hasNumber} label="Number" />
+                                        <StrengthCheck met={hasSpecial} label="Special char" />
                                     </div>
                                 </motion.div>
                             </motion.div>
 
-                            {/* Notification Toggle */}
+                            {/* Notify toggle */}
                             <motion.div
-                                initial={{ opacity: 0, y: 10 }}
+                                initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2 }}
-                                className="relative overflow-hidden"
+                                transition={{ delay: 0.14 }}
+                                className={`${NEU_SURFACE_INSET} rounded-xl flex items-start gap-3 p-4`}
                             >
-                                <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border border-blue-200 dark:border-blue-900/50 rounded-xl">
-                                    <Checkbox
-                                        id="notify"
-                                        checked={notifyRequester}
-                                        onCheckedChange={(checked) => setNotifyRequester(checked as boolean)}
-                                        className="mt-1 data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-violet-600 data-[state=checked]:to-fuchsia-600 data-[state=checked]:border-0"
-                                    />
-                                    <div className="flex-1">
-                                        <label
-                                            htmlFor="notify"
-                                            className="text-sm font-semibold cursor-pointer flex items-center gap-2 text-blue-900 dark:text-blue-100"
-                                        >
-                                            <Mail className="w-4 h-4" />
-                                            Notify requester via email
-                                        </label>
-                                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1 leading-relaxed">
-                                            Send the new password securely to the requester&apos;s registered email address
-                                        </p>
-                                    </div>
+                                <Checkbox
+                                    id="notify"
+                                    checked={notifyRequester}
+                                    onCheckedChange={(checked) => setNotifyRequester(checked as boolean)}
+                                    className="mt-0.5 data-[state=checked]:bg-[#006666] data-[state=checked]:border-[#006666]"
+                                />
+                                <div className="flex-1">
+                                    <label
+                                        htmlFor="notify"
+                                        className="font-[family-name:var(--font-space-mono)] text-sm font-bold text-[#1E2938] flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <Mail className="w-4 h-4 text-[#006666]" />
+                                        Notify requester via email
+                                    </label>
+                                    <p className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/50 mt-1 leading-relaxed">
+                                        Send the new password securely to the requester&apos;s registered email address
+                                    </p>
                                 </div>
                             </motion.div>
 
-                            {error && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="overflow-hidden"
-                                >
-                                    <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-2 border-red-200 dark:border-red-900 rounded-xl">
-                                        <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
-                                        <p className="text-sm font-medium text-red-700 dark:text-red-300">
-                                            {error}
-                                        </p>
-                                    </div>
-                                </motion.div>
-                            )}
+                            {/* Error */}
+                            <AnimatePresence>
+                                {error && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className={`${NEU_SURFACE_INSET} rounded-xl flex items-center gap-3 p-3 border border-[#FF2157]/20`}>
+                                            <AlertCircle className="w-4 h-4 text-[#FF2157] flex-shrink-0" />
+                                            <p className="font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#FF2157]">
+                                                {error}
+                                            </p>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
-                            <div className="flex justify-end gap-3 pt-2">
-                                <Button
-                                    variant="outline"
+                            {/* Actions */}
+                            <div className="flex justify-end gap-3 pt-1">
+                                <button
                                     onClick={handleCancel}
                                     disabled={submitting}
-                                    className="rounded-xl"
+                                    className={`${NEU_BTN_GHOST} px-5 py-2.5 text-sm`}
                                 >
                                     Cancel
-                                </Button>
-                                <Button
+                                </button>
+                                <button
                                     onClick={submit}
                                     disabled={!generatedPassword || submitting}
-                                    className="gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-lg shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/30 transition-all rounded-xl"
+                                    className={`${NEU_BTN_PRIMARY} flex items-center gap-2 px-5 py-2.5 text-sm`}
                                 >
                                     <Key className="w-4 h-4" />
                                     Update Password
-                                </Button>
+                                </button>
                             </div>
                         </motion.div>
                     )}

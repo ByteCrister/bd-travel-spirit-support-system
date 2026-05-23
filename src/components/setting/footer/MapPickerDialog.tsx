@@ -12,7 +12,7 @@ import { LatLngExpression, LeafletMouseEvent } from "leaflet";
 // ── Neumorphism style tokens ──────────────────────────────────
 const NEU_DIALOG_CONTENT =
     "max-w-3xl overflow-hidden rounded-2xl p-0 border border-white/60 " +
-    "bg-[#E7E5E4] shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff] " +
+    "bg-[#E7E5E4] shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
     "max-h-[90vh] flex flex-col";
 
 const NEU_DIALOG_HEADER =

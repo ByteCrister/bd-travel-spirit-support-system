@@ -1,46 +1,21 @@
-// components/forms/article/create/ContentSection.tsx
 'use client';
 
 import React, { useState } from 'react';
 import { useFormikContext, FieldArray } from 'formik';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+    Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from '@/components/ui/accordion';
 import {
-    FiMapPin,
-    FiGlobe,
-    FiMap,
-    FiAlignLeft,
-    FiImage,
-    FiStar,
-    FiPlus,
-    FiTrash2,
-    FiCoffee,
-    FiCalendar,
-    FiPackage,
-    FiX,
-    FiEdit3,
-    FiNavigation,
-    FiHome,
+    FiMapPin, FiGlobe, FiMap, FiAlignLeft, FiImage, FiStar, FiPlus, FiTrash2,
+    FiCoffee, FiCalendar, FiPackage, FiX, FiEdit3, FiNavigation, FiHome,
 } from 'react-icons/fi';
 import Image from 'next/image';
 import { ComboBox } from '@/components/ui/combobox';
-import {
-    ARTICLE_RICH_TEXT_BLOCK_TYPE,
-    ArticleRichTextBlockType,
-    FOOD_RECO_SPICE_TYPE,
-    FoodRecoSpiceType,
-} from '@/constants/article.const';
+import { ARTICLE_RICH_TEXT_BLOCK_TYPE, ArticleRichTextBlockType, FOOD_RECO_SPICE_TYPE, FoodRecoSpiceType } from '@/constants/article.const';
 import { DIVISION, Division, District } from '@/constants/tour.const';
 import { fileToBase64 } from '@/utils/helpers/file-conversion';
 import { CreateArticleFormValues } from '@/utils/validators/article.create.validator';
@@ -50,322 +25,278 @@ import { showToast } from '@/components/global/showToast';
 import { extractErrorMessage } from '@/utils/axios/extract-error-message';
 import { getDistrictsByDivision } from '@/utils/helpers/conversions.tour';
 
-// Animation variants
+// ── Neumorphism style tokens ──────────────────────────────────
+const NEU_CARD =
+    'rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60';
+
+const NEU_SURFACE_INSET =
+    'bg-[#E7E5E4] shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] rounded-xl';
+
+const NEU_INPUT =
+    'rounded-xl bg-[#E7E5E4] text-[#1E2938] placeholder:text-[#1E2938]/40 ' +
+    'font-[family-name:var(--font-jetbrains-mono)] text-sm ' +
+    'shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] border-none ' +
+    'focus:outline-none focus:ring-2 focus:ring-[#006666]/50 transition-all duration-200';
+
+const NEU_BTN_PRIMARY =
+    'rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide text-sm ' +
+    'shadow-[0_4px_12px_rgba(0,0,0,0.06)] ' +
+    'hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:bg-[#007777] ' +
+    'active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] ' +
+    'transition-all duration-200 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed';
+
+const NEU_BTN_GHOST =
+    'rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] text-sm ' +
+    'shadow-[0_4px_12px_rgba(0,0,0,0.06)] ' +
+    'hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] ' +
+    'transition-all duration-200 flex items-center gap-2';
+
+const NEU_BTN_DANGER =
+    'rounded-xl bg-[#E7E5E4] text-[#FF2157] font-[family-name:var(--font-space-mono)] text-sm ' +
+    'shadow-[0_4px_12px_rgba(0,0,0,0.06)] ' +
+    'hover:bg-[#FF2157]/10 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] ' +
+    'transition-all duration-200 flex items-center gap-2';
+
+const NEU_BADGE =
+    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-[family-name:var(--font-jetbrains-mono)] ' +
+    'bg-[#E7E5E4] text-[#1E2938] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] cursor-pointer ' +
+    'hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] transition-all duration-200 group';
+
+const NEU_HEADING =
+    'font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight';
+
+const NEU_LABEL =
+    'font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#1E2938]/60 uppercase tracking-widest';
+
+const NEU_MUTED =
+    'font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50';
+
+const NEU_ICON_WELL_PRIMARY =
+    'p-2.5 rounded-xl bg-[#006666]/10 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]';
+
+// ── Animation ─────────────────────────────────────────────────
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: { staggerChildren: 0.1 }
-    }
+    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
-
 const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { type: 'spring', stiffness: 100, damping: 15 }
-    }
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100, damping: 15 } },
 };
-
 const listItemVariants: Variants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: {
-        opacity: 1,
-        x: 0,
-        transition: { type: 'spring', stiffness: 120, damping: 20 }
-    },
-    exit: {
-        opacity: 0,
-        x: 20,
-        transition: { duration: 0.2 }
-    }
+    hidden: { opacity: 0, x: -16 },
+    visible: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 120, damping: 20 } },
+    exit: { opacity: 0, x: 16, transition: { duration: 0.2 } },
 };
 
-const getDistrictOptionsForDivision = (division: Division) => {
-  const districts = getDistrictsByDivision(division);
-  return districts.map(district => ({
-    value: district,
-    label: district
-  }));
-};
+// ── Helpers ───────────────────────────────────────────────────
+const getDistrictOptionsForDivision = (division: Division) =>
+    getDistrictsByDivision(division).map((d) => ({ value: d, label: d }));
 
+// ── Sub-components ────────────────────────────────────────────
+function SectionHeader({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
+    return (
+        <div className="flex items-center gap-2">
+            <div className={NEU_ICON_WELL_PRIMARY}>
+                <Icon className="h-4 w-4 text-[#006666]" />
+            </div>
+            <h4 className={`${NEU_HEADING} text-sm`}>{label}</h4>
+        </div>
+    );
+}
+
+function TagBadgeList({ items, onRemove }: { items: string[]; onRemove: (i: number) => void }) {
+    if (!items.length) return null;
+    return (
+        <div className={`${NEU_SURFACE_INSET} flex flex-wrap gap-2 p-3`}>
+            <AnimatePresence>
+                {items.map((item, i) => (
+                    <motion.button
+                        key={i}
+                        type="button"
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.85 }}
+                        className={NEU_BADGE}
+                        onClick={() => onRemove(i)}
+                    >
+                        {item}
+                        <FiX className="h-3 w-3 text-[#1E2938]/30 group-hover:text-[#FF2157]" />
+                    </motion.button>
+                ))}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+function TagInput({
+    value, onChange, onKeyDown, onAdd, placeholder, disabled,
+}: {
+    value: string; onChange: (v: string) => void; onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+    onAdd: () => void; placeholder: string; disabled?: boolean;
+}) {
+    return (
+        <div className="flex gap-2">
+            <Input
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder={placeholder}
+                className={`flex-1 ${NEU_INPUT} h-10`}
+            />
+            <button type="button" onClick={onAdd} disabled={disabled || !value.trim()} className={`${NEU_BTN_PRIMARY} px-3 py-2`}>
+                <FiPlus className="h-4 w-4" />
+                Add
+            </button>
+        </div>
+    );
+}
+
+// ── Main component ────────────────────────────────────────────
 type Values = Pick<CreateArticleFormValues, 'destinations'>;
 
 export function ContentSection() {
     const { values, setFieldValue } = useFormikContext<Values>();
-    const [highlightInputs, setHighlightInputs] = useState<{ [key: number]: string }>({});
-    const [localTipInputs, setLocalTipInputs] = useState<{ [key: number]: string }>({});
-    const [transportInputs, setTransportInputs] = useState<{ [key: number]: string }>({});
-    const [accommodationInputs, setAccommodationInputs] = useState<{ [key: number]: string }>({});
+    const [highlightInputs, setHighlightInputs] = useState<{ [k: number]: string }>({});
+    const [localTipInputs, setLocalTipInputs] = useState<{ [k: number]: string }>({});
+    const [transportInputs, setTransportInputs] = useState<{ [k: number]: string }>({});
+    const [accommodationInputs, setAccommodationInputs] = useState<{ [k: number]: string }>({});
     const [mapPickerOpenFor, setMapPickerOpenFor] = useState<number | null>(null);
 
-    // Convert enums to ComboBox options
-    const divisionOptions = Object.values(DIVISION).map(value => ({
-        label: value,
-        value: value as Division
-    }));
-
-    const spiceLevelOptions = Object.values(FOOD_RECO_SPICE_TYPE).map(value => ({
-        label: value,
-        value: value as FoodRecoSpiceType
-    }));
-
-    const richTextBlockOptions = Object.values(ARTICLE_RICH_TEXT_BLOCK_TYPE).map(value => ({
-        label: value.replace('_', ' ').charAt(0).toUpperCase() + value.replace('_', ' ').slice(1),
-        value: value as ArticleRichTextBlockType
+    const divisionOptions = Object.values(DIVISION).map((v) => ({ label: v, value: v as Division }));
+    const spiceLevelOptions = Object.values(FOOD_RECO_SPICE_TYPE).map((v) => ({ label: v, value: v as FoodRecoSpiceType }));
+    const richTextBlockOptions = Object.values(ARTICLE_RICH_TEXT_BLOCK_TYPE).map((v) => ({
+        label: v.replace('_', ' ').charAt(0).toUpperCase() + v.replace('_', ' ').slice(1),
+        value: v as ArticleRichTextBlockType,
     }));
 
     const addHighlight = (idx: number) => {
         const val = highlightInputs[idx]?.trim();
-        if (val) {
-            const current = values.destinations[idx].highlights ?? [];
-            if (!current.includes(val)) {
-                setFieldValue(`destinations.${idx}.highlights`, [...current, val]);
-            }
-            setHighlightInputs({ ...highlightInputs, [idx]: '' });
-        }
+        if (!val) return;
+        const current = values.destinations[idx].highlights ?? [];
+        if (!current.includes(val)) setFieldValue(`destinations.${idx}.highlights`, [...current, val]);
+        setHighlightInputs({ ...highlightInputs, [idx]: '' });
     };
-
     const addLocalTip = (idx: number) => {
         const val = localTipInputs[idx]?.trim();
-        if (val) {
-            const current = values.destinations[idx].localTips ?? [];
-            if (!current.includes(val)) {
-                setFieldValue(`destinations.${idx}.localTips`, [...current, val]);
-            }
-            setLocalTipInputs({ ...localTipInputs, [idx]: '' });
-        }
+        if (!val) return;
+        const current = values.destinations[idx].localTips ?? [];
+        if (!current.includes(val)) setFieldValue(`destinations.${idx}.localTips`, [...current, val]);
+        setLocalTipInputs({ ...localTipInputs, [idx]: '' });
     };
-
     const addTransportOption = (idx: number) => {
         const val = transportInputs[idx]?.trim();
-        if (val) {
-            const current = values.destinations[idx].transportOptions ?? [];
-            if (!current.includes(val)) {
-                setFieldValue(`destinations.${idx}.transportOptions`, [...current, val]);
-            }
-            setTransportInputs({ ...transportInputs, [idx]: '' });
-        }
+        if (!val) return;
+        const current = values.destinations[idx].transportOptions ?? [];
+        if (!current.includes(val)) setFieldValue(`destinations.${idx}.transportOptions`, [...current, val]);
+        setTransportInputs({ ...transportInputs, [idx]: '' });
     };
-
     const addAccommodationTip = (idx: number) => {
         const val = accommodationInputs[idx]?.trim();
-        if (val) {
-            const current = values.destinations[idx].accommodationTips ?? [];
-            if (!current.includes(val)) {
-                setFieldValue(`destinations.${idx}.accommodationTips`, [...current, val]);
-            }
-            setAccommodationInputs({ ...accommodationInputs, [idx]: '' });
-        }
+        if (!val) return;
+        const current = values.destinations[idx].accommodationTips ?? [];
+        if (!current.includes(val)) setFieldValue(`destinations.${idx}.accommodationTips`, [...current, val]);
+        setAccommodationInputs({ ...accommodationInputs, [idx]: '' });
     };
 
-    const removeHighlight = (destIdx: number, highlightIdx: number) => {
-        const current = values.destinations[destIdx].highlights ?? [];
-        setFieldValue(`destinations.${destIdx}.highlights`, current.filter((_, i) => i !== highlightIdx));
-    };
-
-    const removeLocalTip = (destIdx: number, tipIdx: number) => {
-        const current = values.destinations[destIdx].localTips ?? [];
-        setFieldValue(`destinations.${destIdx}.localTips`, current.filter((_, i) => i !== tipIdx));
-    };
-
-    const removeTransportOption = (destIdx: number, transportIdx: number) => {
-        const current = values.destinations[destIdx].transportOptions ?? [];
-        setFieldValue(`destinations.${destIdx}.transportOptions`, current.filter((_, i) => i !== transportIdx));
-    };
-
-    const removeAccommodationTip = (destIdx: number, tipIdx: number) => {
-        const current = values.destinations[destIdx].accommodationTips ?? [];
-        setFieldValue(`destinations.${destIdx}.accommodationTips`, current.filter((_, i) => i !== tipIdx));
-    };
+    const removeHighlight = (di: number, hi: number) => setFieldValue(`destinations.${di}.highlights`, (values.destinations[di].highlights ?? []).filter((_, i) => i !== hi));
+    const removeLocalTip = (di: number, ti: number) => setFieldValue(`destinations.${di}.localTips`, (values.destinations[di].localTips ?? []).filter((_, i) => i !== ti));
+    const removeTransportOption = (di: number, ti: number) => setFieldValue(`destinations.${di}.transportOptions`, (values.destinations[di].transportOptions ?? []).filter((_, i) => i !== ti));
+    const removeAccommodationTip = (di: number, ti: number) => setFieldValue(`destinations.${di}.accommodationTips`, (values.destinations[di].accommodationTips ?? []).filter((_, i) => i !== ti));
+    const removeFoodRecommendation = (di: number, fi: number) => setFieldValue(`destinations.${di}.foodRecommendations`, (values.destinations[di].foodRecommendations ?? []).filter((_, i) => i !== fi));
+    const removeLocalFestival = (di: number, fi: number) => setFieldValue(`destinations.${di}.localFestivals`, (values.destinations[di].localFestivals ?? []).filter((_, i) => i !== fi));
+    const removeRichTextBlock = (di: number, bi: number) => setFieldValue(`destinations.${di}.content`, (values.destinations[di].content ?? []).filter((_, i) => i !== bi));
 
     const handleImageUpload = async (destIdx: number, file: File) => {
         try {
-            const base64 = await fileToBase64(file, {
-                compressImages: true,
-                maxWidth: 1200,
-                quality: 0.8
-            });
-
-            setFieldValue(`destinations.${destIdx}.imageAsset`, {
-                title: file.name,
-                assetId: `temp-${Date.now()}`,
-                url: base64
-            });
+            const base64 = await fileToBase64(file, { compressImages: true, maxWidth: 1200, quality: 0.8 });
+            setFieldValue(`destinations.${destIdx}.imageAsset`, { title: file.name, assetId: `temp-${Date.now()}`, url: base64 });
         } catch (error: unknown) {
-            console.log(error);
-            showToast.warning('Image upload failed', extractErrorMessage(error))
+            showToast.warning('Image upload failed', extractErrorMessage(error));
         }
     };
-
-    const removeImage = (destIdx: number) => {
-        setFieldValue(`destinations.${destIdx}.imageAsset`, undefined);
-    };
+    const removeImage = (destIdx: number) => setFieldValue(`destinations.${destIdx}.imageAsset`, undefined);
 
     const addFoodRecommendation = (idx: number) => {
         const current = values.destinations[idx].foodRecommendations ?? [];
-        setFieldValue(`destinations.${idx}.foodRecommendations`, [
-            ...current,
-            {
-                dishName: '',
-                description: '',
-                bestPlaceToTry: '',
-                approximatePrice: '',
-                spiceLevel: undefined,
-            }
-        ]);
+        setFieldValue(`destinations.${idx}.foodRecommendations`, [...current, { dishName: '', description: '', bestPlaceToTry: '', approximatePrice: '', spiceLevel: undefined }]);
     };
-
-    const removeFoodRecommendation = (destIdx: number, foodIdx: number) => {
-        const current = values.destinations[destIdx].foodRecommendations ?? [];
-        setFieldValue(`destinations.${destIdx}.foodRecommendations`, current.filter((_, i) => i !== foodIdx));
-    };
-
     const addLocalFestival = (idx: number) => {
         const current = values.destinations[idx].localFestivals ?? [];
-        setFieldValue(`destinations.${idx}.localFestivals`, [
-            ...current,
-            {
-                name: '',
-                description: '',
-                timeOfYear: '',
-                location: '',
-                significance: '',
-            }
-        ]);
+        setFieldValue(`destinations.${idx}.localFestivals`, [...current, { name: '', description: '', timeOfYear: '', location: '', significance: '' }]);
     };
-
-    const removeLocalFestival = (destIdx: number, festivalIdx: number) => {
-        const current = values.destinations[destIdx].localFestivals ?? [];
-        setFieldValue(`destinations.${destIdx}.localFestivals`, current.filter((_, i) => i !== festivalIdx));
-    };
-
     const addRichTextBlock = (destIdx: number) => {
         const current = values.destinations[destIdx].content ?? [];
-        setFieldValue(`destinations.${destIdx}.content`, [
-            ...current,
-            {
-                type: ARTICLE_RICH_TEXT_BLOCK_TYPE.PARAGRAPH,
-                text: '',
-            }
-        ]);
+        setFieldValue(`destinations.${destIdx}.content`, [...current, { type: ARTICLE_RICH_TEXT_BLOCK_TYPE.PARAGRAPH, text: '' }]);
     };
 
-    const removeRichTextBlock = (destIdx: number, blockIdx: number) => {
-        const current = values.destinations[destIdx].content ?? [];
-        setFieldValue(`destinations.${destIdx}.content`, current.filter((_, i) => i !== blockIdx));
-    };
-
-    // Add handler functions for the map picker
-    const openMapPicker = (index: number) => {
-        setMapPickerOpenFor(index);
-    };
-
-    const closeMapPicker = () => {
-        setMapPickerOpenFor(null);
-    };
-
+    const openMapPicker = (index: number) => setMapPickerOpenFor(index);
+    const closeMapPicker = () => setMapPickerOpenFor(null);
     const handleMapSelect = (lat: number, lng: number, index: number) => {
         setFieldValue(`destinations.${index}.coordinates.lat`, lat);
         setFieldValue(`destinations.${index}.coordinates.lng`, lng);
     };
-
     const handleDivisionChange = (destIndex: number, newDivision: Division) => {
-
-        setFieldValue(`destinations.${destIndex}.division`, newDivision)
-
-        // Get districts for the new division
-        const districtsForDivision = getDistrictsByDivision(newDivision);
-
-        // Check if current district belongs to the new division
-        const isCurrentDistrictValid = districtsForDivision.includes(values.destinations[destIndex].district as District);
-
-        // Update with new division and possibly reset district
-        setFieldValue(`destinations.${destIndex}.district`, isCurrentDistrictValid ? values.destinations[destIndex].district : (districtsForDivision[0] || ''))
+        setFieldValue(`destinations.${destIndex}.division`, newDivision);
+        const districts = getDistrictsByDivision(newDivision);
+        const isValid = districts.includes(values.destinations[destIndex].district as District);
+        setFieldValue(`destinations.${destIndex}.district`, isValid ? values.destinations[destIndex].district : (districts[0] || ''));
     };
 
-
     return (
-        <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-6"
-        >
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-5">
             {/* Header */}
             <motion.div variants={itemVariants}>
-                <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200/50">
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-4">
-                            <div className="h-12 w-12 rounded-xl bg-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                                <FiMapPin className="h-6 w-6 text-white" />
-                            </div>
-                            <div className="flex-1">
-                                <h2 className="text-xl font-bold text-gray-900 mb-1">
-                                    Destinations & Content
-                                </h2>
-                                <p className="text-sm text-gray-600">
-                                    Add destinations, attractions, and activities to enrich your article
-                                </p>
-                            </div>
+                <div className={`${NEU_CARD} p-6`}>
+                    <div className="flex items-start gap-3">
+                        <div className={NEU_ICON_WELL_PRIMARY}>
+                            <FiMapPin className="h-5 w-5 text-[#006666]" />
+                        </div>
+                        <div>
+                            <h2 className={`${NEU_HEADING} text-xl`}>Destinations & Content</h2>
+                            <p className={NEU_MUTED}>Add destinations, attractions, and activities to enrich your article</p>
                         </div>
                     </div>
-                </Card>
+                </div>
             </motion.div>
 
-            {/* Main Content */}
             <FieldArray name="destinations">
                 {(arrayHelpers) => (
                     <motion.div variants={itemVariants} className="space-y-4">
-                        {/* Add Destination Button */}
-                        <Card className="p-4 border-dashed border-2 hover:border-purple-400 transition-colors">
-                            <Button
+                        {/* Add button */}
+                        <div className={`${NEU_CARD} p-4 border-2 border-dashed border-[#1E2938]/10 hover:border-[#006666]/30 transition-colors`}>
+                            <button
                                 type="button"
-                                variant="ghost"
                                 onClick={() =>
                                     arrayHelpers.push({
-                                        division: '' as Division,
-                                        district: '' as District,
-                                        area: '',
-                                        description: '',
-                                        content: [],
-                                        highlights: [],
-                                        foodRecommendations: [],
-                                        localFestivals: [],
-                                        localTips: [],
-                                        transportOptions: [],
-                                        accommodationTips: [],
-                                        coordinates: { lat: 0, lng: 0 },
+                                        division: '' as Division, district: '' as District, area: '', description: '',
+                                        content: [], highlights: [], foodRecommendations: [], localFestivals: [],
+                                        localTips: [], transportOptions: [], accommodationTips: [], coordinates: { lat: 0, lng: 0 },
                                     } as DestinationBlock)
                                 }
-                                className="w-full h-16 gap-3 text-base hover:bg-purple-50"
+                                className={`${NEU_BTN_GHOST} w-full justify-center h-14 text-base`}
                             >
-                                <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                                    <FiPlus className="h-5 w-5 text-purple-600" />
+                                <div className="h-9 w-9 rounded-full bg-[#006666]/10 flex items-center justify-center">
+                                    <FiPlus className="h-5 w-5 text-[#006666]" />
                                 </div>
-                                <span className="font-semibold">Add New Destination</span>
-                            </Button>
-                        </Card>
+                                <span className={`${NEU_HEADING} text-sm`}>Add New Destination</span>
+                            </button>
+                        </div>
 
-                        {/* Empty State */}
+                        {/* Empty state */}
                         {(!values.destinations || values.destinations.length === 0) && (
-                            <Card className="p-12 text-center border-dashed">
+                            <div className={`${NEU_CARD} p-12 text-center`}>
                                 <div className="max-w-sm mx-auto space-y-4">
-                                    <div className="h-20 w-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto">
-                                        <FiMapPin className="h-10 w-10 text-gray-400" />
+                                    <div className="h-20 w-20 rounded-full bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff] flex items-center justify-center mx-auto">
+                                        <FiMapPin className="h-10 w-10 text-[#1E2938]/25" />
                                     </div>
-                                    <h3 className="text-lg font-semibold text-gray-900">
-                                        No destinations added yet
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Start by adding your first destination to build your travel article
-                                    </p>
+                                    <h3 className={`${NEU_HEADING} text-base`}>No destinations added yet</h3>
+                                    <p className={NEU_MUTED}>Start by adding your first destination to build your travel article</p>
                                 </div>
-                            </Card>
+                            </div>
                         )}
 
-                        {/* Destinations List */}
+                        {/* Destinations list */}
                         <AnimatePresence>
                             {values.destinations?.map((dest, idx) => (
                                 <motion.div
@@ -375,33 +306,31 @@ export function ContentSection() {
                                     animate="visible"
                                     exit="exit"
                                 >
-                                    <Card className="overflow-hidden shadow-md border-gray-200/60">
+                                    <div className={`${NEU_CARD} overflow-hidden`}>
                                         <Accordion type="single" collapsible className="w-full">
                                             <AccordionItem value={`dest-${idx}`} className="border-none">
-                                                <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-gray-50/50 transition-colors">
+                                                <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-white/20 transition-colors">
                                                     <div className="flex items-center gap-4 flex-1 text-left">
-                                                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-md">
-                                                            <FiMapPin className="h-6 w-6 text-white" />
+                                                        <div className="h-11 w-11 rounded-xl bg-[#006666]/10 flex items-center justify-center flex-shrink-0 shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]">
+                                                            <FiMapPin className="h-5 w-5 text-[#006666]" />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <h3 className="font-semibold text-lg text-gray-900 truncate">
+                                                            <h3 className={`${NEU_HEADING} text-base truncate`}>
                                                                 {dest.area || dest.district || `Destination ${idx + 1}`}
                                                             </h3>
                                                             {dest.division && (
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    {dest.division}, {dest.district}
-                                                                </p>
+                                                                <p className={`${NEU_MUTED} text-xs`}>{dest.division}, {dest.district}</p>
                                                             )}
-                                                            <div className="flex items-center gap-2 mt-2">
-                                                                <Badge variant="outline" className="text-xs">
-                                                                    {dest.highlights?.length || 0} highlights
-                                                                </Badge>
-                                                                <Badge variant="outline" className="text-xs">
-                                                                    {dest.foodRecommendations?.length || 0} foods
-                                                                </Badge>
-                                                                <Badge variant="outline" className="text-xs">
-                                                                    {dest.localFestivals?.length || 0} festivals
-                                                                </Badge>
+                                                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                                {[
+                                                                    { label: `${dest.highlights?.length || 0} highlights` },
+                                                                    { label: `${dest.foodRecommendations?.length || 0} foods` },
+                                                                    { label: `${dest.localFestivals?.length || 0} festivals` },
+                                                                ].map((b) => (
+                                                                    <span key={b.label} className="text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/40 bg-[#E7E5E4] px-2 py-0.5 rounded-md shadow-[1px_1px_3px_#c8c6c5,-1px_-1px_3px_#ffffff]">
+                                                                        {b.label}
+                                                                    </span>
+                                                                ))}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -409,174 +338,80 @@ export function ContentSection() {
 
                                                 <AccordionContent className="px-6 pb-6">
                                                     <div className="space-y-6 pt-2">
-                                                        {/* Basic Information */}
+
+                                                        {/* Basic Info */}
                                                         <div className="space-y-4">
-                                                            <div className="flex items-center gap-2 mb-3">
-                                                                <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                                                                    <FiEdit3 className="h-4 w-4 text-blue-600" />
-                                                                </div>
-                                                                <h4 className="font-semibold text-sm">Basic Information</h4>
-                                                            </div>
+                                                            <SectionHeader icon={FiEdit3} label="Basic Information" />
 
                                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                                <div className="space-y-2">
-                                                                    <label className="text-xs font-medium flex items-center gap-1.5">
-                                                                        <FiGlobe className="h-3 w-3 text-gray-500" />
-                                                                        Division
-                                                                    </label>
-                                                                    <ComboBox
-                                                                        options={divisionOptions}
-                                                                        value={dest.division}
-                                                                        // onChange={(value) => setFieldValue(`destinations.${idx}.division`, value)}
-                                                                        onChange={(value) => handleDivisionChange(idx, value as Division)}
-                                                                        placeholder="Select division"
-                                                                    />
+                                                                <div className="space-y-1.5">
+                                                                    <label className={`${NEU_LABEL} flex items-center gap-1`}><FiGlobe className="h-3 w-3" /> Division</label>
+                                                                    <ComboBox options={divisionOptions} value={dest.division} onChange={(v) => handleDivisionChange(idx, v as Division)} placeholder="Select division" />
                                                                 </div>
-                                                                <div className="space-y-2">
-                                                                    <label className="text-xs font-medium flex items-center gap-1.5">
-                                                                        <FiMap className="h-3 w-3 text-gray-500" />
-                                                                        District
-                                                                    </label>
-                                                                    <ComboBox
-                                                                        options={getDistrictOptionsForDivision(dest.division as Division)}
-                                                                        value={dest.district}
-                                                                        onChange={(value) => setFieldValue(`destinations.${idx}.district`, value)}
-                                                                        placeholder="Select district"
-                                                                    />
+                                                                <div className="space-y-1.5">
+                                                                    <label className={`${NEU_LABEL} flex items-center gap-1`}><FiMap className="h-3 w-3" /> District</label>
+                                                                    <ComboBox options={getDistrictOptionsForDivision(dest.division as Division)} value={dest.district} onChange={(v) => setFieldValue(`destinations.${idx}.district`, v)} placeholder="Select district" />
                                                                 </div>
-                                                                <div className="space-y-2">
-                                                                    <label className="text-xs font-medium flex items-center gap-1.5">
-                                                                        <FiMapPin className="h-3 w-3 text-gray-500" />
-                                                                        Area
-                                                                    </label>
-                                                                    <Input
-                                                                        value={dest.area ?? ''}
-                                                                        onChange={(e) => setFieldValue(`destinations.${idx}.area`, e.target.value)}
-                                                                        placeholder="e.g., Cox's Bazar Beach"
-                                                                        className="h-10"
-                                                                    />
+                                                                <div className="space-y-1.5">
+                                                                    <label className={`${NEU_LABEL} flex items-center gap-1`}><FiMapPin className="h-3 w-3" /> Area</label>
+                                                                    <Input value={dest.area ?? ''} onChange={(e) => setFieldValue(`destinations.${idx}.area`, e.target.value)} placeholder="e.g., Cox's Bazar Beach" className={`${NEU_INPUT} h-10`} />
                                                                 </div>
                                                             </div>
 
                                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                                <div className="space-y-2">
-                                                                    <label className="text-xs font-medium">Latitude</label>
-                                                                    <Input
-                                                                        type="number"
-                                                                        step="any"
-                                                                        value={dest.coordinates?.lat || ''}
-                                                                        onChange={(e) => setFieldValue(`destinations.${idx}.coordinates.lat`, parseFloat(e.target.value))}
-                                                                        placeholder="23.8103"
-                                                                    />
+                                                                <div className="space-y-1.5">
+                                                                    <label className={NEU_LABEL}>Latitude</label>
+                                                                    <Input type="number" step="any" value={dest.coordinates?.lat || ''} onChange={(e) => setFieldValue(`destinations.${idx}.coordinates.lat`, parseFloat(e.target.value))} placeholder="23.8103" className={`${NEU_INPUT} h-10`} />
                                                                 </div>
-                                                                <div className="space-y-2">
-                                                                    <label className="text-xs font-medium">Longitude</label>
-                                                                    <Input
-                                                                        type="number"
-                                                                        step="any"
-                                                                        value={dest.coordinates?.lng || ''}
-                                                                        onChange={(e) => setFieldValue(`destinations.${idx}.coordinates.lng`, parseFloat(e.target.value))}
-                                                                        placeholder="90.4125"
-                                                                    />
+                                                                <div className="space-y-1.5">
+                                                                    <label className={NEU_LABEL}>Longitude</label>
+                                                                    <Input type="number" step="any" value={dest.coordinates?.lng || ''} onChange={(e) => setFieldValue(`destinations.${idx}.coordinates.lng`, parseFloat(e.target.value))} placeholder="90.4125" className={`${NEU_INPUT} h-10`} />
                                                                 </div>
-                                                                <div className="space-y-2">
-                                                                    <label className="text-xs font-medium">Map Picker</label>
-                                                                    <Button
-                                                                        type="button"
-                                                                        variant="outline"
-                                                                        onClick={() => openMapPicker(idx)}
-                                                                        className="w-full h-10 gap-2"
-                                                                    >
+                                                                <div className="space-y-1.5">
+                                                                    <label className={NEU_LABEL}>Map Picker</label>
+                                                                    <button type="button" onClick={() => openMapPicker(idx)} className={`${NEU_BTN_GHOST} w-full h-10 px-3 justify-center`}>
                                                                         <FiMapPin className="h-4 w-4" />
                                                                         Pick on Map
-                                                                    </Button>
+                                                                    </button>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="space-y-2">
-                                                                <label className="text-xs font-medium flex items-center gap-1.5">
-                                                                    <FiAlignLeft className="h-3 w-3 text-gray-500" />
-                                                                    Description
-                                                                </label>
-                                                                <Textarea
-                                                                    value={dest.description}
-                                                                    onChange={(e) => setFieldValue(`destinations.${idx}.description`, e.target.value)}
-                                                                    placeholder="Describe this destination..."
-                                                                    rows={3}
-                                                                    className="resize-none"
-                                                                />
+                                                            <div className="space-y-1.5">
+                                                                <label className={`${NEU_LABEL} flex items-center gap-1`}><FiAlignLeft className="h-3 w-3" /> Description</label>
+                                                                <Textarea value={dest.description} onChange={(e) => setFieldValue(`destinations.${idx}.description`, e.target.value)} placeholder="Describe this destination..." rows={3} className={`${NEU_INPUT} resize-none`} />
                                                             </div>
                                                         </div>
 
-                                                        <Separator />
+                                                        <Separator className="bg-[#1E2938]/10" />
 
                                                         {/* Rich Text Content */}
                                                         <div className="space-y-3">
                                                             <div className="flex items-center justify-between">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                                                                        <FiAlignLeft className="h-4 w-4 text-indigo-600" />
-                                                                    </div>
-                                                                    <h4 className="font-semibold text-sm">Content</h4>
-                                                                </div>
-                                                                <Button
-                                                                    type="button"
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => addRichTextBlock(idx)}
-                                                                    className="gap-2"
-                                                                >
+                                                                <SectionHeader icon={FiAlignLeft} label="Content" />
+                                                                <button type="button" onClick={() => addRichTextBlock(idx)} className={`${NEU_BTN_GHOST} px-3 py-1.5 text-xs`}>
                                                                     <FiPlus className="h-3 w-3" />
-                                                                    Add Content Block
-                                                                </Button>
+                                                                    Add Block
+                                                                </button>
                                                             </div>
-
                                                             {(dest.content?.length ?? 0) === 0 ? (
-                                                                <div className="text-center py-8 text-sm text-muted-foreground bg-gray-50 rounded-lg border-2 border-dashed">
-                                                                    No content blocks added yet
+                                                                <div className={`${NEU_SURFACE_INSET} text-center py-8`}>
+                                                                    <p className={NEU_MUTED}>No content blocks added yet</p>
                                                                 </div>
                                                             ) : (
                                                                 <div className="space-y-3">
-                                                                    {dest.content?.map((block, blockIdx) => (
-                                                                        <div
-                                                                            key={blockIdx}
-                                                                            className="p-4 bg-indigo-50/50 rounded-lg border border-indigo-200 space-y-3"
-                                                                        >
+                                                                    {dest.content?.map((block, bi) => (
+                                                                        <div key={bi} className={`${NEU_SURFACE_INSET} p-4 space-y-3`}>
                                                                             <div className="flex items-center justify-between">
-                                                                                <span className="text-xs font-semibold text-indigo-700">
-                                                                                    Content Block {blockIdx + 1}
-                                                                                </span>
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    size="sm"
-                                                                                    variant="ghost"
-                                                                                    onClick={() => removeRichTextBlock(idx, blockIdx)}
-                                                                                    className="h-7 w-7 p-0 text-destructive hover:bg-red-100"
-                                                                                >
+                                                                                <span className={`${NEU_LABEL}`}>Block {bi + 1}</span>
+                                                                                <button type="button" onClick={() => removeRichTextBlock(idx, bi)} className={`${NEU_BTN_DANGER} px-2 py-1 text-xs`}>
                                                                                     <FiTrash2 className="h-3 w-3" />
-                                                                                </Button>
+                                                                                </button>
                                                                             </div>
-                                                                            <ComboBox
-                                                                                options={richTextBlockOptions}
-                                                                                value={block.type}
-                                                                                onChange={(value) => setFieldValue(`destinations.${idx}.content.${blockIdx}.type`, value)}
-                                                                                placeholder="Select block type"
-                                                                            />
+                                                                            <ComboBox options={richTextBlockOptions} value={block.type} onChange={(v) => setFieldValue(`destinations.${idx}.content.${bi}.type`, v)} placeholder="Select block type" />
                                                                             {block.type === 'link' ? (
-                                                                                <Input
-                                                                                    value={block.href || ''}
-                                                                                    onChange={(e) => setFieldValue(`destinations.${idx}.content.${blockIdx}.href`, e.target.value)}
-                                                                                    placeholder="URL"
-                                                                                    className="h-9 bg-white"
-                                                                                />
+                                                                                <Input value={block.href || ''} onChange={(e) => setFieldValue(`destinations.${idx}.content.${bi}.href`, e.target.value)} placeholder="URL" className={`${NEU_INPUT} h-9`} />
                                                                             ) : (
-                                                                                <Textarea
-                                                                                    value={block.text || ''}
-                                                                                    onChange={(e) => setFieldValue(`destinations.${idx}.content.${blockIdx}.text`, e.target.value)}
-                                                                                    placeholder="Content text"
-                                                                                    rows={2}
-                                                                                    className="resize-none bg-white"
-                                                                                />
+                                                                                <Textarea value={block.text || ''} onChange={(e) => setFieldValue(`destinations.${idx}.content.${bi}.text`, e.target.value)} placeholder="Content text" rows={2} className={`${NEU_INPUT} resize-none`} />
                                                                             )}
                                                                         </div>
                                                                     ))}
@@ -584,216 +419,90 @@ export function ContentSection() {
                                                             )}
                                                         </div>
 
-                                                        <Separator />
+                                                        <Separator className="bg-[#1E2938]/10" />
 
                                                         {/* Highlights */}
                                                         <div className="space-y-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="h-8 w-8 rounded-lg bg-yellow-100 flex items-center justify-center">
-                                                                    <FiStar className="h-4 w-4 text-yellow-600" />
-                                                                </div>
-                                                                <h4 className="font-semibold text-sm">Highlights</h4>
-                                                            </div>
-
-                                                            {(dest.highlights?.length ?? 0) > 0 && (
-                                                                <div className="flex flex-wrap gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                                                                    <AnimatePresence>
-                                                                        {dest.highlights?.map((h, hi) => (
-                                                                            <motion.div
-                                                                                key={hi}
-                                                                                initial={{ opacity: 0, scale: 0.8 }}
-                                                                                animate={{ opacity: 1, scale: 1 }}
-                                                                                exit={{ opacity: 0, scale: 0.8 }}
-                                                                            >
-                                                                                <Badge
-                                                                                    variant="secondary"
-                                                                                    className="gap-2 bg-white hover:bg-red-50 cursor-pointer group"
-                                                                                    onClick={() => removeHighlight(idx, hi)}
-                                                                                >
-                                                                                    {h}
-                                                                                    <FiX className="h-3 w-3 text-gray-400 group-hover:text-red-600" />
-                                                                                </Badge>
-                                                                            </motion.div>
-                                                                        ))}
-                                                                    </AnimatePresence>
-                                                                </div>
-                                                            )}
-
-                                                            <div className="flex gap-2">
-                                                                <Input
-                                                                    value={highlightInputs[idx] ?? ''}
-                                                                    onChange={(e) => setHighlightInputs({ ...highlightInputs, [idx]: e.target.value })}
-                                                                    onKeyDown={(e) => {
-                                                                        if (e.key === 'Enter') {
-                                                                            e.preventDefault();
-                                                                            addHighlight(idx);
-                                                                        }
-                                                                    }}
-                                                                    placeholder="Add a highlight..."
-                                                                    className="h-10"
-                                                                />
-                                                                <Button
-                                                                    type="button"
-                                                                    onClick={() => addHighlight(idx)}
-                                                                    disabled={!highlightInputs[idx]?.trim()}
-                                                                    className="gap-2 bg-yellow-600 hover:bg-yellow-700"
-                                                                >
-                                                                    <FiPlus className="h-4 w-4" />
-                                                                    Add
-                                                                </Button>
-                                                            </div>
+                                                            <SectionHeader icon={FiStar} label="Highlights" />
+                                                            <TagBadgeList
+                                                                items={(dest.highlights ?? []).filter((h): h is string => h !== undefined)}
+                                                                onRemove={(i) => removeHighlight(idx, i)}
+                                                            />
+                                                            <TagInput value={highlightInputs[idx] ?? ''} onChange={(v) => setHighlightInputs({ ...highlightInputs, [idx]: v })}
+                                                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addHighlight(idx); } }}
+                                                                onAdd={() => addHighlight(idx)} placeholder="Add a highlight..." />
                                                         </div>
 
-                                                        <Separator />
+                                                        <Separator className="bg-[#1E2938]/10" />
 
-                                                        {/* Image */}
+                                                        {/* Destination Image */}
                                                         <div className="space-y-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
-                                                                    <FiImage className="h-4 w-4 text-green-600" />
-                                                                </div>
-                                                                <h4 className="font-semibold text-sm">Destination Image</h4>
-                                                            </div>
-
+                                                            <SectionHeader icon={FiImage} label="Destination Image" />
                                                             {dest.imageAsset?.url ? (
-                                                                <div className="relative group aspect-video rounded-lg overflow-hidden border-2 border-gray-200">
-                                                                    <Image
-                                                                        src={dest.imageAsset.url}
-                                                                        alt={dest.imageAsset.title}
-                                                                        fill
-                                                                        className="object-cover"
-                                                                        sizes="(max-width: 768px) 100vw, 33vw"
-                                                                        unoptimized
-                                                                        onError={(e) => {
-                                                                            const target = e.currentTarget as HTMLImageElement;
-                                                                            target.src = '/fallback-image.jpg';
-                                                                        }}
-                                                                    />
-                                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                                        <Button
-                                                                            type="button"
-                                                                            size="sm"
-                                                                            variant="destructive"
-                                                                            onClick={() => removeImage(idx)}
-                                                                            className="gap-2"
-                                                                        >
-                                                                            <FiTrash2 className="h-3 w-3" />
+                                                                <div className="relative group aspect-video rounded-xl overflow-hidden shadow-[4px_4px_10px_#c8c6c5,-4px_-4px_10px_#ffffff]">
+                                                                    <Image src={dest.imageAsset.url} alt={dest.imageAsset.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" unoptimized
+                                                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/fallback-image.jpg'; }} />
+                                                                    <div className="absolute inset-0 bg-[#1E2938]/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                        <button type="button" onClick={() => removeImage(idx)} className={`${NEU_BTN_DANGER} px-3 py-2`}>
+                                                                            <FiTrash2 className="h-3.5 w-3.5" />
                                                                             Remove
-                                                                        </Button>
+                                                                        </button>
                                                                     </div>
                                                                 </div>
                                                             ) : (
-                                                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                                                                    <input
-                                                                        type="file"
-                                                                        accept="image/*"
-                                                                        onChange={(e) => {
-                                                                            const file = e.target.files?.[0];
-                                                                            if (file) {
-                                                                                handleImageUpload(idx, file);
-                                                                            }
-                                                                        }}
-                                                                        className="hidden"
-                                                                        id={`image-upload-${idx}`}
-                                                                    />
-                                                                    <label
-                                                                        htmlFor={`image-upload-${idx}`}
-                                                                        className="cursor-pointer flex flex-col items-center gap-2"
-                                                                    >
-                                                                        <FiImage className="h-8 w-8 text-gray-400" />
-                                                                        <span className="text-sm text-gray-600">
-                                                                            Click to upload destination image
-                                                                        </span>
-                                                                        <span className="text-xs text-gray-500">
-                                                                            PNG, JPG, GIF up to 5MB
-                                                                        </span>
+                                                                <div className={`${NEU_SURFACE_INSET} p-8 text-center`}>
+                                                                    <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(idx, f); }} className="hidden" id={`image-upload-${idx}`} />
+                                                                    <label htmlFor={`image-upload-${idx}`} className="cursor-pointer flex flex-col items-center gap-2">
+                                                                        <FiImage className="h-8 w-8 text-[#1E2938]/25" />
+                                                                        <span className={NEU_MUTED}>Click to upload destination image</span>
+                                                                        <span className={`${NEU_MUTED} text-xs`}>PNG, JPG, GIF up to 5MB</span>
                                                                     </label>
                                                                 </div>
                                                             )}
                                                         </div>
 
-                                                        <Separator />
+                                                        <Separator className="bg-[#1E2938]/10" />
 
                                                         {/* Food Recommendations */}
                                                         <div className="space-y-3">
                                                             <div className="flex items-center justify-between">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center">
-                                                                        <FiCoffee className="h-4 w-4 text-red-600" />
-                                                                    </div>
-                                                                    <h4 className="font-semibold text-sm">Food Recommendations</h4>
-                                                                </div>
-                                                                <Button
-                                                                    type="button"
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => addFoodRecommendation(idx)}
-                                                                    className="gap-2"
-                                                                >
+                                                                <SectionHeader icon={FiCoffee} label="Food Recommendations" />
+                                                                <button type="button" onClick={() => addFoodRecommendation(idx)} className={`${NEU_BTN_GHOST} px-3 py-1.5 text-xs`}>
                                                                     <FiPlus className="h-3 w-3" />
                                                                     Add
-                                                                </Button>
+                                                                </button>
                                                             </div>
-
-                                                            {(dest.foodRecommendations?.length ?? 0) === 0 ? (
-                                                                <div className="text-center py-8 text-sm text-muted-foreground bg-gray-50 rounded-lg border-2 border-dashed">
-                                                                    No food recommendations added yet
-                                                                </div>
-                                                            ) : (
+                                                            {(dest.foodRecommendations?.length ?? 0) > 0 && (
                                                                 <div className="space-y-3">
-                                                                    {dest.foodRecommendations?.map((food, foodIdx) => (
-                                                                        <div
-                                                                            key={foodIdx}
-                                                                            className="p-4 bg-red-50/50 rounded-lg border border-red-200 space-y-3"
-                                                                        >
+                                                                    {dest.foodRecommendations?.map((food, fi) => (
+                                                                        <div key={fi} className={`${NEU_SURFACE_INSET} p-4 space-y-3`}>
                                                                             <div className="flex items-center justify-between">
-                                                                                <span className="text-xs font-semibold text-red-700">
-                                                                                    Food {foodIdx + 1}
-                                                                                </span>
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    size="sm"
-                                                                                    variant="ghost"
-                                                                                    onClick={() => removeFoodRecommendation(idx, foodIdx)}
-                                                                                    className="h-7 w-7 p-0 text-destructive hover:bg-red-100"
-                                                                                >
+                                                                                <span className={`${NEU_LABEL}`}>Food #{fi + 1}</span>
+                                                                                <button type="button" onClick={() => removeFoodRecommendation(idx, fi)} className={`${NEU_BTN_DANGER} px-2 py-1 text-xs`}>
                                                                                     <FiTrash2 className="h-3 w-3" />
-                                                                                </Button>
+                                                                                </button>
                                                                             </div>
-                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                                                <Input
-                                                                                    value={food.dishName}
-                                                                                    onChange={(e) => setFieldValue(`destinations.${idx}.foodRecommendations.${foodIdx}.dishName`, e.target.value)}
-                                                                                    placeholder="Dish name"
-                                                                                    className="h-9 bg-white"
-                                                                                />
-                                                                                <ComboBox
-                                                                                    options={spiceLevelOptions}
-                                                                                    value={food.spiceLevel ?? FOOD_RECO_SPICE_TYPE.MEDIUM}
-                                                                                    onChange={(value) => setFieldValue(`destinations.${idx}.foodRecommendations.${foodIdx}.spiceLevel`, value)}
-                                                                                    placeholder="Spice level"
-                                                                                />
+                                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                                <div className="space-y-1">
+                                                                                    <label className={NEU_LABEL}>Dish Name</label>
+                                                                                    <Input value={food.dishName} onChange={(e) => setFieldValue(`destinations.${idx}.foodRecommendations.${fi}.dishName`, e.target.value)} placeholder="e.g., Hilsa curry" className={`${NEU_INPUT} h-9`} />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className={NEU_LABEL}>Spice Level</label>
+                                                                                    <ComboBox options={spiceLevelOptions} value={food.spiceLevel ?? ''} onChange={(v) => setFieldValue(`destinations.${idx}.foodRecommendations.${fi}.spiceLevel`, v)} placeholder="Select spice" />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className={NEU_LABEL}>Best Place to Try</label>
+                                                                                    <Input value={food.bestPlaceToTry ?? ''} onChange={(e) => setFieldValue(`destinations.${idx}.foodRecommendations.${fi}.bestPlaceToTry`, e.target.value)} placeholder="Restaurant name" className={`${NEU_INPUT} h-9`} />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className={NEU_LABEL}>Approx. Price</label>
+                                                                                    <Input value={food.approximatePrice ?? ''} onChange={(e) => setFieldValue(`destinations.${idx}.foodRecommendations.${fi}.approximatePrice`, e.target.value)} placeholder="e.g., ৳200-300" className={`${NEU_INPUT} h-9`} />
+                                                                                </div>
                                                                             </div>
-                                                                            <Textarea
-                                                                                value={food.description}
-                                                                                onChange={(e) => setFieldValue(`destinations.${idx}.foodRecommendations.${foodIdx}.description`, e.target.value)}
-                                                                                placeholder="Description"
-                                                                                rows={2}
-                                                                                className="resize-none bg-white"
-                                                                            />
-                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                                                <Input
-                                                                                    value={food.bestPlaceToTry || ''}
-                                                                                    onChange={(e) => setFieldValue(`destinations.${idx}.foodRecommendations.${foodIdx}.bestPlaceToTry`, e.target.value)}
-                                                                                    placeholder="Best place to try"
-                                                                                    className="h-9 bg-white"
-                                                                                />
-                                                                                <Input
-                                                                                    value={food.approximatePrice || ''}
-                                                                                    onChange={(e) => setFieldValue(`destinations.${idx}.foodRecommendations.${foodIdx}.approximatePrice`, e.target.value)}
-                                                                                    placeholder="Approximate price"
-                                                                                    className="h-9 bg-white"
-                                                                                />
+                                                                            <div className="space-y-1">
+                                                                                <label className={NEU_LABEL}>Description</label>
+                                                                                <Textarea value={food.description} onChange={(e) => setFieldValue(`destinations.${idx}.foodRecommendations.${fi}.description`, e.target.value)} placeholder="Describe the dish..." rows={2} className={`${NEU_INPUT} resize-none`} />
                                                                             </div>
                                                                         </div>
                                                                     ))}
@@ -801,296 +510,116 @@ export function ContentSection() {
                                                             )}
                                                         </div>
 
-                                                        <Separator />
+                                                        <Separator className="bg-[#1E2938]/10" />
 
                                                         {/* Local Festivals */}
                                                         <div className="space-y-3">
                                                             <div className="flex items-center justify-between">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="h-8 w-8 rounded-lg bg-orange-100 flex items-center justify-center">
-                                                                        <FiCalendar className="h-4 w-4 text-orange-600" />
-                                                                    </div>
-                                                                    <h4 className="font-semibold text-sm">Local Festivals</h4>
-                                                                </div>
-                                                                <Button
-                                                                    type="button"
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => addLocalFestival(idx)}
-                                                                    className="gap-2"
-                                                                >
+                                                                <SectionHeader icon={FiCalendar} label="Local Festivals" />
+                                                                <button type="button" onClick={() => addLocalFestival(idx)} className={`${NEU_BTN_GHOST} px-3 py-1.5 text-xs`}>
                                                                     <FiPlus className="h-3 w-3" />
                                                                     Add
-                                                                </Button>
+                                                                </button>
                                                             </div>
-
-                                                            {(dest.localFestivals?.length ?? 0) === 0 ? (
-                                                                <div className="text-center py-8 text-sm text-muted-foreground bg-gray-50 rounded-lg border-2 border-dashed">
-                                                                    No festivals added yet
-                                                                </div>
-                                                            ) : (
+                                                            {(dest.localFestivals?.length ?? 0) > 0 && (
                                                                 <div className="space-y-3">
-                                                                    {dest.localFestivals?.map((festival, festivalIdx) => (
-                                                                        <div
-                                                                            key={festivalIdx}
-                                                                            className="p-4 bg-orange-50/50 rounded-lg border border-orange-200 space-y-3"
-                                                                        >
+                                                                    {dest.localFestivals?.map((festival, fi) => (
+                                                                        <div key={fi} className={`${NEU_SURFACE_INSET} p-4 space-y-3`}>
                                                                             <div className="flex items-center justify-between">
-                                                                                <span className="text-xs font-semibold text-orange-700">
-                                                                                    Festival {festivalIdx + 1}
-                                                                                </span>
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    size="sm"
-                                                                                    variant="ghost"
-                                                                                    onClick={() => removeLocalFestival(idx, festivalIdx)}
-                                                                                    className="h-7 w-7 p-0 text-destructive hover:bg-red-100"
-                                                                                >
+                                                                                <span className={NEU_LABEL}>Festival #{fi + 1}</span>
+                                                                                <button type="button" onClick={() => removeLocalFestival(idx, fi)} className={`${NEU_BTN_DANGER} px-2 py-1 text-xs`}>
                                                                                     <FiTrash2 className="h-3 w-3" />
-                                                                                </Button>
+                                                                                </button>
                                                                             </div>
-                                                                            <Input
-                                                                                value={festival.name}
-                                                                                onChange={(e) => setFieldValue(`destinations.${idx}.localFestivals.${festivalIdx}.name`, e.target.value)}
-                                                                                placeholder="Festival name"
-                                                                                className="h-9 bg-white"
-                                                                            />
-                                                                            <Textarea
-                                                                                value={festival.description}
-                                                                                onChange={(e) => setFieldValue(`destinations.${idx}.localFestivals.${festivalIdx}.description`, e.target.value)}
-                                                                                placeholder="Description"
-                                                                                rows={2}
-                                                                                className="resize-none bg-white"
-                                                                            />
-                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                                                <Input
-                                                                                    value={festival.timeOfYear}
-                                                                                    onChange={(e) => setFieldValue(`destinations.${idx}.localFestivals.${festivalIdx}.timeOfYear`, e.target.value)}
-                                                                                    placeholder="Time of year"
-                                                                                    className="h-9 bg-white"
-                                                                                />
-                                                                                <Input
-                                                                                    value={festival.location}
-                                                                                    onChange={(e) => setFieldValue(`destinations.${idx}.localFestivals.${festivalIdx}.location`, e.target.value)}
-                                                                                    placeholder="Location"
-                                                                                    className="h-9 bg-white"
-                                                                                />
+                                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                                <div className="space-y-1">
+                                                                                    <label className={NEU_LABEL}>Name</label>
+                                                                                    <Input value={festival.name} onChange={(e) => setFieldValue(`destinations.${idx}.localFestivals.${fi}.name`, e.target.value)} placeholder="Festival name" className={`${NEU_INPUT} h-9`} />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className={NEU_LABEL}>Time of Year</label>
+                                                                                    <Input value={festival.timeOfYear} onChange={(e) => setFieldValue(`destinations.${idx}.localFestivals.${fi}.timeOfYear`, e.target.value)} placeholder="e.g., January" className={`${NEU_INPUT} h-9`} />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className={NEU_LABEL}>Location</label>
+                                                                                    <Input value={festival.location} onChange={(e) => setFieldValue(`destinations.${idx}.localFestivals.${fi}.location`, e.target.value)} placeholder="Where it's held" className={`${NEU_INPUT} h-9`} />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className={NEU_LABEL}>Significance</label>
+                                                                                    <Input value={festival.significance ?? ''} onChange={(e) => setFieldValue(`destinations.${idx}.localFestivals.${fi}.significance`, e.target.value)} placeholder="Cultural significance" className={`${NEU_INPUT} h-9`} />
+                                                                                </div>
                                                                             </div>
-                                                                            <Input
-                                                                                value={festival.significance || ''}
-                                                                                onChange={(e) => setFieldValue(`destinations.${idx}.localFestivals.${festivalIdx}.significance`, e.target.value)}
-                                                                                placeholder="Significance (optional)"
-                                                                                className="h-9 bg-white"
-                                                                            />
+                                                                            <div className="space-y-1">
+                                                                                <label className={NEU_LABEL}>Description</label>
+                                                                                <Textarea value={festival.description} onChange={(e) => setFieldValue(`destinations.${idx}.localFestivals.${fi}.description`, e.target.value)} placeholder="Describe the festival..." rows={2} className={`${NEU_INPUT} resize-none`} />
+                                                                            </div>
                                                                         </div>
                                                                     ))}
                                                                 </div>
                                                             )}
                                                         </div>
 
-                                                        <Separator />
+                                                        <Separator className="bg-[#1E2938]/10" />
 
                                                         {/* Local Tips */}
                                                         <div className="space-y-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="h-8 w-8 rounded-lg bg-teal-100 flex items-center justify-center">
-                                                                    <FiPackage className="h-4 w-4 text-teal-600" />
-                                                                </div>
-                                                                <h4 className="font-semibold text-sm">Local Tips</h4>
-                                                            </div>
-
-                                                            {(dest.localTips?.length ?? 0) > 0 && (
-                                                                <div className="flex flex-wrap gap-2 p-3 bg-teal-50 rounded-lg border border-teal-200">
-                                                                    <AnimatePresence>
-                                                                        {dest.localTips?.map((tip, tipIdx) => (
-                                                                            <motion.div
-                                                                                key={tipIdx}
-                                                                                initial={{ opacity: 0, scale: 0.8 }}
-                                                                                animate={{ opacity: 1, scale: 1 }}
-                                                                                exit={{ opacity: 0, scale: 0.8 }}
-                                                                            >
-                                                                                <Badge
-                                                                                    variant="secondary"
-                                                                                    className="gap-2 bg-white hover:bg-red-50 cursor-pointer group"
-                                                                                    onClick={() => removeLocalTip(idx, tipIdx)}
-                                                                                >
-                                                                                    {tip}
-                                                                                    <FiX className="h-3 w-3 text-gray-400 group-hover:text-red-600" />
-                                                                                </Badge>
-                                                                            </motion.div>
-                                                                        ))}
-                                                                    </AnimatePresence>
-                                                                </div>
-                                                            )}
-
-                                                            <div className="flex gap-2">
-                                                                <Input
-                                                                    value={localTipInputs[idx] ?? ''}
-                                                                    onChange={(e) => setLocalTipInputs({ ...localTipInputs, [idx]: e.target.value })}
-                                                                    onKeyDown={(e) => {
-                                                                        if (e.key === 'Enter') {
-                                                                            e.preventDefault();
-                                                                            addLocalTip(idx);
-                                                                        }
-                                                                    }}
-                                                                    placeholder="Add a local tip..."
-                                                                    className="h-10"
-                                                                />
-                                                                <Button
-                                                                    type="button"
-                                                                    onClick={() => addLocalTip(idx)}
-                                                                    disabled={!localTipInputs[idx]?.trim()}
-                                                                    className="gap-2 bg-teal-600 hover:bg-teal-700"
-                                                                >
-                                                                    <FiPlus className="h-4 w-4" />
-                                                                    Add
-                                                                </Button>
-                                                            </div>
+                                                            <SectionHeader icon={FiPackage} label="Local Tips" />
+                                                            <TagBadgeList
+                                                                items={(dest.localTips ?? []).filter((h): h is string => h !== undefined)}
+                                                                onRemove={(i) => removeLocalTip(idx, i)}
+                                                            />
+                                                            <TagInput value={localTipInputs[idx] ?? ''} onChange={(v) => setLocalTipInputs({ ...localTipInputs, [idx]: v })}
+                                                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addLocalTip(idx); } }}
+                                                                onAdd={() => addLocalTip(idx)} placeholder="Add a local tip..." />
                                                         </div>
 
-                                                        <Separator />
+                                                        <Separator className="bg-[#1E2938]/10" />
 
                                                         {/* Transport Options */}
                                                         <div className="space-y-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                                                                    <FiNavigation className="h-4 w-4 text-blue-600" />
-                                                                </div>
-                                                                <h4 className="font-semibold text-sm">Transport Options</h4>
-                                                            </div>
-
-                                                            {(dest.transportOptions?.length ?? 0) > 0 && (
-                                                                <div className="flex flex-wrap gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                                                    <AnimatePresence>
-                                                                        {dest.transportOptions?.map((transport, transportIdx) => (
-                                                                            <motion.div
-                                                                                key={transportIdx}
-                                                                                initial={{ opacity: 0, scale: 0.8 }}
-                                                                                animate={{ opacity: 1, scale: 1 }}
-                                                                                exit={{ opacity: 0, scale: 0.8 }}
-                                                                            >
-                                                                                <Badge
-                                                                                    variant="secondary"
-                                                                                    className="gap-2 bg-white hover:bg-red-50 cursor-pointer group"
-                                                                                    onClick={() => removeTransportOption(idx, transportIdx)}
-                                                                                >
-                                                                                    {transport}
-                                                                                    <FiX className="h-3 w-3 text-gray-400 group-hover:text-red-600" />
-                                                                                </Badge>
-                                                                            </motion.div>
-                                                                        ))}
-                                                                    </AnimatePresence>
-                                                                </div>
-                                                            )}
-
-                                                            <div className="flex gap-2">
-                                                                <Input
-                                                                    value={transportInputs[idx] ?? ''}
-                                                                    onChange={(e) => setTransportInputs({ ...transportInputs, [idx]: e.target.value })}
-                                                                    onKeyDown={(e) => {
-                                                                        if (e.key === 'Enter') {
-                                                                            e.preventDefault();
-                                                                            addTransportOption(idx);
-                                                                        }
-                                                                    }}
-                                                                    placeholder="Add a transport option..."
-                                                                    className="h-10"
-                                                                />
-                                                                <Button
-                                                                    type="button"
-                                                                    onClick={() => addTransportOption(idx)}
-                                                                    disabled={!transportInputs[idx]?.trim()}
-                                                                    className="gap-2 bg-blue-600 hover:bg-blue-700"
-                                                                >
-                                                                    <FiPlus className="h-4 w-4" />
-                                                                    Add
-                                                                </Button>
-                                                            </div>
+                                                            <SectionHeader icon={FiNavigation} label="Transport Options" />
+                                                            <TagBadgeList
+                                                                items={(dest.transportOptions ?? []).filter((h): h is string => h !== undefined)}
+                                                                onRemove={(i) => removeTransportOption(idx, i)}
+                                                            />
+                                                            <TagInput value={transportInputs[idx] ?? ''} onChange={(v) => setTransportInputs({ ...transportInputs, [idx]: v })}
+                                                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTransportOption(idx); } }}
+                                                                onAdd={() => addTransportOption(idx)} placeholder="Add a transport option..." />
                                                         </div>
 
-                                                        <Separator />
+                                                        <Separator className="bg-[#1E2938]/10" />
 
                                                         {/* Accommodation Tips */}
                                                         <div className="space-y-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                                                                    <FiHome className="h-4 w-4 text-purple-600" />
-                                                                </div>
-                                                                <h4 className="font-semibold text-sm">Accommodation Tips</h4>
-                                                            </div>
-
-                                                            {(dest.accommodationTips?.length ?? 0) > 0 && (
-                                                                <div className="flex flex-wrap gap-2 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                                                                    <AnimatePresence>
-                                                                        {dest.accommodationTips?.map((tip, tipIdx) => (
-                                                                            <motion.div
-                                                                                key={tipIdx}
-                                                                                initial={{ opacity: 0, scale: 0.8 }}
-                                                                                animate={{ opacity: 1, scale: 1 }}
-                                                                                exit={{ opacity: 0, scale: 0.8 }}
-                                                                            >
-                                                                                <Badge
-                                                                                    variant="secondary"
-                                                                                    className="gap-2 bg-white hover:bg-red-50 cursor-pointer group"
-                                                                                    onClick={() => removeAccommodationTip(idx, tipIdx)}
-                                                                                >
-                                                                                    {tip}
-                                                                                    <FiX className="h-3 w-3 text-gray-400 group-hover:text-red-600" />
-                                                                                </Badge>
-                                                                            </motion.div>
-                                                                        ))}
-                                                                    </AnimatePresence>
-                                                                </div>
-                                                            )}
-
-                                                            <div className="flex gap-2">
-                                                                <Input
-                                                                    value={accommodationInputs[idx] ?? ''}
-                                                                    onChange={(e) => setAccommodationInputs({ ...accommodationInputs, [idx]: e.target.value })}
-                                                                    onKeyDown={(e) => {
-                                                                        if (e.key === 'Enter') {
-                                                                            e.preventDefault();
-                                                                            addAccommodationTip(idx);
-                                                                        }
-                                                                    }}
-                                                                    placeholder="Add an accommodation tip..."
-                                                                    className="h-10"
-                                                                />
-                                                                <Button
-                                                                    type="button"
-                                                                    onClick={() => addAccommodationTip(idx)}
-                                                                    disabled={!accommodationInputs[idx]?.trim()}
-                                                                    className="gap-2 bg-purple-600 hover:bg-purple-700"
-                                                                >
-                                                                    <FiPlus className="h-4 w-4" />
-                                                                    Add
-                                                                </Button>
-                                                            </div>
+                                                            <SectionHeader icon={FiHome} label="Accommodation Tips" />
+                                                            <TagBadgeList
+                                                                items={(dest.accommodationTips ?? []).filter((h): h is string => h !== undefined)}
+                                                                onRemove={(i) => removeAccommodationTip(idx, i)}
+                                                            />
+                                                            <TagInput value={accommodationInputs[idx] ?? ''} onChange={(v) => setAccommodationInputs({ ...accommodationInputs, [idx]: v })}
+                                                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addAccommodationTip(idx); } }}
+                                                                onAdd={() => addAccommodationTip(idx)} placeholder="Add an accommodation tip..." />
                                                         </div>
 
-                                                        {/* Delete Destination */}
-                                                        <div className="flex justify-end pt-4 border-t">
-                                                            <Button
-                                                                type="button"
-                                                                variant="destructive"
-                                                                onClick={() => arrayHelpers.remove(idx)}
-                                                                className="gap-2"
-                                                            >
+                                                        {/* Remove destination */}
+                                                        <div className="flex justify-end pt-4 border-t border-[#1E2938]/10">
+                                                            <button type="button" onClick={() => arrayHelpers.remove(idx)} className={`${NEU_BTN_DANGER} px-4 py-2`}>
                                                                 <FiTrash2 className="h-4 w-4" />
                                                                 Remove Destination
-                                                            </Button>
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </AccordionContent>
                                             </AccordionItem>
                                         </Accordion>
-                                    </Card>
+                                    </div>
                                 </motion.div>
                             ))}
                         </AnimatePresence>
                     </motion.div>
                 )}
             </FieldArray>
+
             {/* Map Picker Dialog */}
             {mapPickerOpenFor !== null && (
                 <MapPickerDialog
@@ -1100,10 +629,7 @@ export function ContentSection() {
                     initialPosition={
                         values.destinations[mapPickerOpenFor]?.coordinates?.lat &&
                             values.destinations[mapPickerOpenFor]?.coordinates?.lng
-                            ? [
-                                values.destinations[mapPickerOpenFor].coordinates.lat,
-                                values.destinations[mapPickerOpenFor].coordinates.lng
-                            ]
+                            ? [values.destinations[mapPickerOpenFor].coordinates.lat, values.destinations[mapPickerOpenFor].coordinates.lng]
                             : undefined
                     }
                 />
