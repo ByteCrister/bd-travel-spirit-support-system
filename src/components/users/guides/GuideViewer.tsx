@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
 const NEU_DIALOG_CONTENT =
   "max-w-7xl h-[95vh] p-0 gap-0 overflow-hidden rounded-2xl " +
   "border border-white/60 bg-[#E7E5E4] " +
-  "shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff]";
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)]";
 
 const NEU_HEADER = "border-b border-[#1E2938]/10 bg-[#E7E5E4] px-6 py-5";
 

@@ -716,7 +716,7 @@ export default function ArticleToolbar() {
 
             {/* ── Manage Presets Dialog ─────────────────────── */}
             <Dialog open={managePresetsOpen} onOpenChange={setManagePresetsOpen}>
-                <DialogContent className="sm:max-w-md bg-[#E7E5E4] border border-white/60 shadow-[8px_8px_24px_#c8c6c5,-8px_-8px_24px_#ffffff]">
+                <DialogContent className="sm:max-w-md bg-[#E7E5E4] border border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
                     <DialogHeader>
                         <DialogTitle className={S.dialogTitle}>
                             <div className={`${S.dialogIconWell} bg-[#FF2157]/10 text-[#FF2157]`}>
@@ -808,7 +808,7 @@ export default function ArticleToolbar() {
 
             {/* ── Save Preset Dialog ────────────────────────── */}
             <Dialog open={presetOpen} onOpenChange={setPresetOpen}>
-                <DialogContent className="sm:max-w-md bg-[#E7E5E4] border border-white/60 shadow-[8px_8px_24px_#c8c6c5,-8px_-8px_24px_#ffffff]">
+                <DialogContent className="sm:max-w-md bg-[#E7E5E4] border border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
                     <DialogHeader>
                         <DialogTitle className={S.dialogTitle}>
                             <div className={`${S.dialogIconWell} bg-[#006666]/10 text-[#006666]`}>

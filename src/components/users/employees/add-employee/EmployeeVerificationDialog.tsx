@@ -13,7 +13,7 @@ import { AlertCircle, Loader2, ShieldCheck, Mail, ArrowRight, X } from "lucide-r
 
 // ── Neumorphic style tokens ────────────────────────────────────
 const NEU_CARD =
-    "bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff]";
+    "bg-[#E7E5E4] shadow-[0_4px_12px_rgba(0,0,0,0.06)]";
 
 const NEU_BTN_PRIMARY =
     "rounded-xl bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +

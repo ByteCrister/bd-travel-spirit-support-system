@@ -46,7 +46,7 @@ import GuideDetailsActionConfirm from "./GuideDetailsActionConfirm";
 const NEU_DIALOG_CONTENT =
   "sm:max-w-4xl p-0 overflow-hidden flex flex-col max-h-[90vh] rounded-2xl " +
   "border border-white/60 bg-[#E7E5E4] " +
-  "shadow-[16px_16px_32px_#c8c6c5,-16px_-16px_32px_#ffffff]";
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)]";
 
 const NEU_DIALOG_HEADER =
   "border-b border-[#1E2938]/10 bg-[#E7E5E4] px-6 sm:px-8 pt-6 pb-5";

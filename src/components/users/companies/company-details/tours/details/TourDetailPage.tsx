@@ -34,9 +34,10 @@ const NEU_MUTED =
   "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
 
 const NEU_TAB_ACTIVE =
-  "bg-[#006666] text-white font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
-  "shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
-  "rounded-xl transition-all duration-200";
+  "bg-[#006666] !text-[#1E2938] font-[family-name:var(--font-space-mono)] font-bold tracking-wide " +
+  "shadow-[0_2px_4px_rgba(0,0,0,0.15)] rounded-xl transition-all duration-200 " +
+  "[&>span]:!text-[#1E2938] [&>svg]:!text-[#1E2938] " +
+  "data-[state=active]:!text-[#1E2938]";
 
 const NEU_TAB_INACTIVE =
   "bg-[#E7E5E4] text-[#1E2938]/60 font-[family-name:var(--font-space-mono)] " +

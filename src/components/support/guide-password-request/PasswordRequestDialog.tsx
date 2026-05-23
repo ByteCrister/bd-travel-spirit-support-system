@@ -131,7 +131,7 @@ export function PasswordRequestDialog({
         className={cn(
           "max-w-2xl max-h-[90vh] overflow-y-auto p-0",
           "bg-[#E7E5E4] border-white/60",
-          "shadow-[16px_16px_32px_#c8c6c5,-16px_-16px_32px_#ffffff]",
+          "shadow-[0_4px_12px_rgba(0,0,0,0.06)]",
           "rounded-2xl"
         )}
       >

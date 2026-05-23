@@ -31,7 +31,7 @@ const NEU_TRIGGER =
 
 const NEU_POPOVER_CONTENT =
   "w-80 p-0 rounded-2xl border border-white/60 bg-[#E7E5E4] " +
-  "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff]";
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)]";
 
 const NEU_POPOVER_HEADER =
   "px-4 py-3 border-b border-[#1E2938]/10 bg-[#E7E5E4]";

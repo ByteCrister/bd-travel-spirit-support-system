@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 const NEU_DIALOG_CONTENT =
   "sm:max-w-[540px] p-0 gap-0 overflow-hidden rounded-2xl " +
   "border border-white/60 bg-[#E7E5E4] " +
-  "shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff]";
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)]";
 
 const NEU_DIALOG_HEADER_REJECT =
   "px-6 py-5 border-b border-[#1E2938]/10 bg-[#E7E5E4] flex items-start gap-4";

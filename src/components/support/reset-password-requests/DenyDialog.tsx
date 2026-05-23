@@ -83,7 +83,7 @@ export default function DenyDialog({ open, onOpenChange, onConfirm }: DenyDialog
 
     return (
         <Dialog open={open} onOpenChange={handleCancel}>
-            <DialogContent className={`sm:max-w-lg ${NEU_SURFACE} border border-white/60 shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff] rounded-2xl p-0 overflow-hidden`}>
+            <DialogContent className={`sm:max-w-lg ${NEU_SURFACE} border border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.06)] rounded-2xl p-0 overflow-hidden`}>
 
                 <AnimatePresence mode="wait">
                     {submitting ? (

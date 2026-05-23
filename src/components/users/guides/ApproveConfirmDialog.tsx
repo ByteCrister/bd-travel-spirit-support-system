@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const NEU_DIALOG_CONTENT =
   "sm:max-w-md border border-white/60 bg-[#E7E5E4] p-0 overflow-hidden " +
-  "shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff] rounded-2xl";
+  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] rounded-2xl";
 
 const NEU_BODY = "px-8 py-7";
 

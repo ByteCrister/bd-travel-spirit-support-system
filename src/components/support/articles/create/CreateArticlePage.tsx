@@ -82,7 +82,7 @@ export default function CreateArticlePage() {
             animate="visible"
             className={NEU.page}
         >
-            <Breadcrumbs items={breadcrumbItems} />
+            <Breadcrumbs className={"px-4 py-8"} items={breadcrumbItems} />
 
             {/* Header */}
             <motion.div variants={itemVariants} className={NEU.header}>
@@ -117,7 +117,7 @@ export default function CreateArticlePage() {
             {/* Main Content */}
             <motion.div
                 variants={itemVariants}
-                className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8"
+                className="mx-auto max-w-5xl px-2 sm:px-3 lg:px-4 py-4"
             >
                 <ArticleForm />
             </motion.div>

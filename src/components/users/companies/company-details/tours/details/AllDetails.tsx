@@ -50,7 +50,6 @@ import {
   Currency,
 } from "@/constants/tour.const";
 import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
-import { TOUR_DISCOUNT_TYPE } from "@/constants/tour.const";
 
 // ─── Neumorphism Design Tokens ──────────────────────────────────────
 const NEU_PAGE_BG = "min-h-screen bg-[#E7E5E4]";

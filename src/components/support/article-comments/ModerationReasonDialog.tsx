@@ -16,7 +16,7 @@ import { COMMENT_STATUS } from '@/constants/articleComment.const';
 // ── Style constants ────────────────────────────────────────────
 const S = {
     // Dialog content override — Tailwind classes applied via className prop
-    content: 'bg-[#E7E5E4] border border-white/60 rounded-2xl shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff] sm:max-w-md',
+    content: 'bg-[#E7E5E4] border border-white/60 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.06)] sm:max-w-md',
 
     // header
     headerRow: 'flex items-center gap-3',

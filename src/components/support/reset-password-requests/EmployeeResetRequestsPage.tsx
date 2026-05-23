@@ -5,6 +5,7 @@ import { motion, Variants } from "framer-motion";
 import { RefreshCw, Shield, AlertCircle } from "lucide-react";
 import { useResetRequestsStore } from "@/store/employee/reset-requests.store";
 import RequestList from "./RequestList";
+import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 
 // ─── Neumorphism Style Tokens ────────────────────────────────
 const NEU_PAGE_BG = "min-h-screen bg-[#E7E5E4]";
@@ -26,6 +27,11 @@ const NEU_ICON_WELL_PRIMARY =
 const NEU_SURFACE_INSET =
   "bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff]";
 // ────────────────────────────────────────────────────────────
+
+const breadcrumbItems = [
+  { href: "/", label: "Home" },
+  { href: "/employee/reset-requests", label: "Password Reset Requests" },
+];
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -49,7 +55,9 @@ export default function EmployeeResetRequestsPage() {
     if (hasFetched.current) return;
     hasFetched.current = true;
     fetchList(currentQuery).catch(() => {});
-    return () => { hasFetched.current = false; };
+    return () => {
+      hasFetched.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -70,6 +78,10 @@ export default function EmployeeResetRequestsPage() {
       variants={containerVariants}
     >
       <div className="container mx-auto max-w-7xl">
+        {/* ── Breadcrumbs ─────────────────────────────────── */}
+        <motion.div variants={itemVariants} className="mb-4">
+          <Breadcrumbs items={breadcrumbItems} />
+        </motion.div>
 
         {/* ── Header ─────────────────────────────────────────── */}
         <motion.header className="mb-8" variants={itemVariants}>
@@ -138,7 +150,6 @@ export default function EmployeeResetRequestsPage() {
             <RequestList />
           </div>
         </motion.main>
-
       </div>
     </motion.div>
   );

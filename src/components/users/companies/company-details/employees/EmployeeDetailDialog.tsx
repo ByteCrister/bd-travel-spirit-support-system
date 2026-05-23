@@ -46,7 +46,7 @@ const NEU_VALUE =
   "text-sm font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938] font-medium";
 
 const NEU_CARD =
-  "rounded-xl bg-[#E7E5E4] shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff] p-4";
+  "rounded-xl bg-[#E7E5E4] shadow-[0_4px_12px_rgba(0,0,0,0.06)] p-4";
 
 const NEU_RECORD_ROW =
   "p-3 rounded-xl bg-[#E7E5E4] shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] border border-white/50";
@@ -176,7 +176,7 @@ export function EmployeeDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden ${NEU_SURFACE} shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff] border border-white/70 rounded-3xl`}
+        className={`max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden ${NEU_SURFACE} shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-white/70 rounded-3xl`}
       >
         <DialogTitle className="sr-only">Employee Details</DialogTitle>
 

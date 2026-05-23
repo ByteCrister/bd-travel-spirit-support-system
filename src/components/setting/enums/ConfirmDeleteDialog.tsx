@@ -19,7 +19,7 @@ import { motion } from "framer-motion";
 const S = {
     content:
         "sm:max-w-md p-0 overflow-hidden bg-[#E7E5E4] border border-white/60 " +
-        "shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] rounded-2xl",
+        "shadow-[0_4px_12px_rgba(0,0,0,0.06)] rounded-2xl",
     inner: "bg-[#E7E5E4]",
     header: "px-6 pt-6 pb-5",
     headerRow: "flex items-start gap-4",

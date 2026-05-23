@@ -160,7 +160,7 @@ export default function ConfirmationDialog({
         if (!isOpen) handleCancel();
       }}
     >
-      <AlertDialogContent className="sm:max-w-md rounded-2xl bg-[#E7E5E4] shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff] border border-white/60 p-0 overflow-hidden">
+      <AlertDialogContent className="sm:max-w-md rounded-2xl bg-[#E7E5E4] shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-white/60 p-0 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={mode}

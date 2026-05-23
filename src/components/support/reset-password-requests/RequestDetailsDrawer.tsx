@@ -155,7 +155,7 @@ export default function RequestDetailsDrawer({
         return (
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent
-                    className={`sm:max-w-2xl ${NEU_SURFACE} border border-white/60 shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff] rounded-2xl`}
+                    className={`sm:max-w-2xl ${NEU_SURFACE} border border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.06)] rounded-2xl`}
                 >
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
                         <div className={`${NEU_ICON_WELL_PRIMARY} p-4`}>
@@ -176,7 +176,7 @@ export default function RequestDetailsDrawer({
         return (
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent
-                    className={`sm:max-w-2xl ${NEU_SURFACE} border border-white/60 shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff] rounded-2xl`}
+                    className={`sm:max-w-2xl ${NEU_SURFACE} border border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.06)] rounded-2xl`}
                 >
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -201,7 +201,7 @@ export default function RequestDetailsDrawer({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className={`sm:max-w-2xl max-h-[90vh] overflow-y-auto ${NEU_SURFACE} border border-white/60 shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff] rounded-2xl p-6`}
+                className={`sm:max-w-2xl max-h-[90vh] overflow-y-auto ${NEU_SURFACE} border border-white/60 shadow-[0_4px_12px_rgba(0,0,0,0.06)] rounded-2xl p-6`}
             >
                 {/* ── Dialog header ──────────────────────────────────── */}
                 <DialogHeader>

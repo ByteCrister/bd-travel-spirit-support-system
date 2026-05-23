@@ -17,7 +17,7 @@ import React from "react";
 const NEU_SURFACE = "bg-[#E7E5E4]";
 const NEU_SKELETON = "rounded-lg bg-[#d0cecd] animate-pulse";
 const NEU_CARD_INSET =
-  "rounded-xl bg-[#E7E5E4] shadow-[inset_3px_3px_7px_#c8c6c5,inset_-3px_-3px_7px_#ffffff]";
+  "rounded-xl bg-[#E7E5E4] shadow-[0_4px_12px_rgba(0,0,0,0.06)]";
 
 // ─────────────────────────────────────────────────────────────
 
