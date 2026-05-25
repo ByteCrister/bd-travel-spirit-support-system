@@ -9,7 +9,7 @@ import { MODERATION_STATUS } from "@/constants/chatmessage.const";
  * GET /api/chat/conversation
  * Query params: sender, receiver, page, limit
  */
-export async function GET(req: NextRequest): Promise<NextResponse<ConversationResponse>> {
+export async function GET(req: NextRequest){
     const { searchParams } = new URL(req.url);
 
     const sender = searchParams.get("sender");
@@ -65,7 +65,6 @@ export async function GET(req: NextRequest): Promise<NextResponse<ConversationRe
     const totalPages = Math.ceil(messages.length / limit);
 
     const response: ConversationResponse = {
-        success: true,
         data: {
             items: paginated,
             total: messages.length,

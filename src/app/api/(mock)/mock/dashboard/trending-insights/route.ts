@@ -1,20 +1,25 @@
+// app/api/mock/dashboard/trending-insights/route.ts
 import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
-import type { TrendingInsight } from '@/types/dashboard/dashboard.types';
+import { successResponse } from '@/lib/mocks/dashboard.mock';
 
 export async function GET() {
-    const types = ['destination', 'category', 'tour_type'] as const;
-    const trends = ['up', 'down', 'stable'] as const;
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    const items: TrendingInsight[] = Array.from({ length: 4 }).map(() => ({
+    const insights = Array.from({ length: 8 }, () => ({
         id: faker.string.uuid(),
-        type: faker.helpers.arrayElement(types),
-        title: faker.lorem.words({ min: 2, max: 5 }),
-        description: faker.lorem.sentence(),
-        trend: faker.helpers.arrayElement(trends),
-        percentage: faker.number.int({ min: 1, max: 100 }),
-        confidence: faker.number.float({ min: 0.5, max: 0.99, multipleOf: 0.01 }),
+        type: faker.helpers.arrayElement(['destination', 'category', 'tour_type']),
+        name: faker.helpers.arrayElement([
+            'Beach Tours',
+            'Mountain Adventures',
+            'City Breaks',
+            'Cultural Experiences',
+            'Food Tours',
+        ]),
+        growth: faker.number.int({ min: -20, max: 100 }),
+        trend: faker.helpers.arrayElement(['up', 'down', 'stable']),
+        value: faker.number.int({ min: 100, max: 10000 }),
     }));
 
-    return NextResponse.json({ data: items });
+    return NextResponse.json(successResponse(insights));
 }

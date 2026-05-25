@@ -276,7 +276,7 @@ export default function AddEmployeePage() {
   const loadEnums = async () => {
     try {
       await fetchEnums();
-    } catch {}
+    } catch { }
     setEmploymentTypes(Object.values(EMPLOYMENT_TYPE));
     setCurrencies(Object.values(CURRENCY));
   };
@@ -323,10 +323,11 @@ export default function AddEmployeePage() {
         try {
           const ext = file.name.split(".").pop()?.toLowerCase() || "";
           if (
-            !IMAGE_EXTENSIONS.includes(ext) &&
-            !DOCUMENT_EXTENSIONS.includes(ext)
-          )
+            !IMAGE_EXTENSIONS.includes(ext as "bmp" | "gif" | "jpeg" | "jpg" | "png" | "webp")
+            && !DOCUMENT_EXTENSIONS.includes(ext as "csv" | "doc" | "docx" | "pdf" | "ppt" | "pptx" | "txt" | "xls" | "xlsx")
+          ) {
             throw new Error(`Unsupported file type: ${ext}`);
+          }
           if (file.size > MAX_FILE_SIZE_BYTES)
             throw new Error(`File too large (> ${MAX_FILE_SIZE_MB}MB)`);
           const dto = await fileToDocumentDTO(file, DOCUMENT_OPTIONS);
@@ -780,7 +781,7 @@ export default function AddEmployeePage() {
                                         ? "bg-[#006666]/10 shadow-[inset_3px_3px_6px_#c8c6c5,inset_-3px_-3px_6px_#ffffff] border border-[#006666]/20"
                                         : `${NEU_CARD_SM} hover:shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff]`,
                                       showVerificationDialog &&
-                                        "pointer-events-none opacity-60",
+                                      "pointer-events-none opacity-60",
                                     )}
                                   >
                                     <div className="flex items-center gap-3">
@@ -965,7 +966,7 @@ export default function AddEmployeePage() {
                               <Select
                                 value={String(
                                   values.paymentCard?.expYear ??
-                                    new Date().getFullYear(),
+                                  new Date().getFullYear(),
                                 )}
                                 onValueChange={(v) => {
                                   if (showVerificationDialog) return;
@@ -1303,12 +1304,12 @@ export default function AddEmployeePage() {
                                                     const newDays =
                                                       selectedDays.includes(day)
                                                         ? selectedDays.filter(
-                                                            (d) => d !== day,
-                                                          )
+                                                          (d) => d !== day,
+                                                        )
                                                         : [
-                                                            ...selectedDays,
-                                                            day,
-                                                          ];
+                                                          ...selectedDays,
+                                                          day,
+                                                        ];
                                                     setFieldValue(
                                                       `shifts.${index}.days`,
                                                       newDays,

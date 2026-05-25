@@ -11,7 +11,7 @@ import { GUIDE_STATUS } from "@/constants/guide.const";
 import { mailer } from "@/config/node-mailer";
 import UserModel from "@/models/user.model";
 import { USER_ROLE } from "@/constants/user.const";
-import { reviewCommentAdd } from "@/lib/html/application-reviewComment.html";
+import { reviewCommentAdd } from "@/lib/html/application-reviewComment-html";
 
 /* ================= TYPES ================= */
 

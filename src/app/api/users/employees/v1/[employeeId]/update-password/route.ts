@@ -9,7 +9,7 @@ import { EMPLOYEE_STATUS } from "@/constants/employee.const";
 import { IUserDoc } from "@/models/user.model";
 import { USER_ROLE } from "@/constants/user.const";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
-import { notifyEmployeeNewPassword } from "@/lib/html/notify-new-password.html";
+import { notifyEmployeeNewPassword } from "@/lib/html/notify-new-password-html";
 import { mailer } from "@/config/node-mailer";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";

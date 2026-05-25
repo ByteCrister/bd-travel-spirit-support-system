@@ -23,7 +23,7 @@ import { Breadcrumbs } from "../../../global/Breadcrumbs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Flame, RotateCcw, User, Briefcase, Phone, History, FileText,
+  Flame, RotateCcw, User, Briefcase, Phone, FileText,
   StickyNote, Shield, Save, ArrowLeft, Mail, Calendar, Clock,
   Trash2, Lock, X, Sparkles, Check, Copy, Loader2, CreditCard, TrendingUp,
 } from "lucide-react";
@@ -135,9 +135,9 @@ const DEFAULT_ENUMS: EnumBundle = {
 const enums = DEFAULT_ENUMS;
 
 const STATUS_BADGE: Record<string, string> = {
-  active:     "bg-[#00A63D]/10 text-[#00A63D]",
-  onLeave:    "bg-[#FE9900]/10 text-[#FE9900]",
-  suspended:  "bg-[#FF2157]/10 text-[#FF2157]",
+  active: "bg-[#00A63D]/10 text-[#00A63D]",
+  onLeave: "bg-[#FE9900]/10 text-[#FE9900]",
+  suspended: "bg-[#FF2157]/10 text-[#FF2157]",
   terminated: "bg-[#1E2938]/10 text-[#1E2938]/60",
 };
 
@@ -150,16 +150,16 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
   const router = useRouter();
   const { fetchEmployeeDetail, updateEmployee, softDeleteEmployee, restoreEmployee } = useEmployeeStore();
 
-  const [detail, setDetail]       = useState<EmployeeDetailDTO | null>(null);
-  const [loading, setLoading]     = useState(true);
-  const [saving, setSaving]       = useState(false);
-  const [tab, setTab]             = useState<string>("overview");
-  const [form, setForm]           = useState<UpdateEmployeeForm | null>(null);
-  const [dialogOpen, setDialogOpen]   = useState(false);
-  const [dialogMode, setDialogMode]   = useState<"delete" | "restore">("delete");
-  const [sendMail, setSendMail]       = useState<boolean>(true);
+  const [detail, setDetail] = useState<EmployeeDetailDTO | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState<string>("overview");
+  const [form, setForm] = useState<UpdateEmployeeForm | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"delete" | "restore">("delete");
+  const [sendMail, setSendMail] = useState<boolean>(true);
   const [isPassUpdating, setIsPassUpdating] = useState(false);
-  const [avatarPreview, setAvatarPreview]   = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
@@ -407,14 +407,13 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
             <div className={`${NEU_CARD} p-2`}>
               <TabsList className="grid w-full grid-cols-4 gap-1.5 bg-transparent lg:grid-cols-8">
                 {[
-                  { value: "overview",         icon: <User className="h-4 w-4" />,               label: "Overview" },
-                  { value: "role",             icon: <Briefcase className="h-4 w-4" />,          label: "Role" },
-                  { value: "contact",          icon: <Phone className="h-4 w-4" />,              label: "Contact" },
-                  { value: "compensation",     icon: <FaBangladeshiTakaSign className="h-4 w-4" />, label: "Pay" },
-                  { value: "positionHistory",  icon: <History className="h-4 w-4" />,            label: "History" },
-                  { value: "documents",        icon: <FileText className="h-4 w-4" />,           label: "Docs" },
-                  { value: "notes",            icon: <StickyNote className="h-4 w-4" />,         label: "Notes" },
-                  { value: "admin",            icon: <Shield className="h-4 w-4" />,             label: "Admin" },
+                  { value: "overview", icon: <User className="h-4 w-4" />, label: "Overview" },
+                  { value: "role", icon: <Briefcase className="h-4 w-4" />, label: "Role" },
+                  { value: "contact", icon: <Phone className="h-4 w-4" />, label: "Contact" },
+                  { value: "compensation", icon: <FaBangladeshiTakaSign className="h-4 w-4" />, label: "Pay" },
+                  { value: "documents", icon: <FileText className="h-4 w-4" />, label: "Docs" },
+                  { value: "notes", icon: <StickyNote className="h-4 w-4" />, label: "Notes" },
+                  { value: "admin", icon: <Shield className="h-4 w-4" />, label: "Admin" },
                 ].map((t) => (
                   <TabsTrigger key={t.value} value={t.value} className={NEU_TAB_TRIGGER}>
                     {t.icon}
@@ -429,9 +428,9 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <InfoCard icon={User} title="Personal Information" className="lg:col-span-2">
                   <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                    <InfoField icon={User}  label="Full Name" value={detail.user.name} />
-                    <InfoField icon={Mail}  label="Email"     value={detail.user.email} />
-                    <InfoField icon={Phone} label="Phone"     value={detail.user.phone ?? "—"} />
+                    <InfoField icon={User} label="Full Name" value={detail.user.name} />
+                    <InfoField icon={Mail} label="Email" value={detail.user.email} />
+                    <InfoField icon={Phone} label="Phone" value={detail.user.phone ?? "—"} />
                   </div>
 
                   <div className={`${NEU_DIVIDER}`} />
@@ -528,9 +527,9 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                 <InfoCard icon={Calendar} title="Important Dates">
                   <div className="space-y-3">
                     {[
-                      { label: "Date Joined",   value: formatDate(detail.dateOfJoining), icon: Calendar,  cls: "text-[#006666]",  bg: "bg-[#006666]/10" },
-                      { label: "Date Left",      value: detail.dateOfLeaving ? formatDate(detail.dateOfLeaving) : "—", icon: Calendar, cls: "text-[#FE9900]", bg: "bg-[#FE9900]/10" },
-                      { label: "Last Updated",  value: formatDate(detail.updatedAt),    icon: Clock,     cls: "text-[#1E2938]/40", bg: "bg-[#1E2938]/5" },
+                      { label: "Date Joined", value: formatDate(detail.dateOfJoining), icon: Calendar, cls: "text-[#006666]", bg: "bg-[#006666]/10" },
+                      { label: "Date Left", value: detail.dateOfLeaving ? formatDate(detail.dateOfLeaving) : "—", icon: Calendar, cls: "text-[#FE9900]", bg: "bg-[#FE9900]/10" },
+                      { label: "Last Updated", value: formatDate(detail.updatedAt), icon: Clock, cls: "text-[#1E2938]/40", bg: "bg-[#1E2938]/5" },
                     ].map(({ label, value, icon: Icon, cls, bg }) => (
                       <div key={label} className={NEU_DATE_PILL}>
                         <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${bg}`}>
@@ -603,21 +602,24 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                     { label: "Contact Name", field: "name" as const, icon: User, placeholder: "Name" },
                     { label: "Contact Phone", field: "phone" as const, icon: Phone, placeholder: "Phone" },
                     { label: "Relationship", field: "relation" as const, icon: User, placeholder: "e.g. Spouse" },
-                  ].map(({ label, field, icon, placeholder }) => (
-                    <FormRow key={field} label={label} icon={icon}>
-                      <Input
-                        value={(form?.contactInfo?.emergencyContact as Record<string, string>)?.[field] ?? (detail.contactInfo?.emergencyContact as Record<string, string>)?.[field] ?? ""}
-                        placeholder={placeholder}
-                        onChange={(e) => setContact({
-                          emergencyContact: {
-                            ...(form?.contactInfo?.emergencyContact ?? detail.contactInfo?.emergencyContact ?? { name: "", phone: "", relation: "" }),
-                            [field]: e.target.value,
-                          },
-                        })}
-                        className={NEU_INPUT}
-                      />
-                    </FormRow>
-                  ))}
+                  ].map(({ label, field, icon, placeholder }) => {
+                    const emergencyContact = form?.contactInfo?.emergencyContact ?? detail.contactInfo?.emergencyContact ?? { name: "", phone: "", relation: "" };
+                    return (
+                      <FormRow key={field} label={label} icon={icon}>
+                        <Input
+                          value={emergencyContact[field]}
+                          placeholder={placeholder}
+                          onChange={(e) => setContact({
+                            emergencyContact: {
+                              ...emergencyContact,
+                              [field]: e.target.value,
+                            },
+                          })}
+                          className={NEU_INPUT}
+                        />
+                      </FormRow>
+                    );
+                  })}
                 </div>
               </InfoCard>
             </TabsContent>
@@ -716,63 +718,6 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                     />
                   </FormRow>
                 </div>
-              </InfoCard>
-            </TabsContent>
-
-            {/* ── Position History ── */}
-            <TabsContent value="positionHistory" className="mt-6 space-y-6">
-              <InfoCard icon={History} title="Position History">
-                {(detail?.positionHistory ?? []).length === 0 ? (
-                  <div className={`${NEU_SURFACE_INSET} flex flex-col items-center justify-center py-12 gap-3`}>
-                    <History className="h-10 w-10 text-[#1E2938]/20" />
-                    <p className={NEU_MUTED}>No position history recorded</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {(detail?.positionHistory ?? []).map((p, i) => (
-                      <div key={i} className={`${NEU_DATE_PILL} justify-between`}>
-                        <div>
-                          <p className="font-[family-name:var(--font-space-mono)] text-sm font-bold text-[#1E2938]">{p.role ?? "—"}</p>
-                          <p className={NEU_MUTED}>{formatDate(p.startDate)} — {p.endDate ? formatDate(p.endDate) : "Present"}</p>
-                        </div>
-                        {p.department && (
-                          <span className="text-xs font-[family-name:var(--font-space-mono)] font-bold px-2.5 py-1 rounded-lg bg-[#006666]/10 text-[#006666] shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff]">
-                            {p.department}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </InfoCard>
-
-              <InfoCard icon={History} title="Audit Log (latest)">
-                {(detail?.audit ?? []).length === 0 ? (
-                  <div className={`${NEU_SURFACE_INSET} flex items-center justify-center py-10`}>
-                    <p className={NEU_MUTED}>No audit entries</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {(detail?.audit ?? []).map((a) => (
-                      <div key={a._id} className={NEU_DATE_PILL}>
-                        <div className="flex-1">
-                          <p className="font-[family-name:var(--font-space-mono)] text-sm font-bold text-[#1E2938]">{a.action}</p>
-                          {a.note && <p className={NEU_MUTED}>{a.note}</p>}
-                          <p className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/40 mt-0.5">
-                            Actor: {a.actor ?? "system"} {a.actorModel ? `(${a.actorModel})` : ""}
-                          </p>
-                          {a.changes && (
-                            <details className="mt-2">
-                              <summary className="font-[family-name:var(--font-space-mono)] text-xs text-[#006666] cursor-pointer">View changes</summary>
-                              <pre className="mt-2 whitespace-pre-wrap font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/60">{JSON.stringify(a.changes, null, 2)}</pre>
-                            </details>
-                          )}
-                        </div>
-                        <p className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/40 shrink-0">{formatDate(a.createdAt)}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </InfoCard>
             </TabsContent>
 

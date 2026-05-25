@@ -1,28 +1,21 @@
-import { NextResponse } from 'next/server';
-import { faker } from '@faker-js/faker';
-import type { RecentActivity } from '@/types/dashboard/dashboard.types';
+// app/api/mock/dashboard/recent-activity/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { generateMockRecentActivity, createPaginatedResponse, successResponse } from '@/lib/mocks/dashboard.mock';
 
-export async function GET() {
-    const types = ['signup', 'booking', 'report', 'tour', 'user_action'] as const;
-    const severities = ['low', 'medium', 'high'] as const;
-    const items: RecentActivity[] = Array.from({ length: 8 }).map(() => ({
-        id: faker.string.uuid(),
-        type: faker.helpers.arrayElement(types),
-        title: faker.lorem.words({ min: 2, max: 5 }),
-        description: faker.lorem.sentence(),
-        timestamp: faker.date.recent({ days: 7 }).toISOString(),
-        user: faker.person.fullName(),
-        severity: faker.helpers.arrayElement(severities),
-    }));
-    return NextResponse.json({
-        data: {
-            items,
-            pagination: {
-                page: 1,
-                limit: 10,
-                total: items.length,
-                pages: 1,
-            },
-        }
-    });
+export async function GET(request: NextRequest) {
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const searchParams = request.nextUrl.searchParams;
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '10');
+  
+  const totalItems = 45; // Mock total count
+  const allItems = generateMockRecentActivity(totalItems);
+  const start = (page - 1) * limit;
+  const end = start + limit;
+  const paginatedItems = allItems.slice(start, end);
+  
+  const response = createPaginatedResponse(paginatedItems, page, limit, totalItems);
+  
+  return NextResponse.json(successResponse(response));
 }
