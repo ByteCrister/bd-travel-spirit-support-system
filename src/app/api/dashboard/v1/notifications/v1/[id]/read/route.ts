@@ -9,7 +9,7 @@ import { SupportSystemNotificationModel } from "@/models/notifications/support-s
 
 export const PATCH = withErrorHandler(async (
     _req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) => {
     // 1. Authenticate
     const userId = await getUserIdFromSession();
@@ -21,7 +21,7 @@ export const PATCH = withErrorHandler(async (
     await VERIFY_USER_ROLE.MULTIPLE(userId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
 
     // 3. Business logic
-    const { id } = params;
+    const { id } = await params;
 
     if (!Types.ObjectId.isValid(id)) {
         throw new ApiError("Invalid notification ID", 400);

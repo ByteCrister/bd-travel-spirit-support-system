@@ -8,7 +8,7 @@ import { withErrorHandler, ApiError } from "@/lib/helpers/withErrorHandler";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import GuideModel from "@/models/guide/guide.model";
 import { withTransaction } from "@/lib/helpers/withTransaction";
-import { applicationUnsuspended } from "@/lib/html/application-unsuspended.html";
+import { applicationUnsuspended } from "@/lib/html/application-unsuspended-html";
 import { mailer } from "@/config/node-mailer";
 import UserModel from "@/models/user.model";
 

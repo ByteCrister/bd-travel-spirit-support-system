@@ -27,7 +27,6 @@ export async function GET(): Promise<NextResponse<ChatMessageStatsResponse>> {
     };
 
     const response: ChatMessageStatsResponse = {
-        success: true,
         data: stats,
     };
 

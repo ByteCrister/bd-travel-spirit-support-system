@@ -6,7 +6,7 @@ import type {
     ChatMessageListResponse,
     CreateChatMessageDTO,
     UpdateChatMessageDTO,
-    ChatMessageMutationResponse,
+    // ChatMessageMutationResponse,
 } from "@/types/chatMessage.types";
 import { USER_ROLE } from "@/constants/user.const";
 import { MODERATION_STATUS } from "@/constants/chatmessage.const";
@@ -70,7 +70,6 @@ export async function GET(req: NextRequest): Promise<NextResponse<ChatMessageLis
     const totalPages = Math.ceil(total / limit);
 
     const response: ChatMessageListResponse = {
-        success: true,
         data: {
             items,
             total,
@@ -89,7 +88,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<ChatMessageLis
  * =========================
  * Create a new message
  */
-export async function POST(req: NextRequest): Promise<NextResponse<ChatMessageMutationResponse>> {
+export async function POST(req: NextRequest) {
     try {
         const body: CreateChatMessageDTO = await req.json();
 
@@ -118,7 +117,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ChatMessageMu
         messages.unshift(newMessage);
 
         return NextResponse.json(
-            { success: true, data: newMessage },
+            { data: newMessage },
             { status: 201 }
         );
     } catch {
@@ -135,7 +134,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ChatMessageMu
  * =========================
  * Update an existing message
  */
-export async function PATCH(req: NextRequest): Promise<NextResponse<ChatMessageMutationResponse>> {
+export async function PATCH(req: NextRequest){
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) {
@@ -168,7 +167,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse<ChatMessageM
  * =========================
  * Remove a message
  */
-export async function DELETE(req: NextRequest): Promise<NextResponse<ChatMessageMutationResponse>> {
+export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) {

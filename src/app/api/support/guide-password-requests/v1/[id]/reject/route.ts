@@ -12,7 +12,7 @@ import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 import { getUserIdFromSession } from '@/lib/auth/session.auth';
 import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
 import { buildGuidePasswordDto } from '@/lib/build-responses/build-guide-password-dto';
-import guideUpdatePasswordRejectHtml from '@/lib/html/guide-password-reject.html';
+import guideUpdatePasswordRejectHtml from '@/lib/html/guide-password-reject-html';
 import { mailer } from '@/config/node-mailer';
 import GuideModel from '@/models/guide/guide.model';
 

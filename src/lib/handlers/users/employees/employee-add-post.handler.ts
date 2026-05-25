@@ -16,7 +16,7 @@ import { withTransaction } from "@/lib/helpers/withTransaction";
 import { uploadAssets } from "@/lib/cloudinary/upload.cloudinary";
 import { cleanupAssets } from "@/lib/cloudinary/delete.cloudinary";
 import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
-import { EmployeeWelcome } from "@/lib/html/employee-welcome.html";
+import { EmployeeWelcome } from "@/lib/html/employee-welcome-html";
 import { mailer } from "@/config/node-mailer";
 import { ASSET_TYPE } from "@/constants/asset.const";
 

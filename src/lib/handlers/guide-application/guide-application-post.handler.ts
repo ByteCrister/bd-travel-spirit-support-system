@@ -14,7 +14,7 @@ import UserModel from "@/models/user.model";
 import GuideModel, { IGuideDocument } from "@/models/guide/guide.model";
 
 import { mailer } from "@/config/node-mailer";
-import applicationSuccess from "@/lib/html/application-success.html";
+import applicationSuccess from "@/lib/html/application-success-html";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 
 import { GUIDE_DOCUMENT_CATEGORY, GUIDE_STATUS } from "@/constants/guide.const";

@@ -17,7 +17,7 @@ import GuideForgotPasswordModel from "@/models/guide/guide-forgot-password.model
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 import { buildGuidePasswordDto } from "@/lib/build-responses/build-guide-password-dto";
-import guideUpdatePasswordHtml from "@/lib/html/guide-password-update.html";
+import guideUpdatePasswordHtml from "@/lib/html/guide-password-update-html";
 import { mailer } from "@/config/node-mailer";
 import GuideModel from "@/models/guide/guide.model";
 
