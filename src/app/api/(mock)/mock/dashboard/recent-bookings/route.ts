@@ -1,35 +1,21 @@
-import { NextResponse } from "next/server";
-import { faker } from "@faker-js/faker";
-import type { Booking } from "@/types/dashboard/dashboard.types";
+// app/api/mock/dashboard/recent-bookings/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { generateMockBookings, createPaginatedResponse, successResponse } from '@/lib/mocks/dashboard.mock';
 
-export async function GET() {
-    const statuses = ["confirmed", "pending", "cancelled", "completed"] as const;
-    const items: Booking[] = Array.from({ length: 6 }).map(() => ({
-        id: faker.string.uuid(),
-        user: {
-            id: faker.string.uuid(),
-            name: faker.person.fullName(),
-            email: faker.internet.email(),
-        },
-        tour: {
-            id: faker.string.uuid(),
-            title: faker.lorem.words({ min: 2, max: 5 }),
-            destination: `${faker.location.city()}, ${faker.location.country()}`,
-        },
-        bookingDate: faker.date.past({ years: 0.1 }).toISOString(),
-        status: faker.helpers.arrayElement(statuses),
-        amount: faker.number.int({ min: 50, max: 5000 }),
-    }));
+export async function GET(request: NextRequest) {
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    return NextResponse.json({
-        data: {
-            items,
-            pagination: {
-                page: 1,
-                limit: 10,
-                total: items.length,
-                pages: 1,
-            },
-        }
-    });
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+
+    const totalItems = 120; // Mock total count
+    const allItems = generateMockBookings(totalItems);
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    const paginatedItems = allItems.slice(start, end);
+
+    const response = createPaginatedResponse(paginatedItems, page, limit, totalItems);
+
+    return NextResponse.json(successResponse(response));
 }

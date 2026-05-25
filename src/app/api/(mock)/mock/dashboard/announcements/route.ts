@@ -1,17 +1,18 @@
+// app/api/mock/dashboard/announcements/route.ts
 import { NextResponse } from 'next/server';
 import { faker } from '@faker-js/faker';
-import type { Announcement } from '@/types/dashboard/dashboard.types';
+import { successResponse } from '@/lib/mocks/dashboard.mock';
 
 export async function GET() {
-    const types = ['info', 'warning', 'urgent'] as const;
-    const items: Announcement[] = Array.from({ length: 3 }).map(() => ({
-        id: faker.string.uuid(),
-        title: faker.lorem.sentence({ min: 3, max: 6 }),
-        content: faker.lorem.sentences({ min: 1, max: 3 }),
-        type: faker.helpers.arrayElement(types),
-        createdAt: faker.date.recent({ days: 10 }).toISOString(),
-        createdBy: faker.person.fullName(),
-        isActive: faker.datatype.boolean(),
-    }));
-    return NextResponse.json({ data: items });
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const announcements = Array.from({ length: 5 }, () => ({
+    id: faker.string.uuid(),
+    title: faker.company.catchPhrase(),
+    content: faker.lorem.paragraph(),
+    createdAt: faker.date.recent({ days: 30 }).toISOString(),
+    priority: faker.helpers.arrayElement(['low', 'medium', 'high']),
+  }));
+  
+  return NextResponse.json(successResponse(announcements));
 }
