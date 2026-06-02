@@ -9,6 +9,9 @@ import { withTransaction } from '@/lib/helpers/withTransaction';
 import { ACCOUNT_STATUS } from '@/constants/user.const';
 import { buildTravelerDto } from '@/lib/build-responses/build-traveler-dto';
 import { getUserIdFromSession } from '@/lib/auth/session.auth';
+import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
+import { USER_ROLE } from '@/constants/user.const';
+import { AUDIT_ACTION, logAuditBestEffort } from '@/lib/audit/audit-logger';
 
 interface Params {
     params: Promise<{ id: string }>;
@@ -35,10 +38,14 @@ async function suspendTraveler(
         throw new ApiError('Unauthorized', 401);
     }
 
+    await VERIFY_USER_ROLE.MULTIPLE(currentUserId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
+
     const body: SuspendBody = await req.json();
     if (!body.reason || typeof body.reason !== 'string') {
         throw new ApiError('Reason is required', 400);
     }
+
+    const before = await TravelerModel.findById(id).select("accountStatus suspension").lean().exec();
 
     // Perform the suspension update within a transaction
     await withTransaction(async (session) => {
@@ -74,6 +81,17 @@ async function suspendTraveler(
     if (!updatedDetail) {
         throw new ApiError('Failed to retrieve updated traveler', 500);
     }
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.UPDATE,
+        targetModel: "Traveler",
+        target: id,
+        actor: currentUserId,
+        actorModel: "User",
+        note: `Suspended traveler: ${body.reason}`,
+        before: before ? (before as Record<string, unknown>) : undefined,
+        after: { accountStatus: ACCOUNT_STATUS.SUSPENDED, durationDays: body.durationDays ?? null },
+    });
 
     return { data: updatedDetail };
 }

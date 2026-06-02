@@ -19,6 +19,9 @@ import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
 import { EmployeeWelcome } from "@/lib/html/employee-welcome-html";
 import { mailer } from "@/config/node-mailer";
 import { ASSET_TYPE } from "@/constants/asset.const";
+import { getUserIdFromSession } from "@/lib/auth/session.auth";
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 type ObjectId = Types.ObjectId;
 
@@ -52,6 +55,12 @@ async function createUser(
 
 // Main POST handler
 export const EmployeeAddPostHandler = async (req: NextRequest) => {
+    const actorId = await getUserIdFromSession();
+    if (!actorId) {
+        throw new ApiError("Unauthorized", 401);
+    }
+    await VERIFY_USER_ROLE.ADMIN(actorId);
+
     // Parse and validate request body
     const body: CreateEmployeeRequest = await req.json();
 
@@ -189,6 +198,21 @@ export const EmployeeAddPostHandler = async (req: NextRequest) => {
         subject,
         html
     )
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.CREATE,
+        targetModel: "Employee",
+        target: (result.employeeId as Types.ObjectId).toString(),
+        actor: actorId,
+        actorModel: "User",
+        note: "Created employee",
+        after: {
+            employeeId: (result.employeeId as Types.ObjectId).toString(),
+            userId: (result.userId as Types.ObjectId).toString(),
+            email: body.contactInfo.email,
+            status: EMPLOYEE_STATUS.ACTIVE,
+        },
+    });
 
     return {
         data: employeeDTO,

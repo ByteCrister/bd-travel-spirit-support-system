@@ -19,6 +19,9 @@ import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import { PopulatedAssetLean } from "@/types/common/populated-asset.types";
 import AssetModel from "@/models/assets/asset.model";
 import AssetFileModel from "@/models/assets/asset-file.model";
+import { getUserIdFromSession } from "@/lib/auth/session.auth";
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 interface Params {
     params: Promise<{ employeeId: string }>
@@ -93,6 +96,15 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
     await updateEmployeeServerSchema.validate(body, { abortEarly: false });
 
     await ConnectDB()
+
+    const actorId = await getUserIdFromSession();
+    if (!actorId) throw new ApiError("Unauthorized", 401);
+    await VERIFY_USER_ROLE.ADMIN(actorId);
+
+    const before = await EmployeeModel.findById(employeeId)
+        .select("status employmentType salary currency paymentMode dateOfJoining dateOfLeaving")
+        .lean()
+        .exec();
 
     const updatedEmployee = await withTransaction(async (session) => {
         // Fetch employee with populated user
@@ -204,6 +216,20 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
         const dto = await buildEmployeeDTO(updated._id as Types.ObjectId, session);
 
         return dto;
+    });
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.UPDATE,
+        targetModel: "Employee",
+        target: employeeId,
+        actor: actorId,
+        actorModel: "User",
+        note: "Updated employee details",
+        before: before ? (before as Record<string, unknown>) : undefined,
+        after: {
+            status: updatedEmployee.status,
+            employmentType: updatedEmployee.employmentType,
+        },
     });
 
     return {

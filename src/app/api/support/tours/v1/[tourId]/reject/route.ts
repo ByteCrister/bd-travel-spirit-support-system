@@ -14,6 +14,7 @@ import { buildTourDetailDTO } from "@/lib/build-responses/build-tour-details";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 /**
  * POST /api/support/v1/tours/[tourId]/reject
@@ -50,6 +51,8 @@ export const POST = withErrorHandler(
 
         await ConnectDB();
 
+        const before = await TourModel.findById(tourId).select("moderationStatus status").lean().exec();
+
         const result = await withTransaction(async (session) => {
             // Reject the tour
             const updatedTour = await TourModel.rejectById(tourId, {
@@ -75,6 +78,17 @@ export const POST = withErrorHandler(
             };
 
             return response;
+        });
+
+        void logAuditBestEffort({
+            action: AUDIT_ACTION.UPDATE,
+            targetModel: "Tour",
+            target: tourId,
+            actor: rejectedBy,
+            actorModel: "User",
+            note: `Rejected tour: ${reason}`,
+            before: before ? (before as Record<string, unknown>) : undefined,
+            after: { moderationStatus: "rejected" },
         });
 
         return {

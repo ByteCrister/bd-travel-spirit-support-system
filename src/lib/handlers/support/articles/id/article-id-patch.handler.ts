@@ -7,6 +7,7 @@ import { buildTourArticleDto } from "@/lib/build-responses/build-tour-article-dt
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import ConnectDB from "@/config/db";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 /**
  * PATCH /api/support/articles/v1/[articleId]
@@ -51,6 +52,15 @@ export default async function ArticlePatchHandler(
         return dto;
     });
 
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.UPDATE,
+        targetModel: "TravelArticle",
+        target: articleId,
+        actor: currentUserId,
+        actorModel: "User",
+        note: "Restored support article",
+        after: { id: articleId, restored: true },
+    });
 
     return {
         data: { article, success: true, message: "Article restored successfully" },

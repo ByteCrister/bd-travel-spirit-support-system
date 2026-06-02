@@ -14,6 +14,7 @@ import { mailer } from "@/config/node-mailer";
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 type ObjectId = Types.ObjectId;
 
@@ -102,6 +103,16 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: { p
         const html = notifyEmployeeNewPassword(employee.user.name, employee.user.email, password)
         await mailer(employee.user.email, "Password has been updated!!", html)
     }
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.UPDATE,
+        targetModel: "Employee",
+        target: employeeId,
+        actor: adminId,
+        actorModel: "User",
+        note: "Updated employee password",
+        after: { sendMail: !!sendMail },
+    });
 
     return { data: { message: "Password updated successfully" }, status: 200 }
 

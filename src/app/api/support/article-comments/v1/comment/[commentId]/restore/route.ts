@@ -9,6 +9,7 @@ import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
 import TravelArticleCommentModel, { ITravelArticleComment } from '@/models/articles/travel-article-comment.model';
 import { UserRole } from '@/constants/user.const';
 import { PopulatedAssetLean } from '@/types/common/populated-asset.types';
+import { AUDIT_ACTION, logAuditBestEffort } from '@/lib/audit/audit-logger';
 
 interface PopulatedAuthor {
     _id: Types.ObjectId;
@@ -102,6 +103,16 @@ export const POST = withErrorHandler(async (
         createdAt: restoredComment.createdAt.toISOString(),
         updatedAt: restoredComment.updatedAt.toISOString(),
     };
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.UPDATE,
+        targetModel: "TravelArticleComment",
+        target: commentId,
+        actor: currentUserId,
+        actorModel: "User",
+        note: "Restored article comment",
+        after: { restored: true },
+    });
 
     return {
         data: responseData,

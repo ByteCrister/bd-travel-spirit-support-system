@@ -19,6 +19,7 @@ import { ASSET_TYPE } from '@/constants/asset.const';
 import ConnectDB from '@/config/db';
 import { SlugService } from '@/lib/helpers/slug-services';
 import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
+import { AUDIT_ACTION, logAuditBestEffort } from '@/lib/audit/audit-logger';
 
 // Helper function to validate and prepare image assets
 function prepareImageAssets(formData: CreateArticleInput) {
@@ -220,6 +221,21 @@ export default async function ArticlePostHandler(request: NextRequest) {
         }
 
         return dto;
+    });
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.CREATE,
+        targetModel: "TravelArticle",
+        target: article.id,
+        actor: currentUserId,
+        actorModel: "User",
+        note: "Created support article",
+        after: {
+            id: article.id,
+            title: article.title,
+            status: article.status,
+            slug: article.slug,
+        },
     });
 
     return {
