@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import { Bot, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AiChatMessage } from "@/types/ai-chat";
+import { useAiChatStore } from "@/store/ai-chat/ai-chat.store";
 
 // ── Neumorphism style tokens ──────────────────────────────────────────────────
 const NEU_AVATAR_USER =
@@ -24,8 +25,25 @@ const NEU_BUBBLE_BOT =
 
 type MessageBubbleProps = { message: AiChatMessage };
 
+function extractBulletQuestions(content: string): string[] {
+    return content
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.startsWith("- "))
+        .map((line) => line.replace(/^-+\s+/, "").trim())
+        .filter(Boolean)
+        .slice(0, 5);
+}
+
 export function MessageBubble({ message }: MessageBubbleProps) {
     const isUser = message.role === "user";
+    const setDraftMessage = useAiChatStore((s) => s.setDraftMessage);
+    const meta = message.meta ?? {};
+    const actionType = typeof meta.actionType === "string" ? meta.actionType : undefined;
+    const clarifyQuestions =
+        !isUser && actionType === "clarify" ? extractBulletQuestions(message.content) : [];
+    const queryCount = typeof meta.queryCount === "number" ? meta.queryCount : null;
+    const latencyMs = typeof meta.latencyMs === "number" ? meta.latencyMs : null;
 
     return (
         <motion.article
@@ -72,90 +90,118 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                         {message.content}
                     </p>
                 ) : (
-                    <div
-                        className={cn(
-                            "prose prose-sm max-w-none",
-                            // Paragraph spacing
-                            "prose-p:my-1 prose-p:leading-relaxed",
-                            // Headings
-                            "prose-headings:my-2 prose-headings:font-[family-name:var(--font-space-mono)] prose-headings:font-bold prose-headings:text-[#1E2938] prose-headings:tracking-tight",
-                            // Lists
-                            "prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5",
-                            // Inline code
-                            "prose-code:rounded-md prose-code:px-1.5 prose-code:py-0.5 prose-code:text-xs prose-code:font-medium",
-                            // Links
-                            "prose-a:text-[#006666] prose-a:underline prose-a:underline-offset-2",
-                            // Tables
-                            "prose-table:w-full prose-table:text-xs prose-table:border-collapse",
-                            "prose-th:border prose-th:border-[#1E2938]/10 prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:text-[#1E2938] prose-th:font-[family-name:var(--font-space-mono)] prose-th:font-bold",
-                            "prose-td:border prose-td:border-[#1E2938]/10 prose-td:px-3 prose-td:py-2 prose-td:text-[#1E2938]/80",
-                            "prose-tr:even:bg-[#006666]/5"
-                        )}
-                        style={{ fontFamily: "var(--font-jetbrains-mono)", color: "#1E2938" }}
-                    >
-                        <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                                a: ({ href, children }) => (
-                                    <a
-                                        href={href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{ color: "#006666", textDecoration: "underline" }}
-                                    >
-                                        {children}
-                                    </a>
-                                ),
-                                code: ({
-                                    inline,
-                                    children,
-                                    ...props
-                                }: React.ComponentPropsWithoutRef<"code"> & { inline?: boolean }) =>
-                                    inline ? (
-                                        <code
-                                            style={{
-                                                background: "rgba(0,102,102,0.1)",
-                                                borderRadius: "5px",
-                                                padding: "1px 6px",
-                                                fontSize: "0.78em",
-                                                color: "#006666",
-                                                fontFamily: "var(--font-jetbrains-mono), monospace",
-                                            }}
-                                            {...props}
-                                        >
-                                            {children}
-                                        </code>
-                                    ) : (
-                                        <code
-                                            style={{ fontFamily: "var(--font-jetbrains-mono), monospace" }}
-                                            {...props}
-                                        >
-                                            {children}
-                                        </code>
-                                    ),
-                                pre: ({ children }) => (
-                                    <pre
-                                        style={{
-                                            background:
-                                                "linear-gradient(145deg, #d8d6d5, #f0eeee)",
-                                            boxShadow:
-                                                "inset 3px 3px 6px #c8c6c5, inset -3px -3px 6px #ffffff",
-                                            borderRadius: "12px",
-                                            padding: "12px 14px",
-                                            overflowX: "auto",
-                                            fontFamily: "var(--font-jetbrains-mono), monospace",
-                                            fontSize: "0.78rem",
-                                            color: "#1E2938",
-                                        }}
-                                    >
-                                        {children}
-                                    </pre>
-                                ),
-                            }}
+                    <>
+                        <div
+                            className={cn(
+                                "prose prose-sm max-w-none",
+                                "prose-p:my-1 prose-p:leading-relaxed",
+                                "prose-headings:my-2 prose-headings:font-[family-name:var(--font-space-mono)] prose-headings:font-bold prose-headings:text-[#1E2938] prose-headings:tracking-tight",
+                                "prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5",
+                                "prose-code:rounded-md prose-code:px-1.5 prose-code:py-0.5 prose-code:text-xs prose-code:font-medium",
+                                "prose-a:text-[#006666] prose-a:underline prose-a:underline-offset-2",
+                                "prose-table:w-full prose-table:text-xs prose-table:border-collapse",
+                                "prose-th:border prose-th:border-[#1E2938]/10 prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:text-[#1E2938] prose-th:font-[family-name:var(--font-space-mono)] prose-th:font-bold",
+                                "prose-td:border prose-td:border-[#1E2938]/10 prose-td:px-3 prose-td:py-2 prose-td:text-[#1E2938]/80",
+                                "prose-tr:even:bg-[#006666]/5"
+                            )}
+                            style={{ fontFamily: "var(--font-jetbrains-mono)", color: "#1E2938" }}
                         >
-                            {message.content}
-                        </ReactMarkdown>
-                    </div>
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                    a: ({ href, children }) => (
+                                        <a
+                                            href={href}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ color: "#006666", textDecoration: "underline" }}
+                                        >
+                                            {children}
+                                        </a>
+                                    ),
+                                    code: ({
+                                        inline,
+                                        children,
+                                        ...props
+                                    }: React.ComponentPropsWithoutRef<"code"> & { inline?: boolean }) =>
+                                        inline ? (
+                                            <code
+                                                style={{
+                                                    background: "rgba(0,102,102,0.1)",
+                                                    borderRadius: "5px",
+                                                    padding: "1px 6px",
+                                                    fontSize: "0.78em",
+                                                    color: "#006666",
+                                                    fontFamily: "var(--font-jetbrains-mono), monospace",
+                                                }}
+                                                {...props}
+                                            >
+                                                {children}
+                                            </code>
+                                        ) : (
+                                            <code
+                                                style={{ fontFamily: "var(--font-jetbrains-mono), monospace" }}
+                                                {...props}
+                                            >
+                                                {children}
+                                            </code>
+                                        ),
+                                    pre: ({ children }) => (
+                                        <pre
+                                            style={{
+                                                background: "linear-gradient(145deg, #d8d6d5, #f0eeee)",
+                                                boxShadow:
+                                                    "inset 3px 3px 6px #c8c6c5, inset -3px -3px 6px #ffffff",
+                                                borderRadius: "12px",
+                                                padding: "12px 14px",
+                                                overflowX: "auto",
+                                                fontFamily: "var(--font-jetbrains-mono), monospace",
+                                                fontSize: "0.78rem",
+                                                color: "#1E2938",
+                                            }}
+                                        >
+                                            {children}
+                                        </pre>
+                                    ),
+                                }}
+                            >
+                                {message.content}
+                            </ReactMarkdown>
+                        </div>
+
+                        {clarifyQuestions.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                {clarifyQuestions.map((q) => (
+                                    <button
+                                        key={q}
+                                        type="button"
+                                        onClick={() => setDraftMessage(`Answer: ${q} `)}
+                                        className="rounded-full border border-[#006666]/20 bg-white/40 px-3 py-1 text-[11px] text-[#006666] transition-colors hover:bg-white/60"
+                                        title="Prefill your answer"
+                                    >
+                                        {q}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {(actionType === "query" || actionType === "error") && (
+                            <div className="mt-3 text-[10px] text-[#1E2938]/40 font-[family-name:var(--font-jetbrains-mono)]">
+                                {actionType === "query" && (
+                                    <span>
+                                        Used {queryCount ?? "multiple"} query(ies)
+                                        {latencyMs ? ` · ${Math.round(latencyMs)}ms` : ""}
+                                    </span>
+                                )}
+                                {actionType === "error" && (
+                                    <span>
+                                        Had trouble completing request
+                                        {latencyMs ? ` · ${Math.round(latencyMs)}ms` : ""}
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                    </>
                 )}
             </motion.div>
         </motion.article>

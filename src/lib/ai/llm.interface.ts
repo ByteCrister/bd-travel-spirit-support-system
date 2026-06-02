@@ -36,6 +36,21 @@ export interface ChatTurn {
 
 export interface LLMProvider {
     generateIntent(userMessage: string, history?: ChatTurn[]): Promise<AssistantIntent>;
+    generateAction(input: {
+        userMessage: string;
+        history?: ChatTurn[];
+        sessionSummary?: string | null;
+    }): Promise<unknown>;
+    synthesizeAnswer(input: {
+        userMessage: string;
+        history?: ChatTurn[];
+        sessionSummary?: string | null;
+        data: Array<{ id: string; result: QueryExecutionResult }>;
+    }): Promise<string>;
+    summarizeSession(input: {
+        priorSummary?: string | null;
+        history: ChatTurn[];
+    }): Promise<string>;
 }
 
 export interface QueryExecutionResult {

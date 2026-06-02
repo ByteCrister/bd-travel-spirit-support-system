@@ -3,13 +3,10 @@ import ConnectDB from "@/config/db";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 import { USER_ROLE } from "@/constants/user.const";
-import { getLLMProvider } from "@/lib/ai/llm.factory";
-import { executeIntent, serializeRows } from "@/lib/ai/query-executor";
-import { formatAsMarkdown } from "@/lib/ai/response-formatter";
+import { handleAiChatMessage } from "@/lib/ai/chat-orchestrator";
 import {
     listSessionMessages,
     listSessions,
-    loadSessionHistory,
     saveChatExchange,
 } from "@/lib/ai/chat-session.service";
 
@@ -111,49 +108,23 @@ export async function POST(req: NextRequest) {
 
         const trimmedMessage = message.trim();
         const sessionId = resolveSessionId(body);
-        const history = sessionId ? await loadSessionHistory(sessionId, userId) : [];
-
-        const llm = getLLMProvider();
-        let intent;
         try {
-            intent = await llm.generateIntent(trimmedMessage, sessionId ? history : []);
-        } catch (llmError) {
-            console.error("LLM error:", llmError);
-            const errorMarkdown =
-                "Could not understand that request. Try rephrasing, e.g. *show pending guides* or *total booking revenue this month*.";
-            const saved = await saveChatExchange(userId, sessionId, trimmedMessage, errorMarkdown);
-            return NextResponse.json(buildPostResponse(saved, errorMarkdown));
-        }
-
-        if (intent.type === "reply") {
-            const saved = await saveChatExchange(
+            const saved = await handleAiChatMessage({
                 userId,
                 sessionId,
-                trimmedMessage,
-                intent.message
-            );
-            return NextResponse.json(buildPostResponse(saved, intent.message));
+                message: trimmedMessage,
+            });
+            return NextResponse.json(buildPostResponse(saved, saved.response));
+        } catch (err) {
+            console.error("AI chat orchestrator error:", err);
+            const response =
+                "Something went wrong while handling that request. Please try again, or simplify the question.";
+            const saved = await saveChatExchange(userId, sessionId, trimmedMessage, response, {
+                actionType: "error",
+                error: err instanceof Error ? err.message : String(err),
+            });
+            return NextResponse.json(buildPostResponse(saved, response));
         }
-
-        let markdownResponse: string;
-        try {
-            const result = await executeIntent(intent);
-            result.rows = serializeRows(result.rows);
-            markdownResponse = formatAsMarkdown(result, trimmedMessage);
-        } catch (dbError) {
-            console.error("Database error:", dbError);
-            const modelLabel = intent.model;
-            markdownResponse = `Database error while fetching **${modelLabel}** data. Check filters or try a simpler question.`;
-        }
-
-        const saved = await saveChatExchange(
-            userId,
-            sessionId,
-            trimmedMessage,
-            markdownResponse
-        );
-
-        return NextResponse.json(buildPostResponse(saved, markdownResponse));
     } catch (error) {
         console.error("AI chat error:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
