@@ -19,6 +19,7 @@ import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import { buildPaymentAccountResponse } from "@/lib/build-responses/build-payment-account-dt";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 /**
  * GET /api/site-settings/payment-accounts/v1/[id]
@@ -76,6 +77,10 @@ export const PATCH = withErrorHandler(
         await ConnectDB();
 
         await VERIFY_USER_ROLE.ADMIN(userId);
+
+        const before = await StripePaymentAccountModel.findById(id)
+            .lean<IStripePaymentAccount>()
+            .exec();
 
         // Use a transaction to ensure consistency (optional but following pattern)
         const updated = await withTransaction(async (session) => {
@@ -138,6 +143,31 @@ export const PATCH = withErrorHandler(
             return await buildPaymentAccountResponse(id.toString(), session);
         });
 
+        void logAuditBestEffort({
+            action: AUDIT_ACTION.UPDATE,
+            targetModel: "StripePaymentAccount",
+            target: id,
+            actor: userId,
+            actorModel: "User",
+            note: "Updated payment account settings",
+            before: before
+                ? {
+                      isActive: before.isActive,
+                      isBackup: before.isBackup,
+                      purpose: before.purpose,
+                      ownerType: before.ownerType,
+                      ownerId: before.ownerId?.toString?.() ?? null,
+                  }
+                : undefined,
+            after: {
+                isActive: updated.isActive,
+                isBackup: updated.isBackup,
+                purpose: updated.purpose,
+                ownerType: updated.ownerType,
+                ownerId: (updated.ownerId as unknown as Types.ObjectId | null)?.toString?.() ?? null,
+            },
+        });
+
         return { data: updated };
     },
 );
@@ -165,6 +195,10 @@ export const DELETE = withErrorHandler(
         await ConnectDB();
 
         await VERIFY_USER_ROLE.ADMIN(userId);
+
+        const before = await StripePaymentAccountModel.findById(id)
+            .lean<IStripePaymentAccount>()
+            .exec();
 
         // Use transaction to be safe (even though it's a single update)
         await withTransaction(async (session) => {
@@ -205,6 +239,25 @@ export const DELETE = withErrorHandler(
             await account.save({ session });
 
             return account;
+        });
+
+        void logAuditBestEffort({
+            action: AUDIT_ACTION.DELETE,
+            targetModel: "StripePaymentAccount",
+            target: id,
+            actor: userId,
+            actorModel: "User",
+            note: "Soft-deleted payment account",
+            before: before
+                ? {
+                      isActive: before.isActive,
+                      isBackup: before.isBackup,
+                      purpose: before.purpose,
+                      ownerType: before.ownerType,
+                      ownerId: before.ownerId?.toString?.() ?? null,
+                  }
+                : undefined,
+            after: { isDeleted: true },
         });
 
         return { data: { success: true } };

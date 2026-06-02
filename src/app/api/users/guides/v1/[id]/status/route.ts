@@ -14,6 +14,9 @@ import { applicationSuspended } from "@/lib/html/application-suspended-html";
 import { mailer } from "@/config/node-mailer";
 import UserModel from "@/models/user.model";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { USER_ROLE } from "@/constants/user.const";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 /**
  * Update guide application status to approved/rejected/suspended
@@ -30,6 +33,8 @@ export const PUT = withErrorHandler(
         if (!reviewerId || !mongoose.Types.ObjectId.isValid(reviewerId)) {
             throw new ApiError("Unauthorized", 401);
         }
+
+        await VERIFY_USER_ROLE.MULTIPLE(reviewerId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
 
         if (!id || !mongoose.Types.ObjectId.isValid(id)) {
             throw new ApiError("Invalid guide id", 400);
@@ -61,6 +66,8 @@ export const PUT = withErrorHandler(
         }
 
         const reviewerObjectId = new mongoose.Types.ObjectId(reviewerId);
+
+        const before = await GuideModel.findById(id).select("status reviewedAt reviewer reviewComment").lean().exec();
 
         const result = await withTransaction(async (session) => {
             const guide = await GuideModel.findById(id).session(session);
@@ -188,6 +195,17 @@ export const PUT = withErrorHandler(
             }
 
             throw new ApiError("Invalid operation", 400);
+        });
+
+        void logAuditBestEffort({
+            action: AUDIT_ACTION.UPDATE,
+            targetModel: "Guide",
+            target: id,
+            actor: reviewerId,
+            actorModel: "User",
+            note: `Guide status changed to ${status}${reason ? `: ${reason}` : ""}`,
+            before: before ? (before as Record<string, unknown>) : undefined,
+            after: { status, reason: reason ?? null, until: until ?? null },
         });
 
         return {

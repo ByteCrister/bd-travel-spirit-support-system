@@ -10,6 +10,7 @@ import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
 import mappedEmployeeUser from "@/lib/build-responses/build-mappedEmployeeUser";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 import { IEmployeeInfo, IOwnerInfo } from "@/types/user/current-user.types";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 // Request body type for name update
 interface UpdateNameRequest {
@@ -67,6 +68,11 @@ async function handler(request: NextRequest): Promise<HandlerResult<UpdateNameRe
 
     const validatedName = validateName(name);
 
+    const beforeUser = await UserModel.findById(new Types.ObjectId(currentUserId))
+        .select("name role email")
+        .lean<IUserDoc>()
+        .exec();
+
     // 4. Use transaction for atomic update
     const updatedUser = await withTransaction(async (session) => {
         // Find and update user
@@ -105,6 +111,17 @@ async function handler(request: NextRequest): Promise<HandlerResult<UpdateNameRe
         } else {
             throw new ApiError("Invalid user role", 400);
         }
+    });
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.UPDATE,
+        targetModel: "User",
+        target: currentUserId,
+        actor: currentUserId,
+        actorModel: "User",
+        note: "Updated own display name",
+        before: beforeUser ? { name: beforeUser.name } : undefined,
+        after: { name: validatedName },
     });
 
     return {

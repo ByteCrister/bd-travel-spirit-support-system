@@ -8,6 +8,7 @@ import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import ConnectDB from "@/config/db";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 /**
  * PATCH /users/v1/employees/[id]/restore
@@ -50,6 +51,16 @@ export const PATCH = withErrorHandler(async (
         }
 
         return employeeDTO;
+    });
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.UPDATE,
+        targetModel: "Employee",
+        target: employeeId,
+        actor: adminId,
+        actorModel: "User",
+        note: "Restored employee",
+        after: { restored: true },
     });
 
     return {

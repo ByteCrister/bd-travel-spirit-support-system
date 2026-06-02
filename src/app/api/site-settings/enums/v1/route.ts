@@ -11,6 +11,10 @@ import type {
 } from "@/types/site-settings/enum-settings.types";
 
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
+import { getUserIdFromSession } from "@/lib/auth/session.auth";
+import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { USER_ROLE } from "@/constants/user.const";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 /* -----------------------------
    GET: Fetch all enum groups
@@ -50,6 +54,10 @@ export const GET = withErrorHandler(async () => {
 ------------------------------ */
 export const POST = withErrorHandler(async (req: NextRequest) => {
     await ConnectDB();
+
+    const actorId = await getUserIdFromSession();
+    if (!actorId) throw new ApiError("Unauthorized", 401);
+    await VERIFY_USER_ROLE.MULTIPLE(actorId, [USER_ROLE.ADMIN]);
 
     const body = (await req.json()) as CreateEnumGroupPayload;
 
@@ -96,6 +104,16 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
             description: v.description ?? null,
         })),
     };
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.CREATE,
+        targetModel: "EnumGroupSetting",
+        target: enumGroup._id,
+        actor: actorId,
+        actorModel: "User",
+        note: `Created enum group: ${enumGroup.name}`,
+        after: { id: enumGroup._id, name: enumGroup.name },
+    });
 
     return {
         data: { enumGroup },

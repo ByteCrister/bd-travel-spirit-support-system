@@ -11,6 +11,7 @@ import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 import { getUserIdFromSession } from '@/lib/auth/session.auth';
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 import TravelArticleCommentModel from "@/models/articles/travel-article-comment.model";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 /**
  * Wrapped DELETE handler with error handling
@@ -38,6 +39,11 @@ export const DELETE = withErrorHandler(async (
     await ConnectDB();
 
     await VERIFY_USER_ROLE.SUPPORT(currentUserId);
+
+    const before = await TravelArticleCommentModel.findById(commentId)
+        .select("status isDeleted deletedAt articleId parentId")
+        .lean()
+        .exec();
 
     // Execute in transaction to ensure data consistency
     const result = await withTransaction(async (session) => {
@@ -75,6 +81,17 @@ export const DELETE = withErrorHandler(async (
         };
 
         return { data: responseData, status: 200 };
+    });
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.DELETE,
+        targetModel: "TravelArticleComment",
+        target: commentId,
+        actor: currentUserId,
+        actorModel: "User",
+        note: "Soft-deleted article comment",
+        before: before ? (before as Record<string, unknown>) : undefined,
+        after: { isDeleted: true },
     });
 
     return result;

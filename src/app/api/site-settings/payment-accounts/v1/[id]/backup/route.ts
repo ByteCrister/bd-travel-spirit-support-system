@@ -9,6 +9,7 @@ import { buildPaymentAccountResponse } from "@/lib/build-responses/build-payment
 import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 /**
  * PATCH /api/site-settings/payment-accounts/v1/[id]/backup
@@ -40,6 +41,10 @@ export const PATCH = withErrorHandler(
     await ConnectDB();
 
     await VERIFY_USER_ROLE.ADMIN(userId);
+
+    const before = await StripePaymentAccountModel.findById(id)
+      .lean()
+      .exec();
 
     // Execute update within a transaction for consistency
     const updated = await withTransaction(async (session) => {
@@ -84,6 +89,17 @@ export const PATCH = withErrorHandler(
       await account.save({ session });
 
       return await buildPaymentAccountResponse(id.toString(), session);
+    });
+
+    void logAuditBestEffort({
+      action: AUDIT_ACTION.UPDATE,
+      targetModel: "StripePaymentAccount",
+      target: id,
+      actor: userId,
+      actorModel: "User",
+      note: `Set payment account backup=${body.isBackup}`,
+      before: before ? { isBackup: before.isBackup, isActive: before.isActive } : undefined,
+      after: { isBackup: updated.isBackup, isActive: updated.isActive },
     });
 
     return { data: updated };

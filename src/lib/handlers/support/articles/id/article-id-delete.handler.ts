@@ -9,6 +9,7 @@ import { getUserIdFromSession } from '@/lib/auth/session.auth';
 import ConnectDB from '@/config/db';
 import { ApiError } from '@/lib/helpers/withErrorHandler';
 import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
+import { AUDIT_ACTION, logAuditBestEffort } from '@/lib/audit/audit-logger';
 
 export default async function ArticleDeleteHandler(
     request: NextRequest,
@@ -31,6 +32,11 @@ export default async function ArticleDeleteHandler(
     // Check if user has 'support' role
     await VERIFY_USER_ROLE.SUPPORT(currentUserId);
 
+    const before = await TravelArticleModel.findById(articleId)
+        .select("title status slug deleted deletedAt")
+        .lean()
+        .exec();
+
     await withTransaction(async (session) => {
         // Get current user from session (for deletedBy field)
         const currentUserId = await getUserIdFromSession();
@@ -44,6 +50,17 @@ export default async function ArticleDeleteHandler(
         }
 
         return deletedArticle;
+    });
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.DELETE,
+        targetModel: "TravelArticle",
+        target: articleId,
+        actor: currentUserId,
+        actorModel: "User",
+        note: "Soft-deleted support article",
+        before: before ? (before as Record<string, unknown>) : undefined,
+        after: { deleted: true },
     });
 
     return {

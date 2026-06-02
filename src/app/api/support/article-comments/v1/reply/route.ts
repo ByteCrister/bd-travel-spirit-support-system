@@ -19,6 +19,7 @@ import AssetFileModel from '@/models/assets/asset-file.model';
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { PipelineStage } from "mongoose";
 import TravelArticleCommentModel from "@/models/articles/travel-article-comment.model";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 /**
  * Validate create comment payload
@@ -291,6 +292,21 @@ async function CreateReplyHandler(
         );
 
         return createdComment;
+    });
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.CREATE,
+        targetModel: "TravelArticleComment",
+        target: result.id,
+        actor: currentUserId,
+        actorModel: "User",
+        note: payload.parentId ? "Created comment reply" : "Created article comment",
+        after: {
+            id: result.id,
+            articleId: result.articleId,
+            parentId: result.parentId,
+            status: result.status,
+        },
     });
 
     return {

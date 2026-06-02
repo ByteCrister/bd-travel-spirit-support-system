@@ -7,6 +7,7 @@ import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import { USER_ROLE } from "@/constants/user.const";
 import UserModel, { IUserDoc } from "@/models/user.model";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 // Request body type for password update
 interface UpdatePasswordRequest {
@@ -96,6 +97,15 @@ async function handler(request: NextRequest): Promise<HandlerResult<UpdatePasswo
                 runValidators: true
             }
         );
+    });
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.UPDATE,
+        targetModel: "User",
+        target: currentUserId,
+        actor: currentUserId,
+        actorModel: "User",
+        note: "Updated own password",
     });
 
     return {

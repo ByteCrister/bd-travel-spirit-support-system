@@ -18,6 +18,7 @@ import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import ConnectDB from "@/config/db";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 // Types for update operations
 type UpdateData = Partial<Omit<CreateArticleInput, 'heroImage' | 'seo' | 'destinations'>> & {
@@ -80,6 +81,11 @@ export default async function ArticlePutHandler(request: NextRequest, { params }
 
     // Check if user has 'support' role
     await VERIFY_USER_ROLE.SUPPORT(currentUserId);
+
+    const before = await TravelArticleModel.findById(articleId)
+        .select("title status slug deleted updatedAt")
+        .lean()
+        .exec();
 
     // Use withTransaction to handle the entire update in a single transaction
     const article = await withTransaction(async (session) => {
@@ -396,6 +402,17 @@ export default async function ArticlePutHandler(request: NextRequest, { params }
         }
 
         return dto;
+    });
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.UPDATE,
+        targetModel: "TravelArticle",
+        target: articleId,
+        actor: currentUserId,
+        actorModel: "User",
+        note: "Updated support article",
+        before: before ? (before as Record<string, unknown>) : undefined,
+        after: { id: articleId, title: article.title, status: article.status, slug: article.slug },
     });
 
     return {

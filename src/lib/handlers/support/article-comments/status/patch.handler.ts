@@ -15,6 +15,9 @@ import { UserRole } from '@/constants/user.const';
 import { PopulatedAssetLean } from '@/types/common/populated-asset.types';
 import TravelArticleCommentModel, { ITravelArticleComment } from '@/models/articles/travel-article-comment.model';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
+import { getUserIdFromSession } from '@/lib/auth/session.auth';
+import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
+import { AUDIT_ACTION, logAuditBestEffort } from '@/lib/audit/audit-logger';
 
 /* -------------------------------------------------------------------------- */
 /*                               Populate config                               */
@@ -100,6 +103,12 @@ export default async function ArticleCmntPatchHandler(
     { params }: { params: Promise<{ commentId: string }> }
 ): Promise<HandlerResult<UpdateCommentStatusResponseDTO>> {
 
+    const actorId = await getUserIdFromSession();
+    if (!actorId) {
+        throw new ApiError('Unauthorized', 401);
+    }
+    await VERIFY_USER_ROLE.SUPPORT(actorId);
+
     const payload: UpdateCommentStatusPayloadDTO = await request.json();
     validateStatusUpdatePayload(payload);
 
@@ -142,6 +151,17 @@ export default async function ArticleCmntPatchHandler(
         }
 
         const typedComment = updatedComment as unknown as LeanComment;
+
+        void logAuditBestEffort({
+            action: AUDIT_ACTION.UPDATE,
+            targetModel: "TravelArticleComment",
+            target: (typedComment._id as Types.ObjectId).toString(),
+            actor: actorId,
+            actorModel: "User",
+            note: payload.status === COMMENT_STATUS.APPROVED ? "Approved article comment" : "Rejected article comment",
+            before: { status: comment.status },
+            after: { status: payload.status, reason: payload.reason ?? null },
+        });
 
         return {
             status: 200,

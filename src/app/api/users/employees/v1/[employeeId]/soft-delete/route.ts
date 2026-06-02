@@ -8,6 +8,7 @@ import { withTransaction } from "@/lib/helpers/withTransaction";
 import EmployeeModel from "@/models/employees/employees.model";
 import { Types } from "mongoose";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
 
 interface Params {
     params: Promise<{ employeeId: string }>
@@ -45,6 +46,16 @@ export const PATCH = withErrorHandler(async (request: NextRequest, { params }: P
         }
 
         return deleted;
+    });
+
+    void logAuditBestEffort({
+        action: AUDIT_ACTION.DELETE,
+        targetModel: "Employee",
+        target: employeeId,
+        actor: adminId,
+        actorModel: "User",
+        note: reason ? `Soft-deleted employee: ${reason}` : "Soft-deleted employee",
+        after: { deleted: true },
     });
 
     // 6. Return success
