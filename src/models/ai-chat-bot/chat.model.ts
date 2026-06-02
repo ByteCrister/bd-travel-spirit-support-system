@@ -7,6 +7,14 @@ export interface IChatMessage extends Document {
     session: Types.ObjectId;
     role: ChatMessageRole;
     content: string;
+    meta?: {
+        provider?: string;
+        model?: string;
+        actionType?: string;
+        queryCount?: number;
+        latencyMs?: number;
+        error?: string;
+    };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -16,6 +24,8 @@ export interface IChatSession extends Document {
     title: string;
     lastMessagePreview?: string;
     lastMessageAt?: Date;
+    summary?: string;
+    summaryUpdatedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -36,6 +46,10 @@ const ChatMessageSchema = new Schema<IChatMessage>(
         content: {
             type: String,
             required: true,
+        },
+        meta: {
+            type: Schema.Types.Mixed,
+            default: undefined,
         },
     },
     { timestamps: true, versionKey: false }
@@ -64,6 +78,14 @@ const ChatSessionSchema = new Schema<IChatSession>(
             maxlength: 1000,
         },
         lastMessageAt: {
+            type: Date,
+        },
+        summary: {
+            type: String,
+            trim: true,
+            maxlength: 8000,
+        },
+        summaryUpdatedAt: {
             type: Date,
         },
     },

@@ -1,10 +1,21 @@
 export type AiChatMessageRole = "user" | "assistant";
 
+export type AiChatMessageMeta = {
+    provider?: string;
+    model?: string;
+    actionType?: "reply" | "clarify" | "query" | "error" | string;
+    queryCount?: number;
+    latencyMs?: number;
+    error?: string;
+    [key: string]: unknown;
+};
+
 export interface AiChatMessage {
     id: string;
     role: AiChatMessageRole;
     content: string;
     createdAt: string;
+    meta?: AiChatMessageMeta;
 }
 
 export interface AiChatSession {

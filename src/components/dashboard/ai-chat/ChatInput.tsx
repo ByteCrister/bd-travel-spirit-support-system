@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useState, KeyboardEvent, useRef } from "react";
+import { useCallback, KeyboardEvent, useRef } from "react";
 import { ArrowUp, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useAiChatStore } from "@/store/ai-chat/ai-chat.store";
 
 // ── Neumorphism style tokens ──────────────────────────────────────────────────
 const NEU_INPUT_AREA =
@@ -36,7 +37,8 @@ export function ChatInput({
     sending = false,
     placeholder = "Ask about travelers, guides, tours, bookings, revenue…",
 }: ChatInputProps) {
-    const [value, setValue] = useState("");
+    const value = useAiChatStore((s) => s.draftMessage);
+    const setValue = useAiChatStore((s) => s.setDraftMessage);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const handleSend = useCallback(async () => {
@@ -44,7 +46,7 @@ export function ChatInput({
         if (!trimmed || disabled || sending) return;
         setValue("");
         await onSend(trimmed);
-    }, [value, disabled, sending, onSend]);
+    }, [value, disabled, sending, onSend, setValue]);
 
     const handleKeyDown = useCallback(
         (event: KeyboardEvent<HTMLTextAreaElement>) => {

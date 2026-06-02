@@ -27,9 +27,11 @@ interface AiChatState {
     messagesHasMore: boolean;
     messagesLoading: boolean;
 
+    draftMessage: string;
     sending: boolean;
     error: string | null;
 
+    setDraftMessage: (value: string) => void;
     fetchSessionsInitial: () => Promise<void>;
     fetchMoreSessions: () => Promise<void>;
     selectSession: (sessionId: string) => Promise<void>;
@@ -53,6 +55,7 @@ const initialState = {
     messagesHasMore: false,
     messagesLoading: false,
 
+    draftMessage: "",
     sending: false,
     error: null as string | null,
 };
@@ -66,6 +69,8 @@ export const useAiChatStore = create<AiChatState>()(
     devtools(
         (set, get) => ({
             ...initialState,
+
+            setDraftMessage: (value: string) => set({ draftMessage: value }),
 
             fetchSessionsInitial: async () => {
                 set({ sessionsLoading: true, error: null });
@@ -150,6 +155,7 @@ export const useAiChatStore = create<AiChatState>()(
                     messagesCursor: null,
                     messagesHasMore: false,
                     messagesLoading: false,
+                    draftMessage: "",
                     error: null,
                 });
             },
@@ -208,6 +214,7 @@ export const useAiChatStore = create<AiChatState>()(
                 set({
                     sending: true,
                     error: null,
+                    draftMessage: "",
                     messages: [...messages, optimisticUser],
                 });
 

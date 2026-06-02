@@ -8,10 +8,11 @@ import {
     IChatSession,
 } from "@/models/ai-chat-bot/chat.model";
 
-const HISTORY_LIMIT = 8;
+const HISTORY_LIMIT = 20;
 const DEFAULT_SESSION_TITLE = "New chat";
 const TITLE_MAX_LENGTH = 200;
 const PREVIEW_MAX_LENGTH = 1000;
+const SUMMARY_MAX_LENGTH = 8000;
 
 export function buildSessionTitle(firstUserMessage: string): string {
     const trimmed = firstUserMessage.trim();
@@ -38,6 +39,31 @@ export async function getSessionForUser(
     const session = await AIChatSessionModel.findById(sessionId);
     if (!session || session.user.toString() !== userId) return null;
     return session;
+}
+
+export async function getSessionSummary(
+    sessionId: string,
+    userId: string
+): Promise<{ summary: string | null; summaryUpdatedAt: string | null } | null> {
+    const session = await getSessionForUser(sessionId, userId);
+    if (!session) return null;
+    return {
+        summary: session.summary?.trim() ? session.summary.trim() : null,
+        summaryUpdatedAt: session.summaryUpdatedAt?.toISOString() ?? null,
+    };
+}
+
+export async function updateSessionSummary(
+    sessionId: string,
+    userId: string,
+    summary: string
+): Promise<void> {
+    const session = await getSessionForUser(sessionId, userId);
+    if (!session) return;
+    const next = summary.trim().slice(0, SUMMARY_MAX_LENGTH);
+    session.summary = next;
+    session.summaryUpdatedAt = new Date();
+    await session.save();
 }
 
 export async function loadSessionHistory(
@@ -71,6 +97,7 @@ export type SerializedMessage = {
     role: ChatMessageRole;
     content: string;
     createdAt: string;
+    meta?: Record<string, unknown>;
 };
 
 function serializeMessage(doc: IChatMessage): SerializedMessage {
@@ -79,6 +106,7 @@ function serializeMessage(doc: IChatMessage): SerializedMessage {
         role: doc.role,
         content: doc.content,
         createdAt: doc.createdAt.toISOString(),
+        meta: doc.meta ? (doc.meta as Record<string, unknown>) : undefined,
     };
 }
 
@@ -86,7 +114,8 @@ export async function saveChatExchange(
     userId: string,
     sessionId: string | undefined,
     userMessage: string,
-    assistantResponse: string
+    assistantResponse: string,
+    meta?: Record<string, unknown>
 ): Promise<SavedChatExchange> {
     const userObjectId = new Types.ObjectId(userId);
     let session: IChatSession | null = null;
@@ -114,6 +143,7 @@ export async function saveChatExchange(
             session: session._id,
             role: "assistant",
             content: assistantResponse,
+            meta,
         },
     ]);
 
