@@ -1,4 +1,4 @@
-// api/users/employees/[employeeId]
+// api/users/employees/v1/[employeeId]
 import { NextRequest } from "next/server";
 import { buildEmployeeDTO } from "@/lib/build-responses/build-employee-dt";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
@@ -227,8 +227,8 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
         note: "Updated employee details",
         before: before ? (before as Record<string, unknown>) : undefined,
         after: {
-            status: updatedEmployee.status,
-            employmentType: updatedEmployee.employmentType,
+            status: updatedEmployee ? updatedEmployee.status : null,
+            employmentType: updatedEmployee ? updatedEmployee.employmentType : null,
         },
     });
 
