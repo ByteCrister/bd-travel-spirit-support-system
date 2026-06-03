@@ -26,7 +26,7 @@ export async function authRateLimit({
     const redis = getRedisClient();
 
     // Redis key namespace for auth rate limiting to avoid collisions
-    const key = `BD_TRAVEL_SPIRIT_auth:limit:${identifier}`;
+    const key = `bd-travel-spirit-support-system:limit:${identifier}`;
 
     // Atomically increment the counter for this key
     const count = await redis.incr(key);
