@@ -154,7 +154,7 @@ export default function LoginDialog() {
           className="relative w-full"
         >
           {/* Main Container */}
-          <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+          <div className="relative bg-card rounded-3xl shadow-2xl border border-border overflow-hidden">
             {/* Background Effects */}
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-cyan-500/5"></div>
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
@@ -167,10 +167,10 @@ export default function LoginDialog() {
                     <FiShield className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <DialogTitle className={`${inter.className} text-xl font-bold text-gray-900 dark:text-white`}>
+                    <DialogTitle className={`${inter.className} text-xl font-bold text-foreground`}>
                       Support Login
                     </DialogTitle>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                       Access your support dashboard
                     </p>
                   </div>
@@ -180,7 +180,7 @@ export default function LoginDialog() {
                   variant="ghost"
                   size="icon"
                   onClick={() => handleOpenChange(false)}
-                  className="h-8 w-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
+                  className="h-8 w-8 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                 >
                   <FiX className="h-4 w-4 rotate-180" />
                 </Button>
@@ -197,7 +197,7 @@ export default function LoginDialog() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <FormLabel className="text-sm font-medium text-foreground">
                           Email Address
                         </FormLabel>
                         <FormControl>
@@ -209,7 +209,7 @@ export default function LoginDialog() {
                               {...field}
                               type="email"
                               placeholder="Enter your email"
-                              className="pl-10 py-3 rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                              className="pl-10 py-3 rounded-xl border-input bg-background hover:border-input focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
                             />
                           </div>
                         </FormControl>
@@ -224,7 +224,7 @@ export default function LoginDialog() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <FormLabel className="text-sm font-medium text-foreground">
                           Password
                         </FormLabel>
                         <FormControl>
@@ -236,7 +236,7 @@ export default function LoginDialog() {
                               {...field}
                               type={showPassword ? "text" : "password"}
                               placeholder="Enter your password"
-                              className="pl-10 pr-12 py-3 rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                              className="pl-10 pr-12 py-3 rounded-xl border-input bg-background hover:border-input focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
                             />
                             <Button
                               type="button"
@@ -289,10 +289,10 @@ export default function LoginDialog() {
                     {/* Divider */}
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-gray-200 dark:border-gray-700" />
+                        <span className="w-full border-t border-border" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-white dark:bg-gray-900 px-2 text-gray-500 dark:text-gray-400">
+                        <span className="bg-card px-2 text-muted-foreground">
                           Or continue with
                         </span>
                       </div>
@@ -302,7 +302,7 @@ export default function LoginDialog() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300 py-3 transition-all duration-200"
+                      className="w-full rounded-xl border-border bg-background hover:bg-muted text-foreground py-3 transition-all duration-200"
                       onClick={handleGoogleLogin}
                     >
                       <FcGoogle className="h-4 w-4 mr-2" />
@@ -323,8 +323,8 @@ export default function LoginDialog() {
                   </div>
 
                   {/* Footer */}
-                  <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="mt-6 pt-4 border-t border-border">
+                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                       <FiShield className="h-3 w-3" />
                       <span>Secure login with SSL encryption</span>
                     </div>

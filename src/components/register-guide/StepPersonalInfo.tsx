@@ -52,10 +52,10 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl mb-4 shadow-lg shadow-emerald-500/40">
           <User className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-3xl font-semibold mb-2 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
+        <h2 className="text-3xl font-semibold mb-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-300 dark:via-teal-300 dark:to-cyan-300 bg-clip-text text-transparent">
           Personal Information
         </h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+        <p className="text-muted-foreground max-w-2xl mx-auto">
           Let&apos;s start with your basic information. This helps us verify your identity and create your guide profile.
         </p>
       </motion.div>
@@ -63,15 +63,15 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Form */}
         <div className="lg:col-span-2">
-          <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
+          <Card className="border border-border shadow-lg bg-card/90 backdrop-blur">
             <CardHeader className="pb-6">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 rounded-xl flex items-center justify-center">
                   <User className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl text-gray-900">Basic Information</CardTitle>
-                  <p className="text-sm text-gray-600">Tell us about yourself</p>
+                  <CardTitle className="text-xl text-foreground">Basic Information</CardTitle>
+                  <p className="text-sm text-muted-foreground">Tell us about yourself</p>
                 </div>
               </div>
             </CardHeader>
@@ -103,9 +103,9 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
                         value={formData.personalInfo[field.id as keyof typeof formData.personalInfo]}
                         onChange={(e) => handleInputChange(field.id as keyof typeof formData.personalInfo, e.target.value)}
                         className={cn(
-                          "h-12 pl-4 pr-12 transition-all duration-300 bg-white text-gray-900 placeholder:text-gray-400 border-gray-300 focus-visible:ring-emerald-500",
-                          hasError && "border-red-500 bg-red-50",
-                          isValid && "border-emerald-500 bg-emerald-50"
+                          "h-12 pl-4 pr-12 transition-all duration-300 focus-visible:ring-emerald-500",
+                          hasError && "border-red-500 bg-red-50 dark:bg-red-950/30",
+                          isValid && "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
                         )}
                         style={{ boxShadow: '0 0 0 0 rgba(59, 130, 246, 0)' }}
                       />
@@ -156,15 +156,15 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
 
         {/* Address Section */}
         <div className="space-y-6">
-          <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
+          <Card className="border border-border shadow-lg bg-card/90 backdrop-blur">
             <CardHeader className="pb-4">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 rounded-xl flex items-center justify-center">
                   <MapPin className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg text-gray-900">Address Details</CardTitle>
-                  <p className="text-sm text-gray-600">Your location</p>
+                  <CardTitle className="text-lg text-foreground">Address Details</CardTitle>
+                  <p className="text-sm text-muted-foreground">Your location</p>
                 </div>
               </div>
             </CardHeader>
@@ -247,9 +247,9 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
                           value={formData.personalInfo[field.id as keyof typeof formData.personalInfo]}
                           onChange={(e) => handleInputChange(field.id as keyof typeof formData.personalInfo, e.target.value)}
                           className={cn(
-                            "h-10 pl-4 pr-10 transition-all duration-300 bg-white text-gray-900 placeholder:text-gray-400 border-gray-300 focus-visible:ring-emerald-500",
-                            hasError && "border-red-500 bg-red-50",
-                            isValid && "border-emerald-500 bg-emerald-50"
+                            "h-10 pl-4 pr-10 transition-all duration-300 focus-visible:ring-emerald-500",
+                            hasError && "border-red-500 bg-red-50 dark:bg-red-950/30",
+                            isValid && "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
                           )}
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -301,9 +301,9 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
                     readOnly
                     disabled
                     className={cn(
-                      "h-10 pl-4 pr-10 transition-all duration-300 bg-gray-100 text-gray-700 placeholder:text-gray-400 border-gray-300 focus-visible:ring-emerald-500",
-                      getFieldError('country') && "border-red-500 bg-red-50",
-                      isFieldValid('country') && "border-emerald-500 bg-emerald-50"
+                      "h-10 pl-4 pr-10 transition-all duration-300 bg-muted text-muted-foreground placeholder:text-muted-foreground focus-visible:ring-emerald-500",
+                      getFieldError('country') && "border-red-500 bg-red-50 dark:bg-red-950/30",
+                      isFieldValid('country') && "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
                     )}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -353,7 +353,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
         )}
 
         <div className="flex items-center space-x-4 ml-auto">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             Step 1 of 4
           </div>
           <Button

@@ -13,13 +13,13 @@ interface StatsCardSkeletonProps {
 
 export function StatsCardSkeleton({ className }: StatsCardSkeletonProps) {
   return (
-    <div className={cn(NEU_CARD, "relative overflow-hidden h-full p-5", className)}>
+    <div className={cn(NEU_CARD, "relative overflow-hidden h-full min-h-[7.25rem] p-5", className)}>
       {/* Left accent bar placeholder */}
       <div className={cn(NEU_SKELETON, "absolute left-0 top-0 bottom-0 w-1 rounded-r-full")} />
 
-      <div className="pl-3 flex items-start justify-between gap-3">
+      <div className="pl-3 flex items-start justify-between gap-4">
         {/* Text block */}
-        <div className="flex-1 space-y-2.5">
+        <div className="flex-1 min-w-0 space-y-2.5 pr-1">
           <div className={cn(NEU_SKELETON, "h-3 w-20")} />
           <div className={cn(NEU_SKELETON, "h-7 w-28")} />
           <div className={cn(NEU_SKELETON, "h-3 w-16")} />

@@ -11,7 +11,7 @@ import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
  */
 export async function cleanDeletedAssets(session?: mongoose.ClientSession) {
     // Find assets that were soft-deleted more than 1 day ago
-    const ONE_DAY_AGO = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
+    const ONE_DAY_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     const result = await AssetModel.deleteMany(
         { deletedAt: { $lte: ONE_DAY_AGO } },

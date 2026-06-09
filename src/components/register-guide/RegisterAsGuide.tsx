@@ -96,7 +96,7 @@ const RegisterAsGuide: React.FC = () => {
 
   return (
     <main
-      className={`min-h-dvh bg-slate-50 text-slate-900 ${jakarta.className}`}
+      className={`min-h-dvh bg-background text-foreground ${jakarta.className}`}
     >
       {/* Header */}
       <GuideRegisterHeader handleSaveAndContinueLater={handleSaveAndContinueLater} />

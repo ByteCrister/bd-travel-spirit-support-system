@@ -100,7 +100,7 @@ export default function ForgotPasswordDialog({
                     className="relative w-full"
                 >
                     {/* Main Container */}
-                    <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+                    <div className="relative bg-card rounded-3xl shadow-2xl border border-border overflow-hidden">
                         {/* Background Effects */}
                         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-red-500/5 to-pink-500/5"></div>
                         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent"></div>
@@ -113,10 +113,10 @@ export default function ForgotPasswordDialog({
                                         <FiShield className="h-5 w-5 text-white" />
                                     </div>
                                     <div>
-                                        <DialogTitle className={`${inter.className} text-xl font-bold text-gray-900 dark:text-white`}>
+                                        <DialogTitle className={`${inter.className} text-xl font-bold text-foreground`}>
                                             Reset Password
                                         </DialogTitle>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        <p className="text-sm text-muted-foreground">
                                             Tell us why you need password reset
                                         </p>
                                     </div>
@@ -127,7 +127,7 @@ export default function ForgotPasswordDialog({
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleOpenChange(false)}
-                                        className="h-8 w-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
+                                        className="h-8 w-8 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                                     >
                                         <FiX className="h-4 w-4" />
                                     </Button>
@@ -145,7 +145,7 @@ export default function ForgotPasswordDialog({
                                         name="email"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                <FormLabel className="text-sm font-medium text-foreground">
                                                     Email Address
                                                 </FormLabel>
                                                 <FormControl>
@@ -157,7 +157,7 @@ export default function ForgotPasswordDialog({
                                                             {...field}
                                                             type="email"
                                                             placeholder="Enter your email"
-                                                            className="pl-10 py-3 rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                                                            className="pl-10 py-3 rounded-xl border-input bg-background hover:border-input focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
                                                         />
                                                     </div>
                                                 </FormControl>
@@ -172,7 +172,7 @@ export default function ForgotPasswordDialog({
                                         name="description"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                <FormLabel className="text-sm font-medium text-foreground">
                                                     Reason for Password Reset
                                                 </FormLabel>
                                                 <FormControl>
@@ -183,12 +183,12 @@ export default function ForgotPasswordDialog({
                                                         <Textarea
                                                             {...field}
                                                             placeholder="Please explain why you need a password reset (e.g., forgot password, account compromised, etc.)"
-                                                            className="pl-10 py-3 rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 min-h-[100px] resize-none"
+                                                            className="pl-10 py-3 rounded-xl border-input bg-background hover:border-input focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 min-h-[100px] resize-none"
                                                         />
                                                     </div>
                                                 </FormControl>
                                                 <FormMessage className="flex items-center gap-2 text-sm" />
-                                                <div className="text-xs text-gray-500 dark:text-gray-400 text-right">
+                                                <div className="text-xs text-muted-foreground text-right">
                                                     {field.value?.length || 0}/500 characters
                                                 </div>
                                             </FormItem>
@@ -237,8 +237,8 @@ export default function ForgotPasswordDialog({
                                     </div>
 
                                     {/* Footer */}
-                                    <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                        <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <div className="mt-6 pt-4 border-t border-border">
+                                        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                                             <FiShield className="h-3 w-3" />
                                             <span>Your request will be reviewed by our support team</span>
                                         </div>

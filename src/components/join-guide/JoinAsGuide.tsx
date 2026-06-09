@@ -15,7 +15,7 @@ import { jakarta } from "@/styles/fonts";
 export default function JoinAsGuide({ pageData }: { pageData: LandingPageData }) {
 
   return (
-    <main className={`min-h-dvh ${jakarta.className}`}>
+    <main className={`min-h-dvh bg-background text-foreground ${jakarta.className}`}>
       {/* Top Bar */}
       <JoinAsGuideHeader />
 

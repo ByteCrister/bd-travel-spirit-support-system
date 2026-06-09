@@ -49,17 +49,19 @@ export function StatsCard({
   className,
 }: StatsCardProps) {
   const colors = colorAccentMap[color];
+  const displayValue = typeof value === "number" ? value.toLocaleString() : value;
+  const isLongValue = displayValue.length > 10;
 
   if (loading) {
     return (
-      <div className={cn(NEU_CARD, "p-5 relative overflow-hidden", className)}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-2 flex-1">
+      <div className={cn(NEU_CARD, "p-5 relative overflow-hidden min-h-[7.25rem]", className)}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2 flex-1 min-w-0">
             <div className={cn(NEU_SKELETON, "h-3 w-20")} />
-            <div className={cn(NEU_SKELETON, "h-7 w-28")} />
+            <div className={cn(NEU_SKELETON, "h-7 w-28 max-w-full")} />
             <div className={cn(NEU_SKELETON, "h-3 w-16")} />
           </div>
-          <div className={cn(NEU_SKELETON, "h-11 w-11 rounded-xl")} />
+          <div className={cn(NEU_SKELETON, "h-11 w-11 rounded-xl flex-shrink-0")} />
         </div>
         <div className={cn(NEU_SKELETON, "h-0.5 w-full mt-4 rounded-full")} />
       </div>
@@ -76,7 +78,7 @@ export function StatsCard({
     >
       <div className={cn(
         NEU_CARD,
-        "p-5 relative overflow-hidden h-full transition-shadow duration-300",
+        "p-5 relative overflow-hidden h-full min-h-[7.25rem] transition-shadow duration-300",
         "hover:shadow-[10px_10px_20px_#c8c6c5,-10px_-10px_20px_#ffffff]"
       )}>
         {/* Colored accent bar */}
@@ -85,23 +87,44 @@ export function StatsCard({
           style={{ backgroundColor: colors.accent }}
         />
 
-        <div className="pl-3 flex items-start justify-between gap-3">
+        <div className="pl-3 flex items-start justify-between gap-4">
           {/* Text */}
-          <div className="flex-1 min-w-0 space-y-1.5">
-            <p className={cn(NEU_LABEL, "truncate")}>{title}</p>
-            <p className={cn(NEU_HEADING, "text-2xl leading-none tabular-nums")}>
+          <div className="flex-1 min-w-0 space-y-1.5 pr-1">
+            <p className={cn(NEU_LABEL, "truncate")} title={title}>{title}</p>
+            <p
+              className={cn(
+                NEU_HEADING,
+                "leading-tight tabular-nums",
+                isLongValue
+                  ? "text-base sm:text-lg line-clamp-2 break-words"
+                  : "text-xl sm:text-2xl"
+              )}
+              title={displayValue}
+            >
               {typeof value === "number" ? (
                 <CountUp end={value} duration={0.8} separator="," />
-              ) : value}
+              ) : (
+                value
+              )}
             </p>
             {description && (
-              <p className={cn(NEU_MUTED, "text-xs truncate")}>{description}</p>
+              <p className={cn(NEU_MUTED, "text-xs line-clamp-2 break-words")} title={description}>
+                {description}
+              </p>
             )}
           </div>
 
-          {/* Icon well */}
-          <div className={cn(NEU_ICON_WELL, colors.iconBg, "flex items-center justify-center h-11 w-11")}>
-            <div className={cn("h-5 w-5", colors.iconText)}>{icon}</div>
+          {/* Icon well — flex-shrink-0 prevents overlap with text */}
+          <div
+            className={cn(
+              NEU_ICON_WELL,
+              colors.iconBg,
+              "flex flex-shrink-0 items-center justify-center h-11 w-11 mt-0.5"
+            )}
+          >
+            <span className={cn("flex items-center justify-center [&>svg]:h-5 [&>svg]:w-5", colors.iconText)}>
+              {icon}
+            </span>
           </div>
         </div>
 

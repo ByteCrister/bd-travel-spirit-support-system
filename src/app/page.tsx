@@ -22,7 +22,7 @@ export async function generateMetadata() {
       metadataBase,
 
       // ── Title ──────────────────────────────────────────────────────────────  
-      title: `Join as a Tour Guide in Bangladesh | ${totalGuides.toLocaleString()}+ Guides | BD Travel Spirit`,
+      title: `BD Travel Spirit Support System | Join as a Tour Guide in Bangladesh | ${totalGuides.toLocaleString()}+ Guides`,
 
       // ── Description ────────────────────────────────────────────────────────  
       description:

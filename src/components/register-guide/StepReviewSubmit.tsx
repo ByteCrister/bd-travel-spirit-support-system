@@ -158,7 +158,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
         transition={{ duration: 0.5 }}
         className={`w-full max-w-4xl mx-auto ${jakarta.className}`}
       >
-        <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
+        <Card className="border border-border shadow-lg bg-card/90 backdrop-blur">
           <CardContent className="pt-6">
             <div className="text-center space-y-8">
               <motion.div
@@ -181,10 +181,10 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
               </motion.div>
 
               <div>
-                <h2 className="text-3xl font-semibold mb-4 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
+                <h2 className="text-3xl font-semibold mb-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-300 dark:via-teal-300 dark:to-cyan-300 bg-clip-text text-transparent">
                   Application Submitted Successfully!
                 </h2>
-                <p className="text-slate-300 text-lg max-w-2xl mx-auto">
+                <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                   Thank you for your interest in becoming a guide with BD Travel Spirit.
                   We will review your application and get back to you within 3-5 business days.
                 </p>
@@ -201,11 +201,11 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                   <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-xl flex items-center justify-center">
                       <Clock className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="font-semibold text-lg text-gray-900">
+                    <h3 className="font-semibold text-lg text-white">
                       What happens next?
                     </h3>
                   </div>
-                  <ul className="text-sm text-gray-700 space-y-2">
+                  <ul className="text-sm text-slate-300 space-y-2">
                     <li className="flex items-start space-x-2">
                       <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                       <span>Our team will review your application and documents</span>
@@ -229,17 +229,17 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 }}
-                  className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-100"
+                  className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-2xl p-6 border border-emerald-100 dark:border-emerald-800"
                 >
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-xl flex items-center justify-center">
                       <Award className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="font-semibold text-lg text-gray-900">
+                    <h3 className="font-semibold text-lg text-foreground">
                       Why choose us?
                     </h3>
                   </div>
-                  <ul className="text-sm text-gray-700 space-y-2">
+                  <ul className="text-sm text-muted-foreground space-y-2">
                     <li className="flex items-start space-x-2">
                       <Star className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                       <span>Join thousands of successful guides worldwide</span>
@@ -285,10 +285,10 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl mb-4 shadow-lg shadow-emerald-500/40">
             <Eye className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-3xl font-semibold mb-2 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-semibold mb-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-300 dark:via-teal-300 dark:to-cyan-300 bg-clip-text text-transparent">
             Review & Submit
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-2xl mx-auto">
             Please review your information before submitting your application. Make sure all details are accurate and complete.
           </p>
         </motion.div>
@@ -297,17 +297,17 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           {/* Main Review Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Personal Information Review */}
-            <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
+            <Card className="border border-border shadow-lg bg-card/90 backdrop-blur">
               <CardHeader className="pb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 rounded-xl flex items-center justify-center">
                     <User className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl text-gray-900">
+                    <CardTitle className="text-xl text-foreground">
                       Personal Information
                     </CardTitle>
-                    <p className="text-sm text-gray-600">Your basic details</p>
+                    <p className="text-sm text-muted-foreground">Your basic details</p>
                   </div>
                 </div>
               </CardHeader>
@@ -315,37 +315,37 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div className="flex items-center space-x-3">
-                      <User className="w-5 h-5 text-gray-500" />
+                      <User className="w-5 h-5 text-muted-foreground" />
                       <div>
-                        <p className="font-semibold text-gray-900">{formData.personalInfo.name}</p>
-                        <p className="text-sm text-gray-500">Full Name</p>
+                        <p className="font-semibold text-foreground">{formData.personalInfo.name}</p>
+                        <p className="text-sm text-muted-foreground">Full Name</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <Mail className="w-5 h-5 text-gray-500" />
+                      <Mail className="w-5 h-5 text-muted-foreground" />
                       <div>
-                        <p className="font-semibold text-gray-900">{formData.personalInfo.email}</p>
-                        <p className="text-sm text-gray-500">Email Address</p>
+                        <p className="font-semibold text-foreground">{formData.personalInfo.email}</p>
+                        <p className="text-sm text-muted-foreground">Email Address</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <Phone className="w-5 h-5 text-gray-500" />
+                      <Phone className="w-5 h-5 text-muted-foreground" />
                       <div>
-                        <p className="font-semibold text-gray-900">{formData.personalInfo.phone}</p>
-                        <p className="text-sm text-gray-500">Phone Number</p>
+                        <p className="font-semibold text-foreground">{formData.personalInfo.phone}</p>
+                        <p className="text-sm text-muted-foreground">Phone Number</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div className="flex items-start space-x-3">
-                      <MapPin className="w-5 h-5 text-gray-500 mt-1" />
+                      <MapPin className="w-5 h-5 text-muted-foreground mt-1" />
                       <div>
-                        <p className="font-semibold text-gray-900">{formData.personalInfo.street}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="font-semibold text-foreground">{formData.personalInfo.street}</p>
+                        <p className="text-sm text-muted-foreground">
                           {formData.personalInfo.city}, {formData.personalInfo.division} {formData.personalInfo.zip}
                         </p>
-                        <p className="text-sm text-gray-500">{formData.personalInfo.country}</p>
+                        <p className="text-sm text-muted-foreground">{formData.personalInfo.country}</p>
                       </div>
                     </div>
                   </div>
@@ -354,24 +354,24 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
             </Card>
 
             {/* Company Details Review */}
-            <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
+            <Card className="border border-border shadow-lg bg-card/90 backdrop-blur">
               <CardHeader className="pb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 rounded-xl flex items-center justify-center">
                     <Building2 className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl text-gray-900">
+                    <CardTitle className="text-xl text-foreground">
                       Company Details
                     </CardTitle>
-                    <p className="text-sm text-gray-600">Business information</p>
+                    <p className="text-sm text-muted-foreground">Business information</p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="font-semibold text-lg mb-2 text-gray-900">{formData.companyDetails.companyName}</h4>
-                  <p className="text-gray-700 text-sm mb-4">{formData.companyDetails.bio}</p>
+                  <h4 className="font-semibold text-lg mb-2 text-foreground">{formData.companyDetails.companyName}</h4>
+                  <p className="text-muted-foreground text-sm mb-4">{formData.companyDetails.bio}</p>
                 </div>
 
                 {/* Social Links */}
@@ -379,7 +379,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                   <div className="mt-2 space-y-2">
                     {(formData.companyDetails.social ?? []).map((social, index) => (
                       <div key={index} className="flex items-center space-x-3">
-                        <Globe className="w-4 h-4 text-gray-500" />
+                        <Globe className="w-4 h-4 text-muted-foreground" />
                         <a
                           href={social.url}
                           target="_blank"
@@ -396,17 +396,17 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
             </Card>
 
             {/* Documents Review */}
-            <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
+            <Card className="border border-border shadow-lg bg-card/90 backdrop-blur">
               <CardHeader className="pb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 rounded-xl flex items-center justify-center">
                     <FileText className="w-5 h-5 text-cyan-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl text-gray-900">
+                    <CardTitle className="text-xl text-foreground">
                       Verification Documents ({totalDocuments})
                     </CardTitle>
-                    <p className="text-sm text-gray-600">Uploaded files</p>
+                    <p className="text-sm text-muted-foreground">Uploaded files</p>
                   </div>
                 </div>
               </CardHeader>
@@ -414,12 +414,12 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                 {totalDocuments > 0 ? (
                   <div className="space-y-3">
                     {Object.values(formData.documents || {}).flat().map((doc, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border">
                         <div className="flex items-center space-x-3">
                           {getFileIcon(doc.type)}
                           <div>
-                            <p className="font-medium text-sm text-gray-900">{doc.name}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="font-medium text-sm text-foreground">{doc.name}</p>
+                            <p className="text-xs text-muted-foreground">
                               {formatFileSize(doc.size)} • {new Date(doc.uploadedAt).toLocaleDateString()}
                             </p>
                           </div>
@@ -429,9 +429,9 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-2 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg">
                     <AlertCircle className="w-4 h-4 text-red-500" />
-                    <p className="text-sm text-red-700">No documents uploaded</p>
+                    <p className="text-sm text-red-700 dark:text-red-300">No documents uploaded</p>
                   </div>
                 )}
               </CardContent>
@@ -441,7 +441,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Terms and Conditions */}
-            <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
+            <Card className="border border-border shadow-lg bg-card/90 backdrop-blur">
               <CardHeader className="flex flex-row gap-2">
                 <Image
                   src="/images/register_as_guide/secure-data.png"
@@ -451,13 +451,13 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                   className="object-contain"
                 />
                 <CardTitle
-                  className="text-lg text-gray-900"
+                  className="text-lg text-foreground"
                 >
                   Terms & Conditions
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="text-sm text-gray-600 space-y-2">
+                <div className="text-sm text-muted-foreground space-y-2">
                   <p>• By submitting this application, you agree to our terms of service and privacy policy</p>
                   <p>• You confirm that all information provided is accurate and truthful</p>
                   <p>• You have the right to submit the uploaded documents</p>
@@ -468,7 +468,7 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
             </Card>
 
             {/* Security Notice */}
-            <Card className="border border-gray-200 shadow-lg bg-white/90 backdrop-blur">
+            <Card className="border border-border shadow-lg bg-card/90 backdrop-blur">
               <CardHeader className="flex flex-row gap-2">
                 <Image
                   src="/images/register_as_guide/terms-and-conditions.png"
@@ -477,12 +477,12 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
                   height={34}
                   className="object-contain"
                 />
-                <CardTitle className="text-lg text-gray-900">
+                <CardTitle className="text-lg text-foreground">
                   Security Notice
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="text-sm text-gray-600 space-y-2">
+                <div className="text-sm text-muted-foreground space-y-2">
                   <p>• All your data is encrypted and stored securely</p>
                   <p>• We use industry-standard security measures</p>
                   <p>• Your personal information is never shared with third parties</p>
@@ -504,14 +504,14 @@ export const StepReviewSubmit: React.FC<StepReviewSubmitProps> = ({ onPrevious, 
             variant="outline"
             onClick={onPrevious}
             disabled={isSubmitting}
-            className="flex items-center space-x-2 px-6 py-3 h-12 border-gray-300 text-gray-700 hover:bg-gray-100"
+            className="flex items-center space-x-2 px-6 py-3 h-12"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Previous</span>
           </Button>
 
           <div className="flex items-center space-x-4 ml-auto">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               Step 4 of 4
             </div>
             <Button

@@ -2225,9 +2225,6 @@ function BookingCard({
           </div>
         </div>
       )}
-
-      {/* CTA */}
-      <button className={NEU_BTN_PRIMARY_LOCAL}>Book Now</button>
     </div>
   );
 }

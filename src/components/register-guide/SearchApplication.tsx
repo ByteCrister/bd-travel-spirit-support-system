@@ -48,14 +48,14 @@ const SearchApplication: React.FC = () => {
             transition={{ duration: 0.5 }}
             className="max-w-6xl mx-auto mb-8"
         >
-            <Card className="border border-gray-200 shadow-xl bg-gradient-to-br from-white to-emerald-50/30 overflow-hidden">
+            <Card className="border border-border shadow-xl bg-gradient-to-br from-card to-emerald-50/30 dark:to-emerald-950/20 overflow-hidden">
                 {/* Decorative top border */}
                 <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
 
                 <CardHeader className="pb-4 relative">
                     <div className="flex items-start gap-4">
                         <div className="relative">
-                            <div className="w-12 h-12 bg-gradient-to-br from-emerald-50 to-teal-100 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-200/60">
+                            <div className="w-12 h-12 bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-emerald-950/40 dark:to-teal-950/40 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-200/60 dark:ring-emerald-800/60">
                                 <FileSearch className="w-6 h-6 text-emerald-600" strokeWidth={2.5} />
                             </div>
                             <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center animate-pulse">
@@ -66,7 +66,7 @@ const SearchApplication: React.FC = () => {
                             <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent mb-1">
                                 Continue Your Application
                             </CardTitle>
-                            <CardDescription className="text-base text-gray-600">
+                            <CardDescription className="text-base text-muted-foreground">
                                 Already started? Load your saved application using your email and access token
                             </CardDescription>
                         </div>
@@ -86,11 +86,11 @@ const SearchApplication: React.FC = () => {
                                     onClick={handleClearSearch}
                                     variant="ghost"
                                     size="icon"
-                                    className="h-10 w-10 rounded-full bg-gradient-to-br from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 border border-gray-200/60 shadow-sm hover:shadow-md transition-all group"
+                                    className="h-10 w-10 rounded-full bg-gradient-to-br from-muted to-muted/80 hover:from-muted/80 hover:to-muted border border-border shadow-sm hover:shadow-md transition-all group"
                                     aria-label="Clear search and start new"
                                 >
                                     <div className="relative">
-                                        <X className="h-5 w-5 text-gray-500 group-hover:text-red-500 transition-colors" strokeWidth={2.5} />
+                                        <X className="h-5 w-5 text-muted-foreground group-hover:text-red-500 transition-colors" strokeWidth={2.5} />
                                         <div className="absolute inset-0 bg-gradient-to-br from-red-500/0 to-pink-500/0 group-hover:from-red-500/10 group-hover:to-pink-500/10 rounded-full transition-all" />
                                     </div>
                                 </Button>
@@ -105,15 +105,15 @@ const SearchApplication: React.FC = () => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/60 rounded-xl p-4"
+                        className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200/60 dark:border-emerald-800/60 rounded-xl p-4"
                     >
                         <div className="flex items-start gap-3">
                             <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
                                 <AlertCircle className="w-4 h-4 text-white" strokeWidth={2.5} />
                             </div>
                             <div className="flex-1 text-sm">
-                                <p className="font-semibold text-emerald-900 mb-1">Looking for your saved application?</p>
-                                <p className="text-emerald-800 leading-relaxed">
+                                <p className="font-semibold text-emerald-900 dark:text-emerald-200 mb-1">Looking for your saved application?</p>
+                                <p className="text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
                                     Enter the email address you used and the access token that was sent to your email when you first started your application.
                                 </p>
                             </div>
@@ -128,7 +128,7 @@ const SearchApplication: React.FC = () => {
                             transition={{ delay: 0.3 }}
                             className="space-y-2"
                         >
-                            <Label htmlFor="email" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Label htmlFor="email" className="text-sm font-semibold text-foreground flex items-center gap-2">
                                 <Mail className="w-4 h-4 text-emerald-600" />
                                 Email Address
                             </Label>
@@ -140,7 +140,7 @@ const SearchApplication: React.FC = () => {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     disabled={isSearching}
-                                    className="h-11 pl-4 pr-4 border-2 border-gray-200 focus:border-emerald-500 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-60"
+                                    className="h-11 pl-4 pr-4 border-2 border-border focus:border-emerald-500 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-60"
                                 />
                             </div>
                         </motion.div>
@@ -151,7 +151,7 @@ const SearchApplication: React.FC = () => {
                             transition={{ delay: 0.4 }}
                             className="space-y-2"
                         >
-                            <Label htmlFor="accessToken" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Label htmlFor="accessToken" className="text-sm font-semibold text-foreground flex items-center gap-2">
                                 <KeyRound className="w-4 h-4 text-emerald-600" />
                                 Access Token
                             </Label>
@@ -163,7 +163,7 @@ const SearchApplication: React.FC = () => {
                                     value={accessToken}
                                     onChange={(e) => setAccessToken(e.target.value)}
                                     disabled={isSearching}
-                                    className="h-11 pl-4 pr-4 border-2 border-gray-200 focus:border-emerald-500 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-60 font-mono text-sm"
+                                    className="h-11 pl-4 pr-4 border-2 border-border focus:border-emerald-500 rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-60 font-mono text-sm"
                                 />
                             </div>
                         </motion.div>
@@ -203,9 +203,9 @@ const SearchApplication: React.FC = () => {
                                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
                                 transition={{ duration: 0.3 }}
                             >
-                                <Alert className="border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 shadow-md">
-                                    <CheckCircle2 className="h-5 w-5 text-green-600" strokeWidth={2.5} />
-                                    <AlertDescription className="text-green-800 font-medium ml-2">
+                                <Alert className="border-2 border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 shadow-md">
+                                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" strokeWidth={2.5} />
+                                    <AlertDescription className="text-green-800 dark:text-green-300 font-medium ml-2">
                                         Application loaded successfully! Your form has been filled with your saved data.
                                     </AlertDescription>
                                 </Alert>
@@ -219,9 +219,9 @@ const SearchApplication: React.FC = () => {
                                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
                                 transition={{ duration: 0.3 }}
                             >
-                                <Alert className="border-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50 shadow-md">
-                                    <XCircle className="h-5 w-5 text-red-600" strokeWidth={2.5} />
-                                    <AlertDescription className="text-red-800 font-medium ml-2">
+                                <Alert className="border-2 border-red-200 dark:border-red-800 bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 shadow-md">
+                                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" strokeWidth={2.5} />
+                                    <AlertDescription className="text-red-800 dark:text-red-300 font-medium ml-2">
                                         {searchError}
                                     </AlertDescription>
                                 </Alert>
@@ -236,7 +236,7 @@ const SearchApplication: React.FC = () => {
                         transition={{ delay: 0.6 }}
                         className="text-center pt-2"
                     >
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                             Don&apos;t have an access token? Check your email or start a new application below.
                         </p>
                     </motion.div>

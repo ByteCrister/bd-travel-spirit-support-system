@@ -2,7 +2,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { Formik, Form, useField, FieldInputProps } from "formik";
+import { Formik, Form, useField, FieldInputProps, FieldHelperProps } from "formik";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Dialog,
@@ -91,7 +91,7 @@ type FormValues = CreateStripePaymentMethodDTO;
 
 const initialValues: FormValues = {
     ownerType: PAYMENT_OWNER_TYPE.ADMIN,
-    purpose: PAYMENT_PURPOSE.ALL,
+    purpose: PAYMENT_PURPOSE.BLOCK_ACCOUNT,
     isBackup: false,
     email: "",
     name: "",
@@ -282,9 +282,8 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                         <SelectValue placeholder="Select purpose" />
                                                     </SelectTrigger>
                                                     <SelectContent className={`${NEU_SURFACE_RAISED} border-0 rounded-xl`}>
-                                                        <SelectItem value={PAYMENT_PURPOSE.ALL}>All Purposes</SelectItem>
-                                                        <SelectItem value={PAYMENT_PURPOSE.EMPLOYEE_WAGES}>Employee Wages</SelectItem>
-                                                        <SelectItem value={PAYMENT_PURPOSE.REFUND}>Refund</SelectItem>
+                                                        <SelectItem value={PAYMENT_PURPOSE.BLOCK_ACCOUNT}>Block Account</SelectItem>
+                                                        <SelectItem value={PAYMENT_PURPOSE.TRANSACTION_ACCOUNT}>Transaction Account</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             )}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
 import GlobalProvider from "@/components/wrappers/GlobalProvider";
+import { ThemeProvider } from "@/components/wrappers/ThemeProvider";
 import { jetbrainsMono, spaceMono } from "@/styles/fonts";
 
 export const metadata: Metadata = {
@@ -188,8 +189,10 @@ export default async function RootLayout({
     <html
       lang="en"
       className={`${spaceMono.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
     >
       <body>
+        <ThemeProvider>
         <GlobalProvider>
           {/* App content */}
           {children}
@@ -197,6 +200,7 @@ export default async function RootLayout({
           {/* Global toast notifications */}
           <Toaster position="bottom-right" richColors duration={5000} />
         </GlobalProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
