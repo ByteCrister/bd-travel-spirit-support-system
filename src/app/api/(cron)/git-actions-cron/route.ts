@@ -1,46 +1,54 @@
-// app/api/git-actions-cron/route.ts
 import { NextRequest } from "next/server";
-import mongoose from "mongoose";
 import ConnectDB from "@/config/db";
-import AssetModel from "@/models/assets/asset.model";
-import { withTransaction } from "@/lib/helpers/withTransaction";
 import { ApiError, withErrorHandler } from "@/lib/helpers/withErrorHandler";
+import {
+    cleanupDeletedAssets,
+    processEmployeePayments,
+    processTourSettlements,
+} from "@/lib/cron";
 
-/**
- * Function to permanently delete assets that are soft-deleted
- */
-export async function cleanDeletedAssets(session?: mongoose.ClientSession) {
-    // Find assets that were soft-deleted more than 1 day ago
-    const ONE_DAY_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+function verifyCronAuth(req: NextRequest) {
+    const token = process.env.CRON_API_TOKEN ?? process.env.API_TOKEN;
 
-    const result = await AssetModel.deleteMany(
-        { deletedAt: { $lte: ONE_DAY_AGO } },
-        { session }
-    ).exec();
+    if (!token) {
+        throw new ApiError("Cron API token is not configured", 500);
+    }
 
-    return { deletedCount: result.deletedCount ?? 0 };
+    const authorization = req.headers.get("authorization");
+    if (authorization !== `Bearer ${token}`) {
+        throw new ApiError("Unauthorized", 401);
+    }
 }
 
-/**
- * POST API handler
- */
-export const POST = withErrorHandler(async (req: NextRequest) => {
+async function runCronJobs() {
+    await ConnectDB();
 
-    await ConnectDB(); // Ensure DB connection
-
-    const body = await req.json();
-    if (body.action !== "cleanup") {
-        throw new ApiError("Invalid action", 400)
-    }
-
-    // Run cleanup in a transaction
-    await withTransaction(async (session) => {
-        return cleanDeletedAssets(session);
-    });
+    const assetCleanup = await cleanupDeletedAssets();
+    const employeePayments = await processEmployeePayments();
+    const tourSettlements = await processTourSettlements();
 
     return {
-        data: null,
-        status: 200,
-    }
+        success: true,
+        results: {
+            assetCleanup,
+            employeePayments,
+            tourSettlements,
+        },
+    };
+}
 
-})
+export const GET = withErrorHandler(async (req: NextRequest) => {
+    verifyCronAuth(req);
+
+    const data = await runCronJobs();
+
+    return { data, status: 200 };
+});
+
+export const POST = withErrorHandler(async (req: NextRequest) => {
+    verifyCronAuth(req);
+
+    const data = await runCronJobs();
+
+    return { data, status: 200 };
+});
