@@ -47,11 +47,14 @@ export default function HeroSection({ data }: HeroSectionProps) {
     >
       {/* Premium background with carousel - theme-aware overlays */}
       <div className="absolute inset-0 -z-10">
-        <ImageCarousel Images={images} className="h-full w-full" showControls={false} />
-        {/* Light mode overlay: soft neutral gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-100/80 via-gray-50/60 to-gray-100/80 dark:from-slate-900/70 dark:via-slate-800/50 dark:to-slate-900/80" />
-        {/* Dark overlay for text readability in both modes */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20 dark:from-black/60 dark:via-transparent dark:to-black/40" />
+        <ImageCarousel
+          Images={images}
+          className="h-full w-full"
+          showControls={false}
+          fill   // <-- ensures the carousel fills the entire area
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-100/30 via-gray-50/20 to-gray-100/30 dark:from-slate-900/50 dark:via-slate-800/30 dark:to-slate-900/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 dark:from-black/40 dark:via-transparent dark:to-black/20" />
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20 md:py-24 lg:py-32">

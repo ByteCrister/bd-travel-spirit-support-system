@@ -8,7 +8,7 @@ import {
 } from "@/lib/cron";
 
 function verifyCronAuth(req: NextRequest) {
-    const token = process.env.CRON_API_TOKEN ?? process.env.API_TOKEN;
+    const token = process.env.CRON_API_TOKEN!;
 
     if (!token) {
         throw new ApiError("Cron API token is not configured", 500);

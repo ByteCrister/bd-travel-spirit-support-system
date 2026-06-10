@@ -8,7 +8,6 @@ import {
   FiShield,
   FiAward,
   FiUsers,
-  FiHeart
 } from "react-icons/fi";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { FooterTypes } from "@/types/guide/join-as-guide.types";
@@ -365,7 +364,6 @@ export default function Footer({ data }: { data: FooterTypes }) {
                 <span>© {currentYear} BD Travel Spirit. All rights reserved.</span>
                 <span className="hidden sm:inline">•</span>
                 <span className="hidden sm:inline">Made with</span>
-                <FiHeart className="h-4 w-4 text-red-500" />
                 <span className="hidden sm:inline">in Bangladesh</span>
               </motion.div>
 

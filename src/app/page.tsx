@@ -1,6 +1,9 @@
 // app/page.tsx
 import JoinAsGuide from "@/components/join-guide/JoinAsGuide";
-import fetchLandingData from "@/lib/mocks/fetchLandingData.mock";
+import fetchLandingData from "@/lib/handlers/fetch-static/fetchLandingData";
+
+// ISR – revalidate every 60 seconds
+export const revalidate = 60;
 
 // ----------------------------
 // Generate metadata using the same fetch
