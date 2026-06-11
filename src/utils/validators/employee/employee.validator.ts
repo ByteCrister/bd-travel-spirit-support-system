@@ -95,7 +95,9 @@ export const paymentCardValidationSchema: yup.ObjectSchema<PaymentCardDTO> = yup
         .number()
         .min(new Date().getFullYear(), "Card has expired")
         .required("Expiration year is required"),
-    cardholderName: yup.string().trim().optional(),
+    cardholderName: yup.string().trim().required("Cardholder name is required"),
+    stripePaymentMethodId: yup.string().required("Stripe payment method ID is required"),
+    stripeCustomerId: yup.string().required("Stripe connected account ID is required"),
 });
 
 // Main validation schema

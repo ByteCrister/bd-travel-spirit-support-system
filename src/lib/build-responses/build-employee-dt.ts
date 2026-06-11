@@ -4,7 +4,16 @@ import AuditModel from "@/models/audit.model";
 import "@/models/assets/asset.model"; // for populate
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
 import { AuditLog } from "@/types/user/current-user.types";
-import { ContactInfoDTO, DocumentDTO, EmployeeDetailDTO, PaymentCardDTO, PayrollRecordDTO, SalaryHistoryDTO, UserSummaryDTO, CurrentMonthPaymentStatusDTO } from "@/types/employee/employee.types";
+import {
+    ContactInfoDTO,
+    DocumentDTO,
+    EmployeeDetailDTO,
+    PaymentCardDTO,
+    PayrollRecordDTO,
+    SalaryHistoryDTO,
+    UserSummaryDTO,
+    CurrentMonthPaymentStatusDTO,
+} from "@/types/employee/employee.types";
 import { UserRole } from "@/constants/user.const";
 import { ClientSession } from "mongoose";
 import { PopulatedAssetLean } from "@/types/common/populated-asset.types";
@@ -17,7 +26,7 @@ interface IUserLean {
     name: string;
     avatar?: PopulatedAssetLean;
     email: string;
-    role: UserRole
+    role: UserRole;
 }
 
 interface IEmployeeDocumentLean {
@@ -26,15 +35,28 @@ interface IEmployeeDocumentLean {
     uploadedAt: Date;
 }
 
-type EmployeeLeanPopulated =
-    Omit<IEmployee,
-        | "user"
-        | "documents"
-    > & {
-        _id: ObjectId;
-        user: IUserLean;
-        documents: IEmployeeDocumentLean[];
+// Populated payment account (only needed fields)
+interface IPaymentAccountLean {
+    _id: ObjectId;
+    stripeCustomerId: string;
+    stripePaymentMethodId: string;
+    card?: {
+        brand: string;
+        last4: string;
+        expMonth: number;
+        expYear: number;
     };
+}
+
+type EmployeeLeanPopulated = Omit<
+    IEmployee,
+    "user" | "documents" | "paymentAccount"
+> & {
+    _id: ObjectId;
+    user: IUserLean;
+    documents: IEmployeeDocumentLean[];
+    paymentAccount?: IPaymentAccountLean | null;
+};
 
 /**
  * Calculate current month payment status for an employee
@@ -61,14 +83,14 @@ function calculateCurrentMonthPaymentStatus(
 
     // Calculate which month and year this payment cycle corresponds to
     const cycleDate = new Date(joiningDate);
-    cycleDate.setDate(cycleDate.getDate() + (currentCycle * 30));
+    cycleDate.setDate(cycleDate.getDate() + currentCycle * 30);
 
     const currentYear = cycleDate.getFullYear();
     const currentMonth = cycleDate.getMonth() + 1; // 1-12
 
     // Calculate next due date (next cycle)
     const dueDate = new Date(joiningDate);
-    dueDate.setDate(dueDate.getDate() + ((currentCycle + 1) * 30));
+    dueDate.setDate(dueDate.getDate() + (currentCycle + 1) * 30);
 
     // Find payroll record for current cycle month/year
     const currentMonthRecord = payroll.find(
@@ -109,11 +131,11 @@ function calculateCurrentMonthPaymentStatus(
 }
 
 /**
- * Build EmployeeDetailDTO array from multiple employeeIds
+ * Build EmployeeDetailDTO from employeeId
  */
 export async function buildEmployeeDTO(
     employeeId: ObjectId,
-    session?: ClientSession,
+    session?: ClientSession
 ): Promise<EmployeeDetailDTO | null> {
     if (!employeeId) throw new Error("employeeId is required");
 
@@ -127,15 +149,22 @@ export async function buildEmployeeDTO(
             populate: {
                 path: "avatar",
                 select: "file deletedAt",
-                populate: { path: "file", select: "publicUrl" },
-                ...({ match: { deletedAt: null } }),
+                populate: { path: "file", select: "publicUrl",options: { session }, },
+                ...({match: { deletedAt: null }}),
+                options: { session },
             },
         })
         .populate({
             path: "documents.asset",
             select: "file deletedAt",
-            populate: { path: "file", select: "publicUrl" },
-            ...({ match: { deletedAt: null } }),
+            populate: { path: "file", select: "publicUrl", options: { session }, },
+            ...({match: { deletedAt: null }}),
+            options: { session },
+        })
+        .populate({
+            path: "paymentAccount",
+            select: "card stripeCustomerId stripePaymentMethodId",
+            options: { session },
         })
         .lean()
         .exec();
@@ -204,6 +233,22 @@ export async function buildEmployeeDTO(
     );
 
     /* ---------------------------------- */
+    /* Payment Card from paymentAccount   */
+    /* ---------------------------------- */
+    let paymentCard: PaymentCardDTO | undefined;
+    if (employee.paymentAccount?.card) {
+        paymentCard = {
+            brand: employee.paymentAccount.card.brand as PaymentCardDTO["brand"],
+            last4: employee.paymentAccount.card.last4,
+            expMonth: employee.paymentAccount.card.expMonth,
+            expYear: employee.paymentAccount.card.expYear,
+            stripeCustomerId: employee.paymentAccount.stripeCustomerId,
+            stripePaymentMethodId: employee.paymentAccount.stripePaymentMethodId,
+            // cardholderName not stored in this model – can be omitted or fetched separately
+        };
+    }
+
+    /* ---------------------------------- */
     /* Contact info                       */
     /* ---------------------------------- */
     const contactInfo: ContactInfoDTO = {
@@ -261,16 +306,8 @@ export async function buildEmployeeDTO(
         salary: employee.salary,
         currency: employee.currency,
         paymentMode: employee.paymentMode,
-        paymentCard: employee.paymentCard
-            ? {
-                  brand: employee.paymentCard.brand,
-                  last4: employee.paymentCard.last4,
-                  expMonth: employee.paymentCard.expMonth,
-                  expYear: employee.paymentCard.expYear,
-                  cardholderName: employee.paymentCard.cardholderName,
-              } as PaymentCardDTO
-            : undefined,
-        currentMonthPayment, // Added current month payment status
+        paymentCard, // now derived from paymentAccount
+        currentMonthPayment,
         salaryHistory,
         dateOfJoining: employee.dateOfJoining.toISOString(),
         dateOfLeaving: employee.dateOfLeaving?.toISOString(),
@@ -280,7 +317,7 @@ export async function buildEmployeeDTO(
         shifts: employee.shifts,
         documents,
         audit,
-        avatar: avatarUrl, // URL, not ID
+        avatar: avatarUrl,
         notes: employee.notes,
         isDeleted: !!employee.deletedAt,
         createdAt: employee.createdAt.toISOString(),

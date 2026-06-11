@@ -838,208 +838,191 @@ export default function AddEmployeePage() {
                     </div>
 
                     {/* Payment Card */}
-                    {values.paymentMode === SALARY_PAYMENT_MODE.AUTO && (
-                      <div className="md:col-span-2">
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className={`${NEU_SURFACE_INSET} rounded-xl p-5 space-y-4`}
-                        >
-                          <h4
-                            className={`${NEU_HEADING} text-sm flex items-center gap-2`}
-                          >
-                            <div className={`${NEU_ICON_WELL_PRIMARY} p-1.5`}>
-                              <CreditCard className="h-4 w-4 text-[#006666]" />
-                            </div>
-                            Payment Card Details *
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className={`${NEU_SURFACE_INSET} rounded-xl p-5 space-y-4`}
+                      >
+                        <h4 className={`${NEU_HEADING} text-sm flex items-center gap-2`}>
+                          <div className={`${NEU_ICON_WELL_PRIMARY} p-1.5`}>
+                            <CreditCard className="h-4 w-4 text-[#006666]" />
+                          </div>
+                          Payment Card Details *
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Card Brand */}
+                          <FormItem>
+                            <FormLabel>Card Brand *</FormLabel>
+                            <Select
+                              value={values.paymentCard?.brand ?? CARD_BRAND.UNKNOWN}
+                              onValueChange={(v) => {
+                                if (showVerificationDialog) return;
+                                setFieldValue("paymentCard", {
+                                  ...(values.paymentCard ?? {}),
+                                  brand: v as CardBrand,
+                                });
+                              }}
+                              disabled={showVerificationDialog}
+                            >
+                              <SelectTrigger className={`${NEU_BTN_GHOST} w-full h-10 px-4 text-sm`}>
+                                <SelectValue placeholder="Select card brand" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60">
+                                {Object.values(CARD_BRAND).map((brand) => (
+                                  <SelectItem key={brand} value={brand} className="font-[family-name:var(--font-jetbrains-mono)] text-sm cursor-pointer">
+                                    {brand.charAt(0).toUpperCase() + brand.slice(1)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+
+                          {/* Last 4 Digits */}
+                          <FormItem>
+                            <FormLabel>Last 4 Digits *</FormLabel>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={4}
+                              placeholder="1234"
+                              disabled={showVerificationDialog}
+                              value={values.paymentCard?.last4 ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                                setFieldValue("paymentCard", {
+                                  ...(values.paymentCard ?? {}),
+                                  last4: val,
+                                });
+                              }}
+                              className={`${NEU_INPUT} w-full h-10 px-4 font-mono tracking-widest`}
+                            />
+                          </FormItem>
+
+                          {/* Exp. Month */}
+                          <FormItem>
+                            <FormLabel>Exp. Month *</FormLabel>
+                            <Select
+                              value={String(values.paymentCard?.expMonth ?? 1)}
+                              onValueChange={(v) => {
+                                if (showVerificationDialog) return;
+                                setFieldValue("paymentCard", {
+                                  ...(values.paymentCard ?? {}),
+                                  expMonth: parseInt(v, 10),
+                                });
+                              }}
+                              disabled={showVerificationDialog}
+                            >
+                              <SelectTrigger className={`${NEU_BTN_GHOST} w-full h-10 px-4 text-sm`}>
+                                <SelectValue placeholder="Month" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60">
+                                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                                  <SelectItem key={m} value={String(m)} className="font-[family-name:var(--font-jetbrains-mono)] text-sm cursor-pointer">
+                                    {String(m).padStart(2, "0")}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+
+                          {/* Exp. Year */}
+                          <FormItem>
+                            <FormLabel>Exp. Year *</FormLabel>
+                            <Select
+                              value={String(values.paymentCard?.expYear ?? new Date().getFullYear())}
+                              onValueChange={(v) => {
+                                if (showVerificationDialog) return;
+                                setFieldValue("paymentCard", {
+                                  ...(values.paymentCard ?? {}),
+                                  expYear: parseInt(v, 10),
+                                });
+                              }}
+                              disabled={showVerificationDialog}
+                            >
+                              <SelectTrigger className={`${NEU_BTN_GHOST} w-full h-10 px-4 text-sm`}>
+                                <SelectValue placeholder="Year" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60">
+                                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map((y) => (
+                                  <SelectItem key={y} value={String(y)} className="font-[family-name:var(--font-jetbrains-mono)] text-sm cursor-pointer">
+                                    {y}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+
+                          {/* Cardholder Name */}
+                          <div className="md:col-span-2">
                             <FormItem>
-                              <FormLabel>Card Brand *</FormLabel>
-                              <Select
-                                value={
-                                  values.paymentCard?.brand ??
-                                  CARD_BRAND.UNKNOWN
-                                }
-                                onValueChange={(v) => {
-                                  if (showVerificationDialog) return;
-                                  setFieldValue("paymentCard", {
-                                    ...(values.paymentCard ?? {
-                                      last4: "",
-                                      expMonth: 1,
-                                      expYear: new Date().getFullYear(),
-                                      brand: CARD_BRAND.UNKNOWN,
-                                    }),
-                                    brand: v as CardBrand,
-                                  });
-                                }}
-                                disabled={showVerificationDialog}
-                              >
-                                <SelectTrigger
-                                  className={`${NEU_BTN_GHOST} w-full h-10 px-4 text-sm`}
-                                >
-                                  <SelectValue placeholder="Select card brand" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60">
-                                  {Object.values(CARD_BRAND).map((brand) => (
-                                    <SelectItem
-                                      key={brand}
-                                      value={brand}
-                                      className="font-[family-name:var(--font-jetbrains-mono)] text-sm cursor-pointer"
-                                    >
-                                      {brand.charAt(0).toUpperCase() +
-                                        brand.slice(1)}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                            <FormItem>
-                              <FormLabel>Last 4 Digits *</FormLabel>
+                              <FormLabel>Cardholder Name</FormLabel>
                               <input
                                 type="text"
-                                inputMode="numeric"
-                                maxLength={4}
-                                placeholder="1234"
+                                placeholder="Name as shown on card"
                                 disabled={showVerificationDialog}
-                                value={values.paymentCard?.last4 ?? ""}
-                                onChange={(e) => {
-                                  const val = e.target.value
-                                    .replace(/\D/g, "")
-                                    .slice(0, 4);
+                                value={values.paymentCard?.cardholderName ?? ""}
+                                onChange={(e) =>
                                   setFieldValue("paymentCard", {
-                                    ...(values.paymentCard ?? {
-                                      brand: CARD_BRAND.UNKNOWN,
-                                      expMonth: 1,
-                                      expYear: new Date().getFullYear(),
-                                    }),
-                                    last4: val,
-                                  });
-                                }}
-                                className={`${NEU_INPUT} w-full h-10 px-4 font-mono tracking-widest`}
+                                    ...(values.paymentCard ?? {}),
+                                    cardholderName: e.target.value,
+                                  })
+                                }
+                                className={`${NEU_INPUT} w-full h-10 px-4`}
                               />
                             </FormItem>
-                            <FormItem>
-                              <FormLabel>Exp. Month *</FormLabel>
-                              <Select
-                                value={String(
-                                  values.paymentCard?.expMonth ?? 1,
-                                )}
-                                onValueChange={(v) => {
-                                  if (showVerificationDialog) return;
-                                  setFieldValue("paymentCard", {
-                                    ...(values.paymentCard ?? {
-                                      brand: CARD_BRAND.UNKNOWN,
-                                      last4: "",
-                                      expYear: new Date().getFullYear(),
-                                    }),
-                                    expMonth: parseInt(v, 10),
-                                  });
-                                }}
-                                disabled={showVerificationDialog}
-                              >
-                                <SelectTrigger
-                                  className={`${NEU_BTN_GHOST} w-full h-10 px-4 text-sm`}
-                                >
-                                  <SelectValue placeholder="Month" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60">
-                                  {Array.from(
-                                    { length: 12 },
-                                    (_, i) => i + 1,
-                                  ).map((m) => (
-                                    <SelectItem
-                                      key={m}
-                                      value={String(m)}
-                                      className="font-[family-name:var(--font-jetbrains-mono)] text-sm cursor-pointer"
-                                    >
-                                      {String(m).padStart(2, "0")}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                            <FormItem>
-                              <FormLabel>Exp. Year *</FormLabel>
-                              <Select
-                                value={String(
-                                  values.paymentCard?.expYear ??
-                                  new Date().getFullYear(),
-                                )}
-                                onValueChange={(v) => {
-                                  if (showVerificationDialog) return;
-                                  setFieldValue("paymentCard", {
-                                    ...(values.paymentCard ?? {
-                                      brand: CARD_BRAND.UNKNOWN,
-                                      last4: "",
-                                      expMonth: 1,
-                                    }),
-                                    expYear: parseInt(v, 10),
-                                  });
-                                }}
-                                disabled={showVerificationDialog}
-                              >
-                                <SelectTrigger
-                                  className={`${NEU_BTN_GHOST} w-full h-10 px-4 text-sm`}
-                                >
-                                  <SelectValue placeholder="Year" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60">
-                                  {Array.from(
-                                    { length: 10 },
-                                    (_, i) => new Date().getFullYear() + i,
-                                  ).map((y) => (
-                                    <SelectItem
-                                      key={y}
-                                      value={String(y)}
-                                      className="font-[family-name:var(--font-jetbrains-mono)] text-sm cursor-pointer"
-                                    >
-                                      {y}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                            <div className="md:col-span-2">
-                              <FormItem>
-                                <FormLabel>Cardholder Name</FormLabel>
-                                <input
-                                  type="text"
-                                  placeholder="Name as shown on card"
-                                  disabled={showVerificationDialog}
-                                  value={
-                                    values.paymentCard?.cardholderName ?? ""
-                                  }
-                                  onChange={(e) =>
-                                    setFieldValue("paymentCard", {
-                                      ...(values.paymentCard ?? {
-                                        brand: CARD_BRAND.UNKNOWN,
-                                        last4: "",
-                                        expMonth: 1,
-                                        expYear: new Date().getFullYear(),
-                                      }),
-                                      cardholderName: e.target.value,
-                                    })
-                                  }
-                                  className={`${NEU_INPUT} w-full h-10 px-4`}
-                                />
-                              </FormItem>
-                            </div>
                           </div>
-                          <div
-                            className={`flex items-start gap-2 text-xs ${NEU_MUTED}`}
-                          >
-                            <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                            <span>
-                              Card details are stored securely and used only for
-                              automatic salary disbursement.
-                            </span>
+
+                          {/* 🆕 Stripe Payment Method ID - user enters existing value */}
+                          <div className="md:col-span-2">
+                            <FormItem>
+                              <FormLabel>Stripe Payment Method ID</FormLabel>
+                              <input
+                                type="text"
+                                placeholder="pm_xxxxxxxxxxxxx"
+                                disabled={showVerificationDialog}
+                                value={values.paymentCard?.stripePaymentMethodId ?? ""}
+                                onChange={(e) =>
+                                  setFieldValue("paymentCard", {
+                                    ...(values.paymentCard ?? {}),
+                                    stripePaymentMethodId: e.target.value,
+                                  })
+                                }
+                                className={`${NEU_INPUT} w-full h-10 px-4 font-mono text-sm`}
+                              />
+                            </FormItem>
                           </div>
-                        </motion.div>
-                      </div>
-                    )}
+
+                          {/* 🆕 Stripe Customer ID - user enters existing value */}
+                          <div className="md:col-span-2">
+                            <FormItem>
+                              <FormLabel>Stripe Customer ID</FormLabel>
+                              <input
+                                type="text"
+                                placeholder="cus_xxxxxxxxxxxxx"
+                                disabled={showVerificationDialog}
+                                value={values.paymentCard?.stripeCustomerId ?? ""}
+                                onChange={(e) =>
+                                  setFieldValue("paymentCard", {
+                                    ...(values.paymentCard ?? {}),
+                                    stripeCustomerId: e.target.value,
+                                  })
+                                }
+                                className={`${NEU_INPUT} w-full h-10 px-4 font-mono text-sm`}
+                              />
+                            </FormItem>
+                          </div>
+                        </div>
+                        <div className={`flex items-start gap-2 text-xs ${NEU_MUTED}`}>
+                          <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                          <span>
+                            Card details are stored securely and used only for automatic salary disbursement.
+                          </span>
+                        </div>
+                      </motion.div>
+                    </div>
                   </div>
                 </div>
               </motion.div>

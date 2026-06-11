@@ -10,8 +10,6 @@ import {
     SALARY_PAYMENT_MODE,
     SalaryPaymentMode,
 } from "@/constants/employee.const";
-import { CARD_BRAND, CardBrand } from "@/constants/payment.const";
-
 import { Currency } from "@/constants/tour.const";
 import { DayOfWeek } from "@/types/employee/employee.types";
 import { defineModel } from "@/lib/helpers/defineModel";
@@ -165,38 +163,6 @@ const EmployeeDocumentSchema = new Schema<IEmployeeDocument>(
 );
 
 /* =========================================================
-   PAYMENT CARD (embedded on employee)
-========================================================= */
-
-export interface IPaymentCard {
-    brand: CardBrand;
-    last4: string;
-    expMonth: number;
-    expYear: number;
-    cardholderName?: string;
-}
-
-const PaymentCardSchema = new Schema<IPaymentCard>(
-    {
-        brand: {
-            type: String,
-            enum: Object.values(CARD_BRAND),
-            default: CARD_BRAND.UNKNOWN,
-        },
-        last4: {
-            type: String,
-            minlength: 4,
-            maxlength: 4,
-            match: [/^\d{4}$/, "last4 must be exactly 4 digits"],
-        },
-        expMonth: { type: Number, min: 1, max: 12 },
-        expYear: { type: Number },
-        cardholderName: { type: String, trim: true },
-    },
-    { _id: false }
-);
-
-/* =========================================================
    SALARY HISTORY
 ========================================================= */
 
@@ -274,7 +240,9 @@ export interface IEmployee extends Document {
     currency: Currency;
     salaryHistory: ISalaryHistory[];
     paymentMode: SalaryPaymentMode; // auto | manual
-    paymentCard?: IPaymentCard;     // embedded card details for salary payments
+
+    // Reference to a StripePaymentAccount document (for salary disbursement)
+    paymentAccount?: Types.ObjectId;
 
     payroll: IPayrollRecord[];
 
@@ -350,9 +318,11 @@ const EmployeeSchema = new Schema<IEmployee, IEmployeeModel, IEmployeeMethods>(
             default: [],
         },
 
-        paymentCard: {
-            type: PaymentCardSchema,
-            default: undefined,
+        // Reference to a StripePaymentAccount (instead of embedded card)
+        paymentAccount: {
+            type: Schema.Types.ObjectId,
+            ref: "StripePaymentAccount",
+            default: null,
         },
 
         payroll: {
@@ -531,6 +501,8 @@ EmployeeSchema.index({
 });
 EmployeeSchema.index({ companyId: 1, status: 1 });
 EmployeeSchema.index({ deletedAt: 1 });
+// Index for payment account lookups
+EmployeeSchema.index({ paymentAccount: 1 });
 
 /* =========================================================
    MODEL EXPORT

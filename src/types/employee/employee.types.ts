@@ -77,6 +77,8 @@ export interface PaymentCardDTO {
   expMonth: number;
   expYear: number;
   cardholderName?: string;
+  stripePaymentMethodId?: string;
+  stripeCustomerId?: string;
 }
 
 export interface UserSummaryDTO {
@@ -124,7 +126,6 @@ export interface EmployeeListItemDTO {
   salary: number;
   currency: string;
   paymentMode: SalaryPaymentMode; // auto | manual
-  paymentCard?: PaymentCardDTO;   // card details for auto payments
   currentMonthPayment?: CurrentMonthPaymentStatusDTO; // current month payment status
 
   // Dates
@@ -210,7 +211,7 @@ export interface CreateEmployeePayload {
   notes?: string;
 }
 
-export type UpdateEmployeePayload = Omit<CreateEmployeePayload, "password" | "id" | "salary"> & {
+export type UpdateEmployeePayload = Omit<CreateEmployeePayload, "id" | "password" | "salary" | "paymentCard"> & {
   id: ObjectIdString;
   status: EmployeeStatus;
   salary: number;

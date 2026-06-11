@@ -118,7 +118,7 @@ const NEU_DIVIDER = "h-px bg-gradient-to-r from-transparent via-[#1E2938]/10 to-
 type UpdateEmployeeForm = Partial<Pick<UpdateEmployeePayload,
   | "id" | "name" | "status" | "employmentType" | "contactInfo" | "shifts"
   | "notes" | "avatar" | "dateOfJoining" | "dateOfLeaving" | "documents"
-  | "salary" | "currency" | "paymentMode" | "paymentCard"
+  | "salary" | "currency" | "paymentMode" // Removed paymentCard
 >>;
 
 type EnumBundle = {
@@ -163,10 +163,16 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
+  // NEW: Separate state for payment card updates
+  const [cardForm, setCardForm] = useState<PaymentCardDTO | null>(null);
+  const [updatingCard, setUpdatingCard] = useState(false);
+
   const breadcrumbItems = useMemo(() => [
     { label: "Home", href: "/" },
     { label: "Employees", href: "/users/employees" },
-    { label: detail?.user.name ?? "Employee detail", href: `/users/employees/${employeeId}` },
+    { label: detail?.user.name ?? "Employee detail", 
+      href: `/users/employees/${employeeId}`
+     },
   ], [employeeId, detail?.user.name]);
 
   useEffect(() => {
@@ -180,10 +186,24 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
         setForm({
           id: d.id, name: d.user.name, status: d.status, employmentType: d.employmentType,
           avatar: d.avatar, salary: d.salary, paymentMode: d.paymentMode,
-          paymentCard: d.paymentCard ?? undefined, dateOfJoining: d.dateOfJoining,
+          // Removed paymentCard
+          dateOfJoining: d.dateOfJoining,
           dateOfLeaving: d.dateOfLeaving, contactInfo: d.contactInfo,
           shifts: d.shifts, documents: d.documents, notes: d.notes,
         });
+        // Initialize cardForm from existing paymentCard
+        if (d.paymentCard) {
+          setCardForm({ ...d.paymentCard });
+        } else {
+          // Empty card form with defaults for adding new card
+          setCardForm({
+            brand: CARD_BRAND.UNKNOWN,
+            last4: "",
+            expMonth: 1,
+            expYear: new Date().getFullYear(),
+            cardholderName: "",
+          });
+        }
         setAvatarPreview(typeof d.avatar === "string" ? d.avatar : null);
       } catch (e) {
         showToast.error(`Failed to load employee details: ${String(e)}`);
@@ -269,7 +289,8 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
         employmentType: (form.employmentType ?? detail.employmentType) as UpdateEmployeePayload["employmentType"],
         salary: (form.salary ?? detail.salary) as UpdateEmployeePayload["salary"],
         currency: (form.currency ?? detail.currency) as UpdateEmployeePayload["currency"],
-        paymentMode: form.paymentMode, paymentCard: form.paymentCard ?? detail.paymentCard ?? undefined,
+        paymentMode: form.paymentMode as UpdateEmployeePayload["paymentMode"],
+        // Removed paymentCard
         contactInfo: form.contactInfo ?? detail.contactInfo, shifts: form.shifts ?? detail.shifts,
         notes: form.notes ?? detail.notes ?? "",
         avatar: form.avatar as unknown as UpdateEmployeePayload["avatar"],
@@ -284,7 +305,8 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
       setForm({
         id: updated.id, name: updated.user.name, status: updated.status,
         employmentType: updated.employmentType, salary: updated.salary, currency: updated.currency,
-        paymentMode: updated.paymentMode, paymentCard: updated.paymentCard ?? undefined,
+        paymentMode: updated.paymentMode,
+        // Removed paymentCard
         contactInfo: updated.contactInfo, shifts: updated.shifts, notes: updated.notes,
         avatar: updated.avatar, dateOfJoining: updated.dateOfJoining, dateOfLeaving: updated.dateOfLeaving,
         documents: updated.documents,
@@ -295,6 +317,58 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
     } finally {
       setSaving(false);
     }
+  };
+
+  // NEW: Separate handler for updating payment card
+  const handleUpdateCard = async () => {
+    if (!detail?.id || !cardForm) return;
+
+    // Validation
+    if (!cardForm.last4 || cardForm.last4.length !== 4) {
+      showToast.warning("Last 4 digits must be exactly 4 digits");
+      return;
+    }
+    if (cardForm.expMonth < 1 || cardForm.expMonth > 12) {
+      showToast.warning("Expiration month must be between 1 and 12");
+      return;
+    }
+    const currentYear = new Date().getFullYear();
+    if (cardForm.expYear < currentYear || cardForm.expYear > currentYear + 20) {
+      showToast.warning(`Expiration year must be between ${currentYear} and ${currentYear + 20}`);
+      return;
+    }
+
+    setUpdatingCard(true);
+    try {
+      const response = await fetch(`/api/users/employees/${detail.id}/payment-card`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cardForm),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to update payment card (${response.status})`);
+      }
+
+      const updatedEmployee = await response.json();
+      setDetail(updatedEmployee);
+      // Update cardForm with the saved card data
+      if (updatedEmployee.paymentCard) {
+        setCardForm({ ...updatedEmployee.paymentCard });
+      }
+      showToast.success("Payment card updated successfully");
+    } catch (err) {
+      showToast.error(String(extractErrorMessage(err) ?? "Failed to update payment card"));
+    } finally {
+      setUpdatingCard(false);
+    }
+  };
+
+  // Helper to update specific card field
+  const setCardField = <K extends keyof PaymentCardDTO>(key: K, value: PaymentCardDTO[K]) => {
+    if (!cardForm) return;
+    setCardForm({ ...cardForm, [key]: value });
   };
 
   const handleGeneratePassword = () => {
@@ -624,7 +698,7 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
               </InfoCard>
             </TabsContent>
 
-            {/* ── Compensation ── */}
+            {/* ── Compensation (Updated with separate card section) ── */}
             <TabsContent value="compensation" className="mt-6 space-y-6">
               <InfoCard icon={FaBangladeshiTakaSign} title="Current Compensation">
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -684,39 +758,87 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                 </div>
               </InfoCard>
 
+              {/* UPDATED: Separate Payment Card section with its own update button */}
               <InfoCard icon={CreditCard} title="Payment Card">
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
-                  <FormRow label="Card Brand" icon={CreditCard}>
-                    <Select
-                      value={form?.paymentCard?.brand ?? detail.paymentCard?.brand ?? CARD_BRAND.UNKNOWN}
-                      onValueChange={(v) => {
-                        const current = form?.paymentCard ?? detail.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, last4: "", expMonth: 1, expYear: new Date().getFullYear() };
-                        setField("paymentCard", { ...current, brand: v as CardBrand } as PaymentCardDTO);
-                      }}
-                    >
-                      <SelectTrigger className={NEU_SELECT_CLS}><SelectValue /></SelectTrigger>
-                      <SelectContent className="rounded-xl bg-[#E7E5E4] border border-white/60 shadow-[8px_8px_16px_#c8c6c5]">
-                        {Object.values(CARD_BRAND).map((brand) => (
-                          <SelectItem key={brand} value={brand} className="font-[family-name:var(--font-jetbrains-mono)]">
-                            {brand.charAt(0).toUpperCase() + brand.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormRow>
+                <div className="space-y-5">
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+                    <FormRow label="Card Brand" icon={CreditCard}>
+                      <Select
+                        value={cardForm?.brand ?? CARD_BRAND.UNKNOWN}
+                        onValueChange={(v) => setCardField("brand", v as CardBrand)}
+                      >
+                        <SelectTrigger className={NEU_SELECT_CLS}><SelectValue /></SelectTrigger>
+                        <SelectContent className="rounded-xl bg-[#E7E5E4] border border-white/60 shadow-[8px_8px_16px_#c8c6c5]">
+                          {Object.values(CARD_BRAND).map((brand) => (
+                            <SelectItem key={brand} value={brand} className="font-[family-name:var(--font-jetbrains-mono)]">
+                              {brand.charAt(0).toUpperCase() + brand.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormRow>
 
-                  <FormRow label="Last 4 Digits" icon={Lock}>
-                    <Input
-                      type="text" inputMode="numeric" maxLength={4} placeholder="1234"
-                      value={form?.paymentCard?.last4 ?? detail.paymentCard?.last4 ?? ""}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, "").slice(0, 4);
-                        const current = form?.paymentCard ?? detail.paymentCard ?? { brand: CARD_BRAND.UNKNOWN, expMonth: 1, expYear: new Date().getFullYear() };
-                        setField("paymentCard", { ...current, last4: val } as PaymentCardDTO);
-                      }}
-                      className={`${NEU_INPUT} font-mono tracking-widest`}
-                    />
-                  </FormRow>
+                    <FormRow label="Last 4 Digits" icon={Lock}>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={4}
+                        placeholder="1234"
+                        value={cardForm?.last4 ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                          setCardField("last4", val);
+                        }}
+                        className={`${NEU_INPUT} font-mono tracking-widest`}
+                      />
+                    </FormRow>
+
+                    <FormRow label="Expiration Month">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={12}
+                        placeholder="MM"
+                        value={cardForm?.expMonth ?? 1}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          if (!isNaN(val) && val >= 1 && val <= 12) {
+                            setCardField("expMonth", val);
+                          }
+                        }}
+                        className={NEU_INPUT}
+                      />
+                    </FormRow>
+
+                    <FormRow label="Expiration Year">
+                      <Input
+                        type="number"
+                        min={new Date().getFullYear()}
+                        max={new Date().getFullYear() + 20}
+                        placeholder="YYYY"
+                        value={cardForm?.expYear ?? new Date().getFullYear()}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          if (!isNaN(val)) {
+                            setCardField("expYear", val);
+                          }
+                        }}
+                        className={NEU_INPUT}
+                      />
+                    </FormRow>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleUpdateCard}
+                      disabled={updatingCard || !cardForm}
+                      className={NEU_BTN_PRIMARY}
+                    >
+                      {updatingCard ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                      {updatingCard ? "Updating..." : "Update Card"}
+                    </button>
+                  </div>
                 </div>
               </InfoCard>
             </TabsContent>
