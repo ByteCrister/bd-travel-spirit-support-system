@@ -4,6 +4,7 @@ import { USER_ROLE } from "./user.const";
 export enum PAYMENT_OWNER_TYPE {
     ADMIN = USER_ROLE.ADMIN,
     GUIDE = USER_ROLE.GUIDE,
+    TRAVELER = USER_ROLE.TRAVELER,
 }
 export type PaymentOwnerType = `${PAYMENT_OWNER_TYPE}`;
 
