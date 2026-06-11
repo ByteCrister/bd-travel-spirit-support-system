@@ -2,8 +2,10 @@ import { USER_ROLE } from "./user.const";
 
 // Payment ownership should be domain-specific
 export enum PAYMENT_OWNER_TYPE {
-    ADMIN = USER_ROLE.ADMIN,
+    ADMIN = USER_ROLE.ADMIN, 
     GUIDE = USER_ROLE.GUIDE,
+    SUPPORT = USER_ROLE.SUPPORT,
+    ASSISTANT = USER_ROLE.ASSISTANT,
     TRAVELER = USER_ROLE.TRAVELER,
 }
 export type PaymentOwnerType = `${PAYMENT_OWNER_TYPE}`;

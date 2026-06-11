@@ -234,7 +234,7 @@ async function processEmployeeSalary(
 
     try {
         let amountCents: number;
-        let currency = CURRENCY.USD;
+        const currency = CURRENCY.USD;
 
         if (employee.currency.toUpperCase() === CURRENCY.BDT) {
             const usdAmount = await convertBdtToUsd(salaryAmount);
