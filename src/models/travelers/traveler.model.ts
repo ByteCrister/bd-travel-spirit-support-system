@@ -73,6 +73,9 @@ export interface ITraveler extends Document {
   isVerified: boolean;
   accountStatus: AccountStatus;
 
+  // --- Single payment account reference ---
+  paymentAccount?: Types.ObjectId;
+
   // Security
   loginAttempts: number;
   lastLogin?: Date;
@@ -152,6 +155,13 @@ const TravelerSchema = new Schema<ITraveler>(
       type: String,
       enum: Object.values(ACCOUNT_STATUS),
       default: ACCOUNT_STATUS.PENDING,
+    },
+
+    // --- Single payment account reference ---
+    paymentAccount: {
+      type: Schema.Types.ObjectId,
+      ref: "StripePaymentAccount",
+      default: null,
     },
 
     // Security
