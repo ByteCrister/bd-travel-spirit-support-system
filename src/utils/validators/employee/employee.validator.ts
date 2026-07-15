@@ -133,14 +133,7 @@ export const createEmployeeValidationSchema = yup.object({
         .oneOf(Object.values(SALARY_PAYMENT_MODE))
         .required("Payment mode is required"),
     paymentCard: paymentCardValidationSchema
-        .optional()
-        .nullable()
-        .default(null)
-        .when("paymentMode", {
-            is: SALARY_PAYMENT_MODE.AUTO,
-            then: (schema) => schema.required("Payment card is required for automatic payments"),
-            otherwise: (schema) => schema.nullable().optional(),
-        }),
+        .required("Stripe payment account is required for all employees"),
     dateOfJoining: yup
         .date()
         .min(new Date(), "Date cannot be in the past")

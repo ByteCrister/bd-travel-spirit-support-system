@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Loader2, RefreshCw, Shield, CheckCircle2, XCircle, AlertTriangle, Lock } from "lucide-react";
 import generateStrongPassword from "@/utils/helpers/generate-strong-password";
 import { useCurrentUserStore } from "@/store/current-user.store";
+import OtpVerificationDialog from "./OtpVerificationDialog";
 
 // ── Neumorphism tokens ────────────────────────────────────────
 const NEU_CARD =
@@ -51,7 +52,7 @@ const STRENGTH_CONFIG = {
 };
 
 export default function PasswordUpdateForm() {
-  const { updateUserPassword, updatePasswordMeta } = useCurrentUserStore();
+  const { updateUserPassword, updatePasswordMeta, baseUser } = useCurrentUserStore();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -62,6 +63,7 @@ export default function PasswordUpdateForm() {
   });
   const [error, setError] = useState<string>("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [otpOpen, setOtpOpen] = useState(false);
 
   const handleGeneratePassword = () => {
     const strong = generateStrongPassword();
@@ -98,10 +100,16 @@ export default function PasswordUpdateForm() {
     return true;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     setError("");
     setShowSuccess(false);
     if (!validateForm()) return;
+    // Open OTP dialog — actual password update happens after OTP is verified
+    setOtpOpen(true);
+  };
+
+  const handleOtpVerified = async () => {
+    setOtpOpen(false);
     await updateUserPassword({
       currentPassword: formData.currentPassword,
       newPassword: formData.newPassword,
@@ -121,6 +129,13 @@ export default function PasswordUpdateForm() {
   ];
 
   return (
+    <>
+    <OtpVerificationDialog
+      open={otpOpen}
+      email={baseUser?.email ?? ""}
+      onVerified={handleOtpVerified}
+      onClose={() => setOtpOpen(false)}
+    />
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
       <div className={NEU_CARD}>
         {/* Header */}
@@ -364,5 +379,6 @@ export default function PasswordUpdateForm() {
         </div>
       </div>
     </motion.div>
+    </>
   );
 }

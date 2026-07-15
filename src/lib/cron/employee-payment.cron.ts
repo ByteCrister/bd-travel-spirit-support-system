@@ -4,10 +4,6 @@ import {
     PAYROLL_STATUS,
     SALARY_PAYMENT_MODE,
 } from "@/constants/employee.const";
-import {
-    PAYMENT_OWNER_TYPE,
-    PAYMENT_PURPOSE,
-} from "@/constants/payment.const";
 import { USER_ROLE } from "@/constants/user.const";
 import { CURRENCY } from "@/constants/tour.const";
 import {
@@ -16,9 +12,10 @@ import {
 } from "@/lib/exchange-rate/convert-bdt-to-usd";
 import { chargeStripePaymentAccount } from "@/lib/payments/stripe-charge.service";
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
-import GuideModel from "@/models/guide/guide.model";
-import StripePaymentAccountModel from "@/models/payments/payment-account.model";
-import UserModel from "@/models/user.model";
+import {
+    findAdminTransactionAccount,
+    findGuideTransactionAccount,
+} from "@/lib/payroll/payroll-account.helper";
 import {
     findPayrollRecord,
     getCurrentPayrollCycle,
@@ -36,58 +33,6 @@ export type EmployeePaymentResult = {
 type EmployeeWithUser = IEmployee & {
     user: { _id: mongoose.Types.ObjectId; role: string; name?: string };
 };
-
-async function findAdminTransactionAccount() {
-    const adminUser = await UserModel.findOne({ role: USER_ROLE.ADMIN })
-        .select("_id")
-        .lean();
-
-    if (!adminUser?._id) {
-        throw new Error("Admin user not found");
-    }
-
-    const account = await StripePaymentAccountModel.findOne({
-        ownerType: PAYMENT_OWNER_TYPE.ADMIN,
-        ownerId: adminUser._id,
-        purpose: PAYMENT_PURPOSE.TRANSACTION_ACCOUNT,
-        isActive: true,
-        isDeleted: { $ne: true },
-    })
-        .sort({ isBackup: 1, createdAt: -1 })
-        .lean();
-
-    if (!account) {
-        throw new Error("Admin Stripe transaction account not found");
-    }
-
-    return { adminUser, account };
-}
-
-async function findGuideTransactionAccount(guideId: mongoose.Types.ObjectId) {
-    const guide = await GuideModel.findById(guideId).select("owner.user companyName").lean();
-
-    if (!guide?.owner?.user) {
-        throw new Error(`Guide not found for companyId ${guideId.toString()}`);
-    }
-
-    const account = await StripePaymentAccountModel.findOne({
-        ownerType: PAYMENT_OWNER_TYPE.GUIDE,
-        ownerId: guide.owner.user,
-        purpose: PAYMENT_PURPOSE.TRANSACTION_ACCOUNT,
-        isActive: true,
-        isDeleted: { $ne: true },
-    })
-        .sort({ isBackup: 1, createdAt: -1 })
-        .lean();
-
-    if (!account) {
-        throw new Error(
-            `Guide Stripe transaction account not found for guide ${guideId.toString()}`
-        );
-    }
-
-    return { guide, account };
-}
 
 async function upsertPayrollAttempt(
     employeeId: mongoose.Types.ObjectId,
@@ -177,6 +122,7 @@ async function markPayrollResult(
         update["payroll.$.paidAt"] = new Date();
         update["payroll.$.transactionRef"] = result.transactionRef;
         update["payroll.$.failureReason"] = undefined;
+        update["payroll.$.paymentMode"] = SALARY_PAYMENT_MODE.AUTO;
     } else {
         update["payroll.$.failureReason"] = result.failureReason;
     }
@@ -211,6 +157,10 @@ async function processEmployeeSalary(
     }
 
     if (employee.status !== EMPLOYEE_STATUS.ACTIVE || employee.deletedAt) {
+        return "skipped";
+    }
+
+    if (!employee.paymentAccount) {
         return "skipped";
     }
 
@@ -389,4 +339,47 @@ export async function processEmployeePayments(): Promise<EmployeePaymentResult> 
     );
 
     return result;
+}
+
+/**
+ * Retry automatic salary payment for a single employee (current payroll cycle).
+ */
+export async function retryEmployeeSalaryPayment(
+    employeeId: mongoose.Types.ObjectId
+): Promise<"succeeded" | "failed" | "skipped"> {
+    const employee = (await EmployeeModel.findById(employeeId)
+        .populate("user", "role name")
+        .lean()) as unknown as EmployeeWithUser | null;
+
+    if (!employee) {
+        throw new Error("Employee not found");
+    }
+
+    if (employee.paymentMode !== SALARY_PAYMENT_MODE.AUTO) {
+        throw new Error("Salary retry is only available for automatic payment mode");
+    }
+
+    if (!employee.paymentAccount) {
+        throw new Error("Employee Stripe payment account is required");
+    }
+
+    if (employee.user?.role === USER_ROLE.SUPPORT) {
+        const { account } = await findAdminTransactionAccount();
+        return processEmployeeSalary(
+            employee,
+            account._id as mongoose.Types.ObjectId,
+            "admin-transaction-account"
+        );
+    }
+
+    if (employee.user?.role === USER_ROLE.ASSISTANT && employee.companyId) {
+        const { guide, account } = await findGuideTransactionAccount(employee.companyId);
+        return processEmployeeSalary(
+            employee,
+            account._id as mongoose.Types.ObjectId,
+            `guide-${guide.companyName}`
+        );
+    }
+
+    throw new Error("Employee is not eligible for automatic salary payment");
 }

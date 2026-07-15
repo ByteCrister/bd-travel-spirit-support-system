@@ -5,6 +5,7 @@ import {
     cleanupDeletedAssets,
     processEmployeePayments,
     processTourSettlements,
+    cleanupExpiredEmailTokens,
 } from "@/lib/cron";
 
 function verifyCronAuth(req: NextRequest) {
@@ -23,9 +24,13 @@ function verifyCronAuth(req: NextRequest) {
 async function runCronJobs() {
     await ConnectDB();
 
-    const assetCleanup = await cleanupDeletedAssets();
-    const employeePayments = await processEmployeePayments();
-    const tourSettlements = await processTourSettlements();
+    const [assetCleanup, employeePayments, tourSettlements, emailTokenCleanup] =
+        await Promise.all([
+            cleanupDeletedAssets(),
+            processEmployeePayments(),
+            processTourSettlements(),
+            cleanupExpiredEmailTokens(),
+        ]);
 
     return {
         success: true,
@@ -33,6 +38,7 @@ async function runCronJobs() {
             assetCleanup,
             employeePayments,
             tourSettlements,
+            emailTokenCleanup,
         },
     };
 }

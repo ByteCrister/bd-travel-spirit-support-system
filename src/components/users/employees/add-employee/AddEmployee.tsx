@@ -163,7 +163,7 @@ const getInitialValues = (): CreateEmployeeFormValues => ({
   avatar: null,
   salary: null,
   currency: CURRENCY.BDT,
-  paymentMode: SALARY_PAYMENT_MODE.AUTO,
+  paymentMode: SALARY_PAYMENT_MODE.MANUAL,
   paymentCard: null,
   dateOfJoining: new Date(),
   contactInfo: {
@@ -837,7 +837,7 @@ export default function AddEmployeePage() {
                       </FormItem>
                     </div>
 
-                    {/* Payment Card */}
+                    {/* Payment Card — required for all employees */}
                     <div className="md:col-span-2">
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
@@ -1018,7 +1018,7 @@ export default function AddEmployeePage() {
                         <div className={`flex items-start gap-2 text-xs ${NEU_MUTED}`}>
                           <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
                           <span>
-                            Card details are stored securely and used only for automatic salary disbursement.
+                            Stripe payment account is required for all employees. Auto mode pays via cron; manual mode is confirmed by admin in the employee list.
                           </span>
                         </div>
                       </motion.div>

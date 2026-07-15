@@ -7,7 +7,7 @@ import { EMPLOYEE_STATUS, EMPLOYMENT_TYPE } from "@/constants/employee.const";
 
 // Import models
 import UserModel, { IUserDoc } from "@/models/user.model";
-import { CreateEmployeePayload } from "@/types/employee/employee.types";
+import { CreateEmployeePayload, PaymentCardDTO } from "@/types/employee/employee.types";
 import { Types } from "mongoose";
 import { createEmployeeValidationSchema } from "@/utils/validators/employee/employee.validator";
 import EmployeeModel, { IEmployee } from "@/models/employees/employees.model";
@@ -55,6 +55,56 @@ async function createUser(
 
     await user.save({ session });
     return user;
+}
+
+async function attachEmployeeStripeAccount(
+    employee: IEmployee,
+    userId: ObjectId,
+    paymentCard: PaymentCardDTO,
+    session: ClientSession
+): Promise<void> {
+    if (!paymentCard.stripeCustomerId || !paymentCard.stripePaymentMethodId) {
+        throw new ApiError("Payment card details are required", 400);
+    }
+
+    const { stripeCustomerId, stripePaymentMethodId } = paymentCard;
+
+    const verifiedCard = await verifyAndAttachPaymentMethod(
+        stripeCustomerId,
+        stripePaymentMethodId,
+    );
+
+    let paymentAccount = await StripePaymentAccountModel.findOne({
+        ownerId: userId,
+        purpose: PAYMENT_PURPOSE.TRANSACTION_ACCOUNT,
+    }).session(session);
+
+    if (paymentAccount) {
+        paymentAccount.stripeCustomerId = stripeCustomerId;
+        paymentAccount.stripePaymentMethodId = stripePaymentMethodId;
+        paymentAccount.card = {
+            brand: verifiedCard.brand as CardBrand,
+            last4: verifiedCard.last4,
+            expMonth: verifiedCard.expMonth,
+            expYear: verifiedCard.expYear,
+        };
+        paymentAccount.isActive = true;
+        await paymentAccount.save({ session });
+    } else {
+        paymentAccount = new StripePaymentAccountModel({
+            ownerType: PAYMENT_OWNER_TYPE.SUPPORT,
+            ownerId: userId,
+            purpose: PAYMENT_PURPOSE.TRANSACTION_ACCOUNT,
+            stripeCustomerId,
+            stripePaymentMethodId,
+            card: verifiedCard,
+            isActive: true,
+        });
+        await paymentAccount.save({ session });
+    }
+
+    employee.paymentAccount = paymentAccount._id as Types.ObjectId;
+    await employee.save({ session });
 }
 
 // Main POST handler
@@ -141,10 +191,6 @@ export const EmployeeAddPostHandler = async (req: NextRequest) => {
         }
 
         // 4 Prepare employee data
-        // NOTE: paymentAccount is intentionally left unset (will default to null).
-        // If the request contains Stripe payment method details, you can create a
-        // StripePaymentAccount document here and assign its _id to paymentAccount.
-        // For now, we keep it null – payment accounts can be added via a separate endpoint.
         const employeeData: Partial<IEmployee> = {
             user: userId,
             status: EMPLOYEE_STATUS.ACTIVE,
@@ -161,8 +207,11 @@ export const EmployeeAddPostHandler = async (req: NextRequest) => {
             shifts: body.shifts || [],
             documents: documentAssets.map((d) => ({ type: d.type, asset: d.asset, uploadedAt: new Date() })),
             notes: body.notes,
-            // paymentAccount is omitted -> schema default null
         };
+
+        if (!body.paymentCard?.stripeCustomerId || !body.paymentCard?.stripePaymentMethodId) {
+            throw new ApiError("Stripe payment account is required for all employees", 400);
+        }
 
         // 5 Restore & update terminated employee
         if (existingEmployee) {
@@ -186,6 +235,13 @@ export const EmployeeAddPostHandler = async (req: NextRequest) => {
             Object.assign(restoredEmployee, employeeData);
             await restoredEmployee.save({ session });
 
+            await attachEmployeeStripeAccount(
+                restoredEmployee,
+                userId,
+                body.paymentCard,
+                session
+            );
+
             return { employeeId: restoredEmployee._id, userId };
         }
 
@@ -193,52 +249,12 @@ export const EmployeeAddPostHandler = async (req: NextRequest) => {
         const newEmployee = new EmployeeModel(employeeData);
         await newEmployee.save({ session });
 
-        const paymentCard = body.paymentCard;
-
-        if (!paymentCard || !paymentCard.stripeCustomerId || !paymentCard.stripePaymentMethodId) {
-            throw new ApiError("Payment card details are required", 400);
-        }
-
-        const { stripeCustomerId, stripePaymentMethodId } = paymentCard;
-
-        // Verify and attach payment method, retrieve fresh card details
-        const verifiedCard = await verifyAndAttachPaymentMethod(
-            stripeCustomerId,
-            stripePaymentMethodId,
+        await attachEmployeeStripeAccount(
+            newEmployee,
+            userId,
+            body.paymentCard,
+            session
         );
-
-        // Create or update StripePaymentAccount
-        let paymentAccount = await StripePaymentAccountModel.findOne({
-            ownerId: userId,
-            purpose: PAYMENT_PURPOSE.TRANSACTION_ACCOUNT,
-        }).session(session);
-
-        if (paymentAccount) {
-            // Update existing account
-            paymentAccount.stripePaymentMethodId = stripePaymentMethodId;
-            paymentAccount.card = {
-                brand: verifiedCard.brand as CardBrand,
-                last4: verifiedCard.last4,
-                expMonth: verifiedCard.expMonth,
-                expYear: verifiedCard.expYear,
-            };
-            paymentAccount.isActive = true;
-            await paymentAccount.save({ session });
-        } else {
-            paymentAccount = new StripePaymentAccountModel({
-                ownerType: PAYMENT_OWNER_TYPE.SUPPORT,
-                ownerId: userId,
-                purpose: PAYMENT_PURPOSE.TRANSACTION_ACCOUNT,
-                stripeCustomerId,
-                stripePaymentMethodId,
-                card: verifiedCard,
-                isActive: true,
-            });
-            await paymentAccount.save({ session });
-        }
-
-        newEmployee.paymentAccount = paymentAccount._id as Types.ObjectId;
-        await newEmployee.save({ session });
 
         return { employeeId: newEmployee._id, userId };
     });

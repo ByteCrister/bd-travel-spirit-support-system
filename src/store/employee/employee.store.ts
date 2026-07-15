@@ -8,6 +8,9 @@ import {
     EMPLOYEES_CACHE_KEYS,
     EmployeesListResponse,
     EmployeesQuery,
+    BulkManualPayrollResult,
+    BulkMarkManualPayrollPayload,
+    MarkManualPayrollPayload,
     RestoreEmployeePayload,
     UpdateEmployeePayload,
     ObjectIdString,
@@ -71,6 +74,8 @@ interface EmployeeStore {
     restoreEmployee: (payload: RestoreEmployeePayload) => Promise<EmployeeDetailDTO>;
 
     retryEmployeeSalaryPayment: (id: string) => Promise<EmployeeDetailDTO>;
+    markManualPayrollPaid: (id: string, payload?: MarkManualPayrollPayload) => Promise<EmployeeDetailDTO>;
+    bulkMarkManualPayrollPaid: (payload: BulkMarkManualPayrollPayload) => Promise<BulkManualPayrollResult>;
 
     // Meta endpoints
     fetchEnums: (force?: boolean) => Promise<unknown>;
@@ -89,6 +94,8 @@ const EMP_API = {
     SOFT_DELETE: (id: string) => `${URL_AFTER_API}/${id}/soft-delete`,
     RESTORE: (id: string) => `${URL_AFTER_API}/${id}/restore`,
     RETRY_SALARY_PAYMENT: (id: string) => `${URL_AFTER_API}/${id}/retry-payment`,
+    MARK_MANUAL_PAYROLL: (id: string) => `${URL_AFTER_API}/${id}/payroll/mark-paid`,
+    BULK_MARK_MANUAL_PAYROLL: `${URL_AFTER_API}/payroll/bulk-mark-paid`,
     POSITIONS: `${URL_AFTER_API}/positions`,
     ENUMS: `${URL_AFTER_API}/enums`,
 } as const;
@@ -590,7 +597,6 @@ export const useEmployeeStore = create<EmployeeStore>()(
                         }
                     },
 
-                    // Add this new method after restoreEmployee method
                     async retryEmployeeSalaryPayment(id: string) {
                         set(
                             (s) => ({
@@ -675,6 +681,97 @@ export const useEmployeeStore = create<EmployeeStore>()(
                                 "employees/retrySalaryPayment:error"
                             );
                             showToast.error("Salary payment retry failed", message);
+                            throw new Error(message);
+                        }
+                    },
+
+                    async markManualPayrollPaid(id: string, payload?: MarkManualPayrollPayload) {
+                        set(
+                            (s) => ({
+                                lastError: null,
+                                loadingById: { ...s.loadingById, [id]: true },
+                            }),
+                            false,
+                            "employees/markManualPayroll:start"
+                        );
+
+                        try {
+                            const res = await api.post<ApiResponse<EmployeeDetailDTO>>(
+                                EMP_API.MARK_MANUAL_PAYROLL(id),
+                                payload ?? {}
+                            );
+                            const body = res.data;
+                            if (!body?.data) throw new Error("Failed to mark manual payroll as paid");
+
+                            const updatedEmployee = body.data;
+                            get().invalidateCacheKeyPrefix("employees:list:canonical:");
+                            get().cache.delete(EMPLOYEES_CACHE_KEYS.detail(id as ObjectIdString));
+
+                            set(
+                                (s) => ({
+                                    loadingById: { ...s.loadingById, [id]: false },
+                                }),
+                                false,
+                                "employees/markManualPayroll:done"
+                            );
+
+                            showToast.success(
+                                "Manual payroll confirmed",
+                                `Payment recorded for ${updatedEmployee.user.name}.`
+                            );
+                            return updatedEmployee;
+                        } catch (err) {
+                            const message = extractErrorMessage(err);
+                            set(
+                                (s) => ({
+                                    lastError: message,
+                                    loadingById: { ...s.loadingById, [id]: false },
+                                }),
+                                false,
+                                "employees/markManualPayroll:error"
+                            );
+                            showToast.error("Manual payroll failed", message);
+                            throw new Error(message);
+                        }
+                    },
+
+                    async bulkMarkManualPayrollPaid(payload: BulkMarkManualPayrollPayload) {
+                        set({ lastError: null }, false, "employees/bulkMarkManualPayroll:start");
+
+                        try {
+                            const res = await api.post<ApiResponse<BulkManualPayrollResult>>(
+                                EMP_API.BULK_MARK_MANUAL_PAYROLL,
+                                payload
+                            );
+                            const body = res.data;
+                            if (!body?.data) throw new Error("Failed to process bulk manual payroll");
+
+                            get().invalidateCacheKeyPrefix("employees:list:canonical:");
+                            payload.employeeIds.forEach((id) => {
+                                get().cache.delete(EMPLOYEES_CACHE_KEYS.detail(id));
+                            });
+
+                            const { succeeded, failed, total } = body.data;
+
+                            if (failed === 0) {
+                                showToast.success(
+                                    "Bulk payroll complete",
+                                    `${succeeded} of ${total} employees marked as paid.`
+                                );
+                            } else if (succeeded > 0) {
+                                showToast.warning(
+                                    "Bulk payroll partially complete",
+                                    `${succeeded} succeeded, ${failed} failed.`
+                                );
+                            } else {
+                                showToast.error("Bulk payroll failed", "No employees were marked as paid.");
+                            }
+
+                            return body.data;
+                        } catch (err) {
+                            const message = extractErrorMessage(err);
+                            set({ lastError: message }, false, "employees/bulkMarkManualPayroll:error");
+                            showToast.error("Bulk manual payroll failed", message);
                             throw new Error(message);
                         }
                     },

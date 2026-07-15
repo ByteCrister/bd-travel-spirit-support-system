@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUpDown, ChevronDown } from "lucide-react";
+import { ArrowUpDown, ChevronDown, Banknote } from "lucide-react";
 import {
   FaUser,
   FaEnvelope,
@@ -16,7 +16,13 @@ import {
   EmployeeListItemDTO,
   EmployeeSortKey,
 } from "@/types/employee/employee.types";
+import { SALARY_PAYMENT_MODE } from "@/constants/employee.const";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  isManualPayrollPayable,
+  getPayableManualEmployees,
+} from "@/utils/helpers/manual-payroll.helpers";
 import {
   Table,
   TableHeader,
@@ -56,6 +62,12 @@ const NEU_SKELETON = "rounded-md bg-[#d0cecd] animate-pulse";
 const NEU_SURFACE_INSET_SM =
   "bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] rounded-xl";
 
+const NEU_BTN_PAY =
+  "inline-flex items-center gap-1 rounded-lg bg-[#006666] text-white text-[10px] " +
+  "font-[family-name:var(--font-space-mono)] font-bold px-2.5 py-1 " +
+  "shadow-[2px_2px_4px_#004d4d,-1px_-1px_3px_#008080] " +
+  "hover:bg-[#007777] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200";
+
 const NEU_MUTED =
   "font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/50";
 
@@ -74,6 +86,11 @@ interface EmployeeTableProps {
   sortOrder: SortOrder;
   onRetryPayment?: (employeeId: string) => void;
   retryLoading?: string;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  onToggleSelectAll?: (ids: string[]) => void;
+  onManualPay?: (employee: EmployeeListItemDTO) => void;
+  manualPayLoading?: string;
 }
 
 const primaryFields = [
@@ -134,10 +151,33 @@ export function EmployeeTable({
   sortOrder,
   onRetryPayment,
   retryLoading,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAll,
+  onManualPay,
+  manualPayLoading,
 }: EmployeeTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
+  const payableManualRows = useMemo(
+    () => getPayableManualEmployees(list?.docs ?? []),
+    [list?.docs]
+  );
+
+  const payableManualIds = useMemo(
+    () => payableManualRows.map((row) => row.id),
+    [payableManualRows]
+  );
+
+  const allPayableSelected =
+    payableManualIds.length > 0 &&
+    payableManualIds.every((id) => selectedIds?.has(id));
+
+  const somePayableSelected =
+    payableManualIds.some((id) => selectedIds?.has(id)) && !allPayableSelected;
+
   const headers = [
+    { key: "select", label: "", icon: null, width: "w-10", sortable: false },
     { key: "accordion", label: "", icon: null, width: "w-10", sortable: false },
     { key: "avatar", label: "", icon: null, width: "w-14", sortable: false },
     ...primaryFields.map((f) => ({ ...f, sortable: isSortableKey(f.key) })),
@@ -172,7 +212,22 @@ export function EmployeeTable({
                   key={h.key}
                   className={cn("px-3 py-3 text-left", h.width)}
                 >
-                  {h.sortable && isSortableKey(h.key) ? (
+                  {h.key === "select" ? (
+                    payableManualIds.length > 0 && onToggleSelectAll ? (
+                      <Checkbox
+                        checked={
+                          allPayableSelected
+                            ? true
+                            : somePayableSelected
+                              ? "indeterminate"
+                              : false
+                        }
+                        onCheckedChange={() => onToggleSelectAll(payableManualIds)}
+                        aria-label="Select all manual employees due for payment"
+                        className="border-[#1E2938]/30"
+                      />
+                    ) : null
+                  ) : h.sortable && isSortableKey(h.key) ? (
                     <button
                       type="button"
                       className={cn(
@@ -204,7 +259,7 @@ export function EmployeeTable({
                         />
                       </motion.span>
                     </button>
-                  ) : h.key !== "accordion" && h.key !== "avatar" ? (
+                  ) : h.key !== "accordion" && h.key !== "avatar" && h.key !== "select" ? (
                     <span className="inline-flex items-center gap-1.5 font-[family-name:var(--font-space-mono)] text-[10px] font-bold uppercase tracking-widest text-[#1E2938]/50">
                       {h.icon} {h.label}
                     </span>
@@ -225,7 +280,10 @@ export function EmployeeTable({
                     exit={{ opacity: 0 }}
                     className="border-b border-[#1E2938]/5 last:border-0"
                   >
-                    <TableCell className="w-10 px-3 py-3">
+                    <TableCell className="w-10 px-2 py-3">
+                      <div className={`${NEU_SKELETON} h-7 w-7`} />
+                    </TableCell>
+                    <TableCell className="w-10 px-2 py-3">
                       <div className={`${NEU_SKELETON} h-7 w-7`} />
                     </TableCell>
                     <TableCell className="w-14 px-3 py-3">
@@ -248,6 +306,10 @@ export function EmployeeTable({
                     onToggle={() => toggleRow(row.id)}
                     onRetryPayment={onRetryPayment}
                     retryLoading={retryLoading === row.id}
+                    isSelected={selectedIds?.has(row.id) ?? false}
+                    onToggleSelect={onToggleSelect}
+                    onManualPay={onManualPay}
+                    manualPayLoading={manualPayLoading === row.id}
                   />
                 ))
               ) : (
@@ -286,6 +348,10 @@ interface EmployeeAccordionRowProps {
   onToggle: () => void;
   onRetryPayment?: (employeeId: string) => void;
   retryLoading?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
+  onManualPay?: (employee: EmployeeListItemDTO) => void;
+  manualPayLoading?: boolean;
 }
 
 const STATUS_CONFIG = {
@@ -314,6 +380,10 @@ function EmployeeAccordionRow({
   onToggle,
   onRetryPayment,
   retryLoading = false,
+  isSelected = false,
+  onToggleSelect,
+  onManualPay,
+  manualPayLoading = false,
 }: EmployeeAccordionRowProps) {
   const statusData = STATUS_CONFIG[row.status] ?? {
     label: row.status ?? "Unknown",
@@ -330,9 +400,19 @@ function EmployeeAccordionRow({
     cls: "bg-[#1E2938]/10 text-[#1E2938]/60",
   };
 
+  const canPayManually = isManualPayrollPayable(row);
+  const isAutoFailed =
+    row.paymentMode === SALARY_PAYMENT_MODE.AUTO &&
+    row.currentMonthPayment?.status === "failed";
+
   const handleRetry = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onRetryPayment && !retryLoading) onRetryPayment(row.id);
+  };
+
+  const handleManualPay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onManualPay && !manualPayLoading) onManualPay(row);
   };
 
   return (
@@ -346,6 +426,18 @@ function EmployeeAccordionRow({
         )}
         onClick={() => onClick(row.id)}
       >
+        {/* Select checkbox — manual payable only */}
+        <TableCell className="w-10 px-2 py-3" onClick={(e) => e.stopPropagation()}>
+          {canPayManually && onToggleSelect ? (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelect(row.id)}
+              aria-label={`Select ${row.user.name} for manual payment`}
+              className="border-[#1E2938]/30"
+            />
+          ) : null}
+        </TableCell>
+
         {/* Accordion toggle */}
         <TableCell className="w-10 px-2 py-3">
           <button
@@ -423,18 +515,31 @@ function EmployeeAccordionRow({
           className="w-40 px-3 py-3"
           onClick={(e) => e.stopPropagation()}
         >
-          {row.currentMonthPayment ? (
-            <PaymentStatusBadge
-              status={row.currentMonthPayment.status}
-              amount={row.currentMonthPayment.amount}
-              currency={row.currency}
-              isRetryable={row.currentMonthPayment.status === "failed"}
-              onRetry={handleRetry}
-              isLoading={retryLoading}
-            />
-          ) : (
-            <span className={NEU_MUTED}>No payment</span>
-          )}
+          <div className="flex flex-col gap-1.5">
+            {row.currentMonthPayment ? (
+              <PaymentStatusBadge
+                status={row.currentMonthPayment.status}
+                amount={row.currentMonthPayment.amount}
+                currency={row.currency}
+                isRetryable={isAutoFailed}
+                onRetry={handleRetry}
+                isLoading={retryLoading}
+              />
+            ) : (
+              <span className={NEU_MUTED}>No payment</span>
+            )}
+            {canPayManually && onManualPay && (
+              <button
+                type="button"
+                onClick={handleManualPay}
+                disabled={manualPayLoading}
+                className={NEU_BTN_PAY}
+              >
+                <Banknote className="h-3 w-3" />
+                {manualPayLoading ? "Paying…" : "Pay"}
+              </button>
+            )}
+          </div>
         </TableCell>
       </TableRow>
 
@@ -442,7 +547,7 @@ function EmployeeAccordionRow({
       <AnimatePresence>
         {isExpanded && (
           <TableRow className="border-b border-[#1E2938]/5 bg-[#E7E5E4]">
-            <TableCell colSpan={7} className="p-0">
+            <TableCell colSpan={8} className="p-0">
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}

@@ -67,7 +67,9 @@ export interface PayrollRecordDTO {
   paidAt?: ISODateString;
   failureReason?: string;
   transactionRef?: string;
-  paidBy?: ObjectIdString; // admin/user who paid manually
+  paymentMode?: SalaryPaymentMode;
+  paidBy?: ObjectIdString;
+  manualReference?: string;
 }
 
 /** Payment card details embedded on employee */
@@ -126,7 +128,8 @@ export interface EmployeeListItemDTO {
   salary: number;
   currency: string;
   paymentMode: SalaryPaymentMode; // auto | manual
-  currentMonthPayment?: CurrentMonthPaymentStatusDTO; // current month payment status
+  hasPaymentAccount?: boolean;
+  currentMonthPayment?: CurrentMonthPaymentStatusDTO;
 
   // Dates
   dateOfJoining: ISODateString;
@@ -203,7 +206,7 @@ export interface CreateEmployeePayload {
   salary: number | null;
   currency: Currency;
   paymentMode: SalaryPaymentMode; // auto | manual
-  paymentCard?: PaymentCardDTO;   // card details (required if paymentMode is auto)
+  paymentCard?: PaymentCardDTO;   // Stripe card — required for all employees
   dateOfJoining: ISODateString;
   contactInfo: ContactInfoDTO; // phone is required
   shifts: ShiftDTO[];
@@ -224,6 +227,30 @@ export interface RestoreEmployeePayload {
 
 export interface RetrySalaryPaymentPayload {
   id: ObjectIdString;
+}
+
+export interface MarkManualPayrollPayload {
+  year?: number;
+  month?: number;
+  manualReference?: string;
+}
+
+export interface BulkMarkManualPayrollPayload {
+  employeeIds: ObjectIdString[];
+  manualReference?: string;
+}
+
+export interface BulkManualPayrollResult {
+  succeeded: number;
+  failed: number;
+  total: number;
+  results: Array<{
+    employeeId: ObjectIdString;
+    success: boolean;
+    error?: string;
+    year?: number;
+    month?: number;
+  }>;
 }
 
 /* ---------------------------------------------------------------------

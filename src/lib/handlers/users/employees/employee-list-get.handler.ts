@@ -369,6 +369,7 @@ export const UserEmployeeListGetHandler = async (req: NextRequest) => {
                 salary: 1,
                 currency: 1,
                 paymentMode: 1,
+                paymentAccount: 1,
                 dateOfJoining: 1,
                 dateOfLeaving: 1,
                 contactInfo: 1,
@@ -446,6 +447,7 @@ export const UserEmployeeListGetHandler = async (req: NextRequest) => {
             salary: emp.salary,
             currency: emp.currency,
             paymentMode: emp.paymentMode,
+            hasPaymentAccount: Boolean(emp.paymentAccount),
             currentMonthPayment: {
                 status: currentPaymentStatus,
                 amount: emp.salary,

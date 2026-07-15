@@ -6,3 +6,6 @@ export type { EmployeePaymentResult } from "./employee-payment.cron";
 
 export { processTourSettlements } from "./tour-settlement.cron";
 export type { TourSettlementResult } from "./tour-settlement.cron";
+
+export { cleanupExpiredEmailTokens } from "./email-token-cleanup.cron";
+export type { EmailTokenCleanupResult } from "./email-token-cleanup.cron";

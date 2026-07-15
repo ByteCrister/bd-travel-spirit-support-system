@@ -32,6 +32,10 @@ export interface IPayrollRecord {
 
     failureReason?: string;
     transactionRef?: string;
+
+    paymentMode?: SalaryPaymentMode;
+    paidBy?: Types.ObjectId;
+    manualReference?: string;
 }
 
 const PayrollSchema = new Schema<IPayrollRecord>(
@@ -54,6 +58,13 @@ const PayrollSchema = new Schema<IPayrollRecord>(
 
         failureReason: { type: String, trim: true },
         transactionRef: { type: String, trim: true },
+
+        paymentMode: {
+            type: String,
+            enum: Object.values(SALARY_PAYMENT_MODE),
+        },
+        paidBy: { type: Schema.Types.ObjectId, ref: "User" },
+        manualReference: { type: String, trim: true },
     },
     { _id: false }
 );
