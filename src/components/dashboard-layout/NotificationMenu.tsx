@@ -57,6 +57,7 @@ const notificationMeta: Record<
 > = {
   [ADMIN_NOTIFICATION_TYPE.NEW_USER_SIGNUP]: { icon: FiMessageCircle, color: "bg-[#006666]" },
   [ADMIN_NOTIFICATION_TYPE.NEW_GUIDE_REGISTRATION]: { icon: FiMessageCircle, color: "bg-[#00A63D]" },
+  [ADMIN_NOTIFICATION_TYPE.NEW_TOUR_REQUESTED]: { icon: FiMessageCircle, color: "bg-[#006666]" },
   [ADMIN_NOTIFICATION_TYPE.GUIDE_VERIFIED]: { icon: FiSettings, color: "bg-[#00A63D]" },
   [ADMIN_NOTIFICATION_TYPE.GUIDE_FORGOT_PASSWORD]: { icon: FiAlertCircle, color: "bg-[#FE9900]" },
   [ADMIN_NOTIFICATION_TYPE.SUPPORT_EMP_FORGOT_PASSWORD]: { icon: FiAlertCircle, color: "bg-[#FE9900]" },
@@ -99,9 +100,11 @@ export function NotificationMenu() {
     const handleNew = (payload: { data: SupportSystemNotificationType }) =>
       addNotificationFromSocket(payload.data);
     socket.on(ADMIN_NOTIFICATION_TYPE.NEW_GUIDE_REGISTRATION, handleNew);
+    socket.on(ADMIN_NOTIFICATION_TYPE.NEW_TOUR_REQUESTED, handleNew);
     socket.on(ADMIN_NOTIFICATION_TYPE.SYSTEM_ERROR, handleNew);
     return () => {
       socket.off(ADMIN_NOTIFICATION_TYPE.NEW_GUIDE_REGISTRATION, handleNew);
+      socket.off(ADMIN_NOTIFICATION_TYPE.NEW_TOUR_REQUESTED, handleNew);
       socket.off(ADMIN_NOTIFICATION_TYPE.SYSTEM_ERROR, handleNew);
     };
   }, [addNotificationFromSocket]);

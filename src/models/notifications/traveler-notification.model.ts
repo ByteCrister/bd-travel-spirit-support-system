@@ -1,4 +1,4 @@
-// models/user-notification.model.ts
+// models/traveler-notification.model.ts
 import {
   NOTIFICATION_PRIORITY,
   NOTIFICATION_RELATED_MODAL,
@@ -6,7 +6,7 @@ import {
   NotificationRelatedModal,
   USER_NOTIFICATION_TYPE,
   UserNotificationType,
-} from "@/constants/customer-notification.const";
+} from "@/constants/traveler-notification.const";
 import { defineModel } from "@/lib/helpers/defineModel";
 import { Schema, Document, Types } from "mongoose";
 
@@ -16,7 +16,7 @@ import { Schema, Document, Types } from "mongoose";
  * =========================
  * Structure of a notification stored in MongoDB.
  */
-export interface IUserNotification extends Document {
+export interface ITravelerNotification extends Document {
   recipient: Types.ObjectId; // Target user
   type: UserNotificationType; // Category
   priority: NotificationPriority;
@@ -39,7 +39,7 @@ export interface IUserNotification extends Document {
  * SCHEMA
  * =========================
  */
-const UserNotificationSchema = new Schema<IUserNotification>(
+const TravelerNotificationSchema = new Schema<ITravelerNotification>(
   {
     recipient: {
       type: Schema.Types.ObjectId,
@@ -91,11 +91,11 @@ const UserNotificationSchema = new Schema<IUserNotification>(
  * - Sorting by priority for urgent alerts
  * - Filtering by type for targeted queries
  */
-UserNotificationSchema.index({ recipient: 1, isRead: 1 });
-UserNotificationSchema.index({ recipient: 1, priority: -1 });
-UserNotificationSchema.index({ createdAt: -1 });
+TravelerNotificationSchema.index({ recipient: 1, isRead: 1 });
+TravelerNotificationSchema.index({ recipient: 1, priority: -1 });
+TravelerNotificationSchema.index({ createdAt: -1 });
 // Middleware to set expiry date conditionally
-UserNotificationSchema.pre("save", function (next) {
+TravelerNotificationSchema.pre("save", function (next) {
   if (
     this.priority === NOTIFICATION_PRIORITY.LOW ||
     this.priority === NOTIFICATION_PRIORITY.NORMAL
@@ -113,4 +113,4 @@ UserNotificationSchema.pre("save", function (next) {
  * =========================
  * Ensures hot-reload safety in dev and supports multi-connection setups.
  */
-export const UserNotificationModel = defineModel("UserNotification", UserNotificationSchema);
+export const TravelerNotificationModel = defineModel("TravelerNotification", TravelerNotificationSchema);

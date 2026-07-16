@@ -1,22 +1,14 @@
 /**
  * Enum representing the different system or business events
- * that can trigger an admin notification.
+ * that can trigger a guide system notification.
  *
  * Using an enum ensures:
  * - Type safety in TypeScript (no accidental typos in string values)
  * - Centralized management of allowed event types
  * - Easy reuse across services, controllers, and tests
  */
-export enum ADMIN_NOTIFICATION_TYPE {
-  // --- User & Guide Registration ---
-  NEW_USER_SIGNUP = "new_user_signup", // A regular traveler signed up
-  NEW_GUIDE_REGISTRATION = "new_guide_registration", // A new guide applied / registered
-  GUIDE_VERIFIED = "guide_verified", // Admin verified a guide’s profile
-  NEW_TOUR_REQUESTED = "new_tour_requested", // A guide submitted a new tour for moderation
-
+export enum GUIDE_SYSTEM_NOTIFICATION_TYPE {
   // --- Password Resets ---
-  GUIDE_FORGOT_PASSWORD = "guide_forgot_password", // A guide initiated password reset
-  SUPPORT_EMP_FORGOT_PASSWORD = "support_emp_forgot_password", // Support staff password reset
   GUIDE_EMP_FORGOT_PASSWORD = "guide_emp_forgot_password", // A guide’s employee (sub‑account) forgot password
 
   // --- Bookings & Transactions: This is for Guide not for Support System ---
@@ -35,7 +27,7 @@ export enum ADMIN_NOTIFICATION_TYPE {
   LOW_INVENTORY = "low_inventory", // Tour spots / availability running low
 }
 
-export type AdminNotificationType = `${ADMIN_NOTIFICATION_TYPE}`;
+export type GuideSystemNotificationType = `${GUIDE_SYSTEM_NOTIFICATION_TYPE}`;
 
 /**
  * Enum representing the urgency/priority level of a notification.
@@ -43,11 +35,11 @@ export type AdminNotificationType = `${ADMIN_NOTIFICATION_TYPE}`;
  * This helps admins quickly identify which notifications
  * require immediate attention vs. those that can be handled later.
  */
-export enum ADMIN_NOTIFICATION_PRIORITY {
+export enum GUIDE_SYSTEM_NOTIFICATION_PRIORITY {
   LOW = "low", // Informational, no immediate action needed
   MEDIUM = "medium", // Normal priority, should be addressed in due course
   HIGH = "high", // Important, requires timely attention
   CRITICAL = "critical", // Urgent, immediate action required
 }
 
-export type AdminNotificationPriority = `${ADMIN_NOTIFICATION_PRIORITY}`;
+export type GuideSystemNotificationPriority = `${GUIDE_SYSTEM_NOTIFICATION_PRIORITY}`;
