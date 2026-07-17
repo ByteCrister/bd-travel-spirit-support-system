@@ -192,6 +192,8 @@ export default function ArticleToolbar() {
     const [presetOpen, setPresetOpen] = React.useState(false);
     const [showAdvanced, setShowAdvanced] = React.useState(false);
 
+    const today = new Date().toISOString().split('T')[0];
+
     const debouncedSetSearch = useDebouncedCallback((query: string) => {
         setLocalSearch({ query });
     }, 300);
@@ -601,7 +603,7 @@ export default function ArticleToolbar() {
                                             }}
                                             className={S.inputSm}
                                             aria-label="Published from"
-                                            max={localFilter.publishedTo || undefined}
+                                            max={localFilter.publishedTo ? (localFilter.publishedTo < today ? localFilter.publishedTo : today) : today}
                                         />
                                         <input
                                             type="date"
@@ -617,6 +619,7 @@ export default function ArticleToolbar() {
                                             className={S.inputSm}
                                             aria-label="Published to"
                                             min={localFilter.publishedFrom || undefined}
+                                            max={today}
                                         />
                                     </div>
                                     {localFilter.publishedFrom && localFilter.publishedTo && localFilter.publishedFrom > localFilter.publishedTo && (

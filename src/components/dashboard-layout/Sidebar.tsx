@@ -133,35 +133,37 @@ const navigationGroups: NavGroup[] = [
       },
     ],
   },
-  {
-    title: "Social",
-    icon: FiShare2,
-    items: [
-      { href: "/social/ads", label: "Ads", icon: FiImage, adminOnly: true },
-      {
-        href: "/social/promotions",
-        label: "Promotions",
-        icon: FiGift,
-        adminOnly: true,
-      },
-    ],
-  },
+  // Commented out for now
+  // {
+  //   title: "Social",
+  //   icon: FiShare2,
+  //   items: [
+  //     { href: "/social/ads", label: "Ads", icon: FiImage, adminOnly: true },
+  //     {
+  //       href: "/social/promotions",
+  //       label: "Promotions",
+  //       icon: FiGift,
+  //       adminOnly: true,
+  //     },
+  //   ],
+  // },
   {
     title: "Settings",
     icon: FiSettings,
     items: [
-      {
-        href: "/setting/advertising",
-        label: "Advertising",
-        icon: FiImage,
-        adminOnly: true,
-      },
-      {
-        href: "/setting/guide-subscriptions",
-        label: "Guide Subscriptions",
-        icon: FiCreditCard,
-        adminOnly: true,
-      },
+      // Commented out for now
+      // {
+      //   href: "/setting/advertising",
+      //   label: "Advertising",
+      //   icon: FiImage,
+      //   adminOnly: true,
+      // },
+      // {
+      //   href: "/setting/guide-subscriptions",
+      //   label: "Guide Subscriptions",
+      //   icon: FiCreditCard,
+      //   adminOnly: true,
+      // },
       {
         href: "/setting/guide-banners",
         label: "Guide Banners",

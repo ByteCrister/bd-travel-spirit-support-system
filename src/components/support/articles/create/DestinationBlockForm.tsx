@@ -761,7 +761,11 @@ export function DestinationBlockForm({ values, errors, touched, setFieldValue }:
                   <Trash2 className="h-4 w-4" />
                   Remove Destination
                 </button>
-                <button type="button" className={NEU_BTN_GHOST} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                <button type="button" className={NEU_BTN_GHOST} onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
+                  document.body.scrollTo({ top: 0, behavior: 'smooth' });
+                }}>
                   <ChevronDown className="h-4 w-4 rotate-180" />
                   Back to Top
                 </button>

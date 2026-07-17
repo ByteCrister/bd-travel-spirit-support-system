@@ -536,7 +536,7 @@ const ArticleDetailPage = ({ articleId }: { articleId: string }) => {
                                 pendingCommentCount={detail.pendingCommentCount}
                                 headerPulse={headerPulse}
                                 onView={() => router.push(`/support/articles/${encodeId(encodeURIComponent(detail.id))}`)}
-                                onDelete={undefined}
+                                onCreateArticle={() => router.push('/support/articles/create')}
                             />
                         </motion.div>
                     ) : null}

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import {
   FiFlag, FiAlertTriangle, FiEye, FiCheck,
   FiUser, FiMapPin, FiSettings, FiAlertCircle,
+  FiMessageSquare, FiLock,
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 import { PendingAction } from "@/types/dashboard/dashboard.types";
@@ -50,6 +51,9 @@ const getActionIcon = (type: PendingAction["type"]) => {
     case "flagged_content": return <FiAlertCircle className="h-4 w-4" />;
     case "organizer_approval": return <FiUser className="h-4 w-4" />;
     case "tour_approval": return <FiMapPin className="h-4 w-4" />;
+    case "article_comment": return <FiMessageSquare className="h-4 w-4" />;
+    case "guide_password_reset":
+    case "employee_password_reset": return <FiLock className="h-4 w-4" />;
     default: return <FiSettings className="h-4 w-4" />;
   }
 };
@@ -71,13 +75,14 @@ interface PendingActionsProps {
 }
 
 export function PendingActions({
-  actions,
+  actions = [],
   loading = false,
   onResolve,
   onView,
   className,
 }: PendingActionsProps) {
-  const pendingCount = actions.filter((a) => a.status === "pending").length;
+  const safeActions = Array.isArray(actions) ? actions : ((actions as any)?.items || []);
+  const pendingCount = safeActions.filter((a: any) => a.status === "pending").length;
 
   if (loading) {
     return (
@@ -124,7 +129,7 @@ export function PendingActions({
 
       {/* List */}
       <div className="space-y-2.5 max-h-[52vh] overflow-y-auto pr-1">
-        {actions.length === 0 ? (
+        {safeActions.length === 0 ? (
           <div className="text-center py-10">
             <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-[#E7E5E4] shadow-[inset_4px_4px_8px_#c8c6c5,inset_-4px_-4px_8px_#ffffff] flex items-center justify-center">
               <FiCheck className="h-6 w-6 text-[#00A63D]/60" />
@@ -133,9 +138,9 @@ export function PendingActions({
             <p className={cn(NEU_MUTED, "text-xs mt-1")}>All caught up!</p>
           </div>
         ) : (
-          actions.map((action, index) => {
-            const pCfg = priorityConfig[action.priority] ?? priorityConfig.low;
-            const sCfg = statusConfig[action.status] ?? { label: action.status, color: "bg-[#1E2938]/10 text-[#1E2938]" };
+          safeActions.map((action: any, index: number) => {
+            const pCfg = priorityConfig[action.priority as keyof typeof priorityConfig] ?? priorityConfig.low;
+            const sCfg = statusConfig[action.status as keyof typeof statusConfig] ?? { label: action.status, color: "bg-[#1E2938]/10 text-[#1E2938]" };
 
             return (
               <motion.div

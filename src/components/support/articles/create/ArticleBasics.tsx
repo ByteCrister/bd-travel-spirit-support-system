@@ -12,7 +12,7 @@ import { CreateArticleFormValues } from '@/utils/validators/article.create.valid
 import { ARTICLE_TYPE } from '@/constants/article.const';
 import { TOUR_CATEGORIES } from '@/constants/tour.const';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Type, FileText, Tags, Image as ImageIcon, User, Layers, Upload, X, Loader2 } from 'lucide-react';
+import { Type, FileText, Tags, Image as ImageIcon, User, Layers, Upload, X, Loader2, Plus } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { fileToBase64, isAllowedExtension, IMAGE_EXTENSIONS } from '@/utils/helpers/file-conversion';
 import { showToast } from '@/components/global/showToast';
@@ -127,6 +127,17 @@ export function ArticleBasics({ values, errors, touched, setFieldValue }: Articl
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [currentTag, setCurrentTag] = useState('');
+
+  const handleAddTag = () => {
+    const trimmed = currentTag.trim();
+    if (!trimmed) return;
+    if (tags.includes(trimmed)) { showToast.error('Duplicate tag', 'This tag already exists.'); return; }
+    const tagRegex = /^[a-zA-Z0-9 \-_]{1,20}$/;
+    if (!tagRegex.test(trimmed)) { showToast.error('Invalid tag', 'Tag must be letters, numbers, spaces, hyphens or underscores — up to 20 characters.'); return; }
+    if (tags.length >= 5) { showToast.error('Maximum tags reached', 'You can only add up to 5 tags.'); return; }
+    setFieldValue('tags', [...tags, trimmed]);
+    setCurrentTag('');
+  };
 
   const titleError = fieldError(errors, touched, 'title');
   const banglaTitleError = fieldError(errors, touched, 'banglaTitle');
@@ -353,28 +364,42 @@ export function ArticleBasics({ values, errors, touched, setFieldValue }: Articl
                   ))}
                 </AnimatePresence>
               </div>
-              <input
-                value={currentTag}
-                onChange={(e) => setCurrentTag(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (!currentTag.trim()) return;
-                    if (tags.includes(currentTag.trim())) { showToast.error('Duplicate tag', 'This tag already exists.'); return; }
-                    const tagRegex = /^[a-zA-Z0-9 ]{1,20}$/;
-                    if (!tagRegex.test(currentTag.trim())) { showToast.error('Invalid tag', 'Tag must be alphanumeric and spaces, up to 20 characters.'); return; }
-                    if (tags.length >= 5) { showToast.error('Maximum tags reached', 'You can only add up to 5 tags.'); return; }
-                    setFieldValue('tags', [...tags, currentTag.trim()]);
-                    setCurrentTag('');
-                  }
-                }}
-                placeholder={tags.length < 5 ? 'Type a tag and press Enter' : 'Maximum 5 tags reached'}
-                disabled={tags.length >= 5}
-                className={`${NEU.input} disabled:opacity-50`}
-              />
+              <div className="flex gap-2">
+                <input
+                  value={currentTag}
+                  onChange={(e) => setCurrentTag(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTag();
+                    }
+                  }}
+                  placeholder={tags.length < 5 ? 'Type a tag…' : 'Maximum 5 tags reached'}
+                  disabled={tags.length >= 5}
+                  className={`${NEU.input} disabled:opacity-50 flex-1`}
+                  aria-label="Tag input"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  disabled={tags.length >= 5 || !currentTag.trim()}
+                  aria-label="Add tag"
+                  className={[
+                    'inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150',
+                    'bg-[#006666] text-white',
+                    'shadow-[3px_3px_6px_#c8c6c4,_-3px_-3px_6px_#ffffff]',
+                    'hover:bg-[#007777] active:shadow-[inset_2px_2px_4px_#004d4d,inset_-2px_-2px_4px_#008080]',
+                    'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none',
+                    NEU.fontMono,
+                  ].join(' ')}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add
+                </button>
+              </div>
               <p className={NEU.hintText}>
                 <span className="inline-block w-1 h-1 rounded-full bg-[#1E2938]/40 shrink-0" />
-                {tags.length}/5 tags — alphanumeric, up to 20 characters each
+                {tags.length}/5 tags — letters, numbers, hyphens, spaces (max 20 chars)
               </p>
             </div>
           </div>

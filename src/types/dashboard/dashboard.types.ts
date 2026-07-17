@@ -37,7 +37,10 @@ export type PendingActionType =
   | 'complaint'
   | 'flagged_content'
   | 'organizer_approval'
-  | 'tour_approval';
+  | 'tour_approval'
+  | 'article_comment'
+  | 'guide_password_reset'
+  | 'employee_password_reset';
 
 export type PendingActionPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type PendingActionStatus = 'pending' | 'in_progress' | 'resolved';

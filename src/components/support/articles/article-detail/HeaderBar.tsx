@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { FiPlusCircle } from 'react-icons/fi';
 import { ARTICLE_STATUS, ArticleStatus } from '@/constants/article.const';
 
 // ── Neumorphism style tokens ──────────────────────────────────
@@ -45,6 +46,14 @@ const STATUS_DOT: Record<ArticleStatus, string> = {
     [ARTICLE_STATUS.ARCHIVED]: 'bg-[#FE9900]',
 };
 
+const NEU_BTN_CREATE =
+    'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-[family-name:var(--font-space-mono)] font-medium ' +
+    'bg-[#006666] text-white ' +
+    'shadow-[3px_3px_6px_#004d4d,_-2px_-2px_5px_#008080] ' +
+    'hover:shadow-[1px_1px_3px_#004d4d,_-1px_-1px_3px_#008080] hover:translate-y-px ' +
+    'active:shadow-[inset_2px_2px_4px_#004d4d,_inset_-2px_-2px_4px_#008080] ' +
+    'transition-all duration-150 cursor-pointer';
+
 type Props = {
     title: string;
     status: ArticleStatus;
@@ -54,6 +63,7 @@ type Props = {
     headerPulse?: boolean;
     onView?: () => void;
     onDelete?: () => void;
+    onCreateArticle?: () => void;
 };
 
 export function HeaderBar({
@@ -63,6 +73,7 @@ export function HeaderBar({
     commentCount,
     pendingCommentCount,
     headerPulse,
+    onCreateArticle,
 }: Props) {
     return (
         <motion.div
@@ -70,7 +81,7 @@ export function HeaderBar({
             animate={headerPulse ? { scale: 1.008 } : { scale: 1 }}
             transition={{ type: 'spring', stiffness: 250, damping: 20 }}
         >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 {/* Title + status */}
                 <div className="space-y-2 min-w-0">
                     <div className="flex flex-wrap items-center gap-3">
@@ -120,6 +131,20 @@ export function HeaderBar({
                         )}
                     </div>
                 </div>
+
+                {/* Create Article button */}
+                {onCreateArticle && (
+                    <div className="shrink-0">
+                        <button
+                            type="button"
+                            onClick={onCreateArticle}
+                            className={NEU_BTN_CREATE}
+                        >
+                            <FiPlusCircle className="h-4 w-4" />
+                            Create Article
+                        </button>
+                    </div>
+                )}
             </div>
         </motion.div>
     );

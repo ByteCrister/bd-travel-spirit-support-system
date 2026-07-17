@@ -20,8 +20,8 @@ import api from "@/utils/axios";
 import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import { ApiResponse } from "@/types/common/api.types";
 
-const URL_AFTER_API = "/mock/dashboard";
-// const URL_AFTER_API = "/dashboard/v1/overview/v1";
+// const URL_AFTER_API = "/mock/dashboard";
+const URL_AFTER_API = "/dashboard/v1/overview/v1";
 
 // TTL for client cache in ms
 const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
