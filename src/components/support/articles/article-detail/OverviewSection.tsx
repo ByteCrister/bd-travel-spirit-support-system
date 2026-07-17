@@ -150,7 +150,7 @@ export function OverviewSection() {
         setImageError(null);
         setIsUploading(true);
         try {
-            const base64String = await fileToBase64(file, { compressImages: true, maxWidth: 1600, quality: 0.8, maxFileBytes: 5 * 1024 * 1024, allowedExtensions: IMAGE_EXTENSIONS });
+            const base64String = await fileToBase64(file, { compressImages: true, maxWidth: 1600, quality: 0.8, maxFileBytes: 2 * 1024 * 1024, allowedExtensions: IMAGE_EXTENSIONS });
             setFieldValue('heroImage', base64String);
             setImagePreview(base64String);
         } catch (error) {
@@ -292,7 +292,7 @@ export function OverviewSection() {
                             </FormField>
 
                             {/* Hero Image */}
-                            <FormField label="Hero Image" icon={FiImage} error={imageError || errors.heroImage} touched={touched.heroImage} description="1200×630px, max 5MB">
+                            <FormField label="Hero Image" icon={FiImage} error={imageError || errors.heroImage} touched={touched.heroImage} description="1200×630px, max 2MB">
                                 {!imagePreview ? (
                                     <div className={`${NEU_SURFACE_INSET} flex flex-col items-center justify-center p-8 text-center`}>
                                         <FiUpload className="h-10 w-10 text-[#1E2938]/25 mb-3" />
@@ -304,7 +304,7 @@ export function OverviewSection() {
                                                 {isUploading ? 'Uploading...' : 'Choose Image'}
                                             </button>
                                         </label>
-                                        <p className={`${NEU_MUTED} text-xs mt-2`}>{IMAGE_EXTENSIONS.join(', ').toUpperCase()}, max 5MB</p>
+                                        <p className={`${NEU_MUTED} text-xs mt-2`}>{IMAGE_EXTENSIONS.join(', ').toUpperCase()}, max 2MB</p>
                                     </div>
                                 ) : (
                                     <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="relative rounded-xl overflow-hidden shadow-[4px_4px_10px_#c8c6c5,-4px_-4px_10px_#ffffff]">

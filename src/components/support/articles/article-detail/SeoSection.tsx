@@ -249,7 +249,7 @@ export function SeoSection() {
         setImageError(null);
         setIsUploading(true);
         try {
-            const base64String = await fileToBase64(file, { compressImages: true, maxWidth: 1200, quality: 0.8, maxFileBytes: 5 * 1024 * 1024, allowedExtensions: IMAGE_EXTENSIONS });
+            const base64String = await fileToBase64(file, { compressImages: true, maxWidth: 1200, quality: 0.8, maxFileBytes: 2 * 1024 * 1024, allowedExtensions: IMAGE_EXTENSIONS });
             setFieldValue('seo.ogImage', base64String);
             setImagePreview(base64String);
         } catch (error) {
@@ -437,7 +437,7 @@ export function SeoSection() {
                                             {isUploading ? 'Uploading...' : 'Choose Image'}
                                         </button>
                                         <p className={`${NEU_MUTED} text-xs mt-2`}>
-                                            {IMAGE_EXTENSIONS.join(', ').toUpperCase()}, max 5MB
+                                            {IMAGE_EXTENSIONS.join(', ').toUpperCase()}, max 2MB
                                         </p>
                                     </div>
                                 ) : (

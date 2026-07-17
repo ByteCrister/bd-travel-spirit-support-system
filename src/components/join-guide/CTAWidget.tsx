@@ -23,10 +23,10 @@ export default function CTAWidget({ data }: { data: LandingPageData }) {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 mx-auto mb-4">
                     <FiUsers className="h-6 w-6 text-white" />
                 </div>
-                <div className="text-3xl font-bold text-white mb-2">
-                    <CountUpStat end={data.whyPartner.activeGuides ?? 0} duration={2} separator="," suffix="+" />
+                <div className="text-3xl font-bold mb-2">
+                    <CountUpStat end={data.whyPartner.activeGuides ?? 0} duration={2} separator="," suffix="+" className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent" />
                 </div>
-                <div className="text-sm text-slate-300">Active Guides</div>
+                <div className="text-sm text-slate-200">Active Guides</div>
             </MotionDiv>
 
             <MotionDiv
@@ -39,10 +39,10 @@ export default function CTAWidget({ data }: { data: LandingPageData }) {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 mx-auto mb-4">
                     <FiGlobe className="h-6 w-6 text-white" />
                 </div>
-                <div className="text-3xl font-bold text-white mb-2">
-                    <CountUpStat end={data.hero.totalDestinations ?? 0} duration={2} separator="," suffix="+" />
+                <div className="text-3xl font-bold mb-2">
+                    <CountUpStat end={data.hero.totalDestinations ?? 0} duration={2} separator="," suffix="+" className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent" />
                 </div>
-                <div className="text-sm text-slate-300">Destinations</div>
+                <div className="text-sm text-slate-200">Destinations</div>
             </MotionDiv>
 
             <MotionDiv
@@ -55,10 +55,10 @@ export default function CTAWidget({ data }: { data: LandingPageData }) {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 mx-auto mb-4">
                     <FiTrendingUp className="h-6 w-6 text-white" />
                 </div>
-                <div className="text-3xl font-bold text-white mb-2">
-                    <CountUpStat end={data.whyPartner.monthlyVisitors ?? 0} duration={2} separator="," suffix="+" />
+                <div className="text-3xl font-bold mb-2">
+                    <CountUpStat end={data.whyPartner.monthlyVisitors ?? 0} duration={2} separator="," suffix="+" className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent" />
                 </div>
-                <div className="text-sm text-slate-300">Monthly Visitors</div>
+                <div className="text-sm text-slate-200">Monthly Visitors</div>
             </MotionDiv>
         </div>
     );

@@ -129,6 +129,7 @@ export function ArticleBasics({ values, errors, touched, setFieldValue }: Articl
   const [currentTag, setCurrentTag] = useState('');
 
   const titleError = fieldError(errors, touched, 'title');
+  const banglaTitleError = fieldError(errors, touched, 'banglaTitle');
   const articleTypeError = fieldError(errors, touched, 'articleType');
   const categoriesError = fieldError(errors, touched, 'categories');
   const tagsError = fieldError(errors, touched, 'tags');
@@ -165,7 +166,7 @@ export function ArticleBasics({ values, errors, touched, setFieldValue }: Articl
     }
     setIsUploading(true);
     try {
-      const base64 = await fileToBase64(file, { compressImages: true, maxWidth: 1600, quality: 0.8, maxFileBytes: 5 * 1024 * 1024, allowedExtensions: IMAGE_EXTENSIONS });
+      const base64 = await fileToBase64(file, { compressImages: true, maxWidth: 1600, quality: 0.8, maxFileBytes: 2 * 1024 * 1024, allowedExtensions: IMAGE_EXTENSIONS });
       setFieldValue('heroImage', base64);
       showToast.success('Image uploaded', 'Hero image has been successfully uploaded.');
     } catch (error) {
@@ -193,7 +194,7 @@ export function ArticleBasics({ values, errors, touched, setFieldValue }: Articl
     }
     setIsUploading(true);
     try {
-      const base64 = await fileToBase64(file, { compressImages: true, maxWidth: 1600, quality: 0.8, maxFileBytes: 5 * 1024 * 1024, allowedExtensions: IMAGE_EXTENSIONS });
+      const base64 = await fileToBase64(file, { compressImages: true, maxWidth: 1600, quality: 0.8, maxFileBytes: 2 * 1024 * 1024, allowedExtensions: IMAGE_EXTENSIONS });
       setFieldValue('heroImage', base64);
       showToast.success('Image uploaded', 'Hero image uploaded via drag & drop.');
     } catch (error) {
@@ -221,6 +222,26 @@ export function ArticleBasics({ values, errors, touched, setFieldValue }: Articl
             aria-label="Article title"
             aria-invalid={!!titleError}
             className={`${NEU.input} ${titleError ? NEU.inputError : ''}`}
+          />
+        </FieldWrapper>
+      </motion.div>
+
+      {/* ── Bangla Title ── */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.02 }}>
+        <FieldWrapper error={banglaTitleError}>
+          <label className={NEU.label}>
+            <Type className={`w-4 h-4 ${NEU.labelIcon}`} />
+            Bangla Title
+            <span className="text-[#FF2157] normal-case">*</span>
+          </label>
+          <input
+            value={values.banglaTitle}
+            onChange={(e) => setFieldValue('banglaTitle', e.target.value)}
+            placeholder="e.g., সিলেটে একটি চমৎকার সপ্তাহান্ত"
+            aria-label="Bangla Article title"
+            aria-invalid={!!banglaTitleError}
+            className={`${NEU.input} ${banglaTitleError ? NEU.inputError : ''}`}
+            dir="auto"
           />
         </FieldWrapper>
       </motion.div>
@@ -447,7 +468,7 @@ export function ArticleBasics({ values, errors, touched, setFieldValue }: Articl
                         Click to upload or drag &amp; drop
                       </p>
                       <p className={`text-xs text-[#1E2938]/50 mt-1 ${NEU.fontData}`}>
-                        PNG, JPG, GIF, WEBP, BMP up to 5MB
+                        PNG, JPG, GIF, WEBP, BMP up to 2MB
                       </p>
                     </div>
                   </div>

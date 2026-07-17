@@ -26,6 +26,7 @@ import { DestinationBlockForm } from './DestinationBlockForm';
 import { FaqForm } from './FaqForm';
 import { SeoForm } from './SeoForm';
 import { CreateArticleFormValues, createArticleSchema } from '@/utils/validators/article.create.validator';
+import { showFormikSubmitErrors } from '@/utils/validators/common/formik-errors';
 import { spaceMono, jetbrainsMono } from '@/styles/fonts';
 import { ARTICLE_TYPE, ARTICLE_STATUS, ArticleStatus } from '@/constants/article.const';
 import { encodeId } from '@/utils/helpers/mongodb-id-conversions';
@@ -245,15 +246,8 @@ export function ArticleForm() {
             validateOnChange
             validateOnBlur
         >
-            {({ values, errors, touched, setFieldValue, dirty, submitForm, resetForm }) => {
-                const requiresDestinations = [
-                    ARTICLE_TYPE.SINGLE_DESTINATION,
-                    ARTICLE_TYPE.MULTI_DESTINATION,
-                    ARTICLE_TYPE.CITY_GUIDE,
-                    ARTICLE_TYPE.HILL_STATION,
-                    ARTICLE_TYPE.BEACH_DESTINATION,
-                    ARTICLE_TYPE.HISTORICAL_SITE,
-                ].includes(values.articleType as ARTICLE_TYPE);
+            {({ values, errors, touched, setFieldValue, dirty, submitForm, validateForm, resetForm }) => {
+                const requiresDestinations = true; // All article types on this platform use destination blocks to store their content
 
                 const firstFormError = findFirstError(errors);
                 const bannerMessage = error ?? firstFormError;
@@ -265,17 +259,20 @@ export function ArticleForm() {
                     exit: { opacity: 0, y: -10, transition: { duration: 0.2 } },
                 };
 
-                const handleSaveAsDraft = async () => {
-                    setSubmitType(ARTICLE_STATUS.DRAFT);
-                    setFieldValue('status', ARTICLE_STATUS.DRAFT);
+                const handleSafeSubmit = async (targetStatus: ArticleStatus) => {
+                    const validationErrors = await validateForm();
+                    if (Object.keys(validationErrors).length > 0) {
+                        showFormikSubmitErrors(validationErrors);
+                        setShowBanner(true); // Re-show banner if there are errors
+                        return;
+                    }
+                    setSubmitType(targetStatus);
+                    await setFieldValue('status', targetStatus);
                     submitForm();
                 };
 
-                const handlePublish = async () => {
-                    setSubmitType(ARTICLE_STATUS.PUBLISHED);
-                    setFieldValue('status', ARTICLE_STATUS.PUBLISHED);
-                    submitForm();
-                };
+                const handleSaveAsDraft = async () => handleSafeSubmit(ARTICLE_STATUS.DRAFT);
+                const handlePublish = async () => handleSafeSubmit(ARTICLE_STATUS.PUBLISHED);
 
                 const handleReset = (e: React.MouseEvent<HTMLButtonElement>) => {
                     e.preventDefault();

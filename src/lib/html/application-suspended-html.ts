@@ -14,9 +14,12 @@ export const applicationSuspended = (
   <title>Account Suspension Notification - BD Travel Spirit</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    * {
+      box-sizing: border-box;
+    }
   </style>
 </head>
-<body style="font-family: 'Inter', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
+<body style="font-family: 'Inter', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; width: 100%; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
   <!-- Logo Header -->
   <div style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 25px 30px; border-radius: 16px 16px 0 0; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.1); text-align: center;">
     

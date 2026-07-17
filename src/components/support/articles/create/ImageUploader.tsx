@@ -74,9 +74,9 @@ export function ImageUploader({ value, onChange, multiple, label }: ImageUploade
             const loadingToast = toast.loading('Processing image...');
             try {
                 const sizeInMB = file.size / (1024 * 1024);
-                if (sizeInMB > 5) {
+                if (sizeInMB > 2) {
                     toast.dismiss(loadingToast);
-                    toast.error('Image must be under 5MB.');
+                    toast.error('Image must be under 2MB.');
                     continue;
                 }
                 const compressedFile = await imageCompression(file, {
@@ -202,7 +202,7 @@ export function ImageUploader({ value, onChange, multiple, label }: ImageUploade
                                 Drag & drop or click to upload
                             </p>
                             <p className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/40 mt-0.5">
-                                PNG, JPG, WEBP up to 5MB
+                                PNG, JPG, WEBP up to 2MB
                             </p>
                         </div>
                     </div>

@@ -209,7 +209,7 @@ export function ContentSection() {
 
     const handleImageUpload = async (destIdx: number, file: File) => {
         try {
-            const base64 = await fileToBase64(file, { compressImages: true, maxWidth: 1200, quality: 0.8 });
+            const base64 = await fileToBase64(file, { compressImages: true, maxWidth: 1200, quality: 0.8, maxFileBytes: 2 * 1024 * 1024 });
             setFieldValue(`destinations.${destIdx}.imageAsset`, { title: file.name, assetId: `temp-${Date.now()}`, url: base64 });
         } catch (error: unknown) {
             showToast.warning('Image upload failed', extractErrorMessage(error));
@@ -455,7 +455,7 @@ export function ContentSection() {
                                                                     <label htmlFor={`image-upload-${idx}`} className="cursor-pointer flex flex-col items-center gap-2">
                                                                         <FiImage className="h-8 w-8 text-[#1E2938]/25" />
                                                                         <span className={NEU_MUTED}>Click to upload destination image</span>
-                                                                        <span className={`${NEU_MUTED} text-xs`}>PNG, JPG, GIF up to 5MB</span>
+                                                                        <span className={`${NEU_MUTED} text-xs`}>PNG, JPG, GIF up to 2MB</span>
                                                                     </label>
                                                                 </div>
                                                             )}

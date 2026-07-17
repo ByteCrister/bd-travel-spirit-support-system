@@ -4,7 +4,7 @@ import CountUp from "react-countup";
 
 // ── Style tokens (neu design system) ──────────────────────────
 const STYLES = {
-    default: "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tabular-nums",
+    default: "font-[family-name:var(--font-space-mono)] font-bold tabular-nums",
 } as const;
 
 type Props = {

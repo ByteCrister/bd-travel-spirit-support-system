@@ -107,12 +107,12 @@ export function SeoForm({ values, setFieldValue, errors, touched }: SeoFormProps
             const fileName = file.name.toLowerCase();
             const isValidImage = IMAGE_EXTENSIONS.some(ext => fileName.endsWith(`.${ext}`));
             if (!isValidImage) throw new Error(`Please upload a valid image file (${IMAGE_EXTENSIONS.join(', ')})`);
-            if (file.size > 5 * 1024 * 1024) throw new Error('Image size must be less than 5MB');
+            if (file.size > 2 * 1024 * 1024) throw new Error('Image size must be less than 2MB');
             const base64Image = await fileToBase64(file, {
                 compressImages: true,
                 maxWidth: 1200,
                 quality: 0.8,
-                maxFileBytes: 5 * 1024 * 1024,
+                maxFileBytes: 2 * 1024 * 1024,
                 allowedExtensions: IMAGE_EXTENSIONS,
             });
             setFieldValue('seo.ogImage', base64Image);
@@ -412,7 +412,7 @@ export function SeoForm({ values, setFieldValue, errors, touched }: SeoFormProps
                                                 Drag & drop or click to browse
                                             </p>
                                             <p className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/30 mt-0.5">
-                                                {IMAGE_EXTENSIONS.join(', ')} · Max 5MB
+                                                {IMAGE_EXTENSIONS.join(', ')} · Max 2MB
                                             </p>
                                         </div>
                                         {isReplacing && (

@@ -40,6 +40,7 @@ export function employeePasswordUpdateEmail(email: string, name: string, newPass
         
         .email-container {
             max-width: 600px;
+            width: 100%;
             margin: 0 auto;
             background: white;
             border-radius: 20px;

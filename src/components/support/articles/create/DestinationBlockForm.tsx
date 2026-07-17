@@ -204,10 +204,10 @@ export function DestinationBlockForm({ values, errors, touched, setFieldValue }:
       alert(`Invalid file type. Allowed: ${IMAGE_EXTENSIONS.join(', ')}`);
       return;
     }
-    if (file.size > 5 * 1024 * 1024) { alert('File too large. Maximum size is 5MB.'); return; }
+    if (file.size > 2 * 1024 * 1024) { alert('File too large. Maximum size is 2MB.'); return; }
     setUploadingImage({ ...uploadingImage, [destIndex]: true });
     try {
-      const opts: FileToBase64Options = { compressImages: true, maxWidth: 1200, quality: 0.8, maxFileBytes: 5 * 1024 * 1024 };
+      const opts: FileToBase64Options = { compressImages: true, maxWidth: 1200, quality: 0.8, maxFileBytes: 2 * 1024 * 1024 };
       const base64String = await fileToBase64(file, opts);
       updateAt(destIndex, { imageAsset: { title: file.name, assetId: `dest-img-${Date.now()}`, url: base64String } });
     } catch (error) {
@@ -708,8 +708,7 @@ export function DestinationBlockForm({ values, errors, touched, setFieldValue }:
                       />
                       <button
                         type="button"
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        onClick={() => { const { imageAsset, ...rest } = destinations[idx]; updateAt(idx, rest); }}
+                        onClick={() => updateAt(idx, { imageAsset: undefined })}
                         className="absolute top-2 right-2 rounded-xl bg-[#E7E5E4]/90 text-[#FF2157] w-9 h-9 flex items-center justify-center shadow-[3px_3px_6px_#c8c6c5,-3px_-3px_6px_#ffffff] hover:bg-[#FF2157] hover:text-white transition-all duration-200"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -746,7 +745,7 @@ export function DestinationBlockForm({ values, errors, touched, setFieldValue }:
                               Upload Destination Image
                             </p>
                             <p className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/40 mt-1">
-                              {IMAGE_EXTENSIONS.join(', ')} · Max 5MB
+                              {IMAGE_EXTENSIONS.join(', ')} · Max 2MB
                             </p>
                           </div>
                         </>

@@ -61,8 +61,8 @@ import { showFormikSubmitErrors } from '@/utils/validators/common/formik-errors'
 // ---------------------
 const NEU = {
     // Surface & Background
-    page: 'min-h-screen bg-[#E7E5E4]',
-    container: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6',
+    page: 'min-h-screen bg-[#E7E5E4] p-4 sm:p-6',
+    container: 'max-w-7xl mx-auto py-8 pb-24 space-y-6',
 
     // Neumorphic card (raised)
     card: [

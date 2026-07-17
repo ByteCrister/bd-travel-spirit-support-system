@@ -193,6 +193,9 @@ export default function applicationSuccess(email: string, accessToken: string, p
         }
         
         /* --- Existing Email Styles (Updated for logo integration) --- */
+        * {
+            box-sizing: border-box;
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
@@ -203,6 +206,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
         }
         .email-container {
             max-width: 600px;
+            width: 100%;
             margin: 0 auto;
             background-color: #ffffff;
             border-radius: 10px;

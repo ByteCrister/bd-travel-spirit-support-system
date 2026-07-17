@@ -43,6 +43,9 @@ export function reviewCommentAdd(
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
@@ -53,6 +56,7 @@ export function reviewCommentAdd(
         }
         .email-container {
             max-width: 600px;
+            width: 100%;
             margin: 0 auto;
             background-color: #ffffff;
             border-radius: 10px;
