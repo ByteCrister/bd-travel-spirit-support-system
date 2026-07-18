@@ -428,8 +428,9 @@ export default function AddEmployeePage() {
       showToast.success("Successfully added new employee.");
       setShowVerificationDialog(false);
       setPendingSubmission(null);
-    } catch {
-      setVerificationError("Verification failed");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Employee creation failed. Please try again.';
+      setVerificationError(message);
     } finally {
       setVerifying(false);
     }

@@ -75,6 +75,14 @@ export default function EmployeeVerificationDialog({
         if (open) setTimeout(() => inputRefs.current[0]?.focus(), 100);
     }, [open]);
 
+    // Clear inputs when a new error arrives so user can re-enter
+    useEffect(() => {
+        if (error) {
+            setDigits(["", "", "", "", "", ""]);
+            setTimeout(() => inputRefs.current[0]?.focus(), 50);
+        }
+    }, [error]);
+
     const handleDigitChange = (index: number, value: string) => {
         if (!/^\d*$/.test(value)) return;
         const newDigits = [...digits];
@@ -192,10 +200,17 @@ export default function EmployeeVerificationDialog({
                                     animate={{ opacity: 1, height: "auto" }}
                                     exit={{ opacity: 0, height: 0 }}
                                     transition={{ duration: 0.18 }}
-                                    className="flex items-start gap-2.5 px-4 py-3 rounded-xl text-sm bg-[#FF2157]/5 border border-[#FF2157]/20 text-[#FF2157] font-[family-name:var(--font-jetbrains-mono)]"
+                                    className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-[#FF2157]/5 border border-[#FF2157]/20 text-[#FF2157]"
                                 >
                                     <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                                    <span>{error}</span>
+                                    <div className="flex flex-col gap-0.5 min-w-0">
+                                        <span className="font-[family-name:var(--font-space-mono)] font-bold text-xs uppercase tracking-wide">
+                                            Error
+                                        </span>
+                                        <span className="font-[family-name:var(--font-jetbrains-mono)] text-xs break-words leading-relaxed">
+                                            {error}
+                                        </span>
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>

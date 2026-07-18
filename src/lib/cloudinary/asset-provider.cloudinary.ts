@@ -71,34 +71,32 @@ export class CloudinaryAssetProvider implements AssetStorageProvider {
 
 
     /**
-    * Get asset by checksum (public_id)
+    * Get asset by checksum (public_id).
+    * Tries `image` first (the most common type) and only falls back to
+    * video/raw in parallel when image returns a 404.
     */
     async getAssetByChecksum(checksum: string): Promise<CloudinaryApiResource> {
-        const resourceTypes = ["image", "video", "raw"] as const;
-
-        // Try each resource type until we find the asset
-        for (const resourceType of resourceTypes) {
-            try {
-                return await cloudinary.api.resource(checksum, {
-                    resource_type: resourceType
-                }) as CloudinaryApiResource;
-            } catch (error) {
-                const cloudinaryError = error as CloudinaryUploadError;
-                // If 404, try next resource type
-                if (cloudinaryError.error?.http_code === 404) {
-                    continue;
-                }
-                // If other error, throw it
-                throw error;
-            }
+        // Fast-path: image (covers the vast majority of uploads)
+        try {
+            return await cloudinary.api.resource(checksum, {
+                resource_type: "image"
+            }) as CloudinaryApiResource;
+        } catch (err) {
+            const e = err as CloudinaryUploadError;
+            if (e.error?.http_code !== 404) throw err;
         }
 
-        // If we tried all resource types and got 404 for all, throw the last error
+        // Slow-path fallback: check video + raw in parallel
+        const [videoResult, rawResult] = await Promise.allSettled([
+            cloudinary.api.resource(checksum, { resource_type: "video" }),
+            cloudinary.api.resource(checksum, { resource_type: "raw"   }),
+        ]);
+
+        if (videoResult.status === "fulfilled") return videoResult.value as CloudinaryApiResource;
+        if (rawResult.status   === "fulfilled") return rawResult.value   as CloudinaryApiResource;
+
         throw {
-            error: {
-                message: "Asset not found in any resource type",
-                http_code: 404
-            }
+            error: { message: "Asset not found in any resource type", http_code: 404 }
         } as CloudinaryUploadError;
     }
 

@@ -125,66 +125,103 @@ export async function resolveDocuments(
         if (file?.checksum) assetByChecksum.set(file.checksum, asset);
     }
 
-    const finalDocuments: { type: string; asset: Types.ObjectId }[] = [];
-    const usedAssetIds = new Set<string>();
+    // ── Pass 1: categorise every incoming item ──────────────────────────────
+    // Separate "already resolved" items from "needs upload" so we can fire
+    // all new uploads in a single parallel batch rather than one-by-one.
 
-    /** 3️⃣ Resolve each incoming document */
-    for (const doc of incoming) {
-        // CASE A: Existing Cloudinary URL
+    type ResolvedEntry = { idx: number; type: string; asset: Types.ObjectId };
+    type PendingEntry  = { idx: number; type: string; dataUrl: string; checksum: string };
+
+    const resolved: ResolvedEntry[] = [];
+    const pending:  PendingEntry[]  = [];
+
+    for (let idx = 0; idx < incoming.length; idx++) {
+        const doc = incoming[idx];
+
+        // CASE A: Existing Cloudinary URL — reuse immediately
         if (isCloudinaryUrl(doc.url)) {
             const asset = assetByUrl.get(doc.url);
             if (!asset) throw new Error(`Invalid document URL provided: ${doc.url}`);
-
-            usedAssetIds.add(asset._id.toString());
-            finalDocuments.push({ type: doc.type, asset: asset._id });
+            resolved.push({ idx, type: doc.type, asset: asset._id });
             continue;
         }
 
-        // CASE B: Base64 → reuse by checksum or upload
+        // CASE B: Base64 — check checksum cache first
         if (isBase64DataUrl(doc.url)) {
-            const dataUrl = assertValidDataUrl(doc.url);
-            const buffer = base64ToBuffer(dataUrl);
+            const dataUrl  = assertValidDataUrl(doc.url);
+            const buffer   = base64ToBuffer(dataUrl);
             const checksum = sha256(buffer);
 
-            // 1️⃣ Try to reuse existing asset by checksum
             const existing = assetByChecksum.get(checksum);
             if (existing) {
-                usedAssetIds.add(existing._id.toString());
-                finalDocuments.push({ type: doc.type, asset: existing._id });
+                // Already in Cloudinary — reuse without any network call
+                resolved.push({ idx, type: doc.type, asset: existing._id });
                 continue;
             }
 
-            // 2️⃣ Upload new asset (concurrency-safe)
-            try {
-                const [newAssetId] = await uploadAssets(
-                    [
-                        {
-                            base64: doc.url,
-                            name: doc.type,
-                            assetType: assetType ?? ASSET_TYPE.DOCUMENT,
-                        },
-                    ],
-                    session
-                );
-
-                usedAssetIds.add(newAssetId.toString());
-                finalDocuments.push({ type: doc.type, asset: newAssetId });
-            } catch (err) {
-                // Handle duplicate checksum race condition
-                if (err instanceof MongoServerError && err.code === 11000 && err.keyPattern?.checksum) {
-                    const reused = await AssetFileModel.findOne({ checksum }).session(session);
-                    if (!reused) throw new Error("Failed to reuse existing asset after checksum conflict");
-                    usedAssetIds.add((reused._id as Types.ObjectId).toString());
-                    finalDocuments.push({ type: doc.type, asset: reused._id as Types.ObjectId });
-                } else {
-                    throw err;
-                }
-            }
-
+            // Needs a real upload — defer to batch
+            pending.push({ idx, type: doc.type, dataUrl, checksum });
             continue;
         }
 
         throw new Error(`Invalid document format: ${doc.url}`);
+    }
+
+    // ── Pass 2: upload all pending assets in parallel ───────────────────────
+    // uploadAssets already uses p-limit internally (concurrency = 4 by default).
+    let uploadedIds: Types.ObjectId[] = [];
+    if (pending.length > 0) {
+        try {
+            uploadedIds = await uploadAssets(
+                pending.map(p => ({
+                    base64:    p.dataUrl,
+                    name:      p.type,
+                    assetType: assetType ?? ASSET_TYPE.DOCUMENT,
+                })),
+                session
+            );
+        } catch (err) {
+            // Handle duplicate checksum race condition for any item in the batch
+            if (err instanceof MongoServerError && err.code === 11000 && err.keyPattern?.checksum) {
+                // Fallback: sequential retry — only triggered on rare concurrent duplicates
+                uploadedIds = [];
+                for (const p of pending) {
+                    try {
+                        const [id] = await uploadAssets(
+                            [{ base64: p.dataUrl, name: p.type, assetType: assetType ?? ASSET_TYPE.DOCUMENT }],
+                            session
+                        );
+                        uploadedIds.push(id);
+                    } catch (innerErr) {
+                        if (innerErr instanceof MongoServerError && innerErr.code === 11000 && innerErr.keyPattern?.checksum) {
+                            const reused = await AssetFileModel.findOne({ checksum: p.checksum }).session(session);
+                            if (!reused) throw new Error("Failed to reuse existing asset after checksum conflict");
+                            uploadedIds.push(reused._id as Types.ObjectId);
+                        } else {
+                            throw innerErr;
+                        }
+                    }
+                }
+            } else {
+                throw err;
+            }
+        }
+    }
+
+    // ── Merge pass-1 and pass-2 results preserving original order ───────────
+    const finalDocuments: { type: string; asset: Types.ObjectId }[] = new Array(incoming.length);
+    const usedAssetIds = new Set<string>();
+
+    for (const r of resolved) {
+        finalDocuments[r.idx] = { type: r.type, asset: r.asset };
+        usedAssetIds.add(r.asset.toString());
+    }
+
+    for (let i = 0; i < pending.length; i++) {
+        const p  = pending[i];
+        const id = uploadedIds[i];
+        finalDocuments[p.idx] = { type: p.type, asset: id };
+        usedAssetIds.add(id.toString());
     }
 
     /** 4️⃣ Soft-delete assets that are no longer referenced */
@@ -197,4 +234,4 @@ export async function resolveDocuments(
     }
 
     return finalDocuments;
-}
+}

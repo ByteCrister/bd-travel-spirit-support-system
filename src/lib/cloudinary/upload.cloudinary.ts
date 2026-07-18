@@ -39,7 +39,7 @@ export interface Base64Asset {
 export async function uploadAssets(
     assets: Base64Asset[],
     session: ClientSession,
-    concurrency = 1
+    concurrency = 4 // Increased from 1: upload up to 4 assets in parallel
 ): Promise<Types.ObjectId[]> {
     if (!assets?.length) return [];
 
@@ -136,7 +136,8 @@ async function processSingleAsset(
             const uploaded = await storage.create(dataUrl, {
                 checksum,
                 fileName: asset.name,
-                timeout: calculateTimeout(dataUrl),
+                // Pass buffer.length directly — avoids re-decoding base64 inside calculateTimeout
+                timeout: calculateTimeout(buffer.length),
                 maxRetries: 1
             });
 
@@ -206,15 +207,15 @@ async function processSingleAsset(
  * @param dataUrl - Base64 data URL string.
  * @returns Timeout in milliseconds.
  */
-// Replace calculateTimeout function in upload.cloudinary.ts
-function calculateTimeout(dataUrl: string): number {
-    const buffer = base64ToBuffer(dataUrl);
-    const mb = buffer.length / (1024 * 1024);
-    
-    // Adjust timeouts based on file size
-    if (mb > 20) return 300_000; // 5 minutes for very large files
-    if (mb > 10) return 180_000; // 3 minutes
-    if (mb > 5) return 120_000;  // 2 minutes
-    if (mb > 2) return 60_000;   // 1 minute
-    return 30_000;               // 30 seconds for small files
+/**
+ * Calculate a sensible upload timeout based on raw byte count.
+ * Accepts buffer byte length directly to avoid redundant base64 decoding.
+ */
+function calculateTimeout(byteLength: number): number {
+    const mb = byteLength / (1024 * 1024);
+    if (mb > 20) return 300_000; // 5 min for very large files
+    if (mb > 10) return 180_000; // 3 min
+    if (mb > 5)  return 120_000; // 2 min
+    if (mb > 2)  return 60_000;  // 1 min
+    return 30_000;               // 30 s for small files (≤2 MB)
 }
