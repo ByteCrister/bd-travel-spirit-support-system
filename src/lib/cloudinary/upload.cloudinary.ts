@@ -214,8 +214,8 @@ async function processSingleAsset(
 function calculateTimeout(byteLength: number): number {
     const mb = byteLength / (1024 * 1024);
     if (mb > 20) return 300_000; // 5 min for very large files
-    if (mb > 10) return 180_000; // 3 min
-    if (mb > 5)  return 120_000; // 2 min
-    if (mb > 2)  return 60_000;  // 1 min
-    return 30_000;               // 30 s for small files (≤2 MB)
+    if (mb > 10) return 240_000; // 4 min
+    if (mb > 5)  return 180_000; // 3 min
+    if (mb > 2)  return 120_000; // 2 min
+    return 90_000;               // 1.5 min for small files (≤2 MB) - increased from 30s to prevent 499s
 }

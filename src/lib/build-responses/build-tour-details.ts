@@ -182,8 +182,8 @@ export async function buildTourDetailDTO(
             slug: tour.slug,
             status: tour.status,
             summary: tour.summary,
-            heroImage: tour.heroImage?.file?.publicUrl.toString() ?? undefined,
-            gallery: tour.gallery?.map((asset) => asset?.file?.publicUrl ?? "") || [],
+            heroImage: optimizeCloudinaryUrl(tour.heroImage?.file?.publicUrl?.toString()) ?? undefined,
+            gallery: tour.gallery?.map((asset) => optimizeCloudinaryUrl(asset?.file?.publicUrl?.toString()) ?? "") || [],
             seo: tour.seo,
 
             // =============== BANGLADESH-SPECIFIC FIELDS ===============
@@ -252,7 +252,7 @@ export async function buildTourDetailDTO(
                 id: tour.authorId._id.toString(),
                 name: tour.authorId.name,
                 email: tour.authorId.email,
-                avatarUrl: tour.authorId.avatar?.file?.publicUrl ?? "",
+                avatarUrl: optimizeCloudinaryUrl(tour.authorId.avatar?.file?.publicUrl?.toString()) ?? "",
             },
 
             // =============== SYSTEM FIELDS ===============
@@ -272,7 +272,7 @@ export async function buildTourDetailDTO(
                     id: tour.suspension.suspendedBy._id.toString(),
                     name: tour.suspension.suspendedBy.name,
                     email: tour.suspension.suspendedBy.email,
-                    avatarUrl: tour.suspension.suspendedBy.avatar?.file?.publicUrl ?? ""
+                    avatarUrl: optimizeCloudinaryUrl(tour.suspension.suspendedBy.avatar?.file?.publicUrl?.toString()) ?? ""
                 },
                 isAllTime: tour.suspension.isAllTime,
                 startAt: tour.suspension.startAt.toISOString(),
@@ -297,6 +297,18 @@ export async function buildTourDetailDTO(
     }
 }
 
+// Helper to fix Next.js upstream timeouts by pre-optimizing Cloudinary URLs
+function optimizeCloudinaryUrl(url: string | undefined): string | undefined {
+    if (!url || typeof url !== "string") return url;
+    if (url.includes("res.cloudinary.com") && url.includes("/upload/")) {
+        // Prevent double injection
+        if (!url.includes("/upload/f_auto,q_auto")) {
+            return url.replace("/upload/", "/upload/f_auto,q_auto/");
+        }
+    }
+    return url;
+}
+
 // Helper function to transform destinations with image URLs
 function transformDestinations(destinations: IDestinationBlockLean[] | undefined): TourDetailDTO['destinations'] {
     if (!destinations) return [];
@@ -307,9 +319,9 @@ function transformDestinations(destinations: IDestinationBlockLean[] | undefined
         attractions: (attractions ?? []).map(({ _id, images, ...attRest }) => ({
             ...attRest,
             id: _id?.toString(),
-            imageIds: images?.map(img => ({ id: img?._id.toString(), url: img?.file?.publicUrl ?? "" })) ?? [],
+            imageIds: images?.map(img => ({ id: img?._id.toString(), url: optimizeCloudinaryUrl(img?.file?.publicUrl) ?? "" })) ?? [],
         })),
-        imageIds: images?.map(img => ({ id: img?._id.toString(), url: img?.file?.publicUrl ?? "" })) ?? [],
+        imageIds: images?.map(img => ({ id: img?._id.toString(), url: optimizeCloudinaryUrl(img?.file?.publicUrl) ?? "" })) ?? [],
     }));
 }
 
