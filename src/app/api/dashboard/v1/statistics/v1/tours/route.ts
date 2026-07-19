@@ -261,7 +261,7 @@ async function getToursStats(
      */
 
     type DepartureDateFilter = {
-        "departures.date"?: {
+        "departure.date"?: {
             $gte?: Date;
             $lte?: Date;
         };
@@ -270,10 +270,10 @@ async function getToursStats(
     const upcomingFilter: DepartureDateFilter = {};
 
     if (from || to) {
-        upcomingFilter["departures.date"] = {};
+        upcomingFilter["departure.date"] = {};
 
-        if (from) upcomingFilter["departures.date"].$gte = from;
-        if (to) upcomingFilter["departures.date"].$lte = to;
+        if (from) upcomingFilter["departure.date"].$gte = from;
+        if (to) upcomingFilter["departure.date"].$lte = to;
     }
 
     const upcomingAgg =
@@ -285,9 +285,6 @@ async function getToursStats(
                 },
             },
             {
-                $unwind: "$departures",
-            },
-            {
                 $match: upcomingFilter,
             },
             {
@@ -295,7 +292,7 @@ async function getToursStats(
                     _id: {
                         $dateToString: {
                             format: "%Y-%m-%d",
-                            date: "$departures.date",
+                            date: "$departure.date",
                         },
                     },
                     value: { $sum: 1 },

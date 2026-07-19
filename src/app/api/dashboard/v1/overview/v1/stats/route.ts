@@ -71,21 +71,15 @@ export const GET = withErrorHandler(async (req: NextRequest): Promise<HandlerRes
                 { session }
             ),
 
-            // upcoming tours: active tours with at least one future departure
-            (async (): Promise<number> => {
-                const now = new Date();
-                const result = await TourModel.aggregate(
-                    [
-                        { $match: { deletedAt: null, status: TOUR_STATUS.ACTIVE } },
-                        { $unwind: '$departures' },
-                        { $match: { 'departures.date': { $gt: now } } },
-                        { $group: { _id: '$_id' } },
-                        { $count: 'count' },
-                    ],
-                    { session }
-                );
-                return result[0]?.count || 0;
-            })(),
+            // upcoming tours: active tours with a future departure date
+            TourModel.countDocuments(
+                {
+                    deletedAt: null,
+                    status: TOUR_STATUS.ACTIVE,
+                    'departure.date': { $gt: new Date() },
+                },
+                { session }
+            ),
 
             // total bookings (not soft‑deleted)
             BookingModel.countDocuments({ deletedAt: null }, { session }),

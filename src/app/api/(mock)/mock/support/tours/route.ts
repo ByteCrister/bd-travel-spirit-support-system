@@ -299,28 +299,20 @@ function generateTourDetailDTO(id: string): TourDetailDTO {
             days: faker.number.int({ min: 3, max: 10 }),
             nights: faker.number.int({ min: 2, max: 9 }),
         },
-        operatingWindows: Array.from(
-            { length: faker.number.int({ min: 1, max: 3 }) },
-            () => ({
-                startDate: faker.date.future().toISOString(),
-                endDate: faker.date.future().toISOString(),
-                seatsTotal: faker.number.int({ min: 10, max: 30 }),
-                seatsBooked: faker.number.int({ min: 0, max: 25 }),
-            })
-        ),
-        departures: Array.from(
-            { length: faker.number.int({ min: 3, max: 7 }) },
-            () => ({
-                date: faker.date.future().toISOString(),
-                seatsTotal: faker.number.int({ min: 10, max: 30 }),
-                seatsBooked: faker.number.int({ min: 0, max: 30 }),
-                meetingPoint: faker.location.streetAddress(),
-                meetingCoordinates: {
-                    lat: faker.location.latitude({ min: 20, max: 27 }),
-                    lng: faker.location.longitude({ min: 88, max: 93 }),
-                },
-            })
-        ),
+        operatingWindow: {
+            startDate: faker.date.future().toISOString(),
+            endDate: faker.date.future().toISOString(),
+        },
+        departure: {
+            date: faker.date.future().toISOString(),
+            seatsTotal,
+            seatsBooked,
+            meetingPoint: faker.location.streetAddress(),
+            meetingCoordinates: {
+                lat: faker.location.latitude({ min: 20, max: 27 }),
+                lng: faker.location.longitude({ min: 88, max: 93 }),
+            },
+        },
         paymentMethods: faker.helpers.arrayElements(
             Object.values(PAYMENT_METHOD) as PaymentMethod[],
             faker.number.int({ min: 2, max: 4 })

@@ -34,8 +34,6 @@ export interface IGeoPoint {
 export interface IOperatingWindow {
     startDate: Date;
     endDate: Date;
-    seatsTotal?: number;
-    seatsBooked?: number;
 }
 
 export interface IDeparture {
@@ -63,8 +61,8 @@ export interface ITourAnalytics extends Document {
     // Pricing & schedule (denormalized)
     basePrice: IPrice;
     discounts?: IDiscount[];
-    operatingWindows?: IOperatingWindow[];
-    departures?: IDeparture[];
+    operatingWindow?: IOperatingWindow;
+    departure?: IDeparture;
 
     // Engagement
     viewCount: number;
@@ -110,26 +108,20 @@ const TourAnalyticsSchema = new Schema<ITourAnalytics>(
                 validUntil: { type: Date },
             },
         ],
-        operatingWindows: [
-            {
-                startDate: { type: Date, required: true },
-                endDate: { type: Date, required: true },
-                seatsTotal: { type: Number, min: 0 },
-                seatsBooked: { type: Number, min: 0 },
+        operatingWindow: {
+            startDate: { type: Date, required: true },
+            endDate: { type: Date, required: true },
+        },
+        departure: {
+            date: { type: Date },
+            seatsTotal: { type: Number, min: 0 },
+            seatsBooked: { type: Number, default: 0, min: 0 },
+            meetingPoint: { type: String, trim: true },
+            meetingCoordinates: {
+                lat: { type: Number },
+                lng: { type: Number },
             },
-        ],
-        departures: [
-            {
-                date: { type: Date, required: true },
-                seatsTotal: { type: Number, required: true, min: 0 },
-                seatsBooked: { type: Number, default: 0, min: 0 },
-                meetingPoint: { type: String, trim: true },
-                meetingCoordinates: {
-                    lat: { type: Number },
-                    lng: { type: Number },
-                },
-            },
-        ],
+        },
 
         // Engagement
         viewCount: { type: Number, default: 0 },
@@ -147,7 +139,7 @@ const TourAnalyticsSchema = new Schema<ITourAnalytics>(
 TourAnalyticsSchema.index({ tourId: 1, companyId: 1 });
 TourAnalyticsSchema.index({ uniqueTourCode: 1 });
 TourAnalyticsSchema.index({ "basePrice.currency": 1 });
-TourAnalyticsSchema.index({ "departures.date": 1 });
+TourAnalyticsSchema.index({ "departure.date": 1 });
 
 // Export the model using your universal wrapper
 const TourAnalyticsModel = defineModel<ITourAnalytics, Model<ITourAnalytics>>(

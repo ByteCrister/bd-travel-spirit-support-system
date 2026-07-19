@@ -98,13 +98,7 @@ export const GET = withErrorHandler(async (
                         }
                     },
                     totalBookings: {
-                        $sum: {
-                            $reduce: {
-                                input: "$departures",
-                                initialValue: 0,
-                                in: { $add: ["$$value", { $ifNull: ["$$this.seatsBooked", 0] }] }
-                            }
-                        }
+                        $sum: { $ifNull: ["$departure.seatsBooked", 0] }
                     },
                     totalRatingSum: { $sum: { $ifNull: ["$ratings.average", 0] } },
                     ratedToursCount: {

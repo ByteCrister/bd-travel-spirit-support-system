@@ -14,39 +14,35 @@ export const tourHelpers = {
         totalSeats: number;
         bookedSeats: number;
         availableSeats: number;
-        byDeparture: Array<{
+        departure?: {
             date: Date;
             total: number;
             booked: number;
             available: number;
-        }>
+        }
     } {
         const result = {
             totalSeats: 0,
             bookedSeats: 0,
             availableSeats: 0,
-            byDeparture: [] as Array<{
+            departure: undefined as {
                 date: Date;
                 total: number;
                 booked: number;
                 available: number;
-            }>
+            } | undefined
         };
 
-        if (tour.departures && tour.departures.length > 0) {
-            tour.departures.forEach(departure => {
-                result.totalSeats += departure.seatsTotal;
-                result.bookedSeats += departure.seatsBooked;
-
-                result.byDeparture.push({
-                    date: departure.date,
-                    total: departure.seatsTotal,
-                    booked: departure.seatsBooked,
-                    available: departure.seatsTotal - departure.seatsBooked
-                });
-            });
-
+        if (tour.departure) {
+            result.totalSeats = tour.departure.seatsTotal;
+            result.bookedSeats = tour.departure.seatsBooked;
             result.availableSeats = result.totalSeats - result.bookedSeats;
+            result.departure = {
+                date: tour.departure.date,
+                total: tour.departure.seatsTotal,
+                booked: tour.departure.seatsBooked,
+                available: result.availableSeats
+            };
         }
 
         return result;

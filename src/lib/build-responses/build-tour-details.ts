@@ -217,8 +217,8 @@ export async function buildTourDetailDTO(
             basePrice: tour.basePrice,
             discounts: transformDiscounts(tour.discounts) || [],
             duration: tour.duration,
-            operatingWindows: transformOperatingWindows(tour.operatingWindows) || [],
-            departures: transformDepartures(tour.departures) || [],
+            operatingWindow: transformOperatingWindow(tour.operatingWindow),
+            departure: transformDeparture(tour.departure),
             paymentMethods: tour.paymentMethods || [],
 
             // =============== COMPLIANCE & ACCESSIBILITY ===============
@@ -336,44 +336,37 @@ function transformDiscounts(discounts: ITour["discounts"] | undefined): TourDeta
     }));
 }
 
-// Helper function to transform operating windows
-function transformOperatingWindows(windows: ITour["operatingWindows"] | undefined): TourDetailDTO['operatingWindows'] {
-    if (!windows) return [];
+// Helper function to transform operating window
+function transformOperatingWindow(win: ITour["operatingWindow"] | undefined): TourDetailDTO['operatingWindow'] {
+    if (!win) return undefined;
 
-    return windows.map(win => ({
+    return {
         ...win,
         startDate: win.startDate.toISOString(),
         endDate: win.endDate.toISOString()
-    }));
+    };
 }
 
-// Helper function to transform departures
-function transformDepartures(departures: ITour["departures"] | undefined): TourDetailDTO['departures'] {
-    if (!departures) return [];
+// Helper function to transform departure
+function transformDeparture(departure: ITour["departure"] | undefined): TourDetailDTO['departure'] {
+    if (!departure) return undefined;
 
-    return departures.map(dep => ({
-        date: dep.date.toISOString(),
-        seatsTotal: dep.seatsTotal,
-        seatsBooked: dep.seatsBooked,
-        meetingPoint: dep.meetingPoint,
-        meetingCoordinates: dep.meetingCoordinates
-    }));
+    return {
+        date: departure.date.toISOString(),
+        seatsTotal: departure.seatsTotal,
+        seatsBooked: departure.seatsBooked,
+        meetingPoint: departure.meetingPoint,
+        meetingCoordinates: departure.meetingCoordinates
+    };
 }
 
 // Calculate booking summary
 function calculateBookingSummary(tour: TourLeanPopulated): TourDetailDTO['bookingSummary'] {
-    const departures = tour.departures || [];
-
-    const totalSeats = departures.reduce((sum, dep) =>
-        sum + (dep.seatsTotal || 0), 0
-    );
-
-    const bookedSeats = departures.reduce((sum, dep) =>
-        sum + (dep.seatsBooked || 0), 0
-    );
+    const totalSeats = tour.departure?.seatsTotal || 0;
+    const bookedSeats = tour.departure?.seatsBooked || 0;
 
     const availableSeats = totalSeats - bookedSeats;
-    const isFull = availableSeats <= 0;
+    const isFull = totalSeats > 0 && availableSeats <= 0;
     const occupancyPercentage = totalSeats > 0 ? (bookedSeats / totalSeats) * 100 : 0;
 
     return {
@@ -387,14 +380,14 @@ function calculateBookingSummary(tour: TourLeanPopulated): TourDetailDTO['bookin
 
 // Calculate next departure
 function calculateNextDeparture(tour: TourLeanPopulated): string | undefined {
-    const departures = tour.departures || [];
+    if (!tour.departure) return undefined;
     const now = new Date();
-
-    const futureDepartures = departures
-        .filter((dep) => new Date(dep.date) > now)
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    return futureDepartures[0]?.date.toISOString();
+    
+    if (new Date(tour.departure.date) > now) {
+        return tour.departure.date.toISOString();
+    }
+    
+    return undefined;
 }
 
 // Check if tour has active discount
@@ -412,17 +405,15 @@ function checkActiveDiscount(discounts: ITour["discounts"] | undefined): boolean
 function isTourUpcoming(tour: TourLeanPopulated): boolean {
     const now = new Date();
 
-    // Check if any future departure exists
-    const futureDepartures = tour.departures?.some((dep) =>
-        new Date(dep.date) > now
-    );
+    // Check if departure exists and is in the future
+    const futureDeparture = tour.departure && new Date(tour.departure.date) > now;
 
-    // Check operating windows
-    const futureWindows = tour.operatingWindows?.some((win) =>
-        new Date(win.endDate) > now
-    );
+    // Check operating window
+    const futureWindows = tour.operatingWindow
+        ? new Date(tour.operatingWindow.endDate) > now
+        : false;
 
-    return !!(futureDepartures || futureWindows);
+    return !!(futureDeparture || futureWindows);
 }
 
 // Check if tour is expired
@@ -435,16 +426,14 @@ function isTourExpired(tour: TourLeanPopulated): boolean {
 
     const now = new Date();
 
-    // Check if all departures are in the past
-    const allPastDepartures = tour.departures?.every((dep) =>
-        new Date(dep.date) < now
-    ) || false;
+    // Check if departure is in the past
+    const pastDeparture = tour.departure && new Date(tour.departure.date) < now;
 
-    // Check if all operating windows are in the past
-    const allPastWindows = tour.operatingWindows?.every((win) =>
-        new Date(win.endDate) < now
-    ) || false;
+    // Check if operating window is in the past
+    const allPastWindows = tour.operatingWindow
+        ? new Date(tour.operatingWindow.endDate) < now
+        : false;
 
-    return !!(tour.departures?.length && allPastDepartures) ||
-        !!(tour.operatingWindows?.length && allPastWindows);
+    return !!(tour.departure && pastDeparture) ||
+        !!(tour.operatingWindow && allPastWindows);
 }

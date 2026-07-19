@@ -36,18 +36,13 @@ export type TourSettlementResult = {
 function getTourEndDate(tour: ITour): Date | null {
     const endDates: number[] = [];
 
-    if (tour.departures?.length) {
-        const latestDeparture = Math.max(
-            ...tour.departures.map((departure) => new Date(departure.date).getTime())
-        );
+    if (tour.departure?.date) {
         const durationDays = tour.duration?.days ?? 1;
-        endDates.push(latestDeparture + durationDays * 24 * 60 * 60 * 1000);
+        endDates.push(new Date(tour.departure.date).getTime() + durationDays * 24 * 60 * 60 * 1000);
     }
 
-    if (tour.operatingWindows?.length) {
-        endDates.push(
-            ...tour.operatingWindows.map((window) => new Date(window.endDate).getTime())
-        );
+    if (tour.operatingWindow?.endDate) {
+        endDates.push(new Date(tour.operatingWindow.endDate).getTime());
     }
 
     if (!endDates.length) {

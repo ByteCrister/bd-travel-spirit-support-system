@@ -138,8 +138,6 @@ function generateOperatingWindowDTO() {
     return {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-        seatsTotal: faker.number.int({ min: 10, max: 50 }),
-        seatsBooked: faker.number.int({ min: 0, max: 30 }),
     };
 }
 
@@ -289,8 +287,8 @@ export async function GET(
             days: faker.number.int({ min: 3, max: 10 }),
             nights: faker.number.int({ min: 2, max: 9 }),
         },
-        operatingWindows: Array.from({ length: 2 }, () => generateOperatingWindowDTO()),
-        departures: Array.from({ length: 3 }, () => generateDepartureDTO()),
+        operatingWindow: generateOperatingWindowDTO(),
+        departure: generateDepartureDTO(),
         paymentMethods: randomSubset(Object.values(PAYMENT_METHOD) as PaymentMethod[], 3),
 
         // =============== COMPLIANCE & ACCESSIBILITY ===============

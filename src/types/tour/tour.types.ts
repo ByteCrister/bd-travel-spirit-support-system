@@ -130,8 +130,6 @@ export interface AddressDTO {
 export interface OperatingWindowDTO {
     startDate: string;
     endDate: string;
-    seatsTotal?: number;
-    seatsBooked?: number;
 }
 
 export interface DepartureDTO {
@@ -258,8 +256,8 @@ export interface TourDetailDTO {
         days: number;
         nights?: number;
     };
-    operatingWindows?: OperatingWindowDTO[];
-    departures?: DepartureDTO[];
+    operatingWindow?: OperatingWindowDTO;
+    departure?: DepartureDTO;
     paymentMethods: PaymentMethod[];
 
     // =============== COMPLIANCE & ACCESSIBILITY ===============

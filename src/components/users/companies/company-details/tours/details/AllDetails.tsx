@@ -2183,18 +2183,25 @@ function BookingCard({
         </div>
       )}
 
-      {/* Next Departure */}
-      {tour.nextDeparture && (
+      {/* Departure Schedule */}
+      {tour.departure && (
         <div
-          className={`${NEU_SURFACE_INSET_SM_LOCAL} rounded-xl p-3 mb-5 flex items-center gap-2`}
+          className={`${NEU_SURFACE_INSET_SM_LOCAL} rounded-xl p-4 mb-5 border border-[#FE9900]/20`}
         >
-          <MdAccessTime className="text-[#FE9900]" />
-          <span className={`${NEU_MUTED_LOCAL} text-xs`}>
-            Next departure:{" "}
-            <span className="font-[family-name:var(--font-space-mono)] font-bold text-[#FE9900]">
-              {formatDate(tour.nextDeparture)}
-            </span>
-          </span>
+          <div className="flex items-center gap-2 mb-2">
+            <MdAccessTime className="text-[#FE9900]" />
+            <p className={`${NEU_LABEL_LOCAL} text-[#FE9900]`}>Departure</p>
+          </div>
+          <div className="space-y-2">
+            <div className={`${NEU_MUTED_LOCAL} text-sm`}>
+              Date: <span className="font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938]">{formatDate(tour.departure.date)}</span>
+            </div>
+            {tour.departure.meetingPoint && (
+              <div className={`${NEU_MUTED_LOCAL} text-sm`}>
+                Meeting Point: <span className="text-[#1E2938]">{tour.departure.meetingPoint}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

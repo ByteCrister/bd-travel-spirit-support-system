@@ -1409,14 +1409,23 @@ export default function TourDetailPage({ tourId }: Props) {
                                     )}
                                 </div>
 
-                                {/* Next Departure */}
-                                {tour.nextDeparture && (
-                                    <div className={`mt-4 p-3 rounded-xl ${NEU_SURFACE_INSET_SM} border border-[#FE9900]/20 flex items-center gap-2`}>
-                                        <MdAccessTime className="text-[#FE9900] flex-shrink-0" />
-                                        <p className={NEU_MUTED}>
-                                            Next departure:{" "}
-                                            <span className="font-bold text-[#FE9900]">{formatDate(tour.nextDeparture)}</span>
-                                        </p>
+                                {/* Departure Schedule */}
+                                {tour.departure && (
+                                    <div className={`mt-4 p-4 rounded-xl ${NEU_SURFACE_INSET_SM} border border-[#FE9900]/20`}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <MdAccessTime className="text-[#FE9900]" />
+                                            <p className={`${NEU_LABEL} text-[#FE9900]`}>Departure</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className={NEU_MUTED}>
+                                                Date: <span className="font-bold text-[#1E2938]">{formatDate(tour.departure.date)}</span>
+                                            </p>
+                                            {tour.departure.meetingPoint && (
+                                                <p className={NEU_MUTED}>
+                                                    Meeting Point: <span className="text-[#1E2938]">{tour.departure.meetingPoint}</span>
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
 
