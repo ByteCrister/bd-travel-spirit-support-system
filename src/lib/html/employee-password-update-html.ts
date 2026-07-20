@@ -271,7 +271,7 @@ export function employeePasswordUpdateEmail(email: string, name: string, newPass
             </div>
             
             <div style="text-align: center;">
-                <a href="https://bdtravelspirit.com/login" class="button">Login to Your Account</a>
+                <a href="https://bd-travel-spirit-support-system.vercel.app" class="button">Login to Your Account</a>
             </div>
             
             <p class="message">

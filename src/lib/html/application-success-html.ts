@@ -28,300 +28,331 @@ export default function applicationSuccess(email: string, accessToken: string, p
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* --- Logo Container Styles --- */
-        .logo-container {
-            display: inline-block;
-            text-decoration: none;
-            color: inherit;
-            /* Removed transition */
-        }
-        
-        .logo-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 20px;
-            /* Removed transition */
-        }
-        
-        /* --- Icon Design --- */
-        .logo-icon {
-            position: relative;
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, #10b981 0%, #0d9488 50%, #0891b2 100%);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 15px rgba(16, 185, 129, 0.3);
-            /* Removed transition */
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-        
-        /* Removed .logo-icon::before shine effect */
-        
-        .logo-icon-text {
-            color: white;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-weight: 800;
-            font-size: 20px;
-            z-index: 2;
-            letter-spacing: -0.5px;
-        }
-        
-        /* --- Text Section --- */
-        .logo-text {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        
-        .logo-main-title {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-weight: 800;
-            font-size: 24px;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-            line-height: 1.2;
-        }
-        
-        .logo-subtitle {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 11px;
-            font-weight: 700;
-            color: #059669;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            line-height: 1.2;
-        }
-        
-        .logo-underline {
-            width: 40px;
-            height: 3px;
-            background: linear-gradient(90deg, #10b981 0%, #0d9488 100%);
-            border-radius: 2px;
-            margin-top: 2px;
-            /* Removed transition */
-        }
-        
-        /* --- REMOVED ALL HOVER EFFECTS --- */
-        
-        /* --- Responsive Design --- */
-        @media (max-width: 768px) {
-            .logo-icon {
-                width: 40px;
-                height: 40px;
-                border-radius: 10px;
-            }
-            
-            .logo-icon-text {
-                font-size: 18px;
-            }
-            
-            .logo-main-title {
-                font-size: 20px;
-            }
-            
-            .logo-subtitle {
-                font-size: 10px;
-                letter-spacing: 1.5px;
-            }
-            
-            .logo-wrapper {
-                gap: 12px;
-                padding: 15px;
-            }
-            
-            .logo-main-title::after {
-                content: "Travel";
-            }
-            
-            .logo-main-title span {
-                display: none;
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .logo-icon {
-                width: 56px;
-                height: 56px;
-                border-radius: 14px;
-            }
-            
-            .logo-icon-text {
-                font-size: 22px;
-            }
-            
-            .logo-main-title {
-                font-size: 28px;
-            }
-            
-            .logo-subtitle {
-                font-size: 12px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .logo-icon {
-                width: 32px;
-                height: 32px;
-                border-radius: 8px;
-            }
-            
-            .logo-icon-text {
-                font-size: 16px;
-            }
-            
-            .logo-main-title {
-                font-size: 18px;
-            }
-            
-            .logo-subtitle {
-                font-size: 9px;
-                letter-spacing: 1px;
-            }
-            
-            .logo-wrapper {
-                gap: 10px;
-                padding: 12px;
-            }
-        }
-        
-        /* --- Existing Email Styles (Updated for logo integration) --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
         * {
             box-sizing: border-box;
         }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: #334155;
             margin: 0;
-            padding: 0;
-            background-color: #f7f9fc;
+            padding: 20px;
+            background-color: #f8fafc;
         }
+
         .email-container {
             max-width: 600px;
             width: 100%;
             margin: 0 auto;
             background-color: #ffffff;
-            border-radius: 10px;
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
         }
-        /* Changed header background from blue gradient to white */
+
+        /* --- Header / Logo --- */
         .header {
-            background: #ffffff; /* Changed to white */
-            padding: 20px;
+            background: #ffffff;
+            padding: 30px;
             text-align: center;
+            border-bottom: 1px solid #e2e8f0;
         }
-        /* Adjusted header h1 color for better contrast on white background */
-        .header h1 {
-            margin: 15px 0 0 0;
+
+        .logo-container {
+            display: inline-block;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo-wrapper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #10b981 0%, #14b8a6 50%, #06b6d4 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .logo-icon-text {
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            text-align: left;
+        }
+
+        .logo-main-title {
+            font-weight: 700;
             font-size: 24px;
-            font-weight: 600;
-            color: #2d3a8c; /* Added dark blue color for better visibility on white */
+            background: linear-gradient(to right, #334155, #475569);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+            white-space: nowrap;
         }
-        .content {
-            padding: 40px 30px;
-        }
-        .message {
-            background-color: #f8f9ff;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #4f6df5;
-            margin-bottom: 30px;
-        }
-        .info-box {
-            background-color: #f0f2ff;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            margin: 25px 0;
-            word-break: break-all;
-            border: 1px dashed #4f6df5;
-        }
-        .info-label {
+
+        .logo-subtitle {
             font-size: 12px;
-            color: #6c757d;
-            margin-bottom: 8px;
+            font-weight: 600;
+            color: #10b981;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
-        .token, .password {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            color: #2d3a8c;
-            font-size: 16px;
-            letter-spacing: 0.5px;
-            display: block;
-            padding: 8px 0;
+
+        .logo-underline {
+            width: 40px;
+            height: 3px;
+            background: linear-gradient(to right, #10b981, #14b8a6);
+            border-radius: 2px;
+            margin-top: 4px;
         }
-        .warning-note {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 12px 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-            font-size: 14px;
-            border-left: 4px solid #ffc107;
+
+        .header h1 {
+            margin: 20px 0 0 0;
+            font-size: 22px;
+            font-weight: 700;
+            color: #1e293b;
         }
-        .warning-note strong {
-            color: #856404;
+
+        /* --- Content --- */
+        .content {
+            padding: 40px;
         }
-        .footer {
-            background-color: #f8f9fa;
+
+        .message {
+            background-color: #f0fdfa;
             padding: 20px;
-            text-align: center;
-            color: #6c757d;
-            font-size: 14px;
-            border-top: 1px solid #eaeaea;
+            border-radius: 12px;
+            border-left: 4px solid #10b981;
+            margin-bottom: 25px;
+            color: #334155;
         }
-        .highlight {
-            background-color: #fff9e6;
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin: 20px 0;
-            border-left: 3px solid #ffc107;
+
+        .message p {
+            margin: 0 0 8px 0;
         }
+
+        .message p:last-child {
+            margin-bottom: 0;
+        }
+
         .email-address {
-            color: #4f6df5;
+            color: #0f766e;
             font-weight: 600;
         }
+
+        .highlight {
+            background-color: #fffbeb;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .highlight p {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            color: #92400e;
+        }
+
+        .highlight p:last-child {
+            margin-bottom: 0;
+        }
+
         .section {
             margin: 30px 0;
         }
+
         .section-title {
-            color: #4f6df5;
-            font-size: 18px;
+            color: #0f766e;
+            font-size: 16px;
             margin-bottom: 15px;
-            font-weight: 600;
-            border-bottom: 2px solid #f0f2ff;
-            padding-bottom: 5px;
+            font-weight: 700;
+            border-bottom: 2px solid #f0fdfa;
+            padding-bottom: 8px;
         }
+
+        .section p {
+            color: #64748b;
+            font-size: 15px;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 2px dashed #cbd5e1;
+            padding: 18px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 16px 0;
+            word-break: break-all;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .token,
+        .password {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            display: block;
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .warning-note {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            color: #92400e;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+
+        .warning-note strong {
+            color: #92400e;
+        }
+
         .security-note {
-            background-color: #f8f9fa;
-            padding: 12px 15px;
-            border-radius: 6px;
-            border-left: 3px solid #6c757d;
+            background-color: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 4px solid #94a3b8;
             margin: 15px 0;
             font-size: 13px;
-            color: #6c757d;
+            color: #64748b;
         }
-        @media only screen and (max-width: 600px) {
+
+        /* --- Footer --- */
+        .footer {
+            background: #f8fafc;
+            padding: 25px;
+            text-align: center;
+            color: #64748b;
+            font-size: 13px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .footer p {
+            margin: 4px 0;
+        }
+
+        /* --- Responsive --- */
+        @media (min-width: 1024px) {
+            .logo-icon {
+                width: 56px;
+                height: 56px;
+                border-radius: 16px;
+            }
+
+            .logo-icon-text {
+                font-size: 22px;
+            }
+
+            .logo-main-title {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 768px) {
             .content {
-                padding: 25px 20px;
+                padding: 25px;
             }
+
+            .logo-icon {
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+            }
+
+            .logo-icon-text {
+                font-size: 18px;
+            }
+
+            .logo-main-title {
+                font-size: 20px;
+            }
+
+            .logo-subtitle {
+                font-size: 10px;
+                letter-spacing: 0.5px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .content {
+                padding: 20px 16px;
+            }
+
             .header {
-                padding: 15px;
+                padding: 20px 16px;
             }
-            .token, .password {
-                font-size: 14px;
+
+            .logo-wrapper {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .logo-text {
+                text-align: center;
+            }
+
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+            }
+
+            .logo-main-title {
+                font-size: 18px;
+                white-space: normal;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .token,
+            .password {
+                font-size: 13px;
+                padding: 10px;
             }
         }
     </style>
@@ -329,75 +360,71 @@ export default function applicationSuccess(email: string, accessToken: string, p
 <body>
     <div class="email-container">
         <div class="header">
-            <!-- New BD Travel Spirit Logo -->
             <a href="#" class="logo-container">
                 <div class="logo-wrapper">
                     <div class="logo-icon">
                         <div class="logo-icon-text">BD</div>
                     </div>
                     <div class="logo-text">
-                        <div class="logo-main-title">
-                            BD Travel<span> Spirit</span>
-                        </div>
+                        <div class="logo-main-title">BD Travel Spirit</div>
                         <div class="logo-subtitle">Professional Guides</div>
                         <div class="logo-underline"></div>
                     </div>
                 </div>
             </a>
-            <!-- End Logo -->
             <h1>Application Submitted Successfully!</h1>
         </div>
-        
+
         <div class="content">
             <p>Dear User,</p>
-            
+
             <div class="message">
                 <p>Your application submitted with email <span class="email-address">${email}</span> has been received successfully.</p>
                 <p>We have begun processing your application and it is currently under review.</p>
             </div>
-            
+
             <div class="highlight">
                 <p><strong>Please note:</strong> The review process typically takes <strong>5-7 business days</strong> to complete.</p>
                 <p>You will receive another email notification once your application has been reviewed.</p>
             </div>
-            
+
             <div class="section">
                 <div class="section-title">Your Application Credentials</div>
-                
+
                 <p>You can use the following access token to view your submitted form:</p>
-                
+
                 <div class="info-box">
                     <div class="info-label">Access Token</div>
                     <div class="token">${escapeHtml(accessToken)}</div>
                 </div>
-                
+
                 <p>Keep this token safe as it provides access to your application details.</p>
             </div>
-            
+
             <div class="section">
                 <div class="section-title">Account Information</div>
-                
+
                 <p>Your account has been created with the following temporary password:</p>
-                
+
                 <div class="info-box">
                     <div class="info-label">Temporary Password</div>
                     <div class="password">${escapeHtml(password)}</div>
                 </div>
-                
+
                 <div class="warning-note">
                     <strong>Important:</strong> This is your temporary password. <strong>You cannot use it until your application is accepted.</strong> Once your application is approved, you will receive further instructions on how to activate your account and change your password.
                 </div>
-                
+
                 <div class="security-note">
                     <strong>Security Tip:</strong> Do not share your password with anyone. Our team will never ask for your password.
                 </div>
             </div>
-            
+
             <p>Thank you for your patience and for choosing our service.</p>
-            
+
             <p>Best regards,<br>The BD Travel Spirit Team</p>
         </div>
-        
+
         <div class="footer">
             <p>This is an automated message. Please do not reply to this email.</p>
             <p>If you have any questions, please contact our support team.</p>

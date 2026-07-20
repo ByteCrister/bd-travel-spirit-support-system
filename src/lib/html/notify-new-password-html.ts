@@ -54,7 +54,7 @@ export function notifyEmployeeNewPassword(
         }
         
         .header {
-            background: linear-gradient(135deg, #ffffff 0%, #ffffff 50%, #ffffff 100%);
+            background: #ffffff;
             padding: 40px 30px 30px;
             text-align: center;
             position: relative;
@@ -316,8 +316,16 @@ export function notifyEmployeeNewPassword(
         }
         
         .support-btn {
-            background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+            background: #ffffff;
+            color: #0f766e;
+            border: 1.5px solid #ccfbf1;
+            box-shadow: none;
             margin-left: 10px;
+        }
+        
+        .support-btn:hover {
+            background: #f0fdfa;
+            border-color: #99f6e4;
         }
         
         @media (max-width: 600px) {
@@ -337,6 +345,55 @@ export function notifyEmployeeNewPassword(
             .footer-links {
                 flex-direction: column;
                 gap: 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 30px 16px 24px;
+            }
+            
+            .content {
+                padding: 24px 16px;
+            }
+            
+            .logo-container {
+                padding: 14px;
+            }
+            
+            .logo-bd {
+                font-size: 26px;
+            }
+            
+            .brand-name {
+                font-size: 20px;
+            }
+            
+            .greeting {
+                font-size: 18px;
+            }
+            
+            .password-value {
+                font-size: 16px;
+                padding: 10px 14px;
+            }
+            
+            .btn {
+                display: block;
+                width: 100%;
+                margin: 8px 0;
+            }
+            
+            .support-btn {
+                margin-left: 0;
+            }
+            
+            .footer {
+                padding: 24px 16px;
             }
         }
         
@@ -409,6 +466,12 @@ export function notifyEmployeeNewPassword(
             .instructions li strong {
                 color: #f1f5f9;
             }
+            
+            .support-btn {
+                background: #1e293b;
+                color: #5eead4;
+                border-color: #334155;
+            }
         }
     </style>
 </head>
@@ -477,8 +540,8 @@ export function notifyEmployeeNewPassword(
             
             <!-- Action Buttons -->
             <div style="text-align: center; margin: 30px 0;">
-                <a href="https://bd-travel-spirit.com/login" class="btn login-btn">Login to Your Account</a>
-                <a href="https://bd-travel-spirit.com/support" class="btn support-btn">Get Support</a>
+                <a href="https://bd-travel-support-system.vercel.app" class="btn login-btn">Login to Your Account</a>
+                <a href="https://bd-travel-support-system.vercel.app/contact" class="btn support-btn">Get Support</a>
             </div>
             
             <!-- Additional Info -->
@@ -496,10 +559,10 @@ export function notifyEmployeeNewPassword(
             </div>
             
             <div class="footer-links">
-                <a href="https://bd-travel-spirit.com/privacy">Privacy Policy</a>
-                <a href="https://bd-travel-spirit.com/terms">Terms of Service</a>
-                <a href="https://bd-travel-spirit.com/help">Help Center</a>
-                <a href="https://bd-travel-spirit.com/contact">Contact Us</a>
+                <a href="https://bd-travel-support-system.vercel.app">Privacy Policy</a>
+                <a href="https://bd-travel-support-system.vercel.app">Terms of Service</a>
+                <a href="https://bd-travel-support-system.vercel.app">Help Center</a>
+                <a href="https://bd-travel-support-system.vercel.app">Contact Us</a>
             </div>
             
             <div class="copyright">

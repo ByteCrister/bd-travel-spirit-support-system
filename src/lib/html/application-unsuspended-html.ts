@@ -109,7 +109,7 @@ export const applicationUnsuspended = (
     
     <!-- Dashboard CTA -->
     <div style="text-align: center; margin-top: 35px; padding-top: 25px; border-top: 1px solid #d1fae5;">
-      <a href="https://bdtravelspirit.com/guide/dashboard" 
+      <a href="https://bd-travel-spirit-guide-system.vercel.app" 
          style="background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); color: white; padding: 14px 36px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: 600; font-size: 15px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: all 0.3s ease; border: none; margin-bottom: 10px;">
         Go to Your Dashboard
       </a>

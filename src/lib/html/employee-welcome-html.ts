@@ -69,7 +69,6 @@ export function generateEmployeeWelcomeEmail(
         
         .email-container {
             max-width: 600px;
-            width: 100%;
             margin: 0 auto;
             background: #ffffff;
             border-radius: 12px;
@@ -89,7 +88,7 @@ export function generateEmployeeWelcomeEmail(
         .logo-icon {
             width: 48px;
             height: 48px;
-            background: linear-gradient(135deg, #10b981 0%, #0d9488 50%, #06b6d4 100%);
+            background: linear-gradient(135deg, #006666 0%, #008080 55%, #00b3b3 100%);
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -98,7 +97,7 @@ export function generateEmployeeWelcomeEmail(
             font-weight: 700;
             font-size: 20px;
             font-family: 'Inter', 'Segoe UI', sans-serif;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 102, 102, 0.3);
             margin-right: 15px;
         }
         
@@ -118,7 +117,7 @@ export function generateEmployeeWelcomeEmail(
         
         .logo-subtitle {
             font-size: 11px;
-            color: #059669;
+            color: #006666;
             text-transform: uppercase;
             letter-spacing: 2px;
             font-weight: 600;
@@ -128,7 +127,7 @@ export function generateEmployeeWelcomeEmail(
         .logo-underline {
             height: 3px;
             width: 100px;
-            background: linear-gradient(90deg, #10b981 0%, #0d9488 100%);
+            background: linear-gradient(90deg, #006666 0%, #00b3b3 100%);
             margin-top: 5px;
             border-radius: 2px;
         }
@@ -152,7 +151,7 @@ export function generateEmployeeWelcomeEmail(
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #006666 0%, #003d3d 100%);
             color: white;
             padding: 40px 30px;
             text-align: center;
@@ -185,8 +184,8 @@ export function generateEmployeeWelcomeEmail(
         }
         
         .credentials-box {
-            background: linear-gradient(135deg, #f6f9ff 0%, #f0f4ff 100%);
-            border-left: 4px solid #667eea;
+            background: linear-gradient(135deg, #f0fafa 0%, #e6f5f5 100%);
+            border-left: 4px solid #006666;
             padding: 25px;
             border-radius: 8px;
             margin: 25px 0;
@@ -239,20 +238,22 @@ export function generateEmployeeWelcomeEmail(
             font-family: 'Courier New', monospace;
             font-size: 16px;
             letter-spacing: 1px;
-            color: #e53e3e;
+            color: #dc2626;
             font-weight: 600;
             display: inline-block;
             margin-top: 5px;
         }
         
         .details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            display: flex;
+            flex-wrap: wrap;
             gap: 20px;
             margin: 30px 0;
         }
         
         .detail-card {
+            flex: 1 1 calc(50% - 10px);
+            min-width: 200px;
             background: white;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
@@ -335,8 +336,8 @@ export function generateEmployeeWelcomeEmail(
         
         .days-badge {
             display: inline-flex;
-            background: #edf2f7;
-            color: #4a5568;
+            background: #e6f5f5;
+            color: #006666;
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 12px;
@@ -390,7 +391,7 @@ export function generateEmployeeWelcomeEmail(
         }
         
         .footer a {
-            color: #667eea;
+            color: #006666;
             text-decoration: none;
         }
         
@@ -444,7 +445,12 @@ export function generateEmployeeWelcomeEmail(
             }
             
             .details-grid {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+            }
+
+            .detail-card {
+                flex: 1 1 100%;
+                min-width: 0;
             }
             
             .credential-item {
@@ -456,13 +462,84 @@ export function generateEmployeeWelcomeEmail(
                 margin-bottom: 5px;
             }
             
-            .shifts-table {
+            .shifts-table thead {
+                display: none;
+            }
+            
+            .shifts-table, .shifts-table tbody, .shifts-table tr, .shifts-table td {
                 display: block;
-                overflow-x: auto;
+                width: 100%;
+            }
+            
+            .shifts-table tr {
+                margin-bottom: 15px;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+            }
+            
+            .shifts-table td {
+                text-align: right;
+                padding-left: 45%;
+                position: relative;
+                border-top: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            
+            .shifts-table td:last-child {
+                border-bottom: none;
+            }
+            
+            .shifts-table td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 15px;
+                width: 40%;
+                text-align: left;
+                font-weight: 600;
+                color: #718096;
+                font-size: 13px;
+                text-transform: uppercase;
             }
             
             .logo-container {
                 padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .header p {
+                font-size: 14px;
+            }
+
+            .welcome-section h2 {
+                font-size: 19px;
+            }
+
+            .credentials-box, .notes-section, .important-note, .contact-info {
+                padding: 16px;
+            }
+
+            .password-display {
+                font-size: 14px;
+                word-break: break-all;
+            }
+
+            .detail-value {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .header h1 {
+                font-size: 19px;
+            }
+
+            .content {
+                padding: 20px 14px;
             }
         }
     </style>
@@ -619,10 +696,10 @@ function generateShiftsTable(shifts: ShiftDTO[]): string {
 
         return `
           <tr>
-            <td>${daysBadges}</td>
-            <td><strong>${formatTime(shift.startTime)}</strong></td>
-            <td><strong>${formatTime(shift.endTime)}</strong></td>
-            <td>${duration}</td>
+            <td data-label="Shift Days">${daysBadges}</td>
+            <td data-label="Start Time"><strong>${formatTime(shift.startTime)}</strong></td>
+            <td data-label="End Time"><strong>${formatTime(shift.endTime)}</strong></td>
+            <td data-label="Duration">${duration}</td>
           </tr>
           `;
     }).join('')}
