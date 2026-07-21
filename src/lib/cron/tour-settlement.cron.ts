@@ -17,6 +17,7 @@ import {
 import { recordSettlementTransaction } from "@/lib/payments/stripe-charge.service";
 import BookingModel from "@/models/tours/booking.model";
 import TourModel, { ITour } from "@/models/tours/tour.model";
+import TourAnalyticsModel from "@/models/tours/tour-analytics.model";
 import GuideModel from "@/models/guide/guide.model";
 import StripePaymentAccountModel from "@/models/payments/payment-account.model";
 import UserModel from "@/models/user.model";
@@ -120,34 +121,38 @@ async function findSettlementAccounts(tour: ITour) {
     };
 }
 
-async function calculateTourRevenueUsd(
+async function getTourBookingStats(
     tourId: mongoose.Types.ObjectId,
     tourCurrency: string
-): Promise<number> {
+): Promise<{
+    totalBookings: number;
+    seatsBooked: number;
+    totalRevenueBdt: number;
+    revenueUsd: number;
+}> {
     const bookings = await BookingModel.find({
         tour: tourId,
         deletedAt: null,
         status: { $in: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.COMPLETED] },
         "payment.status": BOOKING_PAYMENT_STATUS.PAID,
-    })
-        .select("totalPaid")
-        .lean();
+    }).lean();
 
-    const totalPaid = bookings.reduce((sum, booking) => sum + (booking.totalPaid ?? 0), 0);
+    const totalBookings = bookings.length;
+    const seatsBooked = bookings.reduce((sum, booking) => sum + (booking.totalParticipants ?? 0), 0);
+    const totalRevenueBdt = bookings.reduce((sum, booking) => sum + (booking.totalPaid ?? 0), 0);
 
-    if (totalPaid <= 0) {
-        return 0;
+    let revenueUsd = 0;
+    if (totalRevenueBdt > 0) {
+        if (tourCurrency.toUpperCase() === CURRENCY.USD) {
+            revenueUsd = totalRevenueBdt;
+        } else if (tourCurrency.toUpperCase() === CURRENCY.BDT) {
+            revenueUsd = await convertBdtToUsd(totalRevenueBdt);
+        } else {
+            throw new Error(`Unsupported tour currency: ${tourCurrency}`);
+        }
     }
 
-    if (tourCurrency.toUpperCase() === CURRENCY.USD) {
-        return totalPaid;
-    }
-
-    if (tourCurrency.toUpperCase() === CURRENCY.BDT) {
-        return convertBdtToUsd(totalPaid);
-    }
-
-    throw new Error(`Unsupported tour currency: ${tourCurrency}`);
+    return { totalBookings, seatsBooked, totalRevenueBdt, revenueUsd };
 }
 
 async function settleTour(tour: ITour): Promise<"settled" | "skipped"> {
@@ -160,10 +165,11 @@ async function settleTour(tour: ITour): Promise<"settled" | "skipped"> {
     }
 
     const tourId = tour._id as mongoose.Types.ObjectId;
-    const revenueUsd = await calculateTourRevenueUsd(
+    const stats = await getTourBookingStats(
         tourId,
         tour.basePrice.currency
     );
+    const revenueUsd = stats.revenueUsd;
 
     const adminShareUsd = Number((revenueUsd * ADMIN_COMMISSION_RATE).toFixed(2));
     const guideShareUsd = Number((revenueUsd * GUIDE_SHARE_RATE).toFixed(2));
@@ -214,6 +220,34 @@ async function settleTour(tour: ITour): Promise<"settled" | "skipped"> {
             },
             { session }
         ).exec();
+
+        const seatsTotal = tour.departure?.seatsTotal || 0;
+        const occupancyRate = seatsTotal > 0 ? Number((stats.seatsBooked / seatsTotal).toFixed(4)) : 0;
+
+        await TourAnalyticsModel.create(
+            [
+                {
+                    tourId,
+                    companyId: tour.companyId,
+                    uniqueTourCode: tour.uniqueTourCode,
+                    seatsTotal,
+                    seatsBooked: stats.seatsBooked,
+                    totalBookings: stats.totalBookings,
+                    totalRevenue: stats.totalRevenueBdt,
+                    occupancyRate,
+                    basePrice: tour.basePrice,
+                    discounts: tour.discounts,
+                    operatingWindow: tour.operatingWindow,
+                    departure: tour.departure,
+                    viewCount: tour.viewCount || 0,
+                    likeCount: tour.likeCount || 0,
+                    shareCount: tour.shareCount || 0,
+                    reviewCount: tour.ratings?.count || 0,
+                    averageRating: tour.ratings?.average || 0,
+                },
+            ],
+            { session }
+        );
     });
 
     console.log(
