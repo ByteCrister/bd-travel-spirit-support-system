@@ -17,6 +17,9 @@ import { FORGOT_PASSWORD_STATUS, ForgotPasswordStatus } from '@/constants/guide-
 import GuideForgotPasswordModel from '@/models/guide/guide-forgot-password.model';
 import ConnectDB from '@/config/db';
 import { sanitizeSearch } from '@/lib/helpers/sanitize-search';
+import { getUserIdFromSession } from '@/lib/auth/session.auth';
+import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
+import { USER_ROLE } from '@/constants/user.const';
 
 /* ------------------------------------------------------------------
    QUERY PARAM TYPES
@@ -183,6 +186,10 @@ async function calculateStats(
 
 async function getRequestsHandler(request: NextRequest) {
     await ConnectDB();
+
+    const callerId = await getUserIdFromSession();
+    if (!callerId) throw new ApiError('Authentication required', 401);
+    await VERIFY_USER_ROLE.MULTIPLE(callerId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
 
     const searchParams = request.nextUrl.searchParams;
 

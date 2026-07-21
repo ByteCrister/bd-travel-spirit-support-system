@@ -8,6 +8,9 @@ import ConnectDB from '@/config/db';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 import GuideForgotPasswordModel from '@/models/guide/guide-forgot-password.model';
 import { buildGuidePasswordDto } from '@/lib/build-responses/build-guide-password-dto';
+import { getUserIdFromSession } from '@/lib/auth/session.auth';
+import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
+import { USER_ROLE } from '@/constants/user.const';
 
 interface RouteParams {
     params: Promise<{
@@ -26,6 +29,10 @@ async function getRequestByIdHandler(
 ) {
 
     await ConnectDB();
+
+    const callerId = await getUserIdFromSession();
+    if (!callerId) throw new ApiError('Authentication required', 401);
+    await VERIFY_USER_ROLE.MULTIPLE(callerId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
 
     const id = resolveMongoId((await params).id);
 

@@ -331,7 +331,7 @@ export default function Dashboard() {
                     {loading.pendingActions ? (
                         <ListCardSkeleton title="Pending Actions" rows={5} />
                     ) : (
-                        <PendingActions actions={pendingActions} loading={loading.pendingActions} onResolve={markActionAsResolved} />
+                        <PendingActions actions={pendingActions} loading={loading.pendingActions} />
                     )}
                 </SectionCard>
 

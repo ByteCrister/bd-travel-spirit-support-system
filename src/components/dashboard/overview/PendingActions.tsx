@@ -2,12 +2,13 @@
 
 import { motion } from "framer-motion";
 import {
-  FiFlag, FiAlertTriangle, FiEye, FiCheck,
+  FiAlertTriangle, FiCheck,
   FiUser, FiMapPin, FiSettings, FiAlertCircle,
-  FiMessageSquare, FiLock,
+  FiMessageSquare, FiLock, FiArrowRight,
 } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 import { PendingAction } from "@/types/dashboard/dashboard.types";
+import Link from "next/link";
 
 // ── Neumorphic design tokens ──────────────────────────────────────────────────
 const NEU_CARD = "rounded-2xl bg-[#E7E5E4] shadow-[8px_8px_16px_#c8c6c5,-8px_-8px_16px_#ffffff] border border-white/60";
@@ -19,11 +20,6 @@ const NEU_BTN_PRIMARY =
   "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:bg-[#007777] " +
   "active:shadow-[inset_3px_3px_6px_#004d4d,inset_-2px_-2px_4px_#008080] " +
   "transition-all duration-200";
-const NEU_BTN_GHOST =
-  "rounded-xl bg-[#E7E5E4] text-[#1E2938] font-[family-name:var(--font-space-mono)] " +
-  "shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
-  "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] " +
-  "transition-all duration-200";
 const NEU_SKELETON = "rounded-lg bg-[#d0cecd] animate-pulse";
 const NEU_HEADING = "font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] tracking-tight";
 const NEU_MUTED = "font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#1E2938]/50";
@@ -33,52 +29,53 @@ const NEU_DIVIDER = "border-[#1E2938]/10";
 // ── Priority configs ──────────────────────────────────────────────────────────
 const priorityConfig = {
   urgent: { iconBg: "bg-[#FF2157]/10", iconColor: "text-[#FF2157]", leftBar: "#FF2157", badgeColor: "bg-[#FF2157]/10 text-[#FF2157]" },
-  high: { iconBg: "bg-[#FE9900]/10", iconColor: "text-[#FE9900]", leftBar: "#FE9900", badgeColor: "bg-[#FE9900]/10 text-[#FE9900]" },
+  high:   { iconBg: "bg-[#FE9900]/10", iconColor: "text-[#FE9900]", leftBar: "#FE9900", badgeColor: "bg-[#FE9900]/10 text-[#FE9900]" },
   medium: { iconBg: "bg-[#FE9900]/10", iconColor: "text-[#FE9900]", leftBar: "#FE9900", badgeColor: "bg-[#FE9900]/10 text-[#FE9900]" },
-  low: { iconBg: "bg-[#00A63D]/10", iconColor: "text-[#00A63D]", leftBar: "#00A63D", badgeColor: "bg-[#00A63D]/10 text-[#00A63D]" },
+  low:    { iconBg: "bg-[#00A63D]/10", iconColor: "text-[#00A63D]", leftBar: "#00A63D", badgeColor: "bg-[#00A63D]/10 text-[#00A63D]" },
 };
 
 const statusConfig = {
-  pending: { label: "Pending", color: "bg-[#FE9900]/10 text-[#FE9900]" },
+  pending:     { label: "Pending",     color: "bg-[#FE9900]/10 text-[#FE9900]" },
   in_progress: { label: "In Progress", color: "bg-[#006666]/10 text-[#006666]" },
-  resolved: { label: "Resolved", color: "bg-[#00A63D]/10 text-[#00A63D]" },
+};
+
+// ── Route map: action type → page path ───────────────────────────────────────
+const actionRouteMap: Record<PendingAction["type"], string> = {
+  tour_approval:           "/support/tours",
+  organizer_approval:      "/users/guides",
+  article_comment:         "/support/article-comments",
+  guide_password_reset:    "/support/guide-password-requests",
+  employee_password_reset: "/support/reset-password-requests",
 };
 
 const getActionIcon = (type: PendingAction["type"]) => {
   switch (type) {
-    case "report": return <FiFlag className="h-4 w-4" />;
-    case "complaint": return <FiAlertTriangle className="h-4 w-4" />;
-    case "flagged_content": return <FiAlertCircle className="h-4 w-4" />;
-    case "organizer_approval": return <FiUser className="h-4 w-4" />;
-    case "tour_approval": return <FiMapPin className="h-4 w-4" />;
-    case "article_comment": return <FiMessageSquare className="h-4 w-4" />;
+    case "organizer_approval":      return <FiUser        className="h-4 w-4" />;
+    case "tour_approval":           return <FiMapPin      className="h-4 w-4" />;
+    case "article_comment":         return <FiMessageSquare className="h-4 w-4" />;
     case "guide_password_reset":
-    case "employee_password_reset": return <FiLock className="h-4 w-4" />;
-    default: return <FiSettings className="h-4 w-4" />;
+    case "employee_password_reset": return <FiLock        className="h-4 w-4" />;
+    default:                        return <FiSettings    className="h-4 w-4" />;
   }
 };
 
 const formatTimeAgo = (timestamp: string) => {
   const diff = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
-  if (diff < 60) return "Just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 60)    return "Just now";
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return `${Math.floor(diff / 86400)}d ago`;
 };
 
 interface PendingActionsProps {
-  actions: PendingAction[];
+  actions?: PendingAction[];
   loading?: boolean;
-  onResolve?: (actionId: string) => void;
-  onView?: (actionId: string) => void;
   className?: string;
 }
 
 export function PendingActions({
   actions = [],
   loading = false,
-  onResolve,
-  onView,
   className,
 }: PendingActionsProps) {
   const safeActions = Array.isArray(actions) ? actions : ((actions as any)?.items || []);
@@ -138,11 +135,12 @@ export function PendingActions({
             <p className={cn(NEU_MUTED, "text-xs mt-1")}>All caught up!</p>
           </div>
         ) : (
-          safeActions.map((action: any, index: number) => {
+          safeActions.map((action: PendingAction, index: number) => {
             const pCfg = priorityConfig[action.priority as keyof typeof priorityConfig] ?? priorityConfig.low;
             const sCfg = statusConfig[action.status as keyof typeof statusConfig] ?? { label: action.status, color: "bg-[#1E2938]/10 text-[#1E2938]" };
+            const route = actionRouteMap[action.type];
 
-            return (
+            const cardContent = (
               <motion.div
                 key={action.id}
                 initial={{ opacity: 0, y: 12 }}
@@ -150,8 +148,8 @@ export function PendingActions({
                 transition={{ delay: index * 0.06, duration: 0.3 }}
                 className={cn(
                   NEU_CARD_SM,
-                  "p-3.5 relative overflow-hidden transition-shadow duration-200",
-                  "hover:shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff]"
+                  "p-3.5 relative overflow-hidden transition-all duration-200",
+                  route ? "cursor-pointer hover:shadow-[6px_6px_12px_#c8c6c5,-6px_-6px_12px_#ffffff] group" : ""
                 )}
               >
                 {/* Left accent bar */}
@@ -198,28 +196,31 @@ export function PendingActions({
                         <span className={cn(NEU_MUTED, "text-xs")}>{formatTimeAgo(action.createdAt)}</span>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
-                        {onView && (
-                          <button
-                            onClick={() => onView(action.id)}
-                            className={cn(NEU_BTN_GHOST, "px-2.5 py-1 text-xs flex items-center gap-1")}
-                          >
-                            <FiEye className="h-3 w-3" /> View
-                          </button>
-                        )}
-                        {onResolve && action.status !== "resolved" && (
-                          <button
-                            onClick={() => onResolve(action.id)}
-                            className={cn(NEU_BTN_PRIMARY, "px-2.5 py-1 text-xs flex items-center gap-1")}
-                          >
-                            <FiCheck className="h-3 w-3" /> Resolve
-                          </button>
-                        )}
-                      </div>
+                      {route && (
+                        <span className={cn(
+                          NEU_BTN_PRIMARY,
+                          "px-2.5 py-1 text-xs flex items-center gap-1",
+                          "group-hover:gap-2 transition-all duration-200"
+                        )}>
+                          Go to page
+                          <FiArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
               </motion.div>
+            );
+
+            // Wrap in Link if a route exists, otherwise render as plain div
+            return route ? (
+              <Link key={action.id} href={route} className="block">
+                {cardContent}
+              </Link>
+            ) : (
+              <div key={action.id}>
+                {cardContent}
+              </div>
             );
           })
         )}

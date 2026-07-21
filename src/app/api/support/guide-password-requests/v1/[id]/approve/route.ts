@@ -16,6 +16,7 @@ import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 import GuideForgotPasswordModel from "@/models/guide/guide-forgot-password.model";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
+import { USER_ROLE } from "@/constants/user.const";
 import { buildGuidePasswordDto } from "@/lib/build-responses/build-guide-password-dto";
 import guideUpdatePasswordHtml from "@/lib/html/guide-password-update-html";
 import { mailer } from "@/config/node-mailer";
@@ -81,7 +82,8 @@ async function approveRequestHandler(
     if (!adminObjectId) {
         throw new ApiError("Valid adminId is required", 400);
     }
-    await VERIFY_USER_ROLE.SUPPORT(adminObjectId);
+    // Allow both admin and support roles to approve guide password requests
+    await VERIFY_USER_ROLE.MULTIPLE(adminObjectId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
 
     let updatedPass: string | null = null;
     let userEmail: string | null = null;

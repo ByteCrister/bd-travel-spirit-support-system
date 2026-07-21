@@ -11,6 +11,7 @@ import ConnectDB from '@/config/db';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 import { getUserIdFromSession } from '@/lib/auth/session.auth';
 import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
+import { USER_ROLE } from '@/constants/user.const';
 import { buildGuidePasswordDto } from '@/lib/build-responses/build-guide-password-dto';
 import guideUpdatePasswordRejectHtml from '@/lib/html/guide-password-reject-html';
 import { mailer } from '@/config/node-mailer';
@@ -65,7 +66,8 @@ async function rejectRequestHandler(
         throw new ApiError('Valid admin session required', 401);
     }
 
-    await VERIFY_USER_ROLE.SUPPORT(adminObjectId);
+    // Allow both admin and support roles to reject guide password requests
+    await VERIFY_USER_ROLE.MULTIPLE(adminObjectId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
 
     let userEmail: string | null = null;
 

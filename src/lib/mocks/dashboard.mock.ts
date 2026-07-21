@@ -84,19 +84,19 @@ export const generateMockRecentActivity = (count: number): RecentActivity[] => {
 };
 
 export const generateMockPendingActions = (count: number): PendingAction[] => {
-    const types = ['report', 'complaint', 'flagged_content', 'organizer_approval', 'tour_approval'] as const;
+    const types = ['organizer_approval', 'tour_approval', 'article_comment', 'guide_password_reset', 'employee_password_reset'] as const;
     const priorities = ['low', 'medium', 'high', 'urgent'] as const;
-    const statuses = ['pending', 'in_progress', 'resolved'] as const;
+    const statuses = ['pending', 'in_progress'] as const;
 
     return Array.from({ length: count }, () => ({
         id: faker.string.uuid(),
         type: faker.helpers.arrayElement(types),
         title: faker.helpers.arrayElement([
-            'Suspicious activity reported',
-            'User complaint about tour',
-            'Inappropriate content flagged',
             'Organizer verification needed',
             'Tour approval request',
+            'Pending article comment',
+            'Guide password reset request',
+            'Employee password reset request',
         ]),
         description: faker.lorem.paragraph(),
         priority: faker.helpers.arrayElement(priorities),

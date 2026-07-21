@@ -33,9 +33,6 @@ export interface RecentActivity {
 }
 
 export type PendingActionType =
-  | 'report'
-  | 'complaint'
-  | 'flagged_content'
   | 'organizer_approval'
   | 'tour_approval'
   | 'article_comment'
@@ -43,7 +40,7 @@ export type PendingActionType =
   | 'employee_password_reset';
 
 export type PendingActionPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type PendingActionStatus = 'pending' | 'in_progress' | 'resolved';
+export type PendingActionStatus = 'pending' | 'in_progress';
 
 export interface PendingAction {
   id: string;

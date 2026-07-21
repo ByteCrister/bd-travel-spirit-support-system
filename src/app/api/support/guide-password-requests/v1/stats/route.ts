@@ -8,6 +8,9 @@ import { withErrorHandler, ApiError } from '@/lib/helpers/withErrorHandler';
 import { withTransaction } from '@/lib/helpers/withTransaction';
 import { PipelineStage } from 'mongoose';
 import { PasswordRequestStats } from '@/types/guide/guide-forgot-password.types';
+import { getUserIdFromSession } from '@/lib/auth/session.auth';
+import VERIFY_USER_ROLE from '@/lib/auth/verify-user-role';
+import { USER_ROLE } from '@/constants/user.const';
 
 interface MatchStage {
     status?: string;
@@ -29,6 +32,10 @@ interface AggregationResult {
 // Main handler function
 async function getStatsHandler(request: NextRequest) {
     await ConnectDB();
+
+    const callerId = await getUserIdFromSession();
+    if (!callerId) throw new ApiError('Authentication required', 401);
+    await VERIFY_USER_ROLE.MULTIPLE(callerId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status') || 'ALL';
