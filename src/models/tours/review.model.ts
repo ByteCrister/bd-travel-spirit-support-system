@@ -14,7 +14,7 @@ import TourModel from "./tour.model";
 
 export interface IReviewReply {
     _id: Types.ObjectId;
-    employee: Types.ObjectId; // ref: "Employee"
+    author: Types.ObjectId; // ref: "User"
     message: string;
     isApproved: boolean;
     createdAt: Date;
@@ -24,9 +24,9 @@ export interface IReviewReply {
 
 const ReviewReplySchema = new Schema<IReviewReply>(
     {
-        employee: {
+        author: {
             type: Schema.Types.ObjectId,
-            ref: "Employee",
+            ref: "User",
             required: true,
             index: true,
         },
@@ -293,12 +293,12 @@ ReviewSchema.statics.paginate = async function (
 
 ReviewSchema.methods.addReply = async function (
     this: IReview,
-    employeeId: Types.ObjectId,
+    authorId: Types.ObjectId,
     message: string
 ): Promise<IReview> {
     this.replies.push({
         _id: new mongoose.Types.ObjectId(),
-        employee: employeeId,
+        author: authorId,
         message,
         isApproved: true,
         createdAt: new Date(),

@@ -213,22 +213,8 @@ export class FAQResponseService {
       /* ---------------- ANSWERED BY ---------------- */
       {
         $lookup: {
-          from: getCollectionName(TravelerModel),
-          localField: "answeredBy",
-          foreignField: "_id",
-          as: "answeredByTraveler",
-        },
-      },
-      {
-        $unwind: {
-          path: "$answeredByTraveler",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $lookup: {
           from: getCollectionName(UserModel),
-          localField: "answeredByTraveler.user",
+          localField: "answeredBy",
           foreignField: "_id",
           as: "answeredByUser",
         },
@@ -259,22 +245,8 @@ export class FAQResponseService {
       /* ---------------- EDITED BY ---------------- */
       {
         $lookup: {
-          from: getCollectionName(TravelerModel),
-          localField: "editedBy",
-          foreignField: "_id",
-          as: "editedByTraveler",
-        },
-      },
-      {
-        $unwind: {
-          path: "$editedByTraveler",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $lookup: {
           from: getCollectionName(UserModel),
-          localField: "editedByTraveler.user",
+          localField: "editedBy",
           foreignField: "_id",
           as: "editedByUser",
         },
@@ -369,9 +341,9 @@ export class FAQResponseService {
 
               answeredBy: {
                 $cond: {
-                  if: { $ifNull: ["$answeredByTraveler._id", false] },
+                  if: { $ifNull: ["$answeredByUser._id", false] },
                   then: {
-                    id: "$answeredByTraveler._id",
+                    id: "$answeredByUser._id",
                     name: "$answeredByUser.name",
                     avatarUrl: {
                       $arrayElemAt: ["$answeredByAvatarFile.publicUrl", 0],
@@ -383,9 +355,9 @@ export class FAQResponseService {
 
               editedBy: {
                 $cond: {
-                  if: { $ifNull: ["$editedByTraveler._id", false] },
+                  if: { $ifNull: ["$editedByUser._id", false] },
                   then: {
-                    id: "$editedByTraveler._id",
+                    id: "$editedByUser._id",
                     name: "$editedByUser.name",
                   },
                   else: null,

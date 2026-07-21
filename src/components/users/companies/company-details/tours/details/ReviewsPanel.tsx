@@ -260,10 +260,10 @@ const ReviewItem: React.FC<ReviewItemProps> = React.memo(
                     className={`${NEU_SURFACE_INSET} rounded-xl p-3`}
                   >
                     <div className="flex items-center gap-1.5 mb-1">
-                      {reply.employee.avatar && (
+                      {reply.author.avatar && (
                         <Image
-                          src={reply.employee.avatar}
-                          alt={reply.employee.name}
+                          src={reply.author.avatar}
+                          alt={reply.author.name}
                           width={16}
                           height={16}
                           className="rounded-full"
@@ -272,7 +272,7 @@ const ReviewItem: React.FC<ReviewItemProps> = React.memo(
                       <span
                         className={`${NEU_LABEL} normal-case text-xs text-[#006666]`}
                       >
-                        {reply.employee.name} replied
+                        {reply.author.name} replied
                       </span>
                     </div>
                     <p className={`${NEU_MONO} text-sm text-[#1E2938]/80`}>

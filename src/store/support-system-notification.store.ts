@@ -7,7 +7,7 @@ import type {
     FetchNotificationsResponseType,
 } from "@/types/notification.types";
 
-const URL_AFTER_API = `/dashboard/notifications/v1`
+const URL_AFTER_API = `/dashboard/v1/notifications/v1`
 
 interface SupportSystemNotificationState {
     // Data
@@ -48,15 +48,16 @@ export const useSupportSystemNotificationStore = create<SupportSystemNotificatio
             fetchInitial: async () => {
                 set({ loading: true, actionError: null });
                 try {
-                    const { data } = await api.get<FetchNotificationsResponseType>(
+                    const res = await api.get<{ data: FetchNotificationsResponseType }>(
                         `${URL_AFTER_API}`,
                         { params: { limit: 15 } }
                     );
+                    const { data } = res.data;
                     set({
-                        notifications: data.notifications,
-                        cursor: data.nextCursor,
-                        hasMore: data.hasMore,
-                        totalUnread: data.totalUnread,
+                        notifications: data.notifications || [],
+                        cursor: data.nextCursor || null,
+                        hasMore: data.hasMore || false,
+                        totalUnread: data.totalUnread || 0,
                         loading: false,
                     });
                 } catch (err: any) {
@@ -77,14 +78,15 @@ export const useSupportSystemNotificationStore = create<SupportSystemNotificatio
 
                 set({ loading: true });
                 try {
-                    const { data } = await api.get<FetchNotificationsResponseType>(
+                    const res = await api.get<{ data: FetchNotificationsResponseType }>(
                         `${URL_AFTER_API}`,
                         { params: { cursor, limit: 15 } }
                     );
+                    const { data } = res.data;
                     set({
-                        notifications: [...notifications, ...data.notifications],
-                        cursor: data.nextCursor,
-                        hasMore: data.hasMore,
+                        notifications: [...notifications, ...(data.notifications || [])],
+                        cursor: data.nextCursor || null,
+                        hasMore: data.hasMore || false,
                         loading: false,
                     });
                 } catch (err: any) {

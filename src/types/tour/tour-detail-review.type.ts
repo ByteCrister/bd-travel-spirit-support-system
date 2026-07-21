@@ -5,7 +5,7 @@ import { TravelType } from "@/constants/tour.const";
 /**
  * Minimal info about an employee replying to a review
  */
-export interface ReviewReplyEmployeeDTO {
+export interface ReviewReplyAuthorDTO {
     id: string;
     name: string;
     avatar?: string; // optional, if you want to show employee avatar
@@ -16,7 +16,7 @@ export interface ReviewReplyEmployeeDTO {
  */
 export interface ReviewReplyDTO {
     id: string; // reply id (_id)
-    employee: ReviewReplyEmployeeDTO;
+    author: ReviewReplyAuthorDTO;
     message: string;
     isApproved: boolean;
     createdAt: string;

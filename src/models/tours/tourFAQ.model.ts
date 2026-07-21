@@ -101,7 +101,7 @@ const TourFAQSchema = new Schema<ITourFAQ>(
             index: true,
         },
         askedBy: { type: Schema.Types.ObjectId, ref: "Traveler", required: true },
-        answeredBy: { type: Schema.Types.ObjectId, ref: "Traveler" },
+        answeredBy: { type: Schema.Types.ObjectId, ref: "User" },
 
         question: { type: String, required: true, trim: true, maxlength: 1000 },
         answer: { type: String, trim: true, maxlength: 5000 },
@@ -119,7 +119,7 @@ const TourFAQSchema = new Schema<ITourFAQ>(
 
         answeredAt: { type: Date },
         editedAt: { type: Date },
-        editedBy: { type: Schema.Types.ObjectId, ref: "Traveler" },
+        editedBy: { type: Schema.Types.ObjectId, ref: "User" },
 
         likes: { type: [LikeSchema], default: [] },
         dislikes: { type: [LikeSchema], default: [] },

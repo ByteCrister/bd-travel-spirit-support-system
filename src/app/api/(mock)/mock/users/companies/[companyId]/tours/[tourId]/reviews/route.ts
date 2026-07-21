@@ -12,13 +12,13 @@ function getAvatar(userId: string) {
 
 /** Generate one fake employee reply */
 function generateRandomReply(): ReviewReplyDTO {
-    const employeeId = faker.database.mongodbObjectId();
+    const authorId = faker.database.mongodbObjectId();
     return {
         id: faker.database.mongodbObjectId(),
-        employee: {
-            id: employeeId,
+        author: {
+            id: authorId,
             name: faker.person.fullName(),
-            avatar: getAvatar(employeeId),
+            avatar: getAvatar(authorId),
         },
         message: faker.lorem.sentences(faker.number.int({ min: 1, max: 3 })),
         isApproved: faker.datatype.boolean({ probability: 0.9 }),

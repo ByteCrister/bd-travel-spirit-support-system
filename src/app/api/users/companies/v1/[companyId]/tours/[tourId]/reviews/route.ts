@@ -45,7 +45,7 @@ type AggregatedReplies = Pick<IReviewReply,
     "deletedAt" |
     "updatedAt"> & {
         id: Types.ObjectId,
-        employee: PopulatedUser,
+        author: PopulatedUser,   // matches IReviewReply.author and the $project output
     }
 
 type AggregatedReviewDoc = Pick<IReview,
@@ -233,16 +233,8 @@ export class ReviewResponseService {
                         /* =========================== REPLIES =============================== */
                         {
                             $lookup: {
-                                from: getCollectionName(EmployeeModel),
-                                localField: "replies.employee",
-                                foreignField: "_id",
-                                as: "replyEmployees",
-                            },
-                        },
-                        {
-                            $lookup: {
                                 from: getCollectionName(UserModel),
-                                localField: "replyEmployees.user",
+                                localField: "replies.author",
                                 foreignField: "_id",
                                 as: "replyUsers",
                             },
@@ -335,8 +327,11 @@ export class ReviewResponseService {
                                             isApproved: "$$r.isApproved",
                                             createdAt: "$$r.createdAt",
                                             updatedAt: "$$r.updatedAt",
-                                            employee: {
-                                                id: "$$r.employee",
+                                            authorId: {
+                                                $ifNull: [{ $toString: "$$r.author" }, null],
+                                            },
+                                            author: {
+                                                id: "$$r.author",
                                                 name: {
                                                     $arrayElemAt: ["$replyUsers.name", 0],
                                                 },
@@ -411,10 +406,10 @@ export class ReviewResponseService {
             createdAt: review.createdAt.toISOString(),
             replies: (review.replies ?? []).map((item) => ({
                 id: item.id?.toString() ?? '',
-                employee: {
-                    id: item.employee?.id?.toString() ?? '',
-                    name: item.employee?.name ?? 'Unknown',
-                    avatar: item.employee?.avatar
+                author: {
+                    id: item.author?.id?.toString() ?? '',
+                    name: item.author?.name ?? 'Unknown',
+                    avatar: item.author?.avatar
                 },
                 message: item.message,
                 isApproved: item.isApproved,
