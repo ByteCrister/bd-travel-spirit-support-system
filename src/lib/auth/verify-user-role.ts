@@ -89,6 +89,9 @@ const VERIFY_USER_ROLE = {
     SUPPORT: async (id: string) => {
         return await validateUser(id, USER_ROLE.SUPPORT);
     },
+    ADMIN_OR_SUPPORT: async (id: string) => {
+        return await validateUser(id, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);
+    },
     TRAVELER: async (id: string) => {
         return await validateUser(id, USER_ROLE.TRAVELER);
     },

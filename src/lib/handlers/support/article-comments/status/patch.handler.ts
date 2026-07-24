@@ -107,7 +107,8 @@ export default async function ArticleCmntPatchHandler(
     if (!actorId) {
         throw new ApiError('Unauthorized', 401);
     }
-    await VERIFY_USER_ROLE.SUPPORT(actorId);
+    // Check if user has 'admin' or 'support' role
+    await VERIFY_USER_ROLE.ADMIN_OR_SUPPORT(actorId);
 
     const payload: UpdateCommentStatusPayloadDTO = await request.json();
     validateStatusUpdatePayload(payload);

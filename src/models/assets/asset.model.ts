@@ -8,7 +8,6 @@ import {
     ClientSession,
     HydratedDocument,
 } from "mongoose";
-import AssetFileModel from "./asset-file.model";
 
 /* =========================================================
  * Types
@@ -127,28 +126,6 @@ AssetSchema.query.notDeleted = function () {
     return this.where({ deletedAt: null });
 };
 
-/* =========================================================
- * Hooks
- * ======================================================= */
-
-AssetSchema.pre("save", async function () {
-    const session = this.$session() ?? undefined;
-
-    if (this.isNew) {
-        // Only increment if this is a new Asset document
-        // The AssetFile refCount was already incremented in upload.cloudinary.ts
-        // when we did findOneAndUpdate with $inc: { refCount: 1 }
-        return;
-    } else if (this.isModified("deletedAt")) {
-        if (this.deletedAt) {
-            // Asset is being soft deleted - decrement refCount
-            await AssetFileModel.decrementRef(this.file.toString(), session);
-        } else {
-            // Asset is being restored - increment refCount
-            await AssetFileModel.incrementRef(this.file.toString(), session);
-        }
-    }
-});
 
 /* =========================================================
  * Instance methods
@@ -216,8 +193,7 @@ AssetSchema.statics.softDeleteMany = async function (
         { session }
     );
 
-    // 2️⃣ Decrement refCount for all associated files at once
-    await AssetFileModel.decrementManyRef(fileIds, session);
+
 
     return { matchedCount: assets.length, modifiedCount: assets.length };
 };

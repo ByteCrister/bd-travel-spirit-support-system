@@ -79,8 +79,8 @@ export default async function ArticlePutHandler(request: NextRequest, { params }
 
     await ConnectDB();
 
-    // Check if user has 'support' role
-    await VERIFY_USER_ROLE.SUPPORT(currentUserId);
+    // Check if user has 'admin' or 'support' role
+    await VERIFY_USER_ROLE.ADMIN_OR_SUPPORT(currentUserId);
 
     const before = await TravelArticleModel.findById(articleId)
         .select("title status slug deleted updatedAt")

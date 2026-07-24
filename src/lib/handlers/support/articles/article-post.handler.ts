@@ -127,8 +127,8 @@ export default async function ArticlePostHandler(request: NextRequest) {
 
     await ConnectDB();
 
-    // Check if user has 'support' role
-    await VERIFY_USER_ROLE.SUPPORT(currentUserId);
+    // Check if user has 'admin' or 'support' role
+    await VERIFY_USER_ROLE.ADMIN_OR_SUPPORT(currentUserId);
 
     // 3. Process in transaction
     const article = await withTransaction(async (session) => {

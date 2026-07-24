@@ -78,9 +78,10 @@ export async function cleanupDeletedAssets(): Promise<AssetCleanupResult> {
             const fileDoc = await AssetFileModel.findById(fileId).session(session).exec();
             if (!fileDoc) continue;
 
-            if (fileDoc.refCount > 0) {
+            const isReferenced = await AssetModel.exists({ file: fileId, deletedAt: null }).session(session).exec();
+            if (isReferenced) {
                 console.warn(
-                    `[cron:asset-cleanup] Skipping AssetFile ${fileId} — refCount=${fileDoc.refCount}`
+                    `[cron:asset-cleanup] Skipping AssetFile ${fileId} — still referenced by active asset`
                 );
                 continue;
             }

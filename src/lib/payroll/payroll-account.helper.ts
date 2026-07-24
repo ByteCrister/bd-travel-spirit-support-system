@@ -11,17 +11,19 @@ import UserModel from "@/models/user.model";
  * Throws if either the admin user or account is missing.
  */
 export async function findAdminTransactionAccount() {
-    const adminUser = await UserModel.findOne({ role: USER_ROLE.ADMIN })
+    const adminUsers = await UserModel.find({ role: USER_ROLE.ADMIN })
         .select("_id")
         .lean();
 
-    if (!adminUser?._id) {
-        throw new Error("Admin user not found");
+    if (!adminUsers || adminUsers.length === 0) {
+        throw new Error("Admin users not found");
     }
+
+    const adminIds = adminUsers.map((u) => u._id);
 
     const account = await StripePaymentAccountModel.findOne({
         ownerType: PAYMENT_OWNER_TYPE.ADMIN,
-        ownerId: adminUser._id,
+        ownerId: { $in: adminIds },
         purpose: PAYMENT_PURPOSE.TRANSACTION_ACCOUNT,
         isActive: true,
         isDeleted: { $ne: true },
@@ -32,6 +34,8 @@ export async function findAdminTransactionAccount() {
     if (!account) {
         throw new Error("Admin Stripe transaction account not found");
     }
+
+    const adminUser = adminUsers.find((u) => u._id.toString() === account.ownerId?.toString()) || adminUsers[0];
 
     return { adminUser, account };
 }

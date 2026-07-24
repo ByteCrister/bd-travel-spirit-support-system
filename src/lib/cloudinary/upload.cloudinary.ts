@@ -27,8 +27,8 @@ export interface Base64Asset {
  *
  * Key behaviors:
  * - Uses a short-lived MongoDB transaction session for DB operations that must be atomic.
- * - Deduplicates by checksum: increments a shared AssetFile.refCount and only uploads
- *   to Cloudinary when the checksum is new (refCount === 1).
+ * - Deduplicates by checksum: inserts a shared AssetFile and only uploads
+ *   to Cloudinary when the checksum is new.
  * - Limits concurrent uploads to avoid overwhelming the storage provider.
  *
  * @param assets - Array of base64 assets to upload.
@@ -59,7 +59,7 @@ export async function uploadAssets(
  * Pipeline summary:
  * 1. Validate and normalize incoming base64 -> data URL.
  * 2. Compute checksum and attempt an atomic upsert of AssetFile (with session).
- *    - If the checksum already exists, increment refCount and skip upload.
+ *    - If the checksum already exists, skip upload.
  *    - If new, mark as new and proceed to upload.
  * 3. Upload to Cloudinary (no DB session) when the file is new.
  * 4. Persist upload metadata back to AssetFile (with session).
@@ -96,27 +96,29 @@ async function processSingleAsset(
     // --------------------------------------------------
     // 1️⃣ Fast AssetFile upsert (WITH session)
     // --------------------------------------------------
-    // Attempt an upsert that increments refCount atomically. This is done inside
-    // the provided session so the increment and subsequent Asset creation can be
+    // Attempt an upsert. This is done inside
+    // the provided session so the insert and subsequent Asset creation can be
     // part of the same transaction when the caller uses one.
     //
     // We retry on duplicate-key races because two concurrent requests with the
     // same checksum may both attempt to create the document simultaneously.
     for (let i = 0; i < 5; i++) {
         try {
-            assetFile = await AssetFileModel.findOneAndUpdate(
+            const result: any = await AssetFileModel.findOneAndUpdate(
                 { checksum },
-                { $inc: { refCount: 1 } },
+                { $setOnInsert: { checksum } },
                 {
                     new: true,
                     upsert: true,
                     setDefaultsOnInsert: true,
+                    includeResultMetadata: true,
                     session
                 }
             );
 
-            // If refCount is 1 after the upsert, this is the first time we've seen this checksum.
-            isNew = assetFile.refCount === 1;
+            assetFile = result.value;
+            // If updatedExisting is false, this is the first time we've seen this checksum.
+            isNew = !result.lastErrorObject?.updatedExisting;
             break;
         } catch (err) {
             // If the error is a Mongo duplicate-key race, wait a short backoff and retry.
@@ -132,44 +134,32 @@ async function processSingleAsset(
     // are intentionally performed outside the DB session/transaction because
     // provider SDKs typically do not participate in MongoDB transactions.
     if (isNew) {
-        try {
-            const uploaded = await storage.create(dataUrl, {
-                checksum,
-                fileName: asset.name,
-                // Pass buffer.length directly — avoids re-decoding base64 inside calculateTimeout
-                timeout: calculateTimeout(buffer.length),
-                maxRetries: 1
-            });
+        const uploaded = await storage.create(dataUrl, {
+            checksum,
+            fileName: asset.name,
+            // Pass buffer.length directly — avoids re-decoding base64 inside calculateTimeout
+            timeout: calculateTimeout(buffer.length),
+            maxRetries: 1
+        });
 
-            // --------------------------------------------------
-            // 3️⃣ Save upload metadata (WITH session)
-            // --------------------------------------------------
-            // Persist provider metadata back to the AssetFile document inside the session.
-            // This keeps DB state consistent: objectKey, publicUrl, contentType, fileSize.
-            await AssetFileModel.updateOne(
-                { _id: assetFile!._id },
-                {
-                    $set: {
-                        storageProvider: STORAGE_PROVIDER.CLOUDINARY,
-                        objectKey: uploaded.providerId,
-                        publicUrl: uploaded.url,
-                        contentType: uploaded.contentType,
-                        fileSize: uploaded.fileSize
-                    }
-                },
-                { session }
-            );
-        } catch (err) {
-            // 🔁 Manual rollback (WITH session)
-            // If the external upload fails, decrement the refCount we previously incremented.
-            // This manual compensation keeps refCount accurate and avoids leaking a phantom file record.
-            await AssetFileModel.updateOne(
-                { _id: assetFile!._id },
-                { $inc: { refCount: -1 } },
-                { session }
-            );
-            throw err;
-        }
+        // --------------------------------------------------
+        // 3️⃣ Save upload metadata (WITH session)
+        // --------------------------------------------------
+        // Persist provider metadata back to the AssetFile document inside the session.
+        // This keeps DB state consistent: objectKey, publicUrl, contentType, fileSize.
+        await AssetFileModel.updateOne(
+            { _id: assetFile!._id },
+            {
+                $set: {
+                    storageProvider: STORAGE_PROVIDER.CLOUDINARY,
+                    objectKey: uploaded.providerId,
+                    publicUrl: uploaded.url,
+                    contentType: uploaded.contentType,
+                    fileSize: uploaded.fileSize
+                }
+            },
+            { session }
+        );
     }
 
     // --------------------------------------------------

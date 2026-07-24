@@ -28,8 +28,8 @@ export default async function ArticlePatchHandler(
 
     await ConnectDB();
 
-    // Check if user has 'support' role
-    await VERIFY_USER_ROLE.SUPPORT(currentUserId);
+    // Check if user has 'admin' or 'support' role
+    await VERIFY_USER_ROLE.ADMIN_OR_SUPPORT(currentUserId);
 
     const article = await withTransaction(async (session) => {
         // Restore using model method

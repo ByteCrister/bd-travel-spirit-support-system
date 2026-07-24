@@ -84,30 +84,12 @@ export function NotificationMenu() {
     fetchMore,
     markAsRead,
     markAllAsRead,
-    addNotificationFromSocket,
   } = useSupportSystemNotificationStore();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  useEffect(() => {
-    if (isOpen && notifications.length === 0) fetchInitial();
-  }, [isOpen, fetchInitial, notifications.length]);
 
-  useEffect(() => {
-    const socket = getSocket(SOCKET_NAMESPACES.USER_ONLINE);
-    if (!socket) return;
-    const handleNew = (payload: { data: SupportSystemNotificationType }) =>
-      addNotificationFromSocket(payload.data);
-    socket.on(ADMIN_NOTIFICATION_TYPE.NEW_GUIDE_REGISTRATION, handleNew);
-    socket.on(ADMIN_NOTIFICATION_TYPE.NEW_TOUR_REQUESTED, handleNew);
-    socket.on(ADMIN_NOTIFICATION_TYPE.SYSTEM_ERROR, handleNew);
-    return () => {
-      socket.off(ADMIN_NOTIFICATION_TYPE.NEW_GUIDE_REGISTRATION, handleNew);
-      socket.off(ADMIN_NOTIFICATION_TYPE.NEW_TOUR_REQUESTED, handleNew);
-      socket.off(ADMIN_NOTIFICATION_TYPE.SYSTEM_ERROR, handleNew);
-    };
-  }, [addNotificationFromSocket]);
 
   const lastNotificationRef = useCallback(
     (node: HTMLDivElement | null) => {

@@ -61,14 +61,15 @@ function isTourEndedMoreThanOneDayAgo(tour: ITour, referenceDate: Date = new Dat
 }
 
 async function findSettlementAccounts(tour: ITour) {
-    const adminUser = await UserModel.findOne({ role: USER_ROLE.ADMIN }).select("_id").lean();
-    if (!adminUser?._id) {
-        throw new Error("Admin user not found");
+    const adminUsers = await UserModel.find({ role: USER_ROLE.ADMIN }).select("_id").lean();
+    if (!adminUsers || adminUsers.length === 0) {
+        throw new Error("Admin users not found");
     }
+    const adminIds = adminUsers.map((u) => u._id);
 
     const blockAccount = await StripePaymentAccountModel.findOne({
         ownerType: PAYMENT_OWNER_TYPE.ADMIN,
-        ownerId: adminUser._id,
+        ownerId: { $in: adminIds },
         purpose: PAYMENT_PURPOSE.BLOCK_ACCOUNT,
         isActive: true,
         isDeleted: { $ne: true },
@@ -78,7 +79,7 @@ async function findSettlementAccounts(tour: ITour) {
 
     const adminTransactionAccount = await StripePaymentAccountModel.findOne({
         ownerType: PAYMENT_OWNER_TYPE.ADMIN,
-        ownerId: adminUser._id,
+        ownerId: { $in: adminIds },
         purpose: PAYMENT_PURPOSE.TRANSACTION_ACCOUNT,
         isActive: true,
         isDeleted: { $ne: true },

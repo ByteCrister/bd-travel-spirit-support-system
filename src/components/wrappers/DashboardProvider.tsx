@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import DashboardLayout from "../dashboard-layout/DashboardLayout";
+import { SupportSystemNotificationWrapper } from "./SupportSystemNotificationWrapper";
 
 // Define the admin routes that should use the dashboard layout
 const ADMIN_ROUTES = [
@@ -22,12 +23,12 @@ const ADMIN_ROUTES = [
   "/support/reset-password-requests",
   "/support/guide-password-requests",
 
-  "/social/ads",
-  "/social/promotions",
+  // "/social/ads",
+  // "/social/promotions",
   
-  "/setting/advertising",
+  // "/setting/advertising",
   "/setting/payment-accounts",
-  "/setting/guide-subscriptions",
+  // "/setting/guide-subscriptions",
   "/setting/guide-banners",
   "/setting/enums",
   "/setting/footer",
@@ -47,7 +48,11 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     ) || /^\/companies\/[^/]+$/.test(pathname); // matches /companies/[companyId]
 
   if (shouldUseDashboardLayout) {
-    return <DashboardLayout>{children}</DashboardLayout>;
+    return (
+      <SupportSystemNotificationWrapper>
+        <DashboardLayout>{children}</DashboardLayout>
+      </SupportSystemNotificationWrapper>
+    );
   }
 
   return <>{children}</>;

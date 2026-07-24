@@ -66,7 +66,7 @@ export default async function EmpPassReqPostHandler(req: NextRequest) {
            USER LOOKUP
         ----------------------------------------- */
 
-        const user = await UserModel.findOne({ email, role: { $in: [USER_ROLE.SUPPORT] } }) // only for "support" members
+        const user = await UserModel.findOne({ email, role: { $in: [USER_ROLE.SUPPORT, USER_ROLE.ADMIN] } }) // for support and admin
             .select("_id role")
             .session(session);
 
@@ -75,6 +75,14 @@ export default async function EmpPassReqPostHandler(req: NextRequest) {
             return {
                 message:
                     "If an account exists, your request has been submitted.",
+            };
+        }
+
+        // If the user is an ADMIN, they use the OTP verification flow.
+        if (user.role === USER_ROLE.ADMIN) {
+            return {
+                isAdmin: true,
+                message: "Please verify your email via OTP to reset your password.",
             };
         }
 
