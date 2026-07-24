@@ -14,6 +14,7 @@ import {
   TourBookingFilterParams,
   TourBookingsResponseDTO,
 } from "@/types/tour/tour-detail-booking.types";
+import { TourHistoryDTO, TourHistoryResponse } from "@/types/tour/tour-history.types";
 
 // const URL_AFTER_API = "/mock/users/companies";
 const URL_AFTER_API = "/users/companies/v1";
@@ -106,6 +107,7 @@ interface CompanyDetailState {
   params: ParamsMap;
   activeCacheKey: ActiveCacheKeyMap;
   tourDetails: Record<string, TourDetailDTO | undefined>;
+  tourHistories: Record<string, TourHistoryDTO | undefined>;
   employeeDetails: Record<string, EmployeeDetailDTO | undefined>;
   loading: Record<string, boolean>;
   error: Record<string, string | undefined>;
@@ -116,6 +118,7 @@ interface CompanyDetailState {
   fetchEmployees: (companyId: string, params?: Partial<EmployeeFilterParams>, force?: boolean) => Promise<ListCache<EmployeeListItemDTO>>;
   fetchEmployeeDetail: (companyId: string, employeeId: string, force?: boolean) => Promise<EmployeeDetailDTO>;
   fetchTourDetail: (companyId: string, tourId: string, force?: boolean) => Promise<TourDetailDTO>;
+  fetchTourHistory: (companyId: string, tourId: string, force?: boolean) => Promise<TourHistoryDTO>;
   fetchReviews: (companyId: string, tourId: string, params?: Partial<TourReviewFilterParams>, force?: boolean) => Promise<ListCache<ReviewListItemDTO>>;
   fetchReports: (companyId: string, tourId: string, params?: Partial<PaginationParams>, force?: boolean) => Promise<ListCache<TourReportListItemDTO>>;
   fetchFaqs: (companyId: string, tourId: string, params?: Partial<TourFaqFilterParams>, force?: boolean) => Promise<ListCache<TourFAQDTO>>;
@@ -144,6 +147,8 @@ const tourDetailLoadingKey = (id: string) => `tourDetail:${id}`;
 const employeeDetailLoadingKey = (id: string) => `employeeDetail:${id}`;
 const tourDetailErrorKey = (id: string) => `tourDetailError:${id}`;
 const employeeDetailErrorKey = (id: string) => `employeeDetailError:${id}`;
+export const tourHistoryLoadingKey = (id: string) => `tourHistory:${id}`;
+export const tourHistoryErrorKey = (id: string) => `tourHistoryError:${id}`;
 
 const tourListLoadingKey = (tourId: string, type: "reviews" | "reports" | "faqs") => `${type}List:${tourId}`;
 const tourListErrorKey = (tourId: string, type: "reviews" | "reports" | "faqs") => `${type}ListError:${tourId}`;
@@ -215,6 +220,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
         params: { tours: {}, employees: {}, tourReviews: {}, tourReports: {}, tourFaqs: {}, tourBookings: {} },
         activeCacheKey: { tours: {}, employees: {}, tourReviews: {}, tourReports: {}, tourFaqs: {}, tourBookings: {} },
         tourDetails: {},
+        tourHistories: {},
         employeeDetails: {},
         loading: {},
         error: {},
@@ -318,6 +324,7 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
             params: { tours: {}, employees: {}, tourReviews: {}, tourReports: {}, tourFaqs: {}, tourBookings: {}, },
             activeCacheKey: { tours: {}, employees: {}, tourReviews: {}, tourReports: {}, tourFaqs: {}, tourBookings: {}, },
             tourDetails: {},
+            tourHistories: {},
             employeeDetails: {},
             companies: {},
             cacheTimestamps: {},
@@ -529,6 +536,57 @@ export const useCompanyDetailStore = create<CompanyDetailState>()(
             .catch((err) => {
               const message = extractErrorMessage(err);
               set((s) => ({ error: { ...s.error, [errorKey]: message }, loading: { ...s.loading, [loadingKey]: false } }));
+              throw new Error(message);
+            })
+            .finally(() => inFlightRequests.delete(reqKey));
+
+          inFlightRequests.set(reqKey, p);
+          return p;
+        },
+
+        // --------------------
+        // Fetch tour history (analytics)
+        // --------------------
+        fetchTourHistory: async (companyId, tourId, force = false) => {
+          const state = get();
+          const loadingKey = tourHistoryLoadingKey(tourId);
+          const errorKey = tourHistoryErrorKey(tourId);
+
+          // Serve from cache if fresh
+          const cached = state.tourHistories?.[tourId];
+          const tsKey = `tourHistory:${tourId}`;
+          const tsVal = state.cacheTimestamps[tsKey];
+          if (!force && cached && isFresh(tsVal)) return cached;
+
+          set((s) => ({
+            loading: { ...s.loading, [loadingKey]: true },
+            error: { ...s.error, [errorKey]: undefined },
+          }));
+
+          const url = `/support/tours/v1/${tourId}/history`;
+          const reqKey = makeRequestKey("GET", url);
+
+          if (!force && inFlightRequests.has(reqKey)) {
+            return inFlightRequests.get(reqKey) as Promise<TourHistoryDTO>;
+          }
+
+          const p = api
+            .get<TourHistoryResponse>(url)
+            .then((res) => {
+              const history = res.data.data;
+              set((s) => ({
+                tourHistories: { ...s.tourHistories, [tourId]: history },
+                loading: { ...s.loading, [loadingKey]: false },
+                cacheTimestamps: { ...s.cacheTimestamps, [tsKey]: Date.now() },
+              }));
+              return history;
+            })
+            .catch((err: unknown) => {
+              const message = extractErrorMessage(err);
+              set((s) => ({
+                error: { ...s.error, [errorKey]: message },
+                loading: { ...s.loading, [loadingKey]: false },
+              }));
               throw new Error(message);
             })
             .finally(() => inFlightRequests.delete(reqKey));

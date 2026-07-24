@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import {
@@ -9,6 +10,7 @@ import {
   FaFlag,
   FaQuestionCircle,
   FaCalendar,
+  FaChartBar,
 } from "react-icons/fa";
 
 import AllDetails from "./AllDetails";
@@ -53,6 +55,7 @@ const NEU_ICON_WELL_PRIMARY =
 type Props = { companyId: string; tourId: string };
 
 export default function TourDetailPage({ companyId, tourId }: Props) {
+  const router = useRouter();
   const [tab, setTab] = useState<string>("details");
   const [breadcrumbItems, setBreadcrumbItems] = useState<
     { label: string; href: string }[]
@@ -128,11 +131,27 @@ export default function TourDetailPage({ companyId, tourId }: Props) {
               </div>
             </div>
 
-            {/* Decorative teal accent bar */}
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="w-2 h-10 rounded-full bg-[#006666] opacity-20" />
-              <div className="w-2 h-14 rounded-full bg-[#006666] opacity-40" />
-              <div className="w-2 h-10 rounded-full bg-[#006666] opacity-20" />
+            {/* Right side: History button + decorative accent */}
+            <div className="hidden sm:flex items-center gap-3">
+              <button
+                onClick={() => router.push(`/users/companies/${companyId}/${tourId}/history`)}
+                className={
+                  "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold " +
+                  "font-[family-name:var(--font-space-mono)] bg-[#006666] text-white " +
+                  "shadow-[3px_3px_8px_rgba(0,102,102,0.3)] " +
+                  "hover:bg-[#005555] hover:shadow-[3px_3px_12px_rgba(0,102,102,0.4)] " +
+                  "transition-all duration-200"
+                }
+                aria-label="View tour history"
+              >
+                <FaChartBar className="w-3.5 h-3.5" />
+                History
+              </button>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-10 rounded-full bg-[#006666] opacity-20" />
+                <div className="w-2 h-14 rounded-full bg-[#006666] opacity-40" />
+                <div className="w-2 h-10 rounded-full bg-[#006666] opacity-20" />
+              </div>
             </div>
           </div>
         </motion.div>
