@@ -169,7 +169,7 @@ export function NotificationMenu() {
               </div>
 
               {/* List */}
-              <ScrollArea className="max-h-96" ref={scrollRef}>
+              <div className="max-h-96 overflow-y-auto overflow-x-hidden">
                 {loading && notifications.length === 0 ? (
                   <div className="p-4 space-y-3">
                     {Array.from({ length: 4 }).map((_, i) => (
@@ -266,7 +266,7 @@ export function NotificationMenu() {
                     )}
                   </div>
                 )}
-              </ScrollArea>
+              </div>
             </motion.div>
           </>
         )}

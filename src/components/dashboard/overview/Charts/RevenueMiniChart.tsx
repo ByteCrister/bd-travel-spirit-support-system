@@ -68,7 +68,7 @@ export function RevenueMiniChart({ data, className }: RevenueMiniChartProps) {
         </div>
         <div className={cn(NEU_BADGE, "flex-col items-end gap-0 px-3 py-1.5")}>
           <span className="font-[family-name:var(--font-space-mono)] font-bold text-lg tabular-nums text-[#00A63D] leading-none">
-            ${formatCompact(total)}
+            ৳{formatCompact(total)}
           </span>
           <span className={cn(NEU_LABEL, "text-[9px] mt-0.5")}>Total</span>
         </div>
@@ -89,7 +89,7 @@ export function RevenueMiniChart({ data, className }: RevenueMiniChartProps) {
               .reverse()
               .map((v, i) => (
                 <span key={`y-${i}`} className="tabular-nums leading-none">
-                  ${formatCompact(v)}
+                  ৳{formatCompact(v)}
                 </span>
               ))}
           </div>
@@ -122,7 +122,7 @@ export function RevenueMiniChart({ data, className }: RevenueMiniChartProps) {
                     transition={{ delay: i * 0.02, duration: 0.4, ease: "easeOut" }}
                     className="relative group flex-1 rounded-t-md cursor-default"
                     style={{ minHeight: d.amount > 0 ? 4 : 0 }}
-                    title={`${formatDate(d.date)}: $${d.amount.toLocaleString()}`}
+                    title={`${formatDate(d.date)}: ৳${d.amount.toLocaleString()}`}
                   >
                     {/* Bar — success/green brand color */}
                     <div
@@ -141,7 +141,7 @@ export function RevenueMiniChart({ data, className }: RevenueMiniChartProps) {
                         "font-[family-name:var(--font-jetbrains-mono)] text-[#00A63D] font-bold"
                       )}
                     >
-                      ${formatCompact(d.amount)}
+                      ৳{formatCompact(d.amount)}
                     </div>
                   </motion.div>
                 );

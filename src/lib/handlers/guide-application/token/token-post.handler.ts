@@ -18,6 +18,8 @@ import UserModel from "@/models/user.model";
 import { USER_ROLE } from "@/constants/user.const";
 import { mailer } from "@/config/node-mailer";
 import { EmployeeVerificationHtml } from "@/lib/html/employee-verification-html";
+import { PasswordResetHtml } from "@/lib/html/password-reset-html";
+import { EmailChangeHtml } from "@/lib/html/email-change-html";
 
 const DISALLOWED_ROLES: USER_ROLE[] = [
     USER_ROLE.TRAVELER,
@@ -51,23 +53,12 @@ const MAIL_CONFIG: Record<EmailVerificationPurpose, MailConfig> = {
 
     [EMAIL_VERIFICATION_PURPOSE.PASSWORD_RESET]: {
         subject: "Reset Your Password",
-        html: (token, email) => `
-            <h2>Password Reset Request</h2>
-            <p>Hello ${email},</p>
-            <p>Your password reset token is:</p>
-            <h3>${token}</h3>
-            <p>If you did not request this, please ignore this email.</p>
-        `,
+        html: (token, email) => PasswordResetHtml(token, email),
     },
 
     [EMAIL_VERIFICATION_PURPOSE.EMAIL_CHANGE]: {
-        subject: "",
-        html: (token, email) => `
-            <h2>Email Change Verification</h2>
-            <p>Hello ${email},</p>
-            <p>Please verify your email change using this token:</p>
-            <h3>${token}</h3>
-        `,
+        subject: "Email Change Verification",
+        html: (token, email) => EmailChangeHtml(token, email),
     },
 };
 
@@ -89,11 +80,8 @@ async function generateEmailVerificationToken(
 
     if (existingToken) {
         // If a valid token exists, we don't generate a new one to prevent abuse
-        // Instead, we'll return a placeholder and rely on rate limiting at the API level
-        throw new ApiError(
-            "A verification token has already been sent recently. Please check your email or try again later.",
-            429,
-        );
+        // Instead, we return a flag so the API can return a success message
+        return "ALREADY_SENT";
     }
 
     // Generate new token
@@ -158,26 +146,28 @@ export default async function TokenPostHandler(req: NextRequest) {
             .select("+password")
             .session(session);
 
-        if (user && DISALLOWED_ROLES.includes(user.role as USER_ROLE)) {
-            throw new ApiError(
-                ROLE_FRIENDLY_MESSAGE[user.role] ?? "Account exists with this email.",
-                409,
-            );
-        }
-
-        if (user && purpose === EMAIL_VERIFICATION_PURPOSE.GUIDE_APPLICATION) {
-            const existingGuide = await GuideModel.findOne({
-                "owner.user": user._id,
-            })
-                .select("+accessToken")
-                .session(session);
-
-            if (existingGuide?.status === GUIDE_STATUS.PENDING) {
-                throw new ApiError("Guide application already pending", 409);
+        if (purpose === EMAIL_VERIFICATION_PURPOSE.GUIDE_APPLICATION) {
+            if (user && DISALLOWED_ROLES.includes(user.role as USER_ROLE)) {
+                throw new ApiError(
+                    ROLE_FRIENDLY_MESSAGE[user.role] ?? "Account exists with this email.",
+                    409,
+                );
             }
 
-            if (existingGuide?.status === GUIDE_STATUS.APPROVED) {
-                throw new ApiError("User is already an approved guide", 409);
+            if (user) {
+                const existingGuide = await GuideModel.findOne({
+                    "owner.user": user._id,
+                })
+                    .select("+accessToken")
+                    .session(session);
+
+                if (existingGuide?.status === GUIDE_STATUS.PENDING) {
+                    throw new ApiError("Guide application already pending", 409);
+                }
+
+                if (existingGuide?.status === GUIDE_STATUS.APPROVED) {
+                    throw new ApiError("User is already an approved guide", 409);
+                }
             }
         }
 
@@ -187,6 +177,16 @@ export default async function TokenPostHandler(req: NextRequest) {
     /* =======================
          Send Email (outside transaction)
       ======================= */
+    if (plainToken === "ALREADY_SENT") {
+        return {
+            data: {
+                success: true,
+                message: "A verification token has already been sent recently. Please check your email or try again later.",
+            },
+            status: 200,
+        };
+    }
+
     if (!plainToken) {
         throw new ApiError("Failed to generate verification token", 500);
     }

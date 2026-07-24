@@ -113,7 +113,7 @@ export const ConfirmDeleteDialog: React.FC<ConfirmDeleteDialogProps> = ({
             {price != null && (
               <div className="border-t border-[#1E2938]/08 pt-3">
                 <p className={INFO_LABEL}>Price</p>
-                <p className={INFO_VALUE}>${price}</p>
+                <p className={INFO_VALUE}>৳ {price}</p>
               </div>
             )}
           </div>
