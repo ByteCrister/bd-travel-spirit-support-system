@@ -13,6 +13,12 @@ export interface IViewedTourItem {
   lastViewedAt: Date;
 }
 
+export interface IRatedTourItem {
+  tour: Types.ObjectId;
+  rating: number;
+  ratedAt: Date;
+}
+
 export interface IUserTourInteraction extends Document {
   user: Types.ObjectId;
   bookingHistory: ITourInteractionItem[];
@@ -20,6 +26,7 @@ export interface IUserTourInteraction extends Document {
   sharedTours: ITourInteractionItem[];
   likedTours: ITourInteractionItem[];
   viewedTours: IViewedTourItem[];
+  ratedTours: IRatedTourItem[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +48,15 @@ const ViewedTourItemSchema = new Schema(
   { _id: false }
 );
 
+const RatedTourItemSchema = new Schema(
+  {
+    tour: { type: Schema.Types.ObjectId, ref: "Tour", required: true },
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    ratedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const UserTourInteractionSchema = new Schema<IUserTourInteraction>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
@@ -49,6 +65,7 @@ const UserTourInteractionSchema = new Schema<IUserTourInteraction>(
     sharedTours: [InteractionItemSchema],
     likedTours: [InteractionItemSchema],
     viewedTours: [ViewedTourItemSchema],
+    ratedTours: [RatedTourItemSchema],
   },
   {
     timestamps: true,
@@ -61,6 +78,7 @@ UserTourInteractionSchema.index({ user: 1, "bookingHistory.addedAt": -1 });
 UserTourInteractionSchema.index({ user: 1, "wishlist.addedAt": -1 });
 UserTourInteractionSchema.index({ user: 1, "likedTours.addedAt": -1 });
 UserTourInteractionSchema.index({ user: 1, "viewedTours.lastViewedAt": -1 });
+UserTourInteractionSchema.index({ user: 1, "ratedTours.ratedAt": -1 });
 
 const UserTourInteractionModel = defineModel("UserTourInteraction", UserTourInteractionSchema);
 export default UserTourInteractionModel;
