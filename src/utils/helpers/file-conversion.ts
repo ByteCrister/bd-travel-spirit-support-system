@@ -173,6 +173,7 @@ export async function fileToDocumentDTO(
     type: ext,
     url: dataUrl as unknown as ObjectIdString,
     uploadedAt: new Date().toISOString(),
+    name: file.name,
   };
   return doc;
 }

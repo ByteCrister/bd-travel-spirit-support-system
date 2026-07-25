@@ -1392,11 +1392,15 @@ export default function AddEmployeePage() {
                                     )}
                                   </div>
                                   <div>
-                                    <p
-                                      className={`${NEU_LABEL} text-[#1E2938]/70 normal-case tracking-normal`}
+                                    <a
+                                      href={doc.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className={`${NEU_LABEL} text-[#1E2938]/70 normal-case tracking-normal hover:text-[#006666] transition-colors cursor-pointer block truncate max-w-[200px] sm:max-w-xs`}
+                                      title={doc.name || doc.type}
                                     >
-                                      {doc.type}
-                                    </p>
+                                      {doc.name || doc.type}
+                                    </a>
                                     {documentErrors[i] && (
                                       <p className="text-xs text-[#FF2157] font-[family-name:var(--font-jetbrains-mono)]">
                                         {documentErrors[i]}

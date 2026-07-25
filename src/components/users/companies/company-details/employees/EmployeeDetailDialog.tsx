@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DocumentViewerDialog } from "@/components/shared/DocumentViewerDialog";
 import {
   EmployeeDetailDTO,
   PayrollRecordDTO,
+  DocumentDTO,
 } from "@/types/employee/employee.types";
 import {
   MdPerson,
@@ -172,6 +175,8 @@ export function EmployeeDetailDialog({
       </div>
     );
   };
+
+  const [viewerDoc, setViewerDoc] = useState<DocumentDTO | null>(null);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -463,20 +468,19 @@ export function EmployeeDetailDialog({
                   <Section icon={MdDescription} title="Documents">
                     <div className="space-y-2">
                       {employee.documents.map((doc, idx) => (
-                        <a
+                        <button
                           key={idx}
-                          href={doc.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          type="button"
+                          onClick={() => setViewerDoc(doc)}
                           className={NEU_DOC_LINK}
                         >
                           <div className="flex items-center gap-3">
                             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E7E5E4] shadow-[2px_2px_5px_#c8c6c5,-2px_-2px_5px_#ffffff]">
                               <MdDescription className="h-4 w-4 text-[#006666]" />
                             </div>
-                            <div>
+                            <div className="text-left">
                               <p className="font-bold text-sm font-[family-name:var(--font-space-mono)] text-[#1E2938]">
-                                {doc.type || "Document"}
+                                {doc.name || doc.type || "Document"}
                               </p>
                               <p className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-[#1E2938]/50">
                                 Uploaded {formatDate(doc.uploadedAt)}
@@ -484,12 +488,22 @@ export function EmployeeDetailDialog({
                             </div>
                           </div>
                           <div className="flex items-center gap-1 font-[family-name:var(--font-space-mono)] text-xs font-bold text-[#006666]">
-                            Open
+                            View
                             <MdOpenInNew className="h-3.5 w-3.5" />
                           </div>
-                        </a>
+                        </button>
                       ))}
                     </div>
+                    {viewerDoc && (
+                      <DocumentViewerDialog
+                        open={!!viewerDoc}
+                        onClose={() => setViewerDoc(null)}
+                        url={viewerDoc.url}
+                        filename={viewerDoc.name || viewerDoc.type}
+                        type={viewerDoc.type}
+                        uploadedAt={viewerDoc.uploadedAt}
+                      />
+                    )}
                   </Section>
                 )}
 

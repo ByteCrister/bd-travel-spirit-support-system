@@ -255,14 +255,32 @@ export function GuideViewer({ open, guide, doc, onClose }: Props) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08 }}
               >
-                <div className={cn(NEU_VIEWER_FRAME, "h-full w-full")}>
-                  <iframe
-                    className="h-full w-full"
-                    src={`https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(src)}`}
-                    title={filename}
-                    aria-label="DOCX document viewer"
-                  />
-                </div>
+                {src.startsWith("http") && !src.includes("localhost") ? (
+                  <div className={cn(NEU_VIEWER_FRAME, "h-full w-full")}>
+                    <iframe
+                      className="h-full w-full"
+                      src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(src)}`}
+                      title={filename}
+                      aria-label="DOCX document viewer"
+                    />
+                  </div>
+                ) : (
+                  <div className="m-auto text-center p-8 rounded-2xl shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]">
+                    <FiFile className="mx-auto h-12 w-12 text-[#1E2938]/30 mb-4" />
+                    <p className="text-sm font-[family-name:var(--font-space-mono)] font-bold text-[#1E2938] mb-2">
+                      Preview unavailable
+                    </p>
+                    <p className="text-xs text-[#1E2938]/50 mb-4 max-w-xs">
+                      DOCX preview requires a public URL. Please download to view.
+                    </p>
+                    <button
+                      onClick={handleDownload}
+                      className="bg-[#006666] text-white px-5 py-2 rounded-xl font-bold font-[family-name:var(--font-space-mono)] hover:bg-[#007777] transition-colors"
+                    >
+                      Download File
+                    </button>
+                  </div>
+                )}
                 <p className="text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/50">
                   Preview not loading?{" "}
                   <button

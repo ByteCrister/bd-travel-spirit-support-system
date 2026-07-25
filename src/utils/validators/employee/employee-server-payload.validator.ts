@@ -80,6 +80,7 @@ export const documentValidationSchema: yup.ObjectSchema<DocumentDTO> = yup.objec
     type: yup.string().required("Document type is required"),
     url: yup.string().required("Document URL is required"),
     uploadedAt: yup.string().required(),
+    name: yup.string().optional(),
 });
 
 // Main validation schema

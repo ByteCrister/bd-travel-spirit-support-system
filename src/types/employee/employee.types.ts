@@ -47,6 +47,7 @@ export interface DocumentDTO {
   type: string;
   url: ObjectIdString; // in frontend this will carry cloudinary url
   uploadedAt: ISODateString;
+  name?: string;
 }
 
 export interface SalaryHistoryDTO {

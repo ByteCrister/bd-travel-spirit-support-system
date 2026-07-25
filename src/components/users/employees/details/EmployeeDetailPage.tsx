@@ -39,6 +39,7 @@ import {
 import { CURRENCY } from "@/constants/tour.const";
 import Image from "next/image";
 import ConfirmationDialog from "./ConfirmationDialog";
+import { DocumentViewerDialog } from "@/components/shared/DocumentViewerDialog";
 import EmployeeDetailSkeleton from "./EmployeeDetailSkeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEmployeeStore } from "@/store/employee/employee.store";
@@ -166,6 +167,7 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
   // NEW: Separate state for payment card updates
   const [cardForm, setCardForm] = useState<PaymentCardDTO | null>(null);
   const [updatingCard, setUpdatingCard] = useState(false);
+  const [viewerDoc, setViewerDoc] = useState<DocumentDTO | null>(null);
 
   const breadcrumbItems = useMemo(() => [
     { label: "Home", href: "/" },
@@ -869,19 +871,23 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                         <div className="flex items-start justify-between">
                           <FileText className="h-8 w-8 text-[#006666]" />
                           <span className="text-xs font-[family-name:var(--font-space-mono)] font-bold px-2.5 py-1 rounded-lg bg-[#006666]/10 text-[#006666] shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff]">
-                            {doc.type}
+                            {doc.type.toUpperCase()}
                           </span>
                         </div>
                         <div>
-                          <p className="font-[family-name:var(--font-space-mono)] text-sm font-bold text-[#1E2938] line-clamp-1">{doc.type}</p>
+                          <p className="font-[family-name:var(--font-space-mono)] text-sm font-bold text-[#1E2938] line-clamp-1" title={doc.name || doc.type}>{doc.name || doc.type}</p>
                           <p className={`flex items-center gap-1 mt-1 text-xs ${NEU_MUTED}`}>
                             <Calendar className="h-3 w-3" />{formatDate(doc.uploadedAt)}
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
-                          <a href={doc.url} target="_blank" rel="noreferrer" className="text-xs font-[family-name:var(--font-space-mono)] font-bold text-[#006666] hover:underline">
+                          <button
+                            type="button"
+                            onClick={() => setViewerDoc(doc)}
+                            className="text-xs font-[family-name:var(--font-space-mono)] font-bold text-[#006666] hover:underline"
+                          >
                             View →
-                          </a>
+                          </button>
                           <button onClick={() => removeDocumentAt(i)} className="inline-flex items-center gap-1 text-xs font-[family-name:var(--font-space-mono)] font-bold text-[#FF2157]">
                             <Trash2 className="h-3.5 w-3.5" /> Remove
                           </button>
@@ -889,6 +895,17 @@ export default function EmployeeDetailPage({ employeeId }: { employeeId: string 
                       </div>
                     ))}
                   </div>
+                )}
+
+                {viewerDoc && (
+                  <DocumentViewerDialog
+                    open={!!viewerDoc}
+                    onClose={() => setViewerDoc(null)}
+                    url={viewerDoc.url}
+                    filename={viewerDoc.name || viewerDoc.type}
+                    type={viewerDoc.type}
+                    uploadedAt={viewerDoc.uploadedAt}
+                  />
                 )}
               </InfoCard>
             </TabsContent>
