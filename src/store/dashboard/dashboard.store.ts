@@ -95,7 +95,7 @@ interface DashboardState {
   setError: (key: ErrorKey, error: string | null) => void;
   updateFilters: (patch: Partial<DashboardFilters>) => void;
   markNotificationAsRead: (notificationId: string) => void;
-  markActionAsResolved: (actionId: string) => void;
+
 
   // cache helpers
   invalidateCache: (key?: keyof DashboardState["_cache"]) => void;
@@ -216,12 +216,7 @@ export const useDashboardStore = create<DashboardState>()(
           n.id === notificationId ? { ...n, isRead: true } : n,
         ),
       })),
-    markActionAsResolved: (actionId) =>
-      set((s) => ({
-        pendingActions: s.pendingActions.map((a) =>
-          a.id === actionId ? { ...a, status: "resolved" } : a,
-        ),
-      })),
+
 
     invalidateCache: (key) =>
       set((s) => {

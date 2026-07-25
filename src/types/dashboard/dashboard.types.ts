@@ -40,7 +40,7 @@ export type PendingActionType =
   | 'employee_password_reset';
 
 export type PendingActionPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type PendingActionStatus = 'pending' | 'in_progress';
+export type PendingActionStatus = 'pending' | 'in_progress' | 'resolved';
 
 export interface PendingAction {
   id: string;

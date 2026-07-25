@@ -184,7 +184,7 @@ export default function Dashboard() {
     const {
         stats, recentActivity, pendingActions, recentBookings,
         roleDistribution, adminNotifications, analytics, loading, errors,
-        refreshAll, markNotificationAsRead, markActionAsResolved,
+        refreshAll, markNotificationAsRead,
         statsDateRange, analyticsDateRange,
         recentActivityPagination, adminNotificationsPagination, recentBookingsPagination,
         setStatsDateRange, setAnalyticsDateRange,

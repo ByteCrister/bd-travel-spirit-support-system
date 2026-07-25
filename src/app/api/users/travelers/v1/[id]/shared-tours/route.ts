@@ -7,7 +7,7 @@ import TourModel from '@/models/tours/tour.model';
 import { getCollectionName } from '@/lib/helpers/get-collection-name';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 import { withErrorHandler, ApiError, HandlerResult } from '@/lib/helpers/withErrorHandler';
-import { UserTourInteractionModel } from '@/models/travelers/traveler-tour-interaction.model';
+import UserTourInteractionModel from '@/models/travelers/traveler-tour-interaction.model';
 
 interface Params {
     params: Promise<{ id: string }>;

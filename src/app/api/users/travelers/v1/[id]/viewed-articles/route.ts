@@ -6,7 +6,7 @@ import { TravelerModel } from '@/models/travelers/traveler.model';
 import { getCollectionName } from '@/lib/helpers/get-collection-name';
 import { resolveMongoId } from '@/lib/helpers/resolveMongoId';
 import { TravelArticleModel } from '@/models/articles/travel-article.model';
-import { UserTourInteractionModel } from '@/models/travelers/traveler-tour-interaction.model';
+import UserTourInteractionModel from '@/models/travelers/traveler-tour-interaction.model';
 import { withErrorHandler, ApiError, HandlerResult } from '@/lib/helpers/withErrorHandler';
 
 interface Params {
