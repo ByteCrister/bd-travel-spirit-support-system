@@ -30,6 +30,12 @@ export default function applicationSuccess(email: string, accessToken: string, p
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+        /* Client-specific Resets */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; }
+
+        /* Reset Box Model */
         * {
             box-sizing: border-box;
         }
@@ -41,6 +47,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
             margin: 0;
             padding: 20px;
             background-color: #f8fafc;
+            width: 100% !important;
         }
 
         .email-container {
@@ -72,6 +79,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
             align-items: center;
             justify-content: center;
             gap: 15px;
+            flex-wrap: wrap;
         }
 
         .logo-icon {
@@ -110,7 +118,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
             background-clip: text;
             letter-spacing: -0.5px;
             line-height: 1.2;
-            white-space: nowrap;
+            word-wrap: break-word;
         }
 
         .logo-subtitle {
@@ -134,6 +142,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
             font-size: 22px;
             font-weight: 700;
             color: #1e293b;
+            word-wrap: break-word;
         }
 
         /* --- Content --- */
@@ -148,6 +157,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
             border-left: 4px solid #10b981;
             margin-bottom: 25px;
             color: #334155;
+            word-wrap: break-word;
         }
 
         .message p {
@@ -161,6 +171,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
         .email-address {
             color: #0f766e;
             font-weight: 600;
+            word-break: break-all; /* Ensures long emails wrap instead of overflowing */
         }
 
         .highlight {
@@ -206,7 +217,9 @@ export default function applicationSuccess(email: string, accessToken: string, p
             border-radius: 12px;
             text-align: center;
             margin: 16px 0;
-            word-break: break-all;
+            width: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
         }
 
         .info-label {
@@ -230,6 +243,9 @@ export default function applicationSuccess(email: string, accessToken: string, p
             padding: 12px;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
+            word-break: break-all; /* Crucial for JWTs so they don't break the layout */
+            white-space: pre-wrap;
+            max-width: 100%;
         }
 
         .warning-note {
@@ -271,7 +287,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
         }
 
         /* --- Responsive --- */
-        @media (min-width: 1024px) {
+        @media screen and (min-width: 1024px) {
             .logo-icon {
                 width: 56px;
                 height: 56px;
@@ -287,7 +303,7 @@ export default function applicationSuccess(email: string, accessToken: string, p
             }
         }
 
-        @media (max-width: 768px) {
+        @media screen and (max-width: 768px) {
             .content {
                 padding: 25px;
             }
@@ -310,11 +326,20 @@ export default function applicationSuccess(email: string, accessToken: string, p
                 font-size: 10px;
                 letter-spacing: 0.5px;
             }
+            
+            .token,
+            .password {
+                font-size: 14px; /* Slightly smaller on tablets */
+            }
         }
 
-        @media (max-width: 480px) {
+        @media screen and (max-width: 480px) {
             body {
                 padding: 10px;
+            }
+
+            .email-container {
+                border-radius: 12px;
             }
 
             .content {
@@ -328,10 +353,12 @@ export default function applicationSuccess(email: string, accessToken: string, p
             .logo-wrapper {
                 flex-direction: column;
                 gap: 8px;
+                text-align: center;
             }
 
             .logo-text {
                 text-align: center;
+                align-items: center; /* Center the underline */
             }
 
             .logo-icon {
@@ -343,15 +370,20 @@ export default function applicationSuccess(email: string, accessToken: string, p
             .logo-main-title {
                 font-size: 18px;
                 white-space: normal;
+                line-height: 1.3;
             }
 
             .header h1 {
                 font-size: 18px;
             }
 
+            .info-box {
+                padding: 12px;
+            }
+
             .token,
             .password {
-                font-size: 13px;
+                font-size: 12px; /* Prevent long strings from causing overflow */
                 padding: 10px;
             }
         }
