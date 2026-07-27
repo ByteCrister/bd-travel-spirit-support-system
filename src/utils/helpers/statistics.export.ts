@@ -63,13 +63,14 @@ export const SECTION_EXPORT_CONFIG: Record<SectionKeyEnum, SectionExportConfig> 
 
   [SectionKeyEnum.IMAGES]: {
     expandArray: 'uploadsOverTime',
-    preferredColumns: ['date', 'value', 'moderationStatus.labels', 'storageProviders.labels', 'totalStorage'],
+    preferredColumns: ['date', 'value', 'assetTypeBreakdown.labels', 'visibilityDistribution.labels', 'contentTypeDistribution.labels', 'storageProviders.labels', 'totalStorage', 'totalFiles', 'avgFileSize', 'totalAssets'],
     dedupeKeys: ['date', 'value'],
   },
 
+
   [SectionKeyEnum.NOTIFICATIONS]: {
     expandArray: 'deliveryTimeline',
-    preferredColumns: ['date', 'value', 'sentVsRead.sent', 'sentVsRead.read', 'sentVsRead.readRate', 'byType.labels', 'byPriority.labels'],
+    preferredColumns: ['date', 'value', 'sentVsRead.sent', 'sentVsRead.read', 'sentVsRead.readRate', 'bySystem.labels', 'byPriority.labels'],
     dedupeKeys: ['date', 'value'],
   },
 

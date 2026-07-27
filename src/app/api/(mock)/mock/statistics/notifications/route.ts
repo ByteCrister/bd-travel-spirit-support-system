@@ -9,10 +9,10 @@ export async function GET() {
       read: 750,
       readRate: 75,
     },
-    byType: [
-      { label: 'Email', count: 500 },
-      { label: 'Push', count: 300 },
-      { label: 'SMS', count: 200 },
+    bySystem: [
+      { label: 'Travelers', count: 500 },
+      { label: 'Guides', count: 300 },
+      { label: 'Support', count: 200 },
     ],
     byPriority: [
       { label: 'High', count: 200 },

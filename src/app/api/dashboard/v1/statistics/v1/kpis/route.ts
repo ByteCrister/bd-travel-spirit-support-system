@@ -175,7 +175,7 @@ async function getKPIs(
                 {
                     $group: {
                         _id: null,
-                        total: { $sum: "$totalPaid" },
+                        total: { $sum: { $multiply: ["$totalPaid", 0.15] } },
                     },
                 },
             ]).session(session),

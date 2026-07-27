@@ -3,26 +3,38 @@ import type { EmployeesStats } from '@/types/dashboard/statistics.types';
 
 export async function GET() {
     const data: EmployeesStats = {
-        countsByRole: [
-            { label: 'Guide', count: 50 },
-            { label: 'Admin', count: 10 },
-            { label: 'Support', count: 20 },
-        ],
-        countsByDepartment: [
-            { label: 'Operations', count: 40 },
-            { label: 'Marketing', count: 20 },
-            { label: 'Tech', count: 20 },
+        hiresOverTime: [
+            { date: '2023-01', value: 5 },
+            { date: '2023-02', value: 8 },
+            { date: '2023-03', value: 12 },
         ],
         countsByStatus: [
-            { label: 'Active', count: 70 },
-            { label: 'On Leave', count: 10 },
-            { label: 'Inactive', count: 10 },
+            { label: 'active', count: 70 },
+            { label: 'inactive', count: 10 },
+            { label: 'terminated', count: 5 },
         ],
-        shiftsData: {
-            scheduled: 100,
-            completed: 95,
-            completionRate: 95,
+        byEmploymentType: [
+            { label: 'full-time', count: 50 },
+            { label: 'part-time', count: 20 },
+            { label: 'contract', count: 15 },
+        ],
+        byPaymentMode: [
+            { label: 'automatic', count: 60 },
+            { label: 'manual', count: 25 },
+        ],
+        payrollStatus: [
+            { label: 'paid', count: 80 },
+            { label: 'pending', count: 5 },
+        ],
+        salaryStats: {
+            avg: 5000,
+            min: 3000,
+            max: 12000,
+            totalPayroll: 425000,
+            currency: 'USD',
         },
+        totalShifts: 150,
+        totalEmployees: 85,
     };
 
     return NextResponse.json({ data });

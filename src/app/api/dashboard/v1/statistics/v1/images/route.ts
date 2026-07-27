@@ -38,10 +38,11 @@ async function getImagesStats(req: NextRequest): Promise<HandlerResult<ImagesSta
     const from = searchParams.get("from");
     const to = searchParams.get("to");
     const dateFilter = buildDateFilter(from, to);
+    const baseMatch = { deletedAt: null, ...dateFilter };
 
-    // 1. Uploads over time
+    // 1. Uploads over time (one data-point per day)
     const uploadsAgg = await AssetModel.aggregate<{ date: string; value: number }>([
-        { $match: { deletedAt: null, ...dateFilter } },
+        { $match: baseMatch },
         {
             $group: {
                 _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
@@ -53,46 +54,111 @@ async function getImagesStats(req: NextRequest): Promise<HandlerResult<ImagesSta
     ]);
     const uploadsOverTime: TimeSeriesPoint[] = uploadsAgg;
 
-    // 2. Moderation status (visibility)
-    const modAgg = await AssetModel.aggregate<{ label: string; count: number }>([
-        { $match: { deletedAt: null, ...dateFilter } },
+    // 2. Asset type breakdown (image / video / document / audio / pdf / other)
+    const assetTypeAgg = await AssetModel.aggregate<{ label: string; count: number }>([
+        { $match: baseMatch },
+        { $group: { _id: "$assetType", count: { $sum: 1 } } },
+        { $project: { label: "$_id", count: 1, _id: 0 } },
+        { $sort: { count: -1 } },
+    ]);
+    const assetTypeBreakdown: CategoryCount[] = assetTypeAgg;
+
+    // 3. Visibility distribution (public / private / unlisted)
+    const visibilityAgg = await AssetModel.aggregate<{ label: string; count: number }>([
+        { $match: baseMatch },
         { $group: { _id: "$visibility", count: { $sum: 1 } } },
         { $project: { label: "$_id", count: 1, _id: 0 } },
+        { $sort: { count: -1 } },
     ]);
-    const moderationStatus: CategoryCount[] = modAgg;
+    const visibilityDistribution: CategoryCount[] = visibilityAgg;
 
-    // 3. Storage providers
+    // 4. Total asset count (for stat card)
+    const totalAssets = await AssetModel.countDocuments(baseMatch);
+
+    // 5. Storage providers (from AssetFile — only files that belong to a live asset)
     const providerAgg = await AssetFileModel.aggregate<{ label: string; count: number }>([
-        { $group: { _id: "$storageProvider", count: { $sum: 1 } } },
-        { $project: { label: "$_id", count: 1, _id: 0 } },
-    ]);
-    const storageProviders: CategoryCount[] = providerAgg;
-
-    // 4.  Total storage – count each file only once if it has at least one non‑deleted asset
-    const totalAgg = await AssetFileModel.aggregate<{ total: number }>([
         {
             $lookup: {
                 from: getCollectionName(AssetModel),
                 let: { fileId: "$_id" },
                 pipeline: [
                     { $match: { $expr: { $eq: ["$file", "$$fileId"] }, deletedAt: null } },
-                    { $limit: 1 } // we only need to know if at least one exists
+                    { $limit: 1 },
                 ],
-                as: "assets"
-            }
+                as: "assets",
+            },
         },
-        { $match: { assets: { $ne: [] } } }, // keep only files with at least one non‑deleted asset
-        { $group: { _id: null, total: { $sum: "$fileSize" } } }
+        { $match: { assets: { $ne: [] } } },
+        { $group: { _id: "$storageProvider", count: { $sum: 1 } } },
+        { $project: { label: "$_id", count: 1, _id: 0 } },
+        { $sort: { count: -1 } },
+    ]);
+    const storageProviders: CategoryCount[] = providerAgg;
+
+    // 6. Content type distribution — top MIME types (from live AssetFiles)
+    const contentTypeAgg = await AssetFileModel.aggregate<{ label: string; count: number }>([
+        {
+            $lookup: {
+                from: getCollectionName(AssetModel),
+                let: { fileId: "$_id" },
+                pipeline: [
+                    { $match: { $expr: { $eq: ["$file", "$$fileId"] }, deletedAt: null } },
+                    { $limit: 1 },
+                ],
+                as: "assets",
+            },
+        },
+        { $match: { assets: { $ne: [] } } },
+        { $group: { _id: "$contentType", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 8 },
+        { $project: { label: "$_id", count: 1, _id: 0 } },
+    ]);
+    const contentTypeDistribution: CategoryCount[] = contentTypeAgg;
+
+    // 7. Storage summary — total storage, total files, avg file size (live files only)
+    const storageSummaryAgg = await AssetFileModel.aggregate<{
+        total: number;
+        count: number;
+        avg: number;
+    }>([
+        {
+            $lookup: {
+                from: getCollectionName(AssetModel),
+                let: { fileId: "$_id" },
+                pipeline: [
+                    { $match: { $expr: { $eq: ["$file", "$$fileId"] }, deletedAt: null } },
+                    { $limit: 1 },
+                ],
+                as: "assets",
+            },
+        },
+        { $match: { assets: { $ne: [] } } },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$fileSize" },
+                count: { $sum: 1 },
+                avg: { $avg: "$fileSize" },
+            },
+        },
     ]);
 
-    const totalStorage = totalAgg[0]?.total ?? 0;
+    const totalStorage = storageSummaryAgg[0]?.total ?? 0;
+    const totalFiles = storageSummaryAgg[0]?.count ?? 0;
+    const avgFileSize = Math.round(storageSummaryAgg[0]?.avg ?? 0);
 
     return {
         data: {
             uploadsOverTime,
-            moderationStatus,
+            assetTypeBreakdown,
+            visibilityDistribution,
+            contentTypeDistribution,
             storageProviders,
             totalStorage,
+            totalFiles,
+            avgFileSize,
+            totalAssets,
         },
     };
 }

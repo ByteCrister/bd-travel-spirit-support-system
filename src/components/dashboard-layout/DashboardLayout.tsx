@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
-import { ViewProfile } from "./ViewProfile";
-import { Settings } from "./Settings";
 import { LogoutConfirmation } from "./LogoutConfirmation";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
@@ -134,16 +132,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
       </AnimatePresence>
 
-      {/* Modals */}
-      <ViewProfile
-        isOpen={showViewProfile}
-        onClose={() => setShowViewProfile(false)}
-        onEditProfile={() => setShowSettings(true)}
-      />
-      <Settings
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-      />
       <LogoutConfirmation
         isOpen={showLogoutConfirm}
         onClose={handleLogoutCancel}

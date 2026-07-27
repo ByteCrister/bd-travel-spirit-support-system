@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiUser, FiSettings, FiLogOut, FiChevronDown } from "react-icons/fi";
+import { FiLogOut, FiChevronDown } from "react-icons/fi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCurrentUserStore } from "@/store/current-user.store";
 import { USER_ROLE } from "@/constants/user.const";
@@ -17,12 +17,6 @@ const NEU_BTN =
 const NEU_PANEL =
   "absolute right-0 top-12 z-50 w-64 rounded-2xl overflow-hidden " +
   "bg-[#E7E5E4] shadow-[8px_8px_20px_#c8c6c5,-8px_-8px_20px_#ffffff] border border-white/60";
-const NEU_MENU_ITEM =
-  "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm " +
-  "font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/70 " +
-  "transition-all duration-200 " +
-  "hover:text-[#006666] hover:shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff] " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006666]/40";
 const NEU_MENU_ITEM_DANGER =
   "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm " +
   "font-[family-name:var(--font-jetbrains-mono)] text-[#FF2157]/70 " +
@@ -39,14 +33,10 @@ const NEU_AVATAR_WELL =
 // ─────────────────────────────────────────────────────────────
 
 interface ProfilePopoverProps {
-  onViewProfile?: () => void;
-  onSettings?: () => void;
   onLogout?: () => void;
 }
 
 export function ProfilePopover({
-  onViewProfile,
-  onSettings,
   onLogout,
 }: ProfilePopoverProps) {
   const { baseUser, fullUser, fetchFullUser, fetchBaseUser } =
@@ -155,29 +145,6 @@ export function ProfilePopover({
                     {fullUser?.role}
                   </span>
                 </div>
-              </div>
-
-              <div className={cn("border-t mx-3 mb-2", NEU_DIVIDER)} />
-
-              {/* Menu items */}
-              <div className="px-2 pb-2 space-y-0.5">
-                <motion.button
-                  className={NEU_MENU_ITEM}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => { onViewProfile?.(); setIsOpen(false); }}
-                >
-                  <FiUser className="h-4 w-4" />
-                  View Profile
-                </motion.button>
-
-                <motion.button
-                  className={NEU_MENU_ITEM}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => { onSettings?.(); setIsOpen(false); }}
-                >
-                  <FiSettings className="h-4 w-4" />
-                  Settings
-                </motion.button>
               </div>
 
               <div className={cn("border-t mx-3", NEU_DIVIDER)} />

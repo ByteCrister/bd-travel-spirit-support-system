@@ -46,37 +46,6 @@ export function AiChatPage() {
                 "flex h-[calc(100vh-4rem)] flex-col overflow-hidden"
             )}
         >
-            {/* ── Page Header ── */}
-            <div className={cn(NEU_HEADER_SURFACE, "shrink-0 px-4 py-4 md:px-6")}>
-                <Breadcrumbs items={breadcrumbItems} />
-
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                    className="mt-3 flex items-center gap-4"
-                >
-                    {/* Icon well */}
-                    <motion.span
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.1, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                        className={cn(
-                            NEU_ICON_WELL_PRIMARY,
-                            "relative flex h-12 w-12 shrink-0 items-center justify-center"
-                        )}
-                    >
-                        <Sparkles className="h-5 w-5 text-[#006666]" strokeWidth={1.8} />
-                    </motion.span>
-
-                    <div>
-                        <h1 className={cn(NEU_HEADING, "text-xl")}>AI Assistant</h1>
-                        <p className={cn(NEU_MUTED, "mt-0.5 text-xs")}>
-                            Query travelers, guides, tours, bookings &amp; revenue in natural language.
-                        </p>
-                    </div>
-                </motion.div>
-            </div>
 
             {/* ── Body ── */}
             <div className="flex min-h-0 flex-1 overflow-hidden">

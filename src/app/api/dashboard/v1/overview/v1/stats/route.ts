@@ -56,8 +56,8 @@ export const GET = withErrorHandler(async (req: NextRequest): Promise<HandlerRes
             totalRevenue,
             topDestinations,
         ] = await Promise.all([
-            // total users (no soft‑delete)
-            UserModel.countDocuments({}, { session }),
+            // total users (exclude soft‑deleted)
+            UserModel.countDocuments({ deletedAt: null }, { session }),
 
             // total organizers (guides not soft‑deleted)
             GuideModel.countDocuments({ deletedAt: null }, { session }),
@@ -113,7 +113,7 @@ export const GET = withErrorHandler(async (req: NextRequest): Promise<HandlerRes
                         {
                             $group: {
                                 _id: null,
-                                total: { $sum: '$totalPaid' },
+                                total: { $sum: { $multiply: ['$totalPaid', 0.15] } },
                             },
                         },
                     ],

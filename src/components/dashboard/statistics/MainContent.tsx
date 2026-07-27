@@ -10,7 +10,7 @@ import { LineChart } from './charts/LineChart';
 import { DonutChart } from './charts/DonutChart';
 import { BarChart } from './charts/BarChart';
 import { DataTable } from './tables/DataTable';
-import { formatDuration, formatNumber, formatPercentage } from '@/utils/helpers/format';
+import { formatDuration, formatNumber, formatPercentage, formatBytes } from '@/utils/helpers/format';
 import { RankingItem } from '@/types/dashboard/statistics.types';
 import {
     MdDashboard, MdBarChart, MdPeople, MdEvent,
@@ -264,37 +264,46 @@ export function MainContent({ activeTab, onTabChange }: MainContentProps) {
             content: (
                 <Section
                     title="Media Analytics"
-                    description="Image uploads, moderation status, and storage metrics"
+                    description="Asset types, visibility, file formats, storage providers, and storage usage"
                     loading={loading.images}
                     error={error.images}
                     data={data.images}
                     onRefresh={() => refreshSection(SectionKeyEnum.IMAGES)}
                     onClearError={() => clearError(SectionKeyEnum.IMAGES)}
                 >
+                    {/* Row 1 — uploads timeline + asset type */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <LineChart data={data.images?.uploadsOverTime || []} title="Image Uploads Over Time" color="#00A63D" />
-                        <DonutChart data={data.images?.moderationStatus || []} title="Moderation Status" />
+                        <LineChart data={data.images?.uploadsOverTime || []} title="Asset Uploads Over Time" color="#00A63D" />
+                        <DonutChart data={data.images?.assetTypeBreakdown || []} title="Asset Type Breakdown" showPercentages />
                     </div>
+
+                    {/* Row 2 — visibility + content type */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <DonutChart data={data.images?.visibilityDistribution || []} title="Visibility Distribution" showPercentages />
+                        <BarChart data={data.images?.contentTypeDistribution || []} title="Top Content Types (MIME)" color="#4f46e5" />
+                    </div>
+
+                    {/* Row 3 — storage providers + storage stat card */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <DonutChart data={data.images?.storageProviders || []} title="Storage Providers" />
                         <div className={NEU_STAT_CARD}>
                             <h4 className={NEU_STAT_HEADING}>Storage Metrics</h4>
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <span className={NEU_STAT_LABEL}>Total Storage</span>
-                                    <span className={NEU_STAT_VALUE}>{(data.images?.totalStorage || 0).toFixed(1)} TB</span>
+                                    <span className={NEU_STAT_LABEL}>Total Assets</span>
+                                    <span className={NEU_STAT_VALUE}>{formatNumber(data.images?.totalAssets || 0)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className={NEU_STAT_LABEL}>Approved Images</span>
-                                    <span className={NEU_STAT_VALUE_SUCCESS}>
-                                        {formatPercentage(data.images?.moderationStatus.find(s => s.label === 'Approved')?.percentage || 0)}
-                                    </span>
+                                    <span className={NEU_STAT_LABEL}>Total Files</span>
+                                    <span className={NEU_STAT_VALUE_PRIMARY}>{formatNumber(data.images?.totalFiles || 0)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className={NEU_STAT_LABEL}>Pending Review</span>
-                                    <span className="font-[family-name:var(--font-space-mono)] font-bold text-[#FE9900]">
-                                        {data.images?.moderationStatus.find(s => s.label === 'Pending')?.count || 0}
-                                    </span>
+                                    <span className={NEU_STAT_LABEL}>Total Storage Used</span>
+                                    <span className={NEU_STAT_VALUE}>{formatBytes(data.images?.totalStorage || 0)}</span>
+                                </div>
+                                <div className={`flex justify-between items-center ${NEU_STAT_DIVIDER}`}>
+                                    <span className={NEU_STAT_LABEL}>Avg File Size</span>
+                                    <span className={NEU_STAT_VALUE_PRIMARY}>{formatBytes(data.images?.avgFileSize || 0)}</span>
                                 </div>
                             </div>
                         </div>
@@ -302,6 +311,7 @@ export function MainContent({ activeTab, onTabChange }: MainContentProps) {
                 </Section>
             ),
         },
+
         {
             id: 'notifications',
             label: 'Notifications',
@@ -318,7 +328,7 @@ export function MainContent({ activeTab, onTabChange }: MainContentProps) {
                 >
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <LineChart data={data.notifications?.deliveryTimeline || []} title="Notification Delivery Timeline" color="#0891b2" />
-                        <DonutChart data={data.notifications?.byType || []} title="Notifications by Type" />
+                        <DonutChart data={data.notifications?.bySystem || []} title="Notifications by System" />
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <DonutChart data={data.notifications?.byPriority || []} title="Notifications by Priority" />
@@ -401,48 +411,61 @@ export function MainContent({ activeTab, onTabChange }: MainContentProps) {
             content: (
                 <Section
                     title="Employee Analytics"
-                    description="Staff distribution, shift completion, and workforce metrics"
+                    description="Workforce overview: hires, status, employment types, payroll, and salary distribution"
                     loading={loading.employees}
                     error={error.employees}
                     data={data.employees}
                     onRefresh={() => refreshSection(SectionKeyEnum.EMPLOYEES)}
                     onClearError={() => clearError(SectionKeyEnum.EMPLOYEES)}
                 >
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <DonutChart data={data.employees?.countsByRole || []} title="Employees by Role" />
-                        <DonutChart data={data.employees?.countsByDepartment || []} title="Employees by Department" />
-                        <DonutChart data={data.employees?.countsByStatus || []} title="Employees by Status" />
+                    {/* Row 1 — hires over time + status breakdown */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <LineChart data={data.employees?.hiresOverTime || []} title="Hires Over Time" color="#006666" />
+                        <DonutChart data={data.employees?.countsByStatus || []} title="Employees by Status" showPercentages />
                     </div>
 
+                    {/* Row 2 — employment type + payment mode */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <DataTable
-                            data={data.employees?.countsByRole || []}
-                            title="Role Distribution"
-                            columns={[
-                                { key: 'label', label: 'Role', sortable: true },
-                                { key: 'count', label: 'Count', sortable: true, formatter: (v) => formatNumber(v as number) },
-                            ]}
-                            pageSize={6}
-                        />
+                        <DonutChart data={data.employees?.byEmploymentType || []} title="Employment Type Breakdown" showPercentages />
+                        <BarChart data={data.employees?.payrollStatus || []} title="Payroll Status Distribution" color="#4f46e5" />
+                    </div>
+
+                    {/* Row 3 — payment mode donut + salary stat card */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <DonutChart data={data.employees?.byPaymentMode || []} title="Payment Mode (Auto vs Manual)" />
                         <div className={NEU_STAT_CARD}>
-                            <h4 className={NEU_STAT_HEADING}>Shift Metrics</h4>
+                            <h4 className={NEU_STAT_HEADING}>Workforce & Salary Metrics</h4>
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <span className={NEU_STAT_LABEL}>Shifts Scheduled</span>
-                                    <span className={NEU_STAT_VALUE}>{formatNumber(data.employees?.shiftsData.scheduled || 0)}</span>
+                                    <span className={NEU_STAT_LABEL}>Total Employees</span>
+                                    <span className={NEU_STAT_VALUE}>{formatNumber(data.employees?.totalEmployees || 0)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className={NEU_STAT_LABEL}>Shifts Completed</span>
-                                    <span className={NEU_STAT_VALUE_SUCCESS}>{formatNumber(data.employees?.shiftsData.completed || 0)}</span>
+                                    <span className={NEU_STAT_LABEL}>Active</span>
+                                    <span className={NEU_STAT_VALUE_SUCCESS}>
+                                        {data.employees?.countsByStatus.find(s => s.label === 'active')?.count || 0}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className={NEU_STAT_LABEL}>Completion Rate</span>
-                                    <span className={NEU_STAT_VALUE_PRIMARY}>{formatPercentage(data.employees?.shiftsData.completionRate || 0)}</span>
+                                    <span className={NEU_STAT_LABEL}>Total Shifts Configured</span>
+                                    <span className={NEU_STAT_VALUE_PRIMARY}>{formatNumber(data.employees?.totalShifts || 0)}</span>
                                 </div>
                                 <div className={`flex justify-between items-center ${NEU_STAT_DIVIDER}`}>
-                                    <span className={NEU_STAT_LABEL}>Active Employees</span>
+                                    <span className={NEU_STAT_LABEL}>Avg Salary</span>
+                                    <span className={NEU_STAT_VALUE}>
+                                        {formatNumber(data.employees?.salaryStats.avg || 0)} {data.employees?.salaryStats.currency || ''}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className={NEU_STAT_LABEL}>Salary Range</span>
                                     <span className={NEU_STAT_VALUE_PRIMARY}>
-                                        {data.employees?.countsByStatus.find(s => s.label === 'Active')?.count || 0}
+                                        {formatNumber(data.employees?.salaryStats.min || 0)} – {formatNumber(data.employees?.salaryStats.max || 0)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className={NEU_STAT_LABEL}>Total Paid Payroll</span>
+                                    <span className={NEU_STAT_VALUE_SUCCESS}>
+                                        {formatNumber(data.employees?.salaryStats.totalPayroll || 0)} {data.employees?.salaryStats.currency || ''}
                                     </span>
                                 </div>
                             </div>
@@ -451,6 +474,7 @@ export function MainContent({ activeTab, onTabChange }: MainContentProps) {
                 </Section>
             ),
         },
+
     ];
 
     return (

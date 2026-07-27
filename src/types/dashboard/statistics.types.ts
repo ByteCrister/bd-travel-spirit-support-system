@@ -95,9 +95,14 @@ export interface ReportsStats {
 
 export interface ImagesStats {
     uploadsOverTime: TimeSeriesPoint[];
-    moderationStatus: CategoryCount[];
+    assetTypeBreakdown: CategoryCount[];
+    visibilityDistribution: CategoryCount[];
+    contentTypeDistribution: CategoryCount[];
     storageProviders: CategoryCount[];
     totalStorage: number;
+    totalFiles: number;
+    avgFileSize: number;
+    totalAssets: number;
 }
 
 export interface NotificationsStats {
@@ -106,7 +111,7 @@ export interface NotificationsStats {
         read: number;
         readRate: number;
     };
-    byType: CategoryCount[];
+    bySystem: CategoryCount[];
     byPriority: CategoryCount[];
     deliveryTimeline: TimeSeriesPoint[];
 }
@@ -123,14 +128,20 @@ export interface ChatStats {
 }
 
 export interface EmployeesStats {
-    countsByRole: CategoryCount[];
-    countsByDepartment: CategoryCount[];
+    hiresOverTime: TimeSeriesPoint[];
     countsByStatus: CategoryCount[];
-    shiftsData: {
-        scheduled: number;
-        completed: number;
-        completionRate: number;
+    byEmploymentType: CategoryCount[];
+    byPaymentMode: CategoryCount[];
+    payrollStatus: CategoryCount[];
+    salaryStats: {
+        avg: number;
+        min: number;
+        max: number;
+        totalPayroll: number;
+        currency: string;
     };
+    totalShifts: number;
+    totalEmployees: number;
 }
 
 /* Store shapes */

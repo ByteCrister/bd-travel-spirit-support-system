@@ -103,8 +103,6 @@ export function Topbar({
         </div>
 
         <ProfilePopover
-          onViewProfile={onViewProfile}
-          onSettings={onSettings}
           onLogout={onLogout}
         />
       </motion.div>

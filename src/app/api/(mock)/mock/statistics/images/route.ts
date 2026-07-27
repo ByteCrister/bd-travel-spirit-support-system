@@ -8,16 +8,27 @@ export async function GET() {
             date: faker.date.recent().toISOString(),
             value: faker.number.int({ min: 100, max: 1000 }),
         })),
-        moderationStatus: [
-            { label: 'Approved', count: 900 },
-            { label: 'Rejected', count: 100 },
+        assetTypeBreakdown: [
+            { label: 'Destination', count: 400 },
+            { label: 'Tour', count: 300 },
+            { label: 'User', count: 200 },
+        ],
+        visibilityDistribution: [
+            { label: 'public', count: 800 },
+            { label: 'private', count: 100 },
+        ],
+        contentTypeDistribution: [
+            { label: 'image/jpeg', count: 600 },
+            { label: 'image/png', count: 300 },
         ],
         storageProviders: [
-            { label: 'AWS S3', count: 500 },
-            { label: 'GCP', count: 300 },
-            { label: 'Local', count: 200 },
+            { label: 'AWS S3', count: 800 },
+            { label: 'Local', count: 100 },
         ],
+        totalAssets: 900,
+        totalFiles: 950,
         totalStorage: faker.number.int({ min: 100000, max: 10000000 }),
+        avgFileSize: faker.number.int({ min: 1024, max: 5000000 }),
     };
 
     return NextResponse.json({ data });
