@@ -31,6 +31,7 @@ export async function handleAiChatMessage(input: {
     userId: string;
     sessionId?: string;
     message: string;
+    isAdmin: boolean;
 }): Promise<OrchestratorResult> {
     const llm = getLLMProvider();
     const startedAt = safeNowMs();
@@ -51,6 +52,7 @@ export async function handleAiChatMessage(input: {
             userMessage: input.message,
             history,
             sessionSummary,
+            isAdmin: input.isAdmin,
         });
     } catch (err) {
         const response =
@@ -88,11 +90,40 @@ export async function handleAiChatMessage(input: {
     const envelope = QueryIntentEnvelopeSchema.parse(actionRaw);
     const results: Array<{ id: string; result: QueryExecutionResult }> = [];
 
+    const REVENUE_MODELS = new Set(["transaction"]);
+    const REVENUE_KEYWORDS = ["revenue", "totalPaid", "amount", "commission", "earnings", "income", "profit"];
+
+    function isRevenueIntent(intent: ReturnType<typeof parseAssistantIntent>): boolean {
+        if (intent.type === "reply") return false;
+        if (REVENUE_MODELS.has(intent.model)) return true;
+        // Detect revenue-focused aggregates on booking (e.g. $sum: "$totalPaid")
+        if (intent.type === "aggregate") {
+            const pipelineStr = JSON.stringify(intent.pipeline).toLowerCase();
+            return REVENUE_KEYWORDS.some((kw) => pipelineStr.includes(kw.toLowerCase()));
+        }
+        return false;
+    }
+
     for (const q of envelope.queries) {
         const intent = parseAssistantIntent(q.intent);
         if (intent.type === "reply") {
             continue;
         }
+
+        // Gate: support users cannot execute revenue/financial queries
+        if (!input.isAdmin && isRevenueIntent(intent)) {
+            results.push({
+                id: q.id,
+                result: {
+                    model: intent.model,
+                    mode: intent.type === "aggregate" ? "aggregate" : "find",
+                    rows: [],
+                    blocked: true,
+                } as QueryExecutionResult & { blocked: boolean },
+            });
+            continue;
+        }
+
         const exec = await executeIntent(intent);
         exec.rows = serializeRows(exec.rows);
         results.push({ id: q.id, result: exec });

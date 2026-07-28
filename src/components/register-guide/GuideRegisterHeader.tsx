@@ -72,8 +72,8 @@ export function GuideRegisterHeader({ handleSaveAndContinueLater }: HeaderProps)
                         </div>
                     </div>
 
-                    {/* Right Section - Save draft */}
-                    <div className="flex justify-end">
+                    {/* Right Section - Actions */}
+                    <div className="flex justify-end items-center gap-2 sm:gap-3">
                         <Button
                             variant="outline"
                             size="sm"
@@ -82,9 +82,18 @@ export function GuideRegisterHeader({ handleSaveAndContinueLater }: HeaderProps)
                         >
                             <Save className="w-4 h-4" />
                             <span className="hidden sm:inline">
-                                Save &amp; continue later
+                                Save draft
                             </span>
                         </Button>
+
+                        <a href="#registration-form">
+                            <Button
+                                size="sm"
+                                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20 hover:from-emerald-400 hover:to-teal-400"
+                            >
+                                Apply Now
+                            </Button>
+                        </a>
                     </div>
                 </div>
             </div>

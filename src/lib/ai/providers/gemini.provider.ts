@@ -26,6 +26,7 @@ export class GeminiProvider implements LLMProvider {
         userMessage: string;
         history?: ChatTurn[];
         sessionSummary?: string | null;
+        isAdmin?: boolean;
     }): Promise<unknown> {
         const model = this.genAI.getGenerativeModel({ model: this.model });
         const prompt = buildActionPrompt(input);

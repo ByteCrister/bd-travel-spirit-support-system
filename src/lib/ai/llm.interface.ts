@@ -40,6 +40,7 @@ export interface LLMProvider {
         userMessage: string;
         history?: ChatTurn[];
         sessionSummary?: string | null;
+        isAdmin?: boolean;
     }): Promise<unknown>;
     synthesizeAnswer(input: {
         userMessage: string;

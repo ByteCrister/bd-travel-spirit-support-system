@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Loader2, Plus, MessageSquare, Clock } from "lucide-react";
+import { Loader2, Plus, MessageSquare, Clock, Trash2, X, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAiChatStore } from "@/store/ai-chat/ai-chat.store";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,7 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
         fetchMoreSessions,
         selectSession,
         startNewSession,
+        deleteSession,
     } = useAiChatStore();
 
     const listRef = useRef<HTMLDivElement>(null);
@@ -130,12 +131,14 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                                             key={session.sessionId}
                                             initial={{ opacity: 0, x: -8 }}
                                             animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -12, scale: 0.97 }}
                                             transition={{ delay: i * 0.03, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                                         >
                                             <SessionItem
                                                 session={session}
                                                 isActive={activeSessionId === session.sessionId}
                                                 onSelect={() => void selectSession(session.sessionId)}
+                                                onDelete={() => void deleteSession(session.sessionId)}
                                             />
                                         </motion.li>
                                     ))}
@@ -160,11 +163,16 @@ function SessionItem({
     session,
     isActive,
     onSelect,
+    onDelete,
 }: {
     session: AiChatSession;
     isActive: boolean;
     onSelect: () => void;
+    onDelete: () => void;
 }) {
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
     const MAX_PREVIEW_LENGTH = 22;
     const rawPreview = session.lastMessagePreview || "No messages yet";
     const preview =
@@ -176,43 +184,132 @@ function SessionItem({
         ? formatDistanceToNow(new Date(session.lastMessageAt), { addSuffix: true })
         : formatDistanceToNow(new Date(session.updatedAt), { addSuffix: true });
 
-    return (
-        <motion.button
-            type="button"
-            onClick={onSelect}
-            whileTap={{ scale: 0.99 }}
-            className={cn(
-                "relative w-full rounded-xl px-3 py-2.5 text-left transition-all duration-200",
-                isActive ? NEU_SESSION_ACTIVE : NEU_SESSION_IDLE
-            )}
-        >
-            {/* Active accent bar */}
-            {isActive && (
-                <span
-                    className="absolute left-0 top-2.5 bottom-2.5 w-0.5 rounded-full bg-[#006666]"
-                />
-            )}
+    const handleDeleteClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setConfirmDelete(true);
+    };
 
-            {/* Title */}
-            <span
+    const handleConfirm = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setDeleting(true);
+        await onDelete();
+        setDeleting(false);
+        setConfirmDelete(false);
+    };
+
+    const handleCancel = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setConfirmDelete(false);
+    };
+
+    return (
+        <div className="group relative">
+            {/* ── Main session button ── */}
+            <motion.button
+                type="button"
+                onClick={onSelect}
+                whileTap={{ scale: 0.99 }}
                 className={cn(
-                    "block truncate text-xs font-bold font-[family-name:var(--font-space-mono)]",
-                    isActive ? "text-[#006666]" : "text-[#1E2938]"
+                    "relative w-full rounded-xl px-3 py-2.5 text-left transition-all duration-200 pr-8",
+                    isActive ? NEU_SESSION_ACTIVE : NEU_SESSION_IDLE
                 )}
             >
-                {session.title}
-            </span>
+                {/* Active accent bar */}
+                {isActive && (
+                    <span
+                        className="absolute left-0 top-2.5 bottom-2.5 w-0.5 rounded-full bg-[#006666]"
+                    />
+                )}
 
-            {/* Preview */}
-            <span className="mt-0.5 block truncate font-[family-name:var(--font-jetbrains-mono)] text-[11px] text-[#1E2938]/50">
-                {preview}
-            </span>
+                {/* Title */}
+                <span
+                    className={cn(
+                        "block truncate text-xs font-bold font-[family-name:var(--font-space-mono)]",
+                        isActive ? "text-[#006666]" : "text-[#1E2938]"
+                    )}
+                >
+                    {session.title}
+                </span>
 
-            {/* Timestamp */}
-            <span className="mt-1 flex items-center gap-1 font-[family-name:var(--font-jetbrains-mono)] text-[10px] text-[#1E2938]/30">
-                <Clock className="h-2.5 w-2.5" />
-                {timeLabel}
-            </span>
-        </motion.button>
+                {/* Preview */}
+                <span className="mt-0.5 block truncate font-[family-name:var(--font-jetbrains-mono)] text-[11px] text-[#1E2938]/50">
+                    {preview}
+                </span>
+
+                {/* Timestamp */}
+                <span className="mt-1 flex items-center gap-1 font-[family-name:var(--font-jetbrains-mono)] text-[10px] text-[#1E2938]/30">
+                    <Clock className="h-2.5 w-2.5" />
+                    {timeLabel}
+                </span>
+            </motion.button>
+
+            {/* ── Delete button (appears on hover) ── */}
+            <AnimatePresence>
+                {!confirmDelete && (
+                    <motion.button
+                        key="delete-btn"
+                        type="button"
+                        title="Delete chat"
+                        onClick={handleDeleteClick}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 0, scale: 1 }}
+                        whileHover={{ opacity: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className={cn(
+                            "absolute right-1.5 top-1/2 -translate-y-1/2 z-10",
+                            "flex h-6 w-6 items-center justify-center rounded-lg",
+                            "bg-[#E7E5E4] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff]",
+                            "text-[#1E2938]/40 hover:text-red-500",
+                            "opacity-0 group-hover:opacity-100 transition-all duration-150"
+                        )}
+                    >
+                        <Trash2 className="h-3 w-3" />
+                    </motion.button>
+                )}
+            </AnimatePresence>
+
+            {/* ── Inline confirm overlay ── */}
+            <AnimatePresence>
+                {confirmDelete && (
+                    <motion.div
+                        key="confirm"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 4 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute inset-0 z-20 flex items-center justify-between rounded-xl px-3 py-2 bg-[#E7E5E4] shadow-[inset_2px_2px_5px_#c8c6c5,inset_-2px_-2px_5px_#ffffff]"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <span className="font-[family-name:var(--font-jetbrains-mono)] text-[11px] text-[#1E2938]/60 truncate mr-2">
+                            Delete this chat?
+                        </span>
+                        <div className="flex items-center gap-1 shrink-0">
+                            {/* Cancel */}
+                            <button
+                                type="button"
+                                onClick={handleCancel}
+                                disabled={deleting}
+                                className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#E7E5E4] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] text-[#1E2938]/50 hover:text-[#1E2938] transition-colors disabled:opacity-50"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                            {/* Confirm */}
+                            <button
+                                type="button"
+                                onClick={handleConfirm}
+                                disabled={deleting}
+                                className="flex h-6 w-6 items-center justify-center rounded-lg bg-red-500/90 shadow-[2px_2px_4px_rgba(0,0,0,0.15)] text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                            >
+                                {deleting ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                    <Check className="h-3 w-3" />
+                                )}
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 }

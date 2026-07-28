@@ -22,6 +22,8 @@ import { REPORT_STATUS } from "@/constants/report.const";
 import { EMPLOYEE_STATUS } from "@/constants/employee.const";
 import { BOOKING_PAYMENT_STATUS } from "@/constants/tour-booking.const";
 
+const ADMIN_COMMISSION_RATE = Number(process.env.ADMIN_COMMISSION_RATE)
+
 /**
  * GET /api/dashboard/v1/statistics/v1/kpis
  *
@@ -175,7 +177,7 @@ async function getKPIs(
                 {
                     $group: {
                         _id: null,
-                        total: { $sum: { $multiply: ["$totalPaid", 0.15] } },
+                        total: { $sum: { $multiply: ["$totalPaid", ADMIN_COMMISSION_RATE] } },
                     },
                 },
             ]).session(session),

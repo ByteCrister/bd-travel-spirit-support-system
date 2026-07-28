@@ -16,6 +16,8 @@ import { withErrorHandler, HandlerResult, ApiError } from '@/lib/helpers/withErr
 import { withTransaction } from '@/lib/helpers/withTransaction';
 import { ClientSession } from 'mongoose';
 
+const ADMIN_COMMISSION_RATE=Number(process.env.ADMIN_COMMISSION_RATE!);
+
 /**
  * GET api/dashboard/v1/overview/v1/stats/route.ts
  * Returns dashboard statistics with optional date range filtering.
@@ -113,7 +115,7 @@ export const GET = withErrorHandler(async (req: NextRequest): Promise<HandlerRes
                         {
                             $group: {
                                 _id: null,
-                                total: { $sum: { $multiply: ['$totalPaid', 0.15] } },
+                                total: { $sum: { $multiply: ['$totalPaid', ADMIN_COMMISSION_RATE] } },
                             },
                         },
                     ],

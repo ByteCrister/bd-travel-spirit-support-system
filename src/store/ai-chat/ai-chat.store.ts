@@ -5,6 +5,7 @@ import { extractErrorMessage } from "@/utils/axios/extract-error-message";
 import type {
     AiChatMessage,
     AiChatSession,
+    DeleteSessionResponse,
     FetchSessionMessagesResponse,
     FetchSessionsResponse,
     SendAiChatMessageResponse,
@@ -38,6 +39,7 @@ interface AiChatState {
     startNewSession: () => void;
     fetchMoreMessages: () => Promise<void>;
     sendMessage: (content: string) => Promise<void>;
+    deleteSession: (sessionId: string) => Promise<void>;
     clearError: () => void;
     reset: () => void;
 }
@@ -257,6 +259,35 @@ export const useAiChatStore = create<AiChatState>()(
             },
 
             clearError: () => set({ error: null }),
+
+            deleteSession: async (sessionId: string) => {
+                try {
+                    await api.delete<DeleteSessionResponse>(
+                        `${API_BASE}/${sessionId}`
+                    );
+
+                    const { activeSessionId, sessions } = get();
+                    const remaining = sessions.filter((s) => s.sessionId !== sessionId);
+
+                    const wasActive = activeSessionId === sessionId;
+
+                    set({
+                        sessions: remaining,
+                        ...(wasActive
+                            ? {
+                                  activeSessionId: null,
+                                  activeSessionTitle: "New chat",
+                                  messages: [],
+                                  messagesCursor: null,
+                                  messagesHasMore: false,
+                                  messagesLoading: false,
+                              }
+                            : {}),
+                    });
+                } catch (err) {
+                    set({ error: extractErrorMessage(err) });
+                }
+            },
 
             reset: () => set(initialState),
         }),

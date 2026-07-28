@@ -22,8 +22,8 @@ import GuideModel from "@/models/guide/guide.model";
 import StripePaymentAccountModel from "@/models/payments/payment-account.model";
 import UserModel from "@/models/user.model";
 
-const ADMIN_COMMISSION_RATE = 0.15;
-const GUIDE_SHARE_RATE = 0.85;
+const ADMIN_COMMISSION_RATE = process.env.ADMIN_COMMISSION_RATE!;
+const GUIDE_SHARE_RATE = process.env.GUIDE_SHARE_RATE!;
 const SETTLEMENT_GRACE_MS = 24 * 60 * 60 * 1000;
 
 export type TourSettlementResult = {
@@ -172,8 +172,8 @@ async function settleTour(tour: ITour): Promise<"settled" | "skipped"> {
     );
     const revenueUsd = stats.revenueUsd;
 
-    const adminShareUsd = Number((revenueUsd * ADMIN_COMMISSION_RATE).toFixed(2));
-    const guideShareUsd = Number((revenueUsd * GUIDE_SHARE_RATE).toFixed(2));
+    const adminShareUsd = Number((revenueUsd * Number(ADMIN_COMMISSION_RATE)).toFixed(2));
+    const guideShareUsd = Number((revenueUsd * Number(GUIDE_SHARE_RATE)).toFixed(2));
     const adminShareCents = usdToStripeCents(adminShareUsd);
     const guideShareCents = usdToStripeCents(guideShareUsd);
 

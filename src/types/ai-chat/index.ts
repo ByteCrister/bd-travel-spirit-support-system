@@ -6,4 +6,5 @@ export type {
     FetchSessionsResponse,
     SendAiChatMessageBody,
     SendAiChatMessageResponse,
+    DeleteSessionResponse,
 } from "./ai-chat.types";

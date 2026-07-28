@@ -8,10 +8,15 @@ function historyBlock(history: ChatTurn[] | undefined): string {
         .join("\n")}\n`;
 }
 
+// Platform commission rate — read once at module load so it is available at prompt-build time
+const COMMISSION_RATE = parseFloat(process.env.ADMIN_COMMISSION_RATE ?? "0.15");
+const COMMISSION_PERCENT = Math.round(COMMISSION_RATE * 100); // e.g. 15
+
 export function buildActionPrompt(input: {
     userMessage: string;
     history?: ChatTurn[];
     sessionSummary?: string | null;
+    isAdmin?: boolean;
 }): string {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -20,6 +25,27 @@ export function buildActionPrompt(input: {
     const summaryBlock = input.sessionSummary?.trim()
         ? `\nSession summary:\n${input.sessionSummary.trim()}\n`
         : "";
+
+    // ── Revenue context (admin only) ──────────────────────────────────────────
+    const revenueContext = input.isAdmin
+        ? `
+Revenue / commission rules (ADMIN ONLY):
+- Platform commission rate: ${COMMISSION_PERCENT}% (env ADMIN_COMMISSION_RATE = ${COMMISSION_RATE}).
+- Each confirmed booking: traveller pays totalPaid → funds held in escrow → on tour completion,
+  ${100 - COMMISSION_PERCENT}% goes to the guide company, ${COMMISSION_PERCENT}% goes to the platform.
+- To calculate platform revenue from bookings: aggregate booking model, $sum: "$totalPaid", then multiply result by ${COMMISSION_RATE}.
+- Example platform revenue query: model "booking", $match status "confirmed", $group _id null, totalGross $sum "$totalPaid".
+  Platform share = totalGross × ${COMMISSION_RATE}.
+- transaction model shows raw Stripe/payment transactions (admin view only).
+- You MAY generate revenue, transaction, commission, and earnings queries.
+`.trim()
+        : `
+IMPORTANT RESTRICTION (support role):
+- You are NOT authorised to access revenue, financial, commission, earnings, income, or profit data.
+- Do NOT generate intents with model "transaction".
+- Do NOT include $sum "$totalPaid", $sum "$amount", or any revenue-related aggregation.
+- If the user asks about revenue or financials, respond with type "reply" explaining that this information is restricted to administrators.
+`.trim();
 
     return `
 You are a production support AI assistant for the BD Travel Spirit support system.
@@ -39,6 +65,8 @@ Rules:
 Today's date: ${today}
 Start of current month (ISO): ${startOfMonth}
 ${summaryBlock}${historyBlock(input.history)}
+${revenueContext}
+
 Available query intent format and models:
 ${SCHEMA_CONTEXT}
 
@@ -50,6 +78,7 @@ Return ONLY JSON in one of these shapes:
 { "type":"query", "queries":[ { "id":"q1", "intent": { ...find/aggregate/reply? (reply not allowed here) } } ] }
 `.trim();
 }
+
 
 export function buildSynthesisPrompt(input: {
     userMessage: string;

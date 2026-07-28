@@ -3,6 +3,7 @@ import ConnectDB from "@/config/db";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 import { USER_ROLE } from "@/constants/user.const";
+import { UserModel } from "@/models/user.model";
 import { handleAiChatMessage } from "@/lib/ai/chat-orchestrator";
 import {
     listSessionMessages,
@@ -108,11 +109,18 @@ export async function POST(req: NextRequest) {
 
         const trimmedMessage = message.trim();
         const sessionId = resolveSessionId(body);
+
+        // Resolve caller role — revenue data is admin-only
+        const callerDoc = await UserModel.findById(userId).select("role").lean();
+        const callerRole = (callerDoc as { role?: string } | null)?.role ?? "";
+        const isAdmin = callerRole === USER_ROLE.ADMIN;
+
         try {
             const saved = await handleAiChatMessage({
                 userId,
                 sessionId,
                 message: trimmedMessage,
+                isAdmin,
             });
             return NextResponse.json(buildPostResponse(saved, saved.response));
         } catch (err) {

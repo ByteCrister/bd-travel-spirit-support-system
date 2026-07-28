@@ -266,3 +266,24 @@ export async function listSessionMessages(
         hasMore,
     };
 }
+
+/**
+ * Hard-deletes a chat session and all of its messages.
+ * Ownership is verified — only the session owner can delete.
+ * Returns `true` if deleted, `false` if not found / not owned.
+ */
+export async function deleteSession(
+    sessionId: string,
+    userId: string
+): Promise<boolean> {
+    const session = await getSessionForUser(sessionId, userId);
+    if (!session) return false;
+
+    // Delete all messages belonging to this session first
+    await AIChatMessageModel.deleteMany({ session: session._id });
+
+    // Delete the session itself
+    await AIChatSessionModel.findByIdAndDelete(session._id);
+
+    return true;
+}

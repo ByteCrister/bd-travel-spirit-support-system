@@ -56,3 +56,7 @@ export interface SendAiChatMessageResponse {
         assistant: AiChatMessage;
     };
 }
+
+export interface DeleteSessionResponse {
+    deleted: boolean;
+}

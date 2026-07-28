@@ -137,7 +137,6 @@ const TourAnalyticsSchema = new Schema<ITourAnalytics>(
 
 // Indexes for fast lookup
 TourAnalyticsSchema.index({ tourId: 1, companyId: 1 });
-TourAnalyticsSchema.index({ uniqueTourCode: 1 });
 TourAnalyticsSchema.index({ "basePrice.currency": 1 });
 TourAnalyticsSchema.index({ "departure.date": 1 });
 

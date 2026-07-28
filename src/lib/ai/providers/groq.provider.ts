@@ -32,6 +32,7 @@ export class GroqProvider implements LLMProvider {
         userMessage: string;
         history?: ChatTurn[];
         sessionSummary?: string | null;
+        isAdmin?: boolean;
     }): Promise<unknown> {
         const completion = await this.groq.chat.completions.create({
             messages: [{ role: "user", content: buildActionPrompt(input) }],
