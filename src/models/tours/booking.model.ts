@@ -340,6 +340,7 @@ BookingSchema.statics.createBooking = async function (
 
     const booking = new this({
         bookingReference,
+        uniqueTourCode: tour.uniqueTourCode,
         traveler: travelerId,
         tour: tourId,
         totalParticipants: data.totalParticipants,
