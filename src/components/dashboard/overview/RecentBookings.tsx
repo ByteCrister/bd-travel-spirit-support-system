@@ -49,7 +49,7 @@ const formatDate = (dateString: string) =>
   });
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+  new Intl.NumberFormat("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 
 interface RecentBookingsProps {
   bookings: Booking[];

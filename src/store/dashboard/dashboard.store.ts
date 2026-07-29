@@ -133,6 +133,11 @@ interface DashboardState {
   refreshAll: (isAdmin?: boolean, force?: boolean) => Promise<void>;
 }
 
+export const getDateRangeForDays = (days: number): DateRangeFilter => ({
+  start: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  end: new Date().toISOString().split('T')[0],
+});
+
 const now = () => Date.now();
 
 const makeCacheEntry = <T>(
@@ -182,14 +187,8 @@ export const useDashboardStore = create<DashboardState>()(
     trendingInsights: [],
 
     // initial filter values
-    statsDateRange: {
-      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      end: new Date().toISOString().split('T')[0],
-    },
-    analyticsDateRange: {
-      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      end: new Date().toISOString().split('T')[0],
-    },
+    statsDateRange: getDateRangeForDays(30 * 1),
+    analyticsDateRange: getDateRangeForDays(30 * 1),
     recentActivityPagination: { page: 1, limit: 10 },
     adminNotificationsPagination: { page: 1, limit: 10 },
     recentBookingsPagination: { page: 1, limit: 10 },

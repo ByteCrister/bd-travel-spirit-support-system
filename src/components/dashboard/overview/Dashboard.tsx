@@ -212,6 +212,10 @@ export default function Dashboard() {
     const handleRecentBookingsPageChange = (p: number) => { setRecentBookingsPagination({ page: p }); fetchRecentBookings({ force: true }); };
     const handleRecentBookingsLimitChange = (l: number) => { setRecentBookingsPagination({ page: 1, limit: l }); fetchRecentBookings({ force: true }); };
 
+    const analyticsDays = Math.max(1, Math.ceil(
+        Math.abs(new Date(analyticsDateRange.end).getTime() - new Date(analyticsDateRange.start).getTime()) / (1000 * 60 * 60 * 24)
+    ));
+
     return (
         <motion.div
             variants={containerVariants}
@@ -288,16 +292,16 @@ export default function Dashboard() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <SectionCard className="lg:col-span-2 !p-0 overflow-hidden">
-                            {loading.analytics ? <div className="p-5"><ChartsSkeleton title="Bookings (Last 14 Days)" /></div> : <BookingsLineChart data={analytics?.bookingsOverTime || []} />}
+                            {loading.analytics ? <div className="p-5"><ChartsSkeleton title={`Bookings (Last ${analyticsDays} Days)`} /></div> : <BookingsLineChart data={analytics?.bookingsOverTime || []} days={analyticsDays} />}
                         </SectionCard>
                         <SectionCard className="!p-0 overflow-hidden">
-                            {loading.analytics ? <div className="p-5"><ChartsSkeleton title="Revenue (14 Days)" /></div> : <RevenueMiniChart data={analytics?.revenueOverTime || []} />}
+                            {loading.analytics ? <div className="p-5"><ChartsSkeleton title={`Revenue (${analyticsDays} Days)`} /></div> : <RevenueMiniChart data={analytics?.revenueOverTime || []} days={analyticsDays} />}
                         </SectionCard>
                         <SectionCard className="lg:col-span-3 !p-0 overflow-hidden">
                             {loading.analytics ? (
-                                <div className="p-5"><ChartsSkeleton title="Travelers vs Guides (14 Days)" /></div>
+                                <div className="p-5"><ChartsSkeleton title={`Travelers vs Guides (${analyticsDays} Days)`} /></div>
                             ) : (
-                                <UsersAreaChart travelers={analytics?.travelersOverTime || []} guides={analytics?.guidesOverTime || []} />
+                                <UsersAreaChart travelers={analytics?.travelersOverTime || []} guides={analytics?.guidesOverTime || []} days={analyticsDays} />
                             )}
                         </SectionCard>
                     </div>

@@ -339,7 +339,7 @@ export const StepPersonalInfo: React.FC<StepPersonalInfoProps> = ({ onNext, onPr
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
-        className="flex justify-between items-center pt-8"
+        className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-4 pt-8"
       >
         {onPrevious && (
           <Button

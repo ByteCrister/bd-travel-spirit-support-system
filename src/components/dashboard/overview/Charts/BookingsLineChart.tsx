@@ -28,6 +28,7 @@ interface Point {
 
 interface BookingsLineChartProps {
   data: Point[];
+  days?: number;
   className?: string;
 }
 
@@ -40,10 +41,10 @@ function formatDate(dateStr: string) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export function BookingsLineChart({ data, className }: BookingsLineChartProps) {
-  const last14 = data.slice(-14);
-  const max = Math.max(1, ...last14.map((d) => d.count));
-  const total = last14.reduce((sum, d) => sum + d.count, 0);
+export function BookingsLineChart({ data, days = 14, className }: BookingsLineChartProps) {
+  const displayData = data.slice(-days);
+  const max = Math.max(1, ...displayData.map((d) => d.count));
+  const total = displayData.reduce((sum, d) => sum + d.count, 0);
   const yTicks = 4;
   const tickValues = Array.from(
     { length: yTicks + 1 },
@@ -61,7 +62,7 @@ export function BookingsLineChart({ data, className }: BookingsLineChartProps) {
       <div className={cn("flex items-start justify-between px-5 sm:px-6 pt-5 pb-4 border-b", NEU_DIVIDER)}>
         <div>
           <h3 className={cn(NEU_HEADING, "text-sm")}>Bookings</h3>
-          <p className={cn(NEU_MUTED, "text-xs mt-0.5")}>Last 14 days activity</p>
+          <p className={cn(NEU_MUTED, "text-xs mt-0.5")}>Last {days} days activity</p>
         </div>
         <div className={cn(NEU_BADGE, "flex-col items-end gap-0 px-3 py-1.5")}>
           <span className="font-[family-name:var(--font-space-mono)] font-bold text-lg tabular-nums text-[#1E2938] leading-none">
@@ -111,7 +112,7 @@ export function BookingsLineChart({ data, className }: BookingsLineChartProps) {
 
             {/* Bars */}
             <div className="relative flex items-end justify-between gap-1 h-48 px-2 pb-0">
-              {last14.map((d, i) => {
+              {displayData.map((d, i) => {
                 const heightPct = (d.count / max) * 100;
                 return (
                   <motion.div
@@ -152,7 +153,7 @@ export function BookingsLineChart({ data, className }: BookingsLineChartProps) {
 
         {/* X-axis labels */}
         <div className="flex gap-1 mt-2 ml-[52px]">
-          {last14.map((d, i) => (
+          {displayData.map((d, i) => (
             <div
               key={`x-${i}`}
               className={cn(

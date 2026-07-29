@@ -251,7 +251,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                     key={index}
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex items-center gap-3 rounded-lg border border-border bg-background p-3"
+                    className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 rounded-lg border border-border bg-background p-3"
                   >
                     {/* Platform Select */}
                     <Select
@@ -263,7 +263,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                         updateCompanyDetails(updated);
                       }}
                     >
-                      <SelectTrigger className="w-40 border-border bg-background text-foreground">
+                      <SelectTrigger className="w-full sm:w-40 border-border bg-background text-foreground">
                         <SelectValue placeholder="Platform" />
                       </SelectTrigger>
                       <SelectContent>
@@ -276,7 +276,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                     </Select>
 
                     {/* URL Input */}
-                    <div className="relative flex-1">
+                    <div className="relative w-full sm:flex-1">
                       <Input
                         type="url"
                         placeholder={`https://${social.platform}.com/yourcompany`}
@@ -310,7 +310,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
                           updated.social = updated.social.filter((_, i) => i !== index);
                           updateCompanyDetails(updated);
                         }}
-                        className="text-red-500 hover:text-red-600"
+                        className="text-red-500 hover:text-red-600 sm:self-center self-end"
                       >
                         ✕
                       </Button>
@@ -418,7 +418,7 @@ export const StepCompanyDetails: React.FC<StepCompanyDetailsProps> = ({ onNext, 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
-        className="flex justify-between items-center pt-8"
+        className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-4 pt-8"
       >
         <Button
           variant="outline"

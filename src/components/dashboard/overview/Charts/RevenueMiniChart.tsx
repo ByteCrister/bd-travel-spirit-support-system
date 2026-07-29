@@ -27,6 +27,7 @@ interface Point {
 
 interface RevenueMiniChartProps {
   data: Point[];
+  days?: number;
   className?: string;
 }
 
@@ -43,10 +44,10 @@ function formatDate(dateStr: string) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export function RevenueMiniChart({ data, className }: RevenueMiniChartProps) {
-  const last14 = data.slice(-14);
-  const max = Math.max(1, ...last14.map((d) => d.amount));
-  const total = last14.reduce((sum, d) => sum + d.amount, 0);
+export function RevenueMiniChart({ data, days = 14, className }: RevenueMiniChartProps) {
+  const displayData = data.slice(-days);
+  const max = Math.max(1, ...displayData.map((d) => d.amount));
+  const total = displayData.reduce((sum, d) => sum + d.amount, 0);
   const yTicks = 4;
   const tickValues = Array.from(
     { length: yTicks + 1 },
@@ -64,7 +65,7 @@ export function RevenueMiniChart({ data, className }: RevenueMiniChartProps) {
       <div className={cn("flex items-start justify-between px-5 sm:px-6 pt-5 pb-4 border-b", NEU_DIVIDER)}>
         <div>
           <h3 className={cn(NEU_HEADING, "text-sm")}>Revenue</h3>
-          <p className={cn(NEU_MUTED, "text-xs mt-0.5")}>Last 14 days</p>
+          <p className={cn(NEU_MUTED, "text-xs mt-0.5")}>Last {days} days</p>
         </div>
         <div className={cn(NEU_BADGE, "flex-col items-end gap-0 px-3 py-1.5")}>
           <span className="font-[family-name:var(--font-space-mono)] font-bold text-lg tabular-nums text-[#00A63D] leading-none">
@@ -112,7 +113,7 @@ export function RevenueMiniChart({ data, className }: RevenueMiniChartProps) {
 
             {/* Bars */}
             <div className="relative flex items-end justify-between gap-1 h-36 px-2">
-              {last14.map((d, i) => {
+              {displayData.map((d, i) => {
                 const heightPct = (d.amount / max) * 100;
                 return (
                   <motion.div
@@ -152,7 +153,7 @@ export function RevenueMiniChart({ data, className }: RevenueMiniChartProps) {
 
         {/* X-axis labels */}
         <div className="flex gap-1 mt-2 ml-[52px]">
-          {last14.map((d, i) => (
+          {displayData.map((d, i) => (
             <div
               key={`x-${i}`}
               className={cn(NEU_LABEL, "flex-1 text-center text-[9px] truncate leading-none")}

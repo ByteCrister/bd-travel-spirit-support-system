@@ -32,6 +32,7 @@ interface Point {
 interface UsersAreaChartProps {
   travelers: Point[];
   guides: Point[];
+  days?: number;
   className?: string;
 }
 
@@ -44,14 +45,14 @@ function formatDate(dateStr: string) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export function UsersAreaChart({ travelers, guides, className }: UsersAreaChartProps) {
+export function UsersAreaChart({ travelers, guides, days = 14, className }: UsersAreaChartProps) {
   const series = travelers
     .map((t, i) => ({
       date: t.date,
       travelers: t.count,
       guides: guides[i]?.count ?? 0,
     }))
-    .slice(-14);
+    .slice(-days);
 
   const max = Math.max(1, ...series.map((s) => Math.max(s.travelers, s.guides)));
   const yTicks = 4;
@@ -74,7 +75,7 @@ export function UsersAreaChart({ travelers, guides, className }: UsersAreaChartP
       <div className={cn("flex items-start justify-between px-5 sm:px-6 pt-5 pb-4 border-b", NEU_DIVIDER)}>
         <div>
           <h3 className={cn(NEU_HEADING, "text-sm")}>Travelers vs Guides</h3>
-          <p className={cn(NEU_MUTED, "text-xs mt-0.5")}>Last 14 days comparison</p>
+          <p className={cn(NEU_MUTED, "text-xs mt-0.5")}>Last {days} days comparison</p>
         </div>
         {/* Two mini totals */}
         <div className="flex items-center gap-2">

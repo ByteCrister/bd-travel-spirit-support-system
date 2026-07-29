@@ -51,6 +51,10 @@ interface AnalyticsData {
         totalRegistered: number;
         newThisPeriod: number;
     };
+    bookingsOverTime: Array<{ date: string; count: number; revenue: number }>;
+    travelersOverTime: Array<{ date: string; count: number }>;
+    guidesOverTime: Array<{ date: string; count: number }>;
+    revenueOverTime: Array<{ date: string; amount: number }>;
 }
 
 /**
@@ -78,12 +82,26 @@ export const GET = withErrorHandler(async (
     }
 
     const startDate = new Date(startParam);
-    const endDate = new Date(endParam);
+    let endDate = new Date(endParam);
     endDate.setHours(23, 59, 59, 999); // include the whole end day
 
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         throw new ApiError('Invalid date values', 400);
     }
+
+    const now = new Date();
+    if (endDate > now) {
+        endDate = now;
+    }
+
+    const dateArray: string[] = [];
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+        dateArray.push(currentDate.toISOString().split('T')[0]);
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    const adminCommissionRate = parseFloat(process.env.ADMIN_COMMISSION_RATE || '0.15');
 
     if (startDate > endDate) {
         throw new ApiError('Start date must be before end date', 400);
@@ -103,7 +121,10 @@ export const GET = withErrorHandler(async (
             totalBookings,
             totalParticipantsAgg,
             revenueAgg,
-            bookingsByStatusAgg
+            bookingsByStatusAgg,
+            bookingsOverTimeAgg,
+            travelersOverTimeAgg,
+            guidesOverTimeAgg
         ] = await Promise.all([
             BookingModel.countDocuments(bookingMatch).session(session),
             BookingModel.aggregate(
@@ -118,7 +139,7 @@ export const GET = withErrorHandler(async (
                     {
                         $match: {
                             ...bookingMatch,
-                            status: BOOKING_STATUS.CONFIRMED, // only confirmed payments count towards revenue
+                            status: { $ne: BOOKING_STATUS.REFUNDED },
                         },
                     },
                     { $group: { _id: null, total: { $sum: '$totalPaid' } } }
@@ -132,12 +153,55 @@ export const GET = withErrorHandler(async (
                 ],
                 { session }
             ),
+            BookingModel.aggregate([
+                { $match: bookingMatch },
+                {
+                    $group: {
+                        _id: { $dateToString: { format: '%Y-%m-%d', date: '$bookedAt' } },
+                        count: { $sum: 1 },
+                        revenue: {
+                            $sum: {
+                                $cond: [
+                                    { $ne: ['$status', BOOKING_STATUS.REFUNDED] },
+                                    { $multiply: ['$totalPaid', adminCommissionRate] },
+                                    0
+                                ]
+                            }
+                        }
+                    }
+                }
+            ], { session }),
+            TravelerModel.aggregate([
+                { $match: { createdAt: { $gte: startDate, $lte: endDate }, deletedAt: null } },
+                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } }
+            ], { session }),
+            GuideModel.aggregate([
+                { $match: { createdAt: { $gte: startDate, $lte: endDate }, deletedAt: null } },
+                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } }
+            ], { session })
         ]);
 
-        const totalRevenue = revenueAgg[0]?.total || 0;
+        const totalRevenue = (revenueAgg[0]?.total || 0) * adminCommissionRate;
         const totalParticipants = totalParticipantsAgg[0]?.total || 0;
         const averageBookingValue =
             totalBookings > 0 ? Math.floor(totalRevenue / totalBookings) : 0;
+
+        const mapOverTime = (agg: any[]) => {
+            const map = new Map(agg.map(item => [item._id, item]));
+            return dateArray.map(date => {
+                const data = map.get(date) || {};
+                return {
+                    date,
+                    count: data.count || 0,
+                    revenue: data.revenue || 0
+                };
+            });
+        };
+
+        const bookingsOverTime = mapOverTime(bookingsOverTimeAgg);
+        const travelersOverTime = mapOverTime(travelersOverTimeAgg).map(d => ({ date: d.date, count: d.count }));
+        const guidesOverTime = mapOverTime(guidesOverTimeAgg).map(d => ({ date: d.date, count: d.count }));
+        const revenueOverTime = bookingsOverTime.map(d => ({ date: d.date, amount: d.revenue }));
 
         // Format bookings by status into a clean object
         const bookingsByStatusMap = Object.values(BOOKING_STATUS).reduce(
@@ -253,6 +317,10 @@ export const GET = withErrorHandler(async (
                 totalRegistered: totalTravelers,
                 newThisPeriod: newTravelersThisPeriod,
             },
+            bookingsOverTime,
+            travelersOverTime,
+            guidesOverTime,
+            revenueOverTime,
         };
     });
 
