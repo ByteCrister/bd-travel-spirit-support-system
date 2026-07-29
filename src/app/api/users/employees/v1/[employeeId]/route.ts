@@ -22,6 +22,8 @@ import AssetFileModel from "@/models/assets/asset-file.model";
 import { getUserIdFromSession } from "@/lib/auth/session.auth";
 import VERIFY_USER_ROLE from "@/lib/auth/verify-user-role";
 import { AUDIT_ACTION, logAuditBestEffort } from "@/lib/audit/audit-logger";
+import { mailer } from "@/config/node-mailer";
+import { generateEmployeeUpdateEmail } from "@/lib/html/employee-update-html";
 
 interface Params {
     params: Promise<{ employeeId: string }>
@@ -35,6 +37,7 @@ export type EmployeeLeanPopulated =
         user: {
             _id: Types.ObjectId;
             name: string;
+            email: string;
             avatar?: PopulatedAssetLean
             role: UserRole
         };
@@ -214,8 +217,15 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
         if (!updated) throw new ApiError("Employee update failed!", 400);
         const dto = await buildEmployeeDTO(updated._id as Types.ObjectId, session);
 
-        return dto;
+        return { dto, userEmail: employee.user.email, userName: body.name };
     });
+
+    // Send email notification (non-blocking)
+    if (updatedEmployee.userEmail) {
+        const html = generateEmployeeUpdateEmail(updatedEmployee.userName);
+        mailer(updatedEmployee.userEmail, "Your Profile Has Been Updated", html)
+            .catch(err => console.error("Failed to send update email:", err));
+    }
 
     void logAuditBestEffort({
         action: AUDIT_ACTION.UPDATE,
@@ -226,13 +236,13 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
         note: "Updated employee details",
         before: before ? (before as Record<string, unknown>) : undefined,
         after: {
-            status: updatedEmployee ? updatedEmployee.status : null,
-            employmentType: updatedEmployee ? updatedEmployee.employmentType : null,
+            status: updatedEmployee.dto ? updatedEmployee.dto.status : null,
+            employmentType: updatedEmployee.dto ? updatedEmployee.dto.employmentType : null,
         },
     });
 
     return {
-        data: updatedEmployee,
+        data: updatedEmployee.dto,
         status: 200,
     };
 });

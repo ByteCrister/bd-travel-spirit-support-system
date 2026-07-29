@@ -1146,22 +1146,24 @@ export default function AddEmployeePage() {
                       </div>
                       <h3 className={`${NEU_HEADING} text-lg`}>Work Shifts</h3>
                     </div>
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      disabled={showVerificationDialog}
-                      className={`${NEU_BTN_PRIMARY} flex items-center gap-2 px-4 h-9 text-sm`}
-                      onClick={() =>
-                        setFieldValue("shifts", [
-                          ...values.shifts,
-                          { startTime: "09:00", endTime: "17:00", days: [] },
-                        ])
-                      }
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Shift
-                    </motion.button>
+                    {values.shifts.length === 0 && (
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        disabled={showVerificationDialog}
+                        className={`${NEU_BTN_PRIMARY} flex items-center gap-2 px-4 h-9 text-sm`}
+                        onClick={() =>
+                          setFieldValue("shifts", [
+                            ...values.shifts,
+                            { startTime: "09:00", endTime: "17:00", days: [] },
+                          ])
+                        }
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Shift
+                      </motion.button>
+                    )}
                   </div>
 
                   <FieldArray name="shifts">

@@ -66,10 +66,12 @@ export default function ShiftEditor({
       {/* Header row */}
       <div className="flex items-center justify-between">
         <p className={NEU_MUTED}>Configure employee work schedules</p>
-        <button type="button" onClick={add} className={NEU_BTN_PRIMARY}>
-          <Plus className="h-4 w-4" />
-          Add Shift
-        </button>
+        {shifts.length === 0 && (
+          <button type="button" onClick={add} className={NEU_BTN_PRIMARY}>
+            <Plus className="h-4 w-4" />
+            Add Shift
+          </button>
+        )}
       </div>
 
       {/* Empty state */}
