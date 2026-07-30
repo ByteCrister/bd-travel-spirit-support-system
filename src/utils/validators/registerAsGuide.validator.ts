@@ -52,7 +52,7 @@ export const personalInfoSchema = z.object({
     .trim()
     .min(2, 'Full name must be at least 2 characters')
     .max(100, 'Full name must not exceed 100 characters')
-    .regex(/^[a-zA-Z\s.'-]+$/, 'Full name can only contain letters, spaces, apostrophes, and hyphens'),
+    .regex(/^[\p{L}\s.'-]+$/u, 'Full name can only contain valid letters, spaces, apostrophes, and hyphens'),
 
   email: z
     .string()
@@ -73,13 +73,15 @@ export const personalInfoSchema = z.object({
     .string()
     .trim()
     .min(5, 'Address must be at least 5 characters')
-    .max(200, 'Address must not exceed 200 characters'),
+    .max(200, 'Address must not exceed 200 characters')
+    .regex(/^[\p{L}\p{N}\s.,'#/-]+$/u, 'Address contains invalid characters'),
 
   city: z
     .string()
     .trim()
     .min(2, 'City must be at least 2 characters')
     .max(100, 'City must not exceed 100 characters')
+    .regex(/^[\p{L}\s.'-]+$/u, 'City contains invalid characters')
     .superRefine((val, ctx) => {
       if (matchDistrict(val) === undefined) {
         ctx.addIssue({
@@ -113,12 +115,22 @@ export const personalInfoSchema = z.object({
     .trim()
     .min(2, 'Country must be at least 2 characters')
     .max(100, 'Country must not exceed 100 characters')
+    .regex(/^[\p{L}\s.'-]+$/u, 'Country contains invalid characters')
 })
 
 // Company Details validation schema
 export const companyDetailsSchema = z.object({
-  companyName: z.string().trim().min(2, 'Company name must be at least 2 characters'),
-  bio: z.string().trim().min(50, 'Bio must be at least 50 characters').max(500, 'Bio must not exceed 500 characters'),
+  companyName: z
+    .string()
+    .trim()
+    .min(2, 'Company name must be at least 2 characters')
+    .regex(/^[\p{L}\p{N}\s.,'&/-]+$/u, 'Company name contains invalid characters'),
+  bio: z
+    .string()
+    .trim()
+    .min(50, 'Bio must be at least 50 characters')
+    .max(500, 'Bio must not exceed 500 characters')
+    .regex(/^[\p{L}\p{N}\s.,!?'"()&\r\n:;/-]+$/u, 'Bio contains invalid characters'),
   social: z.array(
     z.object({
       platform: z.nativeEnum(GUIDE_SOCIAL_PLATFORM),
