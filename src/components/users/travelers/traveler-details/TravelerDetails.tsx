@@ -572,7 +572,7 @@ export default function TravelerDetails({ id }: { id: string }) {
                       <DialogContent
                         className={cn(
                           "rounded-2xl border-none",
-                          "bg-[#E7E5E4] shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff]",
+                          "bg-[#E7E5E4]",
                         )}
                       >
                         <DialogHeader>
@@ -662,7 +662,7 @@ export default function TravelerDetails({ id }: { id: string }) {
                       <DialogContent
                         className={cn(
                           "rounded-2xl border-none",
-                          "bg-[#E7E5E4] shadow-[12px_12px_24px_#c8c6c5,-12px_-12px_24px_#ffffff]",
+                          "bg-[#E7E5E4]",
                         )}
                       >
                         <DialogHeader>
