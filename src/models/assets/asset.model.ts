@@ -1,5 +1,7 @@
 import { defineModel } from "@/lib/helpers/defineModel";
 import { ASSET_TYPE, VISIBILITY, AssetType, Visibility } from "@/constants/asset.const";
+import "@/models/assets/asset-file.model"; // Ensure AssetFile schema is registered
+
 import {
     Schema,
     Types,
