@@ -1,6 +1,49 @@
 import { documentTypes } from '@/components/register-guide/StepDocuments'
 import { GUIDE_SOCIAL_PLATFORM } from '@/constants/guide.const'
+import { BangladeshDistricts } from '@/data/bangladesh-districts'
+import { BangladeshDivisions } from '@/data/bangladesh-division'
+import { isValidBangladeshZip } from '@/data/bangladesh-zip-codes'
 import { z } from 'zod'
+
+/**
+ * Normalizes a location string for fuzzy comparison:
+ *   - lowercases
+ *   - removes apostrophes, hyphens, and other punctuation
+ *   - collapses multiple spaces into one
+ *
+ * Examples:
+ *   "Cox's Bazar" → "coxs bazar"
+ *   "Cox-Bazar"   → "coxbazar"
+ *   "  Dhaka  "   → "dhaka"
+ */
+export function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[''`´\-]/g, '')   // strip apostrophes & hyphens
+    .replace(/[^a-z0-9 ]/g, '') // strip remaining non-alphanumeric (except space)
+    .replace(/\s+/g, ' ')       // collapse multiple spaces
+    .trim()
+}
+
+/** Pre-normalized district values for O(1) lookup */
+const normalizedDistricts: Map<string, BangladeshDistricts> = new Map(
+  Object.values(BangladeshDistricts).map((d) => [normalizeText(d), d])
+)
+
+/** Pre-normalized division values for O(1) lookup */
+const normalizedDivisions: Map<string, BangladeshDivisions> = new Map(
+  Object.values(BangladeshDivisions).map((d) => [normalizeText(d), d])
+)
+
+/** Returns the matched district enum value, or undefined if no match */
+export function matchDistrict(input: string): BangladeshDistricts | undefined {
+  return normalizedDistricts.get(normalizeText(input))
+}
+
+/** Returns the matched division enum value, or undefined if no match */
+export function matchDivision(input: string): BangladeshDivisions | undefined {
+  return normalizedDivisions.get(normalizeText(input))
+}
 
 // Personal Info validation schema
 export const personalInfoSchema = z.object({
@@ -22,8 +65,8 @@ export const personalInfoSchema = z.object({
     .string()
     .trim()
     .regex(
-      /^\+?[0-9]{7,15}$/,
-      'Phone number must be 7–15 digits and may include a leading +'
+      /^(?:\+?88)?01[3-9]\d{8}$/,
+      'Please enter a valid Bangladeshi phone number (e.g. 01XXXXXXXXX or +8801XXXXXXXXX)'
     ),
 
   street: z
@@ -36,18 +79,34 @@ export const personalInfoSchema = z.object({
     .string()
     .trim()
     .min(2, 'City must be at least 2 characters')
-    .max(100, 'City must not exceed 100 characters'),
+    .max(100, 'City must not exceed 100 characters')
+    .superRefine((val, ctx) => {
+      if (matchDistrict(val) === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `"${val}" is not a recognised Bangladesh district. Try e.g. "Dhaka", "Chattogram", "Cox's Bazar".`,
+        })
+      }
+    }),
 
   division: z
     .string()
     .trim()
-    .min(2, 'State must be at least 2 characters')
-    .max(100, 'State must not exceed 100 characters'),
+    .superRefine((val, ctx) => {
+      if (matchDivision(val) === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `"${val}" is not a recognised division. Must be one of: ${Object.values(BangladeshDivisions).join(', ')}.`,
+        })
+      }
+    }),
 
   zip: z
     .string()
     .trim()
-    .regex(/^[A-Za-z0-9\- ]{3,10}$/, 'Please enter a valid zip/postal code'),
+    .refine(isValidBangladeshZip, {
+      message: 'Please enter a valid Bangladesh 4-digit postal code (e.g. 1200 for Dhaka)',
+    }),
 
   country: z
     .string()

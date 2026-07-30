@@ -107,7 +107,7 @@ const RegisterAsGuide: React.FC<RegisterAsGuideProps> = ({ stats }) => {
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="inline-block mb-6 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-5 py-1.5 text-xs font-semibold uppercase tracking-widest text-emerald-300"
+            className="block mx-auto w-fit mb-6 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-5 py-1.5 text-xs font-semibold uppercase tracking-widest text-emerald-300"
           >
             Guide Registration Open
           </motion.span>
@@ -117,7 +117,7 @@ const RegisterAsGuide: React.FC<RegisterAsGuideProps> = ({ stats }) => {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.3, type: 'spring', stiffness: 160 }}
-            className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-xl shadow-emerald-500/30 mb-7"
+            className="flex mx-auto items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-xl shadow-emerald-500/30 mb-7"
           >
             <Shield className="w-10 h-10 text-white" />
           </motion.div>

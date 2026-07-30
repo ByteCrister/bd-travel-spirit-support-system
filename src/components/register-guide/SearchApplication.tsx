@@ -136,7 +136,7 @@ const SearchApplication: React.FC = () => {
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="your.email@example.com"
+                                    placeholder="username@gmail.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     disabled={isSearching}

@@ -45,22 +45,22 @@ export const formFields = [
 export const locationFields = [
     {
         id: 'city',
-        label: 'City',
-        placeholder: 'City',
+        label: 'City / Upazila',
+        placeholder: 'e.g. Mirpur, Gulshan, Sylhet City',
         icon: Building,
         required: true
     },
     {
         id: 'division',
-        label: 'Division/State',
-        placeholder: 'Division',
+        label: 'Division',
+        placeholder: 'e.g. dhaka, chattogram, sylhet…',
         icon: Building,
         required: true
     },
     {
         id: 'zip',
-        label: 'Zip Code',
-        placeholder: 'Zip Code',
+        label: 'Postal Code',
+        placeholder: 'e.g. 1200 (4-digit BD code)',
         icon: Building,
         required: true
     }

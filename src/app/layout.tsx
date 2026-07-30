@@ -188,7 +188,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceMono.variable} ${jetbrainsMono.variable}`}
+      className={`scroll-smooth ${spaceMono.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <body>

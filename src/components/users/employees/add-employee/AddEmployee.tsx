@@ -1068,7 +1068,7 @@ export default function AddEmployeePage() {
                             {...field}
                             type="email"
                             disabled={showVerificationDialog}
-                            placeholder="email@example.com"
+                            placeholder="username@gmail.com"
                             className={`${NEU_INPUT} w-full h-10 px-4`}
                           />
                         )}

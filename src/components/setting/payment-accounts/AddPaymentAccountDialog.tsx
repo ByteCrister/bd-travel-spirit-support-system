@@ -366,7 +366,7 @@ export function AddPaymentAccountDialog({ children }: Props) {
                                                     value={value}
                                                     onChange={onChange}
                                                     onBlur={onBlur}
-                                                    placeholder="customer@example.com"
+                                                    placeholder="username@gmail.com"
                                                     className={`h-11 ${NEU_INPUT}`}
                                                     style={{ fontFamily: "var(--font-jetbrains-mono)" }}
                                                 />
