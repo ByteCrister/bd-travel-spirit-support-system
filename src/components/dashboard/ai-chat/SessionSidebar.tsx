@@ -33,9 +33,9 @@ const NEU_SESSION_IDLE =
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-type SessionSidebarProps = { open: boolean };
+type SessionSidebarProps = { open: boolean; onClose: () => void };
 
-export function SessionSidebar({ open }: SessionSidebarProps) {
+export function SessionSidebar({ open, onClose }: SessionSidebarProps) {
     const {
         sessions,
         activeSessionId,
@@ -72,22 +72,30 @@ export function SessionSidebar({ open }: SessionSidebarProps) {
                     transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                     className={cn(
                         NEU_SIDEBAR_BG,
-                        "flex h-full flex-col overflow-hidden md:w-72 lg:w-72"
+                        "flex h-full flex-col overflow-hidden w-full md:w-72 lg:w-72 shrink-0 z-20"
                     )}
                     style={{ minWidth: open ? undefined : 0 }}
                 >
                     {/* ── Sidebar header ── */}
-                    <header className={cn("shrink-0 p-3 border-b", NEU_DIVIDER)}>
+                    <header className={cn("shrink-0 p-3 border-b flex items-center gap-2", NEU_DIVIDER)}>
                         <motion.button
                             type="button"
                             onClick={startNewSession}
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.98 }}
-                            className={cn(NEU_BTN_PRIMARY, "flex items-center justify-center gap-2 px-4 py-2.5")}
+                            className={cn(NEU_BTN_PRIMARY, "flex-1 flex items-center justify-center gap-2 px-4 py-2.5")}
                         >
                             <Plus className="h-4 w-4" strokeWidth={2.5} />
                             New conversation
                         </motion.button>
+                        {/* Mobile close button */}
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="md:hidden flex shrink-0 items-center justify-center h-[2.375rem] w-[2.375rem] rounded-xl bg-[#E7E5E4] shadow-[2px_2px_4px_#c8c6c5,-2px_-2px_4px_#ffffff] text-[#1E2938]/50 hover:text-[#1E2938] transition-colors"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
                     </header>
 
                     {/* ── Section label ── */}

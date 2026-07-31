@@ -27,6 +27,11 @@ interface AiChatState {
     messagesCursor: string | null;
     messagesHasMore: boolean;
     messagesLoading: boolean;
+    sessionCache: Record<string, {
+        messages: AiChatMessage[];
+        messagesCursor: string | null;
+        messagesHasMore: boolean;
+    }>;
 
     draftMessage: string;
     sending: boolean;
@@ -56,6 +61,11 @@ const initialState = {
     messagesCursor: null as string | null,
     messagesHasMore: false,
     messagesLoading: false,
+    sessionCache: {} as Record<string, {
+        messages: AiChatMessage[];
+        messagesCursor: string | null;
+        messagesHasMore: boolean;
+    }>,
 
     draftMessage: "",
     sending: false,
@@ -118,6 +128,23 @@ export const useAiChatStore = create<AiChatState>()(
             },
 
             selectSession: async (sessionId: string) => {
+                const { sessionCache, sessions } = get();
+                const cached = sessionCache[sessionId];
+                const sessionMeta = sessions.find((s) => s.sessionId === sessionId);
+
+                if (cached) {
+                    set({
+                        activeSessionId: sessionId,
+                        activeSessionTitle: sessionMeta?.title || "Chat",
+                        messages: cached.messages,
+                        messagesCursor: cached.messagesCursor,
+                        messagesHasMore: cached.messagesHasMore,
+                        messagesLoading: false,
+                        error: null,
+                    });
+                    return;
+                }
+
                 set({
                     activeSessionId: sessionId,
                     messages: [],
@@ -132,14 +159,22 @@ export const useAiChatStore = create<AiChatState>()(
                         params: { sessionId, limit: MESSAGE_PAGE_SIZE },
                     });
 
-                    const sessionMeta = get().sessions.find((s) => s.sessionId === sessionId);
+                    const currentSessionMeta = get().sessions.find((s) => s.sessionId === sessionId);
 
                     set({
-                        activeSessionTitle: data.title || sessionMeta?.title || "Chat",
+                        activeSessionTitle: data.title || currentSessionMeta?.title || "Chat",
                         messages: data.messages,
                         messagesCursor: data.nextCursor,
                         messagesHasMore: data.hasMore,
                         messagesLoading: false,
+                        sessionCache: {
+                            ...get().sessionCache,
+                            [sessionId]: {
+                                messages: data.messages,
+                                messagesCursor: data.nextCursor,
+                                messagesHasMore: data.hasMore,
+                            }
+                        }
                     });
                 } catch (err) {
                     set({
@@ -185,11 +220,21 @@ export const useAiChatStore = create<AiChatState>()(
                         },
                     });
 
+                    const newMessages = [...data.messages, ...messages];
+
                     set({
-                        messages: [...data.messages, ...messages],
+                        messages: newMessages,
                         messagesCursor: data.nextCursor,
                         messagesHasMore: data.hasMore,
                         messagesLoading: false,
+                        sessionCache: {
+                            ...get().sessionCache,
+                            [activeSessionId]: {
+                                messages: newMessages,
+                                messagesCursor: data.nextCursor,
+                                messagesHasMore: data.hasMore,
+                            }
+                        }
                     });
                 } catch (err) {
                     set({
@@ -242,12 +287,22 @@ export const useAiChatStore = create<AiChatState>()(
                         updatedAt: assistant.createdAt,
                     };
 
+                    const newMessages = [...currentMessages, user, assistant];
+
                     set({
                         activeSessionId: data.sessionId,
                         activeSessionTitle: existing?.title ?? sessionSummary.title,
-                        messages: [...currentMessages, user, assistant],
+                        messages: newMessages,
                         sessions: upsertSession(get().sessions, sessionSummary),
                         sending: false,
+                        sessionCache: {
+                            ...get().sessionCache,
+                            [data.sessionId]: {
+                                messages: newMessages,
+                                messagesCursor: get().messagesCursor,
+                                messagesHasMore: get().messagesHasMore,
+                            }
+                        }
                     });
                 } catch (err) {
                     set({
@@ -268,11 +323,15 @@ export const useAiChatStore = create<AiChatState>()(
 
                     const { activeSessionId, sessions } = get();
                     const remaining = sessions.filter((s) => s.sessionId !== sessionId);
+                    
+                    const newCache = { ...get().sessionCache };
+                    delete newCache[sessionId];
 
                     const wasActive = activeSessionId === sessionId;
 
                     set({
                         sessions: remaining,
+                        sessionCache: newCache,
                         ...(wasActive
                             ? {
                                   activeSessionId: null,

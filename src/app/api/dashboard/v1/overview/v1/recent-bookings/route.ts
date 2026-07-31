@@ -65,7 +65,7 @@ export const GET = withErrorHandler(async (
             match: { deletedAt: null },
             populate: {
                 path: 'user',
-                model: getCollectionName(UserModel),
+                model: UserModel.modelName,
                 select: 'name email',
             },
         })
