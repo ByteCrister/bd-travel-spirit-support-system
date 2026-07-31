@@ -734,9 +734,9 @@ export default function AllDetails({
                   <div className="mb-8">
                     <h3 className={`${NEU_HEADING} text-base mb-3`}>Tags</h3>
                     <div className="flex flex-wrap gap-2">
-                      {tour.tags.map((t) => (
+                      {tour.tags.map((t, index) => (
                         <span
-                          key={t}
+                          key={`${t}-${index}`}
                           className={`${NEU_BADGE} hover:shadow-[inset_2px_2px_4px_#c8c6c5,inset_-2px_-2px_4px_#ffffff] cursor-pointer transition-all px-3 py-1.5`}
                         >
                           #{t}

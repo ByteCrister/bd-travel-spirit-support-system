@@ -19,6 +19,7 @@ import ReportsPanel from "./ReportsPanel";
 import TourFaqsPanel from "./TourFaqsPanel";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 import TourBookingsPanel from "./TourBookingsPanel";
+import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 
 // ─── Neumorphism Design Tokens ────────────────────────────────────────────────
 const NEU_PAGE_BG = "min-h-screen bg-[#E7E5E4]";
@@ -134,7 +135,7 @@ export default function TourDetailPage({ companyId, tourId }: Props) {
             {/* Right side: History button + decorative accent */}
             <div className="hidden sm:flex items-center gap-3">
               <button
-                onClick={() => router.push(`/users/companies/${companyId}/${tourId}/history`)}
+                onClick={() => router.push(`/users/companies/${encodeURIComponent(encodeId(companyId))}/${encodeURIComponent(encodeId(tourId))}/history`)}
                 className={
                   "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold " +
                   "font-[family-name:var(--font-space-mono)] bg-[#006666] text-white " +

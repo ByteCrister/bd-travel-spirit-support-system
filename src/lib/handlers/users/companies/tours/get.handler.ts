@@ -10,6 +10,7 @@ import { TOUR_STATUS } from "@/constants/tour.const";
 import { sanitizeSearch } from "@/lib/helpers/sanitize-search";
 
 type ObjectId = Types.ObjectId;
+import { resolveMongoId } from "@/lib/helpers/resolveMongoId";
 
 
 type IDestinationBlockLean =
@@ -36,8 +37,9 @@ type TourLeanPopulated =
  * GET api/users/companies/v1/[companyId]/tours
  * Fetch paginated & filtered tours
  */
-const GetTourListHandler = async (req: NextRequest) => {
+const GetTourListHandler = async (req: NextRequest, { params }: { params: Promise<{ companyId: string }> }) => {
     const { searchParams } = new URL(req.url);
+    const companyId = resolveMongoId((await params).companyId);
 
     /* ---------------- Pagination ---------------- */
     const page = Math.max(Number(searchParams.get("page")) || 1, 1);
@@ -55,6 +57,7 @@ const GetTourListHandler = async (req: NextRequest) => {
     /* ---------------- Filters ---------------- */
     const filter: FilterQuery<ITour> = {
         deletedAt: { $exists: false },
+        companyId,
     };
 
     const arrayFilter = (key: string) => {

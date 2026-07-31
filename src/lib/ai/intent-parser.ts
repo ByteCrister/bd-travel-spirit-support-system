@@ -15,6 +15,9 @@ const DATA_MODELS: DataModel[] = [
     "tour",
     "booking",
     "transaction",
+    "report",
+    "review",
+    "tourFAQ",
 ];
 
 const FORBIDDEN_FILTER_KEYS = new Set(["$where", "$function", "$accumulator", "$expr"]);
@@ -34,11 +37,43 @@ const MAX_LIMIT = 50;
 const MAX_PIPELINE_LENGTH = 12;
 
 export function extractJsonObject(text: string): unknown {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-        throw new Error("No JSON in LLM response");
+    // Strip markdown code fences (e.g. ```json ... ```)
+    const stripped = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+
+    // Find the outermost balanced JSON object using a character scanner
+    const start = stripped.indexOf("{");
+    if (start === -1) {
+        throw new Error(`No JSON object in LLM response. Raw text: ${stripped.slice(0, 200)}`);
     }
-    return JSON.parse(jsonMatch[0]);
+
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    let end = -1;
+
+    for (let i = start; i < stripped.length; i++) {
+        const ch = stripped[i];
+        if (escape) { escape = false; continue; }
+        if (ch === "\\" && inString) { escape = true; continue; }
+        if (ch === "\"") { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === "{") depth++;
+        else if (ch === "}") {
+            depth--;
+            if (depth === 0) { end = i; break; }
+        }
+    }
+
+    if (end === -1) {
+        throw new Error(`Unbalanced JSON braces in LLM response. Raw text: ${stripped.slice(0, 200)}`);
+    }
+
+    const jsonSlice = stripped.slice(start, end + 1);
+    try {
+        return JSON.parse(jsonSlice);
+    } catch (e) {
+        throw new Error(`JSON.parse failed: ${e instanceof Error ? e.message : String(e)}. Slice: ${jsonSlice.slice(0, 200)}`);
+    }
 }
 
 export function parseAssistantIntent(raw: unknown): AssistantIntent {

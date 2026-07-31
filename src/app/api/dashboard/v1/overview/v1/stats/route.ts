@@ -16,7 +16,7 @@ import { withErrorHandler, HandlerResult, ApiError } from '@/lib/helpers/withErr
 import { withTransaction } from '@/lib/helpers/withTransaction';
 import { ClientSession } from 'mongoose';
 
-const ADMIN_COMMISSION_RATE=Number(process.env.ADMIN_COMMISSION_RATE!);
+const ADMIN_COMMISSION_RATE=parseFloat(process.env.ADMIN_COMMISSION_RATE!);
 
 /**
  * GET api/dashboard/v1/overview/v1/stats/route.ts

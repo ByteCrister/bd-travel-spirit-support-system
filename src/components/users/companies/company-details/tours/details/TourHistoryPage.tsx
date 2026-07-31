@@ -30,6 +30,7 @@ import {
 } from "@/store/company/company-detail.store";
 import { TourAnalyticsRunDTO } from "@/types/tour/tour-history.types";
 import { format } from "date-fns";
+import { encodeId } from "@/utils/helpers/mongodb-id-conversions";
 
 // ─── Neumorphism Design Tokens ────────────────────────────────────────────────
 const NEU_PAGE_BG = "min-h-screen bg-[#E7E5E4]";
@@ -335,7 +336,7 @@ export default function TourHistoryPage({ companyId, tourId }: Props) {
                 <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
                 Refresh
               </button>
-              <button onClick={() => router.push(`/users/companies/${companyId}/${tourId}`)} className={NEU_BTN_PRIMARY}>
+              <button onClick={() => router.push(`/users/companies/${encodeURIComponent(encodeId(companyId))}/${encodeURIComponent(encodeId(tourId))}`)} className={NEU_BTN_PRIMARY}>
                 <ArrowLeft className="w-4 h-4" />
                 Tour Detail
               </button>

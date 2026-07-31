@@ -41,7 +41,22 @@ export const GET = withErrorHandler(async (
         .lean();
 
     if (!analyticsRecords || analyticsRecords.length === 0) {
-        throw new ApiError("No analytics records found for this tour", 404);
+        const emptyDto: TourHistoryDTO = {
+            tourId: tourId.toString(),
+            aggregate: {
+                totalRuns: 0,
+                totalBookingsAllRuns: 0,
+                totalRevenueAllRuns: 0,
+                totalViewsAllRuns: 0,
+                totalLikesAllRuns: 0,
+                totalSharesAllRuns: 0,
+                averageOccupancyRate: 0,
+                overallAverageRating: 0,
+                totalReviewsAllRuns: 0,
+            },
+            runs: [],
+        };
+        return { data: emptyDto, status: 200 };
     }
 
     const ratingBreakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };

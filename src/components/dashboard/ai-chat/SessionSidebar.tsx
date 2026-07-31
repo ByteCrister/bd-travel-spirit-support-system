@@ -251,10 +251,9 @@ function SessionItem({
                         type="button"
                         title="Delete chat"
                         onClick={handleDeleteClick}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 0, scale: 1 }}
-                        whileHover={{ opacity: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
                         className={cn(
                             "absolute right-1.5 top-1/2 -translate-y-1/2 z-10",
                             "flex h-6 w-6 items-center justify-center rounded-lg",

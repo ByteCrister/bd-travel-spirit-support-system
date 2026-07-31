@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { Breadcrumbs } from "@/components/global/Breadcrumbs";
 import { useAiChatStore } from "@/store/ai-chat/ai-chat.store";
 import { spaceMono, jetbrainsMono } from "@/styles/fonts";
 import { SessionSidebar } from "./SessionSidebar";
 import { ChatPanel } from "./ChatPanel";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 // ── Neumorphism style tokens ──────────────────────────────────────────────────
 const NEU_PAGE_BG = "bg-[#E7E5E4]";
@@ -30,6 +31,7 @@ const breadcrumbItems = [
 ];
 
 export function AiChatPage() {
+    const router = useRouter();
     const reset = useAiChatStore((state) => state.reset);
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -46,7 +48,15 @@ export function AiChatPage() {
                 "flex h-[calc(100vh-4rem)] flex-col overflow-hidden"
             )}
         >
-
+            <Breadcrumbs items={breadcrumbItems} />
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.back()}
+                className="absolute top-4 left-4 rounded-full"
+            >
+                <ArrowLeft className="h-5 w-5" />
+            </Button>
             {/* ── Body ── */}
             <div className="flex min-h-0 flex-1 overflow-hidden">
                 <SessionSidebar open={sidebarOpen} />

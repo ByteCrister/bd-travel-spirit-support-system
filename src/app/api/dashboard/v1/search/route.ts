@@ -24,11 +24,7 @@ import ConnectDB from "@/config/db";
 // Limits per collection
 const LIMIT = 5;
 
-// ---------------------------------------------------------------------------
-// Helper: create a case‑insensitive regex from a sanitised string
-// ---------------------------------------------------------------------------
-const buildRegex = (sanitized: string) =>
-    new RegExp(sanitized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+
 
 // ---------------------------------------------------------------------------
 // Route handler
@@ -79,8 +75,8 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
         }
     }
 
-    // Build the regex once for all queries
-    const pattern = buildRegex(sanitized);
+    // Create the case-insensitive RegExp from the already-escaped string
+    const pattern = new RegExp(sanitized, "i");
 
     // 6. Run all model searches in parallel (updated – removed searchUsers)
     const [

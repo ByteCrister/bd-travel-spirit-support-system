@@ -22,8 +22,8 @@ import GuideModel from "@/models/guide/guide.model";
 import StripePaymentAccountModel from "@/models/payments/payment-account.model";
 import UserModel from "@/models/user.model";
 
-const ADMIN_COMMISSION_RATE = process.env.ADMIN_COMMISSION_RATE!;
-const GUIDE_SHARE_RATE = process.env.GUIDE_SHARE_RATE!;
+const ADMIN_COMMISSION_RATE = parseFloat(process.env.ADMIN_COMMISSION_RATE!);
+const GUIDE_SHARE_RATE = parseFloat(process.env.GUIDE_SHARE_RATE!);
 const SETTLEMENT_GRACE_MS = 24 * 60 * 60 * 1000;
 
 export type TourSettlementResult = {

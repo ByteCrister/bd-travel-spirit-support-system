@@ -10,6 +10,7 @@ import type {
     FetchNotificationsResponseType,
 } from "@/types/notification.types";
 import { SupportSystemNotificationModel } from "@/models/notifications/support-system-notification.model";
+import ConnectDB from "@/config/db";
 
 const DEFAULT_LIMIT = 15;
 
@@ -39,6 +40,8 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     if (!userId) {
         throw new ApiError("Unauthorized", 401);
     }
+
+    await ConnectDB();
 
     // 2. Authorize (Admin or Support)
     await VERIFY_USER_ROLE.MULTIPLE(userId, [USER_ROLE.ADMIN, USER_ROLE.SUPPORT]);

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { MessageBubble } from "./MessageBubble";
 import type { AiChatMessage } from "@/types/ai-chat";
+import { useAiChatStore } from "@/store/ai-chat/ai-chat.store";
 
 // ── Neumorphism style tokens ──────────────────────────────────────────────────
 const NEU_SURFACE = "bg-[#E7E5E4]";
@@ -46,6 +47,7 @@ export function MessageList({
   hasMore = false,
   onLoadMore,
 }: MessageListProps) {
+  const sendMessage = useAiChatStore((s) => s.sendMessage);
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const shouldStickToBottomRef = useRef(true);
@@ -161,16 +163,35 @@ export function MessageList({
                 </svg>
               </motion.div>
 
-              {/* Heading */}
+              {/* Welcome text */}
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.35 }}
-                className="text-center"
+                className="text-center w-full max-w-md px-4"
               >
-                <p className={cn(NEU_HEADING, "text-base")}>Admin AI Assistant</p>
-                <p className={cn(NEU_MUTED, "mt-1.5 text-xs max-w-xs text-center")}>
-                  Ask anything about travelers, guides, tours, bookings, or revenue.
+                <p className={cn(NEU_HEADING, "text-base mb-3")}>
+                  I am your BD Travel Spirit support assistant.
+                </p>
+                <p className={cn(NEU_MUTED, "text-xs mb-4")}>
+                  I can help you query and analyze system data, including:
+                </p>
+                <ul className="text-left space-y-2 mb-6 ml-4 list-disc marker:text-[#006666]/50">
+                  <li className="text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/70">
+                    <strong className="text-[#1E2938]/90 font-bold">Travelers & Users:</strong> Search profiles, accounts, emails, and registration dates.
+                  </li>
+                  <li className="text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/70">
+                    <strong className="text-[#1E2938]/90 font-bold">Guides & Employees:</strong> Look up statuses, company details, payrolls, and contact info.
+                  </li>
+                  <li className="text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/70">
+                    <strong className="text-[#1E2938]/90 font-bold">Tours & Bookings:</strong> Retrieve tour details, check statuses, and list recent bookings.
+                  </li>
+                  <li className="text-xs font-[family-name:var(--font-jetbrains-mono)] text-[#1E2938]/70">
+                    <strong className="text-[#1E2938]/90 font-bold">Revenue & Financials:</strong> Calculate total revenue, commissions, and transaction histories.
+                  </li>
+                </ul>
+                <p className={cn(NEU_HEADING, "text-sm text-[#006666]")}>
+                  How can I assist you today?
                 </p>
               </motion.div>
 
@@ -190,8 +211,13 @@ export function MessageList({
                     className={cn(
                       NEU_CARD_SM,
                       NEU_CARD_HOVER,
-                      "px-3 py-2.5 text-left cursor-default transition-all duration-200"
+                      "px-3 py-2.5 text-left cursor-pointer transition-all duration-200"
                     )}
+                    onClick={() => {
+                      if (!sending && !loading) {
+                        void sendMessage(label);
+                      }
+                    }}
                   >
                     <div className="mb-1.5 flex h-7 w-7 items-center justify-center rounded-lg bg-[#006666]/10">
                       <Icon className="h-3.5 w-3.5 text-[#006666]" strokeWidth={1.8} />

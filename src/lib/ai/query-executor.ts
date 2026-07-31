@@ -8,6 +8,9 @@ import GuideModel from "@/models/guide/guide.model";
 import TourModel from "@/models/tours/tour.model";
 import BookingModel from "@/models/tours/booking.model";
 import { TransactionModel } from "@/models/payments/transaction.model";
+import { ReportModel } from "@/models/tours/report.model";
+import { ReviewModel } from "@/models/tours/review.model";
+import { TourFAQModel } from "@/models/tours/tourFAQ.model";
 import {
     AggregateIntent,
     AssistantIntent,
@@ -80,6 +83,36 @@ async function runFind(
             if (sort) query = query.sort(sort);
             return query.limit(limit).lean() as Promise<Record<string, unknown>[]>;
         }
+        case "report": {
+            let query = ReportModel.find(asFilter(filter)) as LooseQuery;
+            if (projection) query = query.select(projection);
+            if (sort) query = query.sort(sort);
+            return query
+                .populate("reporter", "name email")
+                .populate("tour", "title slug")
+                .limit(limit)
+                .lean() as Promise<Record<string, unknown>[]>;
+        }
+        case "review": {
+            let query = ReviewModel.find(asFilter(filter)) as LooseQuery;
+            if (projection) query = query.select(projection);
+            if (sort) query = query.sort(sort);
+            return query
+                .populate("user", "name email")
+                .populate("tour", "title slug")
+                .limit(limit)
+                .lean() as Promise<Record<string, unknown>[]>;
+        }
+        case "tourFAQ": {
+            let query = TourFAQModel.find(asFilter(filter)) as LooseQuery;
+            if (projection) query = query.select(projection);
+            if (sort) query = query.sort(sort);
+            return query
+                .populate("askedBy", "name email")
+                .populate("tour", "title slug")
+                .limit(limit)
+                .lean() as Promise<Record<string, unknown>[]>;
+        }
         default:
             throw new Error(`Unknown model: ${model}`);
     }
@@ -105,6 +138,12 @@ async function runAggregate(
             return BookingModel.aggregate(stages) as Promise<Record<string, unknown>[]>;
         case "transaction":
             return TransactionModel.aggregate(stages) as Promise<Record<string, unknown>[]>;
+        case "report":
+            return ReportModel.aggregate(stages) as Promise<Record<string, unknown>[]>;
+        case "review":
+            return ReviewModel.aggregate(stages) as Promise<Record<string, unknown>[]>;
+        case "tourFAQ":
+            return TourFAQModel.aggregate(stages) as Promise<Record<string, unknown>[]>;
         default:
             throw new Error(`Unknown model: ${model}`);
     }

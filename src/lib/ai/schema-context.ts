@@ -29,6 +29,12 @@ booking — bookingReference, uniqueTourCode, traveler, tour, totalParticipants,
 
 transaction — paymentAccountId, stripePaymentIntentId, amount, currency, status (pending|processing|succeeded|failed|canceled|refunded), description, createdAt
 
+report — reporter (ObjectId), tour (ObjectId), reason, message, status (pending|investigating|resolved|rejected), priority (low|medium|high|critical), createdAt, resolvedAt, rejectedAt
+
+review — tour (ObjectId), user (ObjectId), rating (1-5), title, comment, isVerified, isApproved, helpfulCount, createdAt
+
+tourFAQ — tour (ObjectId), askedBy (ObjectId), answeredBy (ObjectId), question, answer, status (pending|approved|rejected), createdAt
+
 Rules:
 - Partial text search: { "name": { "$regex": "akash", "$options": "i" } } or { "companyName": { "$regex": "spirit", "$options": "i" } }
 - Use exact enum strings from schema (e.g. accountStatus "active", booking status "confirmed", payment.status "paid")
@@ -45,21 +51,3 @@ Examples:
 "hello" → { "type":"reply","message":"Hello! I can look up travelers, guides, employees, tours, bookings, and payment data. What do you need?" }
 `.trim();
 
-export function buildPrompt(userMessage: string, history: { role: string; content: string }[] = []): string {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const today = now.toISOString().split("T")[0];
-
-    const historyBlock = history.length
-        ? `\nRecent conversation:\n${history
-              .map((turn) => `${turn.role}: ${turn.content}`)
-              .join("\n")}\n`
-        : "";
-
-    return `${SCHEMA_CONTEXT}
-Today's date: ${today}
-Start of current month (ISO): ${startOfMonth}
-${historyBlock}
-Admin question: "${userMessage}"
-Return ONLY valid JSON.`;
-}

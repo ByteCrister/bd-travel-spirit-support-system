@@ -22,7 +22,7 @@ import { REPORT_STATUS } from "@/constants/report.const";
 import { EMPLOYEE_STATUS } from "@/constants/employee.const";
 import { BOOKING_PAYMENT_STATUS } from "@/constants/tour-booking.const";
 
-const ADMIN_COMMISSION_RATE = Number(process.env.ADMIN_COMMISSION_RATE)
+const ADMIN_COMMISSION_RATE = parseFloat(process.env.ADMIN_COMMISSION_RATE || '0.15')
 
 /**
  * GET /api/dashboard/v1/statistics/v1/kpis

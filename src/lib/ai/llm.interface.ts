@@ -5,7 +5,10 @@ export type DataModel =
     | "guide"
     | "tour"
     | "booking"
-    | "transaction";
+    | "transaction"
+    | "report"
+    | "review"
+    | "tourFAQ";
 
 export type FindIntent = {
     type: "find";
@@ -35,7 +38,6 @@ export interface ChatTurn {
 }
 
 export interface LLMProvider {
-    generateIntent(userMessage: string, history?: ChatTurn[]): Promise<AssistantIntent>;
     generateAction(input: {
         userMessage: string;
         history?: ChatTurn[];
