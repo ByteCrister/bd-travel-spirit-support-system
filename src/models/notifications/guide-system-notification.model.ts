@@ -25,6 +25,7 @@ export interface IGuideSystemNotification extends Document {
   icon?: string;
   relatedModel?: string;
   relatedId?: Types.ObjectId;
+  guide: Types.ObjectId;
   priority: GuideSystemNotificationPriority;
   meta?: Record<string, unknown>;
   expiresAt?: Date;
@@ -47,6 +48,7 @@ export interface IGuideSystemNotificationData {
   icon?: string;
   relatedModel?: string;
   relatedId?: string;
+  guide: string;
   priority: GuideSystemNotificationPriority;
   meta?: Record<string, unknown>;
   expiresAt?: string;
@@ -80,6 +82,7 @@ const GuideSystemNotificationSchema = new Schema<IGuideSystemNotification>(
     icon: { type: String, trim: true },
     relatedModel: { type: String, trim: true },
     relatedId: { type: Schema.Types.ObjectId },
+    guide: { type: Schema.Types.ObjectId, ref: "Guide", required: true, index: true },
     priority: {
       type: String,
       enum: Object.values(GUIDE_SYSTEM_NOTIFICATION_PRIORITY),
@@ -107,7 +110,7 @@ GuideSystemNotificationSchema.pre("save", function (next) {
   next();
 });
 
-// Simple index for the most common query: newest (undeleted) notifications
-GuideSystemNotificationSchema.index({ isDeleted: 1, createdAt: -1 });
+// Compound index for the most common query: a guide's newest undeleted notifications
+GuideSystemNotificationSchema.index({ guide: 1, isDeleted: 1, createdAt: -1 });
 
 export const GuideSystemNotificationModel = defineModel("GuideSystemNotification", GuideSystemNotificationSchema);
