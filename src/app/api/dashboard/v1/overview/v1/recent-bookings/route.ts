@@ -6,9 +6,8 @@ import { BOOKING_STATUS } from '@/constants/tour-booking.const';
 import ConnectDB from '@/config/db';
 import BookingModel, { IBooking } from '@/models/tours/booking.model';
 import UserModel, { IUserDoc } from '@/models/user.model';
-import { ITraveler } from '@/models/travelers/traveler.model';
-import { ITour } from '@/models/tours/tour.model';
-import { getCollectionName } from '@/lib/helpers/get-collection-name';
+import { ITraveler, TravelerModel } from '@/models/travelers/traveler.model';
+import TourModel, { ITour } from '@/models/tours/tour.model';
 import { withErrorHandler, HandlerResult } from '@/lib/helpers/withErrorHandler';
 
 // User fields we selected
@@ -62,6 +61,7 @@ export const GET = withErrorHandler(async (
         .limit(limit)
         .populate({
             path: 'traveler',
+            model: TravelerModel.modelName,
             match: { deletedAt: null },
             populate: {
                 path: 'user',
@@ -71,6 +71,7 @@ export const GET = withErrorHandler(async (
         })
         .populate({
             path: 'tour',
+            model: TourModel.modelName,
             match: { deletedAt: null },
             select: 'title district',
         });
