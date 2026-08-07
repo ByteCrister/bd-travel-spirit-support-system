@@ -88,6 +88,8 @@ interface DashboardState {
     analytics: CacheEntry<AnalyticsData>;
   };
 
+  _hasFetched: Partial<Record<LoadingKey, boolean>>;
+
   _inFlight: Partial<Record<string, Promise<unknown>>>;
 
   // sync actions
@@ -202,6 +204,7 @@ export const useDashboardStore = create<DashboardState>()(
       adminNotifications: makeCacheEntry<AdminNotification[] | null>(null),
       analytics: makeCacheEntry<AnalyticsData | null>(null),
     },
+    _hasFetched: {},
     _inFlight: {},
 
     // sync actions
@@ -266,15 +269,19 @@ export const useDashboardStore = create<DashboardState>()(
 
       const promise = (async () => {
         try {
+          const isInitial = !get()._hasFetched.stats;
           const params = new URLSearchParams({
             start: get().statsDateRange.start,
             end: get().statsDateRange.end,
           });
+          if (isInitial) params.append("isInitialCall", "true");
+          
           const res = await api.get<ApiResponse<DashboardStats>>(`${URL_AFTER_API}/stats?${params}`);
           if (!res.data?.data) throw new Error("Invalid response");
           const data = res.data.data;
           set((s) => ({
             stats: data,
+            _hasFetched: { ...s._hasFetched, stats: true },
             _cache: { ...s._cache, stats: makeCacheEntry(data) },
           }));
         } catch (err) {
@@ -308,15 +315,19 @@ export const useDashboardStore = create<DashboardState>()(
 
       const promise = (async () => {
         try {
+          const isInitial = !get()._hasFetched.recentActivity;
           const params = new URLSearchParams({
             page: String(pagination.page),
             limit: String(pagination.limit),
           });
+          if (isInitial) params.append("isInitialCall", "true");
+          
           const res = await api.get<ApiResponse<PaginatedResponse<RecentActivity>>>(`${URL_AFTER_API}/recent-activity?${params}`);
           if (!res.data?.data) throw new Error("Invalid response");
           const { items } = res.data.data;
           set((s) => ({
             recentActivity: items,
+            _hasFetched: { ...s._hasFetched, recentActivity: true },
             _cache: { ...s._cache, recentActivity: makeCacheEntry(items) },
           }));
         } catch (err) {
@@ -357,14 +368,20 @@ export const useDashboardStore = create<DashboardState>()(
 
       const promise = (async () => {
         try {
+          const isInitial = !get()._hasFetched.pendingActions;
+          const params = new URLSearchParams();
+          if (isInitial) params.append("isInitialCall", "true");
+          const qs = params.toString() ? `?${params.toString()}` : "";
+          
           const res = await api.get<ApiResponse<PendingAction[]>>(
-            `${URL_AFTER_API}/pending-actions`,
+            `${URL_AFTER_API}/pending-actions${qs}`,
           );
           if (!res.data || !res.data.data)
             throw new Error("Invalid api response.");
           const data = res.data.data || [];
           set((s) => ({
             pendingActions: data,
+            _hasFetched: { ...s._hasFetched, pendingActions: true },
             _cache: { ...s._cache, pendingActions: makeCacheEntry(data) },
           }));
         } catch (err) {
@@ -403,15 +420,19 @@ export const useDashboardStore = create<DashboardState>()(
 
       const promise = (async () => {
         try {
+          const isInitial = !get()._hasFetched.recentBookings;
           const params = new URLSearchParams({
             page: String(pagination.page),
             limit: String(pagination.limit),
           });
+          if (isInitial) params.append("isInitialCall", "true");
+          
           const res = await api.get<ApiResponse<PaginatedResponse<Booking>>>(`${URL_AFTER_API}/recent-bookings?${params}`);
           if (!res.data?.data) throw new Error("Invalid response");
           const { items } = res.data.data;
           set((s) => ({
             recentBookings: items,
+            _hasFetched: { ...s._hasFetched, recentBookings: true },
             _cache: { ...s._cache, recentBookings: makeCacheEntry(items) },
           }));
         } catch (err) {
@@ -452,14 +473,20 @@ export const useDashboardStore = create<DashboardState>()(
 
       const promise = (async () => {
         try {
+          const isInitial = !get()._hasFetched.roleDistribution;
+          const params = new URLSearchParams();
+          if (isInitial) params.append("isInitialCall", "true");
+          const qs = params.toString() ? `?${params.toString()}` : "";
+          
           const res = await api.get<ApiResponse<RoleDistribution>>(
-            `${URL_AFTER_API}/role-distribution`,
+            `${URL_AFTER_API}/role-distribution${qs}`,
           );
           if (!res.data || !res.data.data)
             throw new Error("Invalid api response.");
           const data = res.data.data || null;
           set((s) => ({
             roleDistribution: data,
+            _hasFetched: { ...s._hasFetched, roleDistribution: true },
             _cache: { ...s._cache, roleDistribution: makeCacheEntry(data) },
           }));
         } catch (err) {
@@ -499,15 +526,19 @@ export const useDashboardStore = create<DashboardState>()(
 
       const promise = (async () => {
         try {
+          const isInitial = !get()._hasFetched.adminNotifications;
           const params = new URLSearchParams({
             page: String(pagination.page),
             limit: String(pagination.limit),
           });
+          if (isInitial) params.append("isInitialCall", "true");
+          
           const res = await api.get<ApiResponse<PaginatedResponse<AdminNotification>>>(`${URL_AFTER_API}/admin-notifications?${params}`);
           if (!res.data?.data) throw new Error("Invalid response");
           const { items } = res.data.data;
           set((s) => ({
             adminNotifications: items,
+            _hasFetched: { ...s._hasFetched, adminNotifications: true },
             _cache: { ...s._cache, adminNotifications: makeCacheEntry(items) },
           }));
         } catch (err) {
@@ -541,15 +572,19 @@ export const useDashboardStore = create<DashboardState>()(
 
       const promise = (async () => {
         try {
+          const isInitial = !get()._hasFetched.analytics;
           const params = new URLSearchParams({
             start: range.start,
             end: range.end,
           });
+          if (isInitial) params.append("isInitialCall", "true");
+          
           const res = await api.get<ApiResponse<AnalyticsData>>(`${URL_AFTER_API}/analytics?${params}`);
           if (!res.data?.data) throw new Error("Invalid response");
           const data = res.data.data;
           set((s) => ({
             analytics: data,
+            _hasFetched: { ...s._hasFetched, analytics: true },
             _cache: { ...s._cache, analytics: makeCacheEntry(data) },
           }));
         } catch (err) {

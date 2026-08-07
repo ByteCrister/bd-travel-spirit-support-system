@@ -94,6 +94,7 @@ const SECTION_TTL: Partial<Record<SectionKey, number>> = {
 
 const cache = new Map<string, CacheEntry>();
 const pendingRequests = new Map<string, Promise<unknown>>();
+const hasFetched = new Set<SectionKey>();
 
 function cacheKey(section: SectionKey, range: DateRange) {
     const from = range.from ? range.from.toISOString() : "";
@@ -103,11 +104,13 @@ function cacheKey(section: SectionKey, range: DateRange) {
 
 async function fetchSectionFromApi<T extends SectionResponse>(
     path: string,
-    range: DateRange
+    range: DateRange,
+    isInitialCall?: boolean
 ): Promise<T> {
     const params: Record<string, string | undefined> = {};
     if (range.from) params.from = range.from.toISOString();
     if (range.to) params.to = range.to.toISOString();
+    if (isInitialCall) params.isInitialCall = "true";
 
     // Tell axios we expect an ApiResponse<T>
     const resp = await api.get<ApiResponse<T>>(`${URL_AFTER_API}/${path}`, { params });
@@ -142,6 +145,7 @@ async function getCachedOrFetch<T extends SectionResponse>(
     range: DateRange,
     opts?: { force?: boolean }
 ): Promise<T> {
+    const isInitialCall = !hasFetched.has(section);
     const canonical = canonicalRange(range);
     const key = cacheKey(section, canonical);
     const now = Date.now();
@@ -160,7 +164,8 @@ async function getCachedOrFetch<T extends SectionResponse>(
         }
         const background = (async () => {
             try {
-                const fresh = await fetchSectionFromApi<T>(section, range);
+                const fresh = await fetchSectionFromApi<T>(section, range, isInitialCall);
+                hasFetched.add(section);
                 cache.set(key, { value: fresh, fetchedAt: Date.now(), ttlMs });
             } catch {
                 // ignore background fetch errors
@@ -174,7 +179,8 @@ async function getCachedOrFetch<T extends SectionResponse>(
 
     const promise = (async () => {
         try {
-            const res = await fetchSectionFromApi<T>(section, range);
+            const res = await fetchSectionFromApi<T>(section, range, isInitialCall);
+            hasFetched.add(section);
             cache.set(key, { value: res, fetchedAt: Date.now(), ttlMs });
             return res;
         } finally {

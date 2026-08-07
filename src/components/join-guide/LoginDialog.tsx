@@ -12,7 +12,8 @@ import {
   FiEye,
   FiEyeOff,
   FiShield,
-  FiArrowRight
+  FiArrowRight,
+  FiInfo
 } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import { signIn } from "next-auth/react";
@@ -55,6 +56,9 @@ const errorMap: Record<string, string> = {
 const CALL_BACK_URL = "/dashboard/overview";
 const EMAIL_VALIDATE_URL = "/auth/user/v1/validate";
 
+const READY_ONLY_EMAIL=process.env.NEXT_PUBLIC_READY_ONLY_EMAIL;
+const READY_ONLY_PSSWORD=process.env.NEXT_PUBLIC_READY_ONLY_PSSWORD;
+
 export default function LoginDialog() {
   const {
     isLoginOpen: isOpen,
@@ -71,11 +75,12 @@ export default function LoginDialog() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginValidator),
     defaultValues: {
-      email: "",
-      password: "",
+      email: READY_ONLY_EMAIL,
+      password: READY_ONLY_PSSWORD,
     },
   });
 
+  const isReadOnlyCredentials = form.watch("email") === READY_ONLY_EMAIL && form.watch("password") === READY_ONLY_PSSWORD;
 
   const handleSubmit = async (values: LoginFormValues) => {
 
@@ -191,6 +196,16 @@ export default function LoginDialog() {
             <div className="relative px-6 pb-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                  {isReadOnlyCredentials && (
+                    <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 mb-2 flex items-start gap-3">
+                      <FiInfo className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+                      <div className="text-sm text-emerald-700 dark:text-emerald-400">
+                        <p className="font-semibold">Read-only Credentials</p>
+                        <p className="opacity-90 text-xs mt-0.5">Use these test credentials to explore the support features.</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Email Field */}
                   <FormField
                     control={form.control}
